@@ -1,0 +1,6 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" fill="none">
+  <rect width="900" height="1200" fill="#2A103D"/>
+  <circle cx="450" cy="330" r="120" fill="#FFD5EE"/>
+  <rect x="270" y="450" width="360" height="570" rx="100" fill="#B08BFF"/>
+  <text x="50%" y="1100" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-size="42" font-family="Arial">PLACEHOLDER: AFTER COAT</text>
+</svg>

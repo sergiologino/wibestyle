@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Я на стиле — Wibestyle Landing
 
-## Getting Started
+Яркий fashion-tech лендинг AI-примерочной с маркетплейсов. Основан на прототипе `yanastyle-landing`.
 
-First, run the development server:
+## Запуск
 
 ```bash
+npm install
+cp .env.example .env.local
+# Укажите NEXT_PUBLIC_YANDEX_METRIKA_ID и NEXT_PUBLIC_SITE_URL
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Production:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Замена изображений
 
-## Learn More
+Все ключевые изображения — в `content/image-slots.ts`. Положите файлы в `public/assets/` и обновите только `src` (и при необходимости `alt`).
 
-To learn more about Next.js, take a look at the following resources:
+Пример: `/assets/hero-before.png` → `/assets/my-before.jpg`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Для страницы макияжа сейчас используются `female-card-*.png` как временные кадры.
+Для идеального результата положите свои close-up «до/после» в `public/assets/makeup/` и обновите слоты `makeupEveningBefore`, `makeupEveningAfter`, `makeupLightBefore`, `makeupLightAfter` в `content/image-slots.ts`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Тариф и ранняя регистрация
 
-## Deploy on Vercel
+- Годовая подписка: **6990 ₽**
+- Первым **100** участникам: **скидка 50%** → **3495 ₽/год**
+- Заявки сохраняются в `data/leads.json` через `POST /api/leads`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## SEO / GEO / AEO
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Многостраничная структура: `content/seo-pages.ts` + маршрут `app/[...slug]`
+- `app/robots.ts`, `app/sitemap.ts`
+- `GET /llms.txt`, `GET /llms-full.txt`
+- JSON-LD на главной и SEO-страницах
+- Answer-first блоки на подстраницах
+
+## Яндекс.Метрика
+
+В `.env.local`:
+
+```
+NEXT_PUBLIC_YANDEX_METRIKA_ID=12345678
+```
+
+## Тесты
+
+```bash
+npm test
+```
+
+Тесты запускаются автоматически при `npm run build`.

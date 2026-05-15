@@ -1,0 +1,6 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700" viewBox="0 0 900 700" fill="none">
+  <rect width="900" height="700" fill="#2B0F3E"/>
+  <rect x="160" y="350" width="260" height="140" rx="60" fill="#FFF"/>
+  <rect x="480" y="310" width="260" height="170" rx="70" fill="#FF8BD0"/>
+  <text x="50%" y="620" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-size="42" font-family="Arial">PLACEHOLDER: SHOES CLOSEUP</text>
+</svg>
