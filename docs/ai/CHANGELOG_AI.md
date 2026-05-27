@@ -1,5 +1,104 @@
 # AI Changelog
 
+## 2026-05-28 (Auth persistence + Share card + WB images)
+- Web-app: persistent login via refresh token rotation — proactive refresh before JWT expiry, cross-tab lock, no logout on transient/network errors; session clears only on invalid refresh or explicit logout.
+- Web-app: «Отправить подруге» — ShareCard показывает результат через authenticated blob (`AuthenticatedShareImage`), не пустую рамку.
+- API: Wildberries — card.wb.ru fallback, расширенная карта basket-хостов (до basket-40), User-Agent, проверка скачиваемости фото; убран silent fallback с плейсхолдером; подсказка загрузить фото файлом при ошибке.
+
+## 2026-05-24 (Gallery moderation UI polish)
+- Admin `/gallery`: список жалоб, фильтр open/resolved, скрытие постов.
+- Web-app: `ReportPostButton` на `/gallery` и `/p/[slug]`; redirect `?next=` после OTP.
+
+## 2026-05-24 (Security + Compliance — TZ 12)
+- Flyway V9: admin_audit_logs, gallery_reports.
+- Account deletion with storage cleanup and refresh token revoke.
+- Gallery report + admin hide; hidden posts excluded from public feed.
+- Media EXIF strip, signed access tokens, upload size limits.
+- Rate limiting on OTP start; multipart 10MB cap.
+
+## 2026-05-24 (Landing + Admin Leads/Reviews — TZ 11)
+- Flyway `V8__landing_leads_admin.sql`: lead status, page/UTM/referrer.
+- Admin leads: list/filter, CSV export, status update (`/admin/leads`).
+- Admin reviews: PATCH display name.
+- Landing wired to backend: LeadForm, published reviews or interest fallback.
+- Public `GET /landing/leads` returns stats only (no PII leak).
+
+## 2026-05-24 (Media + Reviews + Billing webhooks — TZ 10)
+- Flyway `V7__media_reviews_billing.sql`: media_assets, reviews, billing_checkouts, landing_interests.
+- Media: upload-url → multipart upload → complete-upload; download ready assets.
+- Reviews: user create, admin publish/reject, public `/reviews/published`.
+- Billing: `POST /checkout` (pending) + mock webhook simulate; `POST /subscribe` — dev instant activate.
+- `POST /landing/interest`; admin `/reviews` page.
+- api-client: media, reviews, checkout/webhook methods.
+
+## 2026-05-24 (Backend API + JWT — TZ 10, частично)
+- JWT access tokens (jjwt HS256), refresh/logout endpoints.
+- RefreshTokenStore: in-memory (test) / Redis (prod).
+- `GET /billing/entitlements`, `POST /billing/checkout`, `POST /billing/subscribe`.
+- Docs: [API.md](./API.md), [PROMO_CODES_GUIDE.md](./PROMO_CODES_GUIDE.md).
+
+## 2026-05-24 (Auth + Billing + Promo — TZ 09)
+- Flyway `V6__billing_promo.sql`: promo_codes, redemptions, billing fields, quota flags.
+- Billing: Wibe 400/3840 ₽, Elite 900/8640 ₽; paywall default Wibe Annual.
+- QuotaService: reserve/consume/refund; plan_generations_left for paid plans.
+- Entitlements в `/me`; mock `POST /billing/subscribe`.
+- Admin promo API + `/promo` page: create/generate/revoke, VK link instructions.
+- Promo redeem on OTP verify; deep link `?promo=CODE`; Cyrillic keyboard guard.
+- OTP resend cooldown + max attempts.
+
+## 2026-05-24 (Search + Gallery — TZ 06, 08)
+- Flyway `V5__search_favorites_gallery.sql`: favorites, gallery_posts, likes, comments.
+- Search: `SearchQueryUnderstandingService` + demo marketplace results; `POST /api/v1/search`.
+- Favorites CRUD: `GET/POST/DELETE /api/v1/favorites`.
+- Size advisory: `POST /api/v1/size-advice` с warnings по профилю и review signals.
+- Gallery: posts from try-on session, public slug, likes, comments; `GET /api/v1/features`.
+- Web: `SearchClient` (auto-search), `GalleryClient`, `PublicPostClient`, `/p/[slug]`.
+- `ResultClient` — save/share создаёт gallery post; `LinkTryOnClient` — size advice + `?url=`.
+- Integration tests: search, favorites, size-advice, gallery post from try-on.
+
+## 2026-05-24 (AI Integration — TZ 07)
+- `NoteappAiClient` → `POST /api/ai/process` (image_generation) через `X-API-Key`.
+- Async worker `TryOnJobWorker` + `AiJobStatus`, idempotency key `tryon:{sessionId}:photo:front:v1`.
+- Trial списывается только при успехе; технический fail → demo fallback (если включён).
+- `GET /api/v1/ai/jobs/{jobId}`, Flyway `V4__ai_jobs.sql`.
+- `ResultClient` polling при status `generating`.
+- Config: `wibestyle.ai.*` (`WIBESTYLE_AI_API_KEY`, `WIBESTYLE_AI_TRYON_NETWORK`).
+
+## 2026-05-24 (Marketplace Try-On — TZ 05)
+- Flyway `V3__tryon_sessions.sql`: `try_on_sessions`, `try_on_jobs`.
+- Marketplace adapters: `WildberriesAdapter`, `OzonAdapter`, `MarketplaceAdapterRegistry`.
+- Try-on API: create link/photo session, generate (AI stub), get session + result.
+- Trial generations списываются при generate; требуется avatar snapshot.
+- Web-app: LinkTryOnClient, PhotoTryOnClient, ResultClient подключены к API.
+- `@wibestyle/api-client`: try-on session methods.
+
+## 2026-05-24 (Architecture + Avatar — TZ 03–04)
+- TZ-03: `RequestIdFilter`, `QueueNames`, `DomainEvents`, `FeatureFlagsProperties`, `StorageProperties`, local storage service.
+- TZ-04: Flyway `V2__avatar_profile.sql`, entities `UserProfileEntity`, `AvatarEntity`, `AvatarSnapshotEntity`.
+- API: `GET/PUT/DELETE /profile`, full avatar lifecycle (`/avatars`, photo upload, validate, preprocess, activate, delete).
+- Web-app: `AvatarOnboardingForm` вызывает API; client validation `avatar-validation.ts`.
+- `@wibestyle/api-client`: profile + avatar methods, multipart upload.
+- Integration tests: avatar flow, inappropriate photo reject, anthropometry required on activate.
+
+## 2026-05-24 (UX flows — TZ 02)
+- Web-app: welcome → OTP → avatar → home dashboard.
+- Try-on flows: link WB/Ozon и photo upload с demo result screen.
+- WOW: BeforeAfterSlider, ResultReveal, ShareCard, gallery likes, paywall Wibe.
+- API: `GET /api/v1/me`, `POST /api/v1/marketplaces/parse-link`.
+- AppSessionProvider + localStorage, 13 маршрутов web-app.
+
+## 2026-05-24 (Foundation — TZ 01)
+- Monorepo: `apps/landing`, `apps/web-app`, `apps/admin`, `apps/mobile-app`, `packages/*`, `services/api`.
+- Spring Boot API: health, OTP skeleton, landing leads, Flyway `V1__foundation.sql`.
+- `@wibestyle/ui` — design tokens и компоненты в стиле лендинга.
+- Web-app skeleton: главная, `/auth`, `/try-on` на порту 3001.
+- Docker compose: PostgreSQL + Redis.
+
+## 2026-05-24 (лендинг dev-fix)
+- Исправлен dev: `turbopack.root` в `next.config.ts` (конфликт lockfile в `Look/` → лишний file-watching, потеря CSS/ассетов, ошибки SWC).
+- Hash-навигация в Header/Footer для App Router; автотесты `lib/navigation.test.ts`.
+- Оптимизация CPU в dev: без infinite-анимаций hero, solid background у topbar.
+
 ## 2026-05-15
 - `/podbor-obraza`: мозаика `visualsCompact` — каждое фото в контейнере `fill`, высота **46vh** (~70% от ⅔ экрана), `object-position: center top`.
 

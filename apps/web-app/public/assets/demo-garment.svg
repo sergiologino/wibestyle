@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-label="Demo garment">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff4fb"/>
+      <stop offset="100%" stop-color="#ffe4f5"/>
+    </linearGradient>
+    <linearGradient id="dress" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff6abf"/>
+      <stop offset="100%" stop-color="#782cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)"/>
+  <ellipse cx="400" cy="860" rx="220" ry="40" fill="rgba(120,44,255,0.12)"/>
+  <path d="M280 220 Q400 140 520 220 L560 820 Q400 900 240 820 Z" fill="url(#dress)" opacity="0.92"/>
+  <text x="400" y="960" text-anchor="middle" fill="#6d6273" font-family="Arial, sans-serif" font-size="28" font-weight="700">Demo look</text>
+</svg>

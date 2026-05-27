@@ -1,0 +1,9 @@
+# Redis опционален для dev (refresh tokens in-memory без Redis).
+# PostgreSQL — локально установленный сервер, не Docker.
+# См. scripts/create-local-database.sql и docs/ai/RUNBOOK.md
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

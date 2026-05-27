@@ -1,0 +1,36 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  datasource:
+    url: jdbc:h2:mem:wibestyle;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+wibestyle:
+  auth:
+    otp-ttl-seconds: 300
+    jwt-secret: test-jwt-secret-with-enough-length-for-hmac-sha256
+  admin:
+    api-key: test-admin-key
+  storage:
+    root: ${java.io.tmpdir}/wibestyle-test-storage
+  security:
+    rate-limit-enabled: false
+  ai:
+    enabled: false
+    fallback-to-demo: true
+    async-enabled: false
+  features:
+    flags:
+      search: true
+      sizeAdvisory: true

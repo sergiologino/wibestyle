@@ -26,5 +26,65 @@
 - Decision: `POST /api/leads` пишет в `data/leads.json`, первые 100 получают `hasDiscount: true`.
 - Consequences: Работает локально без внешнего backend; для production нужен CRM/DB.
 
+## ADR-0007: Явный `turbopack.root` для изолированного лендинга
+- Status: Accepted
+- Context: В каталоге `Look/` несколько `package-lock.json`; Turbopack выбирал родительский корень, следил за лишними файлами и периодически не резолвил CSS/модули wibestyle.
+- Decision: Зафиксировать `turbopack.root` на директории `wibestyle` в `next.config.ts`.
+- Consequences: Стабильная dev-сборка, ниже CPU; при переходе в monorepo root может потребоваться пересмотр.
+
+## ADR-0008: Monorepo WibeStyle (Этап 0 Foundation)
+- Status: Accepted
+- Context: ТЗ `01`/`13` требуют landing, web-app, admin, mobile skeleton, backend API, shared packages.
+- Decision: npm workspaces monorepo в `wibestyle/`; лендинг перенесён в `apps/landing`; backend — Spring Boot в `services/api`.
+- Consequences: Единая сборка/тесты; dev-порты 3000/3001/3002/8080; turbopack.root на корень monorepo.
+
+## ADR-0009: Local file storage для avatar MVP
+- Status: Accepted
+- Context: TZ-04 требует upload/preprocess avatar до подключения S3/CDN.
+- Decision: `LocalStorageService` пишет в `wibestyle.storage.root`; пути хранятся в БД; production заменится на private bucket + signed URLs.
+- Consequences: Dev/test работает без облака; миграция на object storage — adapter swap без смены API контракта.
+
+## ADR-0010: Avatar snapshot на activate
+- Status: Accepted
+- Context: TryOnSession не должен меняться при обновлении профиля/avatar.
+- Decision: При `POST /avatars/{id}/activate` создаётся `avatar_snapshots` с антропометрией, privacy flags, processed image path, quality score.
+- Consequences: Immutable reference для будущих try-on sessions; один active avatar на user.
+
+## ADR-0011: MarketplaceAdapter registry
+- Status: Accepted
+- Context: TZ-05 требует расширяемые адаптеры WB/Ozon и будущие маркетплейсы.
+- Decision: Java interface `MarketplaceAdapter` + Spring beans per marketplace + `MarketplaceAdapterRegistry.resolve(url)`.
+- Consequences: Новый маркетплейс = новый adapter bean; parse-link и try-on используют один контракт `ProductDetails`.
+
+## ADR-0012: TryOnSession + demo AI stub
+- Status: Accepted
+- Context: Нужен end-to-end flow до подключения noteapp-ai-integration.
+- Decision: `TryOnService.generate` создаёт `try_on_jobs`, синхронно завершает demo stub с demo assets; trial списывается на generate.
+- Consequences: Frontend получает real session UUID; замена на async worker без смены API контракта.
+
+## ADR-0013: noteapp-ai-integration для VIRTUAL_TRY_ON_PHOTO
+- Status: Accepted
+- Context: TZ-07; noteapp пока не имеет dedicated try-on API, только `image_generation`.
+- Decision: `NoteappAiClient` шлёт structured prompt + metadata operation=`VIRTUAL_TRY_ON_PHOTO`; при ошибке — demo fallback если `fallback-to-demo=true`.
+- Consequences: End-to-end async flow готов; замена на real try-on provider в noteapp не ломает wibestyle API.
+
+## ADR-0014: Heuristic search + demo marketplace catalog
+- Status: Accepted
+- Context: TZ-06 требует search MVP до интеграции с реальными API маркетплейсов.
+- Decision: `SearchQueryUnderstandingService` извлекает facets из текста; `SearchService` возвращает demo items из adapter registry.
+- Consequences: Frontend получает реальный API контракт; замена на external search — без смены web-app types.
+
+## ADR-0015: Gallery post from TryOnSession
+- Status: Accepted
+- Context: TZ-08 share-card и публичная галерея.
+- Decision: `POST /gallery/posts` принимает `tryOnSessionId`, генерирует slug, visibility public/private; image из session result.
+- Consequences: Share flow через slug `/p/{slug}`; likes/comments на post entity.
+
+## ADR-0016: Promo codes с deep link и одноразовым redeem на login
+- Status: Accepted
+- Context: Нужны промокоды для VK/early users со скидкой %, лимитом регистраций и ручной отменой.
+- Decision: `promo_codes` + `promo_code_redemptions`; redeem при успешном OTP verify; скидка хранится в profile до checkout; admin через `X-Admin-Key`; deep link `?promo=CODE`; валидация латиницы CAPS + отклонение кириллицы-омографов.
+- Consequences: 1 user = 1 redemption; uses_count инкрементируется на login; admin `/promo` генерирует ссылки для VK.
+
 ## Superseded
-- Пока нет.
+- ADR-0002 частично: вместо одного frontend-сервиса — monorepo (landing + web-app + API). Лендинг остаётся отдельным deployable app.

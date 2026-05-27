@@ -1,0 +1,93 @@
+spring:
+  application:
+    name: wibestyle-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wibestyle}
+    username: ${SPRING_DATASOURCE_USERNAME:wibestyle}
+    password: ${SPRING_DATASOURCE_PASSWORD:wibestyle}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8080
+wibestyle:
+  auth:
+    otp-ttl-seconds: 300
+    otp-resend-cooldown-seconds: 60
+    otp-max-attempts: 5
+    access-token-ttl-seconds: 3600
+    refresh-token-ttl-seconds: 2592000
+    jwt-secret: ${WIBESTYLE_JWT_SECRET:dev-jwt-secret-change-me-in-production-min-32-chars}
+    legacy-access-token-enabled: true
+  admin:
+    api-key: ${WIBESTYLE_ADMIN_API_KEY:dev-admin-key}
+    bootstrap-password: ${WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD:dev-admin-password}
+  oauth:
+    web-app-callback-url: ${WIBESTYLE_OAUTH_WEB_CALLBACK:http://localhost:3001/auth/oauth/callback}
+    api-public-base-url: ${WIBESTYLE_OAUTH_API_PUBLIC_BASE:http://localhost:8080}
+    yandex:
+      enabled: ${WIBESTYLE_OAUTH_YANDEX_ENABLED:false}
+      client-id: ${WIBESTYLE_OAUTH_YANDEX_CLIENT_ID:}
+      client-secret: ${WIBESTYLE_OAUTH_YANDEX_CLIENT_SECRET:}
+    google:
+      enabled: ${WIBESTYLE_OAUTH_GOOGLE_ENABLED:false}
+      client-id: ${WIBESTYLE_OAUTH_GOOGLE_CLIENT_ID:}
+      client-secret: ${WIBESTYLE_OAUTH_GOOGLE_CLIENT_SECRET:}
+  security:
+    rate-limit-enabled: true
+    otp-start-per-minute: 10
+    media-access-ttl-seconds: 900
+    max-upload-bytes: 10485760
+  billing:
+    wibe-monthly-rub: 400
+    wibe-annual-rub: 3840
+    elite-monthly-rub: 900
+    elite-annual-rub: 8640
+    wibe-generations: 20
+    elite-generations: 100
+    annual-discount-percent: 20
+    annual-rub: 6990
+    discounted-annual-rub: 3495
+    first-users-limit: 100
+  storage:
+    # Стабильный путь: WIBESTYLE_STORAGE_ROOT или ~/.wibestyle/storage (см. LocalStorageService)
+    root: ${WIBESTYLE_STORAGE_ROOT:./data/storage}
+  features:
+    flags:
+      videoTryOn: false
+      multiItemTryOn: false
+      search: true
+      sizeAdvisory: true
+      eliteFrame: false
+      futureStylist: false
+      futureMakeup: false
+      futureHairstyle: false
+
+  ai:
+    enabled: ${WIBESTYLE_AI_ENABLED:false}
+    base-url: ${WIBESTYLE_AI_BASE_URL:http://localhost:8091}
+    api-key: ${WIBESTYLE_AI_API_KEY:}
+    fallback-to-demo: ${WIBESTYLE_AI_FALLBACK_TO_DEMO:false}
+    async-enabled: ${WIBESTYLE_AI_ASYNC_ENABLED:true}
+    timeout-seconds: ${WIBESTYLE_AI_TIMEOUT_SECONDS:180}
+    virtual-try-on-network: ${WIBESTYLE_AI_TRYON_NETWORK:wibestyle-vton}
+    size-compliment-network: ${WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK:gpt-4o-mini}
+    webhook-secret: ${WIBESTYLE_AI_WEBHOOK_SECRET:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

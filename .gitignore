@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,7 +15,7 @@
 /coverage
 
 # next.js
-/.next/
+**/.next/
 /out/
 
 # production
@@ -36,6 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# java / gradle
+services/api/target/
+services/api/build/
+services/api/.gradle/
+
 # typescript
-*.tsbuildinfo
-next-env.d.ts
+**/next-env.d.ts

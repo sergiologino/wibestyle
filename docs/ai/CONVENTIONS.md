@@ -20,6 +20,7 @@
 
 ## Контент memory-файлов
 - Допускается только итоговое знание.
+- Документация по доменам: [API.md](./API.md), [PROMO_CODES_GUIDE.md](./PROMO_CODES_GUIDE.md).
 - Запрещено хранить:
   - логи,
   - stacktrace,

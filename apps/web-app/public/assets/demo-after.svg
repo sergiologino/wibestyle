@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-label="Avatar after">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff4fb"/>
+      <stop offset="100%" stop-color="#ffe4f5"/>
+    </linearGradient>
+    <linearGradient id="dress" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff1fa2"/>
+      <stop offset="100%" stop-color="#b100ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)"/>
+  <ellipse cx="400" cy="210" rx="70" ry="82" fill="#f3dbe8"/>
+  <path d="M300 320 Q400 280 500 320 L530 760 Q400 820 270 760 Z" fill="url(#dress)"/>
+  <rect x="300" y="760" width="60" height="180" rx="24" fill="#ddd5df"/>
+  <rect x="440" y="760" width="60" height="180" rx="24" fill="#ddd5df"/>
+  <text x="400" y="960" text-anchor="middle" fill="#ff1fa2" font-family="Arial, sans-serif" font-size="28" font-weight="700">0C! &</text>
+</svg>

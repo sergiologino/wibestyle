@@ -1,58 +1,63 @@
-# Я на стиле — Wibestyle Landing
+# WibeStyle monorepo
 
-Яркий fashion-tech лендинг AI-примерочной с маркетплейсов. Основан на прототипе `yanastyle-landing`.
+Платформа AI-примерочной «Я на стиле».
 
-## Запуск
+## Домены
 
-```bash
+- Лендинг: `https://wibestyle.ru` → `apps/landing` (port 3000)
+- Web app: `https://app.wibestyle.ru` → `apps/web-app` (port 3001)
+- Admin: `apps/admin` (port 3002)
+- API: `https://api.wibestyle.ru` → `services/api` (port 8080)
+
+## Быстрый старт
+
+```powershell
 npm install
-cp .env.example .env.local
-# Укажите NEXT_PUBLIC_YANDEX_METRIKA_ID и NEXT_PUBLIC_SITE_URL
-npm run dev
-```
 
-Production:
+# 1. PostgreSQL локально (не Docker): scripts/create-local-database.sql
+# 2. DBeaver: localhost:5432/wibestyle, user wibestyle
 
-```bash
-npm run build
-npm start
-```
+npm run dev:api       # http://localhost:8080
+npm run dev:web       # http://localhost:3001
+npm run dev:admin     # http://localhost:3002
+npm run dev:landing   # http://localhost:3000 (опционально)
 
-## Замена изображений
-
-Все ключевые изображения — в `content/image-slots.ts`. Положите файлы в `public/assets/` и обновите только `src` (и при необходимости `alt`).
-
-Пример: `/assets/hero-before.png` → `/assets/my-before.jpg`
-
-Для страницы макияжа сейчас используются `female-card-*.png` как временные кадры.
-Для идеального результата положите свои close-up «до/после» в `public/assets/makeup/` и обновите слоты `makeupEveningBefore`, `makeupEveningAfter`, `makeupLightBefore`, `makeupLightAfter` в `content/image-slots.ts`.
-
-## Тариф и ранняя регистрация
-
-- Годовая подписка: **6990 ₽**
-- Первым **100** участникам: **скидка 50%** → **3495 ₽/год**
-- Заявки сохраняются в `data/leads.json` через `POST /api/leads`
-
-## SEO / GEO / AEO
-
-- Многостраничная структура: `content/seo-pages.ts` + маршрут `app/[...slug]`
-- `app/robots.ts`, `app/sitemap.ts`
-- `GET /llms.txt`, `GET /llms-full.txt`
-- JSON-LD на главной и SEO-страницах
-- Answer-first блоки на подстраницах
-
-## Яндекс.Метрика
-
-В `.env.local`:
-
-```
-NEXT_PUBLIC_YANDEX_METRIKA_ID=12345678
+# Redis опционально:
+# docker compose up -d
 ```
 
 ## Тесты
 
-```bash
+```powershell
 npm test
+npm run test:api      # Gradle: services/api/gradlew.bat test
 ```
 
-Тесты запускаются автоматически при `npm run build`.
+## Backend (Gradle)
+
+```powershell
+cd services\api
+.\gradlew.bat bootRun
+.\gradlew.bat test
+.\gradlew.bat bootJar
+```
+
+## Документация
+
+- [RUNBOOK.md](./docs/ai/RUNBOOK.md) — PostgreSQL, DBeaver, Gradle, production
+- [IMPLEMENTATION_STATUS.md](./docs/ai/IMPLEMENTATION_STATUS.md) — статус фич
+
+## Структура
+
+```text
+apps/landing      — SEO-лендинг
+apps/web-app      — веб-приложение примерочной
+apps/admin        — админка
+apps/mobile-app   — React Native skeleton
+packages/         — shared-types, ui, api-client
+services/api      — Spring Boot API (Gradle)
+scripts/          — create-local-database.sql
+docs/ai/          — проектная память
+```
+
+Техническое задание: `E:\1_MyProjects\Look\ТЗ\`

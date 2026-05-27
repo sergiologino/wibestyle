@@ -1,0 +1,321 @@
+package ru.wibestyle.api.ai;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import ru.wibestyle.api.config.AiIntegrationProperties;
+import ru.wibestyle.api.domain.AvatarSnapshotEntity;
+import ru.wibestyle.api.domain.TryOnSessionEntity;
+import ru.wibestyle.api.service.AiIntegrationLogService;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@Component
+public class NoteappAiClient {
+
+    private static final Logger log = LoggerFactory.getLogger(NoteappAiClient.class);
+
+    private final RestClient restClient;
+    private final AiIntegrationProperties properties;
+    private final AiIntegrationLogService logService;
+
+    public NoteappAiClient(
+            RestClient.Builder restClientBuilder,
+            AiIntegrationProperties properties,
+            AiIntegrationLogService logService
+    ) {
+        this.properties = properties;
+        this.logService = logService;
+        this.restClient = restClientBuilder
+                .baseUrl(properties.getBaseUrl())
+                .build();
+    }
+
+    public String generateChatText(String networkName, String systemPrompt, String userPrompt) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put(
+                "messages",
+                java.util.List.of(
+                        Map.of("role", "system", "content", systemPrompt),
+                        Map.of("role", "user", "content", userPrompt)
+                )
+        );
+        payload.put("settings", Map.of("temperature", 0.9, "maxTokens", 180));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("networkName", networkName);
+        body.put("requestType", "chat");
+        body.put("payload", payload);
+
+        JsonNode response = restClient.post()
+                .uri("/api/ai/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-API-Key", properties.getApiKey())
+                .body(body)
+                .retrieve()
+                .body(JsonNode.class);
+
+        if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
+            throw new RestClientException("Chat generation failed");
+        }
+        JsonNode inner = response.path("response");
+        JsonNode choices = inner.path("choices");
+        if (choices.isArray() && !choices.isEmpty()) {
+            String content = choices.get(0).path("message").path("content").asText(null);
+            if (content != null && !content.isBlank()) {
+                return content.trim();
+            }
+        }
+        String text = inner.path("text").asText(null);
+        if (text != null && !text.isBlank()) {
+            return text.trim();
+        }
+        throw new RestClientException("No text in chat response");
+    }
+
+    public ProcessResult processVirtualTryOn(
+            TryOnSessionEntity session,
+            String prompt,
+            String personImageBase64,
+            String garmentImageBase64,
+            Map<String, String> metadata,
+            AvatarSnapshotEntity avatarSnapshot,
+            String figureLockPrompt,
+            String fitPromptHint
+    ) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("prompt", prompt);
+        payload.put("settings", Map.of("aspectRatio", "3:4", "width", 768, "height", 1024));
+        payload.put("garmentTitle", session.getProductTitle());
+        payload.put("garmentBrand", session.getProductBrand());
+        if (session.getGarmentCategory() != null && !session.getGarmentCategory().isBlank()) {
+            payload.put("garmentCategory", session.getGarmentCategory().trim());
+        }
+        payload.put("selectedSize", session.getSelectedSize());
+        if (personImageBase64 != null) {
+            payload.put("personImageBase64", personImageBase64);
+        }
+        if (garmentImageBase64 != null) {
+            payload.put("garmentImageBase64", garmentImageBase64);
+        }
+        if (avatarSnapshot != null) {
+            if (avatarSnapshot.getHeightCm() != null) {
+                payload.put("heightCm", avatarSnapshot.getHeightCm());
+            }
+            if (avatarSnapshot.getBustCm() != null) {
+                payload.put("bustCm", avatarSnapshot.getBustCm());
+            }
+            if (avatarSnapshot.getWaistCm() != null) {
+                payload.put("waistCm", avatarSnapshot.getWaistCm());
+            }
+            if (avatarSnapshot.getHipsCm() != null) {
+                payload.put("hipsCm", avatarSnapshot.getHipsCm());
+            }
+            if (avatarSnapshot.getClothingSize() != null && !avatarSnapshot.getClothingSize().isBlank()) {
+                payload.put("clothingSize", avatarSnapshot.getClothingSize().trim());
+            }
+        }
+        if (figureLockPrompt != null && !figureLockPrompt.isBlank()) {
+            payload.put("figureLockPrompt", figureLockPrompt);
+        }
+        if (fitPromptHint != null && !fitPromptHint.isBlank()) {
+            payload.put("fitPromptHint", fitPromptHint);
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", session.getUserId().toString());
+        body.put("networkName", properties.getVirtualTryOnNetwork());
+        body.put("requestType", "image_generation");
+        body.put("payload", payload);
+        body.put("metadata", metadata == null ? Map.of() : metadata);
+
+        log.info(
+                "Noteapp try-on call baseUrl={} network={} userId={} personImageChars={} garmentImageChars={} garmentTitle={} promptLen={} promptPreview={}",
+                properties.getBaseUrl(),
+                properties.getVirtualTryOnNetwork(),
+                session.getUserId(),
+                personImageBase64 != null ? personImageBase64.length() : 0,
+                garmentImageBase64 != null ? garmentImageBase64.length() : 0,
+                session.getProductTitle(),
+                prompt != null ? prompt.length() : 0,
+                promptPreview(prompt)
+        );
+        logService.logOutboundRequest(session, body);
+
+        try {
+            JsonNode response = restClient.post()
+                    .uri("/api/ai/process")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-API-Key", properties.getApiKey())
+                    .body(body)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            if (response == null) {
+                log.warn("Noteapp try-on empty response");
+                logService.logInboundResponse(session, false, null, null, null, 0, "Empty AI response", Map.of());
+                return ProcessResult.failure("EMPTY_RESPONSE", "Empty AI response");
+            }
+
+            String status = response.path("status").asText("");
+            String requestId = response.path("requestId").asText(null);
+            String networkUsed = response.path("networkUsed").asText(null);
+            long executionTimeMs = response.path("executionTimeMs").asLong(0);
+            String provider = response.path("response").path("provider").asText(null);
+            Map<String, Object> responseSummary = responseSummary(response);
+            log.info(
+                    "Noteapp try-on response status={} requestId={} networkUsed={} provider={} ms={}",
+                    status,
+                    requestId,
+                    networkUsed,
+                    provider,
+                    executionTimeMs
+            );
+            if (!"success".equalsIgnoreCase(status)) {
+                String error = response.path("errorMessage").asText("AI request failed");
+                logService.logInboundResponse(session, false, requestId, networkUsed, provider, executionTimeMs, error, responseSummary);
+                return ProcessResult.failure("AI_GENERATION_FAILED", error);
+            }
+
+            String imageUrl = extractImageUrl(response.path("response"));
+            if (imageUrl == null) {
+                log.warn("Noteapp try-on success but no image URL in response");
+                logService.logInboundResponse(
+                        session, false, requestId, networkUsed, provider, executionTimeMs,
+                        "No image URL in AI response", responseSummary
+                );
+                return ProcessResult.failure("AI_GENERATION_FAILED", "No image URL in AI response");
+            }
+
+            Map<String, Object> successSummary = new LinkedHashMap<>(responseSummary);
+            successSummary.put("imageUrl", imageUrl);
+            logService.logInboundResponse(session, true, requestId, networkUsed, provider, executionTimeMs, null, successSummary);
+            return ProcessResult.success(requestId, networkUsed, executionTimeMs, imageUrl);
+        } catch (RestClientException ex) {
+            log.warn("Noteapp AI call failed baseUrl={}: {}", properties.getBaseUrl(), ex.getMessage());
+            logService.logInboundResponse(session, false, null, null, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()));
+            return ProcessResult.failure("AI_PROVIDER_TIMEOUT", ex.getMessage());
+        }
+    }
+
+    private String extractImageUrl(JsonNode responseBody) {
+        if (responseBody == null || responseBody.isMissingNode()) {
+            return null;
+        }
+        JsonNode data = responseBody.path("data");
+        if (data.isArray()) {
+            for (JsonNode item : data) {
+                String url = firstUrl(item);
+                if (url != null) {
+                    return url;
+                }
+            }
+        }
+        JsonNode output = responseBody.path("output");
+        if (output.isArray()) {
+            for (JsonNode item : output) {
+                String url = firstUrl(item);
+                if (url != null) {
+                    return url;
+                }
+            }
+        }
+        JsonNode assets = responseBody.path("assets");
+        if (assets.isArray() && assets.size() > 0 && assets.get(0).isTextual()) {
+            return assets.get(0).asText();
+        }
+        return firstUrl(responseBody);
+    }
+
+    private static Map<String, Object> responseSummary(JsonNode response) {
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("status", response.path("status").asText(""));
+        summary.put("requestId", response.path("requestId").asText(null));
+        summary.put("networkUsed", response.path("networkUsed").asText(null));
+        summary.put("executionTimeMs", response.path("executionTimeMs").asLong(0));
+        JsonNode inner = response.path("response");
+        if (!inner.isMissingNode()) {
+            summary.put("provider", inner.path("provider").asText(null));
+            summary.put("tryOnRoute", inner.path("tryOnRoute").asText(null));
+            summary.put("tryOnRouteReason", inner.path("tryOnRouteReason").asText(null));
+            summary.put("xaiKeySource", inner.path("xaiKeySource").asText(null));
+            summary.put("promptLength", inner.path("prompt").asText("").length());
+        }
+        return summary;
+    }
+
+    private static String resolveTryOnErrorCode(String errorMessage) {
+        if (errorMessage == null) {
+            return "AI_GENERATION_FAILED";
+        }
+        String lower = errorMessage.toLowerCase();
+        if (lower.contains("vton_content_moderation")
+                || lower.contains("content moderation")
+                || lower.contains("rejected by content moderation")) {
+            return "VTON_CONTENT_MODERATION";
+        }
+        return "AI_GENERATION_FAILED";
+    }
+
+    private static String userFacingTryOnError(String errorCode, String rawMessage) {
+        if ("VTON_CONTENT_MODERATION".equals(errorCode)) {
+            return "Сервис изображений временно отклонил примерку этого товара (модерация). "
+                    + "Это обычная домашняя одежда с маркетплейса, не эротика — попробуйте позже или другой ракурс фото товара.";
+        }
+        return rawMessage;
+    }
+
+    private static String promptPreview(String prompt) {
+        if (prompt == null || prompt.isBlank()) {
+            return "";
+        }
+        String oneLine = prompt.replace('\n', ' ').replaceAll("\\s+", " ").trim();
+        return oneLine.length() <= 160 ? oneLine : oneLine.substring(0, 160) + "…";
+    }
+
+    private String firstUrl(JsonNode node) {
+        if (node == null) {
+            return null;
+        }
+        if (node.hasNonNull("url")) {
+            return node.get("url").asText();
+        }
+        Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
+            if (entry.getValue().isTextual() && entry.getKey().toLowerCase().contains("url")) {
+                return entry.getValue().asText();
+            }
+        }
+        return null;
+    }
+
+    public record ProcessResult(
+            boolean success,
+            String requestId,
+            String provider,
+            long executionTimeMs,
+            String imageUrl,
+            String errorCode,
+            String errorMessage
+    ) {
+        static ProcessResult success(String requestId, String provider, long executionTimeMs, String imageUrl) {
+            return new ProcessResult(true, requestId, provider, executionTimeMs, imageUrl, null, null);
+        }
+
+        static ProcessResult failure(String errorCode, String errorMessage) {
+            return new ProcessResult(false, null, null, 0, null, errorCode, errorMessage);
+        }
+
+        public static ProcessResult failed(String errorCode, String errorMessage) {
+            return failure(errorCode, errorMessage);
+        }
+    }
+}
