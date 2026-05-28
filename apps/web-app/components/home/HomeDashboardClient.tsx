@@ -1,11 +1,30 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, Card, Pill } from "@wibestyle/ui";
+import type { TryOnHistoryItem } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
+import TryOnHistoryGrid from "@/components/home/TryOnHistoryGrid";
 
 export default function HomeDashboardClient() {
-  const { profile, phone } = useAppSession();
+  const { api, profile, phone } = useAppSession();
+  const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    api.listMyTryOnSessions()
+      .then((payload) => {
+        if (active) setHistory(payload.items);
+      })
+      .finally(() => {
+        if (active) setHistoryLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api]);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 md:px-8">
@@ -20,8 +39,21 @@ export default function HomeDashboardClient() {
         <div className="mt-6 flex flex-wrap gap-4">
           <Link href="/try-on/link"><Button size="lg">Примерить по ссылке</Button></Link>
           <Link href="/try-on/photo"><Button size="lg" variant="secondary">Примерить по фото</Button></Link>
-          <Link href="/gallery"><Button size="lg" variant="ghost">Галерея</Button></Link>
+          <Link href="/gallery"><Button size="lg" variant="ghost">Галерея сообщества</Button></Link>
         </div>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <Pill tone="soft">Твои примерки</Pill>
+            <h2 className="mt-3 text-3xl font-black tracking-tight">Все образы, которые ты примеряла</h2>
+            <p className="mt-2 font-bold text-[#6d6273]">
+              Даже если не публиковала в общей галерее — здесь всё сохраняется только для тебя.
+            </p>
+          </div>
+        </div>
+        <TryOnHistoryGrid items={history} loading={historyLoading} />
       </section>
 
       <div className="grid gap-4 md:grid-cols-2">

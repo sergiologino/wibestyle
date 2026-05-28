@@ -808,6 +808,79 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void adminDeleteGalleryPostRemovesFromPublicList() throws Exception {
+        String accessToken = authenticate("+79990007788");
+        activateAvatar(accessToken);
+        String sessionBody = mockMvc.perform(post("/api/v1/try-on/sessions/link")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"url":"https://www.wildberries.ru/catalog/888/detail.aspx","selectedSize":"M"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String sessionId = objectMapper.readTree(sessionBody).get("session").get("id").asText();
+        mockMvc.perform(post("/api/v1/try-on/sessions/" + sessionId + "/generate")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
+
+        String postBody = mockMvc.perform(post("/api/v1/gallery/posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tryOnSessionId": "%s",
+                                  "visibility": "public",
+                                  "productLinkVisible": true
+                                }
+                                """.formatted(sessionId)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String postId = objectMapper.readTree(postBody).get("post").get("id").asText();
+
+        mockMvc.perform(delete("/api/v1/admin/gallery/posts/" + postId)
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deleted").value(true));
+
+        mockMvc.perform(get("/api/v1/gallery/posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0));
+    }
+
+    @Test
+    void listMyTryOnSessionsReturnsReadyHistory() throws Exception {
+        String accessToken = authenticate("+79990008899");
+        activateAvatar(accessToken);
+
+        mockMvc.perform(get("/api/v1/try-on/sessions/mine")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0));
+
+        String sessionBody = mockMvc.perform(post("/api/v1/try-on/sessions/link")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"url":"https://www.wildberries.ru/catalog/999/detail.aspx","selectedSize":"M"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String sessionId = objectMapper.readTree(sessionBody).get("session").get("id").asText();
+
+        mockMvc.perform(post("/api/v1/try-on/sessions/" + sessionId + "/generate")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/try-on/sessions/mine")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].sessionId").value(sessionId))
+                .andExpect(jsonPath("$.items[0].afterImageUrl").exists());
+    }
+
+    @Test
     void deleteAccountRemovesUser() throws Exception {
         String accessToken = authenticate("+79990005544");
         mockMvc.perform(post("/api/v1/profile/delete-account")

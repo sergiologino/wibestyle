@@ -11,6 +11,8 @@
 - **Auth persistence**: refresh token 30 дней в localStorage + PostgreSQL; proactive refresh; logout только при явном выходе или invalid refresh.
 - **Share card**: фото примерки в «Отправить подруге» через authenticated media URL.
 - **Wildberries**: card.wb.ru + расширенные basket-хосты; ошибка с подсказкой «Фото из галереи» если CDN недоступен.
+- **Home**: личная лента всех завершённых примерок (`GET /try-on/sessions/mine`).
+- **Admin gallery**: удаление постов (`DELETE /admin/gallery/posts/{id}`) + просмотр постов для модерации.
 
 ## Этап 12 (Security + Compliance) — выполнен
 - Flyway `V9__security_compliance.sql`: admin_audit_logs, gallery_reports.
@@ -60,6 +62,7 @@
 
 ## UX-маршруты web-app
 - `/welcome` → `/auth` → `/onboarding/avatar` → `/home`
+- `/home` — личная лента всех завершённых примерок + CTA
 - `/try-on/link` — ссылка WB/Ozon → preview → размер + size advice → API session → result
 - `/try-on/photo` — фото из галереи → API session → result
 - `/try-on/result/[sessionId]` — данные из API (before/after, product); save to gallery / share / review

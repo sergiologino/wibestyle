@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-05-28 (Personal try-on history + admin gallery delete)
+- `GET /try-on/sessions/mine` — все завершённые примерки пользователя (private, без публикации в галерею).
+- Web-app `/home`: плитка «Твои примерки» с переходом на `/try-on/result/{id}`.
+- Admin `/gallery`: вкладки «Жалобы» и «Посты галереи»; `DELETE /admin/gallery/posts/{id}` — безвозвратное удаление; hide сохранён.
+
 ## 2026-05-28 (Auth persistence + Share card + WB images)
 - Web-app: persistent login via refresh token rotation — proactive refresh before JWT expiry, cross-tab lock, no logout on transient/network errors; session clears only on invalid refresh or explicit logout.
 - Web-app: «Отправить подруге» — ShareCard показывает результат через authenticated blob (`AuthenticatedShareImage`), не пустую рамку.

@@ -206,6 +206,16 @@ public class TryOnService {
     }
 
     @Transactional(readOnly = true)
+    public Map<String, Object> listMine(UUID userId) {
+        List<TryOnSessionEntity> sessions = tryOnSessionRepository
+                .findByUserIdAndStatusOrderByCreatedAtDesc(userId, TryOnSessionStatus.READY);
+        List<Map<String, Object>> items = sessions.stream()
+                .map(this::toHistoryMap)
+                .toList();
+        return Map.of("items", items);
+    }
+
+    @Transactional(readOnly = true)
     public Map<String, Object> getSession(UUID userId, UUID sessionId) {
         TryOnSessionEntity session = requireSession(userId, sessionId);
         Map<String, Object> response = new HashMap<>();
@@ -286,6 +296,19 @@ public class TryOnService {
         } catch (JsonProcessingException ex) {
             return List.of();
         }
+    }
+
+    private Map<String, Object> toHistoryMap(TryOnSessionEntity session) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("sessionId", session.getId().toString());
+        map.put("productTitle", session.getProductTitle() != null ? session.getProductTitle() : "Мой look");
+        map.put("productUrl", session.getProductUrl());
+        map.put("marketplace", session.getMarketplace());
+        map.put("afterImageUrl", session.getAfterImageUrl());
+        map.put("selectedSize", session.getSelectedSize());
+        map.put("sourceType", sourceTypeJson(session.getSourceType()));
+        map.put("createdAt", session.getCreatedAt().toString());
+        return map;
     }
 
     private Map<String, Object> toSessionMap(TryOnSessionEntity session) {

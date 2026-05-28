@@ -33,6 +33,7 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 | POST | `/marketplaces/parse-link` |
 | POST | `/try-on/sessions/link`, `/photo` |
 | POST | `/try-on/sessions/{id}/generate` |
+| GET | `/try-on/sessions/mine` | личная история завершённых примерок (status=ready) |
 | GET | `/try-on/sessions/{id}` |
 | GET | `/ai/jobs/{jobId}` |
 
@@ -57,7 +58,9 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 | Method | Path | Header |
 |--------|------|--------|
 | GET | `/admin/gallery/reports` | `X-Admin-Key` |
-| POST | `/admin/gallery/posts/{id}/hide` | |
+| GET | `/admin/gallery/posts` | список постов для модерации |
+| POST | `/admin/gallery/posts/{id}/hide` | скрыть из public feed |
+| DELETE | `/admin/gallery/posts/{id}` | безвозвратное удаление |
 | GET | `/admin/audit` | |
 
 ## Billing

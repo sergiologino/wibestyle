@@ -2,6 +2,7 @@ package ru.wibestyle.api.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,6 +47,12 @@ public class AdminGalleryController {
         return galleryModerationService.listReports(status);
     }
 
+    @GetMapping("/posts")
+    public Map<String, Object> listPosts(@RequestHeader(value = "X-Admin-Key", required = false) String adminKey) {
+        AdminSupport.requireAdminKey(adminKey, adminProperties);
+        return galleryModerationService.listPostsForModeration();
+    }
+
     @PostMapping("/posts/{postId}/hide")
     public Map<String, Object> hidePost(
             @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
@@ -55,6 +62,18 @@ public class AdminGalleryController {
         AdminSupport.requireAdminKey(adminKey, adminProperties);
         Map<String, Object> response = galleryModerationService.hidePost(postId);
         AdminActions.audit(adminAuditService, adminKey, adminProperties, request, "hide", "gallery_post", postId.toString(), null);
+        return response;
+    }
+
+    @DeleteMapping("/posts/{postId}")
+    public Map<String, Object> deletePost(
+            @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
+            @PathVariable UUID postId,
+            HttpServletRequest request
+    ) {
+        AdminSupport.requireAdminKey(adminKey, adminProperties);
+        Map<String, Object> response = galleryModerationService.deletePost(postId);
+        AdminActions.audit(adminAuditService, adminKey, adminProperties, request, "delete", "gallery_post", postId.toString(), null);
         return response;
     }
 }

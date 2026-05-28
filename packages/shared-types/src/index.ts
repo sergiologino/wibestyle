@@ -257,6 +257,18 @@ export type TryOnResult = {
   sizeFitMessage?: string;
 };
 
+/** Completed try-on entry for user's personal history (home feed). */
+export type TryOnHistoryItem = {
+  sessionId: string;
+  productTitle: string;
+  productUrl?: string;
+  marketplace?: string;
+  afterImageUrl?: string;
+  selectedSize?: string;
+  sourceType?: "marketplace_link" | "garment_photo" | "gallery_upload";
+  createdAt?: string;
+};
+
 export type SearchResultItem = ProductPreview & {
   description?: string;
   rating?: number;

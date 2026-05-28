@@ -18,6 +18,7 @@ import type {
   SizeAdvice,
   SubscriptionPlan,
   TryOnResult,
+  TryOnHistoryItem,
   TryOnSessionRecord,
   UpdateProfilePayload,
   UserEntitlements,
@@ -298,6 +299,10 @@ export class WibeStyleApiClient {
     return this.request<{ session: TryOnSessionRecord; product?: ProductPreview; result?: TryOnResult }>(
       `/api/v1/try-on/sessions/${sessionId}`,
     );
+  }
+
+  listMyTryOnSessions() {
+    return this.request<{ items: TryOnHistoryItem[] }>("/api/v1/try-on/sessions/mine");
   }
 
   getAiJob(jobId: string) {
@@ -680,6 +685,28 @@ export class WibeStyleApiClient {
     return this.request<{ post: { id: string; moderationStatus: string } }>(
       `/api/v1/admin/gallery/posts/${postId}/hide`,
       { method: "POST", headers: { "X-Admin-Key": adminKey } },
+    );
+  }
+
+  listAdminGalleryPosts(adminKey: string) {
+    return this.request<{
+      items: {
+        id: string;
+        slug: string;
+        title: string;
+        publicImageUrl?: string;
+        visibility: string;
+        moderationStatus: string;
+        userId: string;
+        createdAt: string;
+      }[];
+    }>("/api/v1/admin/gallery/posts", { headers: { "X-Admin-Key": adminKey } });
+  }
+
+  deleteAdminGalleryPost(adminKey: string, postId: string) {
+    return this.request<{ deleted: boolean; postId: string }>(
+      `/api/v1/admin/gallery/posts/${postId}`,
+      { method: "DELETE", headers: { "X-Admin-Key": adminKey } },
     );
   }
 

@@ -61,6 +61,20 @@ public class GalleryModerationService {
         return Map.of("items", reports.stream().map(this::toReportMap).toList());
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Object> listPostsForModeration() {
+        List<GalleryPostEntity> posts = galleryPostRepository.findTop100ByOrderByCreatedAtDesc();
+        return Map.of("items", posts.stream().map(this::toModerationPostMap).toList());
+    }
+
+    @Transactional
+    public Map<String, Object> deletePost(UUID postId) {
+        GalleryPostEntity post = galleryPostRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("POST_NOT_FOUND"));
+        galleryPostRepository.delete(post);
+        return Map.of("deleted", true, "postId", postId.toString());
+    }
+
     @Transactional
     public Map<String, Object> hidePost(UUID postId) {
         GalleryPostEntity post = galleryPostRepository.findById(postId)
@@ -79,6 +93,20 @@ public class GalleryModerationService {
                 });
 
         return Map.of("post", Map.of("id", post.getId().toString(), "moderationStatus", post.getModerationStatus()));
+    }
+
+    private Map<String, Object> toModerationPostMap(GalleryPostEntity post) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", post.getId().toString());
+        map.put("slug", post.getSlug());
+        map.put("title", post.getTitle());
+        map.put("imageUrl", post.getImageUrl());
+        map.put("publicImageUrl", "/api/v1/gallery/posts/" + post.getId() + "/image");
+        map.put("visibility", post.getVisibility());
+        map.put("moderationStatus", post.getModerationStatus());
+        map.put("userId", post.getUserId().toString());
+        map.put("createdAt", post.getCreatedAt().toString());
+        return map;
     }
 
     private Map<String, Object> toReportMap(GalleryReportEntity report) {

@@ -16,4 +16,6 @@ public interface GalleryPostRepository extends JpaRepository<GalleryPostEntity, 
     List<GalleryPostEntity> findByVisibilityAndModerationStatusOrderByCreatedAtDesc(String visibility, String moderationStatus);
 
     Optional<GalleryPostEntity> findBySlug(String slug);
+
+    List<GalleryPostEntity> findTop100ByOrderByCreatedAtDesc();
 }

@@ -69,6 +69,13 @@ public class TryOnController {
         return tryOnService.generate(requireUserId(authorization), sessionId);
     }
 
+    @GetMapping("/mine")
+    public Map<String, Object> listMine(
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        return tryOnService.listMine(requireUserId(authorization));
+    }
+
     @GetMapping("/{sessionId}")
     public Map<String, Object> getSession(
             @RequestHeader(value = "Authorization", required = false) String authorization,
