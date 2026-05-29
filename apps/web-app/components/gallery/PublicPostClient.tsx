@@ -6,7 +6,7 @@ import { Button, Card, ShareCard } from "@wibestyle/ui";
 import type { GalleryPost } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import ReportPostButton from "@/components/gallery/ReportPostButton";
-import { appBaseUrl, resolveGalleryImageUrl } from "@/lib/api-media";
+import { appBaseUrl, brandDomain, landingSiteUrl, resolveGalleryImageUrl, resolveGalleryVideoUrl } from "@/lib/api-media";
 
 type Comment = { id: string; body: string; createdAt: string };
 
@@ -58,6 +58,8 @@ export default function PublicPostClient({ slug, initialPost, initialComments }:
   }
 
   const imageSrc = resolveGalleryImageUrl(post);
+  const videoSrc = resolveGalleryVideoUrl(post);
+  const isVideo = post.mediaType === "video" && Boolean(videoSrc);
   const author = post.authorDisplayName ?? "Участник WibeStyle";
 
   return (
@@ -69,27 +71,24 @@ export default function PublicPostClient({ slug, initialPost, initialComments }:
         </Link>
       </div>
 
-      {imageSrc ? (
-        <img src={imageSrc} alt={post.title} className="rounded-[28px] object-cover" />
-      ) : null}
-      <h1 className="text-display text-4xl">{post.title}</h1>
-      <p className="text-body">Образ от {author}</p>
-      {post.description ? <p className="text-body">{post.description}</p> : null}
-
-      {post.productLinkVisible && post.productUrl ? (
-        <Link href={post.productUrl} target="_blank" className="text-link text-sm">
-          Открыть товар {post.productTitle ? `· ${post.productTitle}` : ""}
-        </Link>
-      ) : null}
-
       <ShareCard
         appBaseUrl={appBaseUrl()}
+        brandDomain={brandDomain()}
         eliteFrame={Boolean(post.eliteFrame)}
-        imageUrl={imageSrc}
+        imageUrl={isVideo ? undefined : imageSrc}
+        landingUrl={landingSiteUrl()}
+        mediaType={isVideo ? "video" : "image"}
         postSlug={post.slug}
         productTitle={post.productTitle ?? post.title}
         showProductLink={post.productLinkVisible}
+        videoUrl={isVideo ? videoSrc : undefined}
       />
+
+      <div className="px-1">
+        <h1 className="text-display text-3xl">{post.title}</h1>
+        <p className="text-body mt-1">Образ от {author}</p>
+        {post.description ? <p className="text-body mt-2">{post.description}</p> : null}
+      </div>
 
       <ReportPostButton postId={post.id} accessToken={accessToken} api={api} returnPath={`/p/${slug}`} />
 

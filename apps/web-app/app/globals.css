@@ -1,5 +1,42 @@
 @import "tailwindcss";
 
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes attentionPulse {
+  0%,
+  100% {
+    box-shadow: 0 8px 24px rgba(255, 31, 162, 0.22);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(255, 31, 162, 0.42), 0 0 0 6px rgba(255, 31, 162, 0.12);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 :root {
   --pink: #ff1fa2;
   --violet: #782cff;

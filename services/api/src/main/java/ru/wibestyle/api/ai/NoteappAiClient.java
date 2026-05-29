@@ -81,6 +81,62 @@ public class NoteappAiClient {
         throw new RestClientException("No text in chat response");
     }
 
+    public String generateVisionChatText(
+            String networkName,
+            String systemPrompt,
+            String userText,
+            String imageBase64,
+            String mimeType
+    ) {
+        String dataUrl = "data:" + (mimeType == null || mimeType.isBlank() ? "image/jpeg" : mimeType) + ";base64," + imageBase64;
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put(
+                "messages",
+                java.util.List.of(
+                        Map.of("role", "system", "content", systemPrompt),
+                        Map.of(
+                                "role", "user",
+                                "content", java.util.List.of(
+                                        Map.of("type", "text", "text", userText),
+                                        Map.of("type", "image_url", "image_url", Map.of("url", dataUrl))
+                                )
+                        )
+                )
+        );
+        payload.put("settings", Map.of("temperature", 0.2, "maxTokens", 120));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("networkName", networkName);
+        body.put("requestType", "chat");
+        body.put("payload", payload);
+
+        JsonNode response = restClient.post()
+                .uri("/api/ai/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-API-Key", properties.getApiKey())
+                .body(body)
+                .retrieve()
+                .body(JsonNode.class);
+
+        if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
+            throw new RestClientException("Vision chat generation failed");
+        }
+        JsonNode inner = response.path("response");
+        JsonNode choices = inner.path("choices");
+        if (choices.isArray() && !choices.isEmpty()) {
+            String content = choices.get(0).path("message").path("content").asText(null);
+            if (content != null && !content.isBlank()) {
+                return content.trim();
+            }
+        }
+        String text = inner.path("text").asText(null);
+        if (text != null && !text.isBlank()) {
+            return text.trim();
+        }
+        throw new RestClientException("No text in vision chat response");
+    }
+
     public ProcessResult processVirtualTryOn(
             TryOnSessionEntity session,
             String prompt,

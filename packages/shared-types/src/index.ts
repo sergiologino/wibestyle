@@ -151,6 +151,9 @@ export type AvatarRecord = {
   updatedAt?: string;
 };
 
+/** Maximum non-deleted avatars per account. Anthropometry stays on profile only. */
+export const MAX_AVATARS_PER_USER = 3;
+
 export type UpdateProfilePayload = {
   displayName?: string;
   gender?: "female" | "male" | "other";
@@ -225,6 +228,12 @@ export type GarmentCategory =
   | "shoes"
   | "accessory"
   | "other";
+
+export type GarmentClassification = {
+  category: GarmentCategory;
+  title: string;
+  source?: "ai" | "fallback";
+};
 
 export type ProductSizeChartRow = {
   label: string;

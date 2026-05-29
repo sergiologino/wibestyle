@@ -14,6 +14,7 @@ public record CreateGalleryPostRequest(
         String marketplace,
         String productUrl,
         String productTitle,
-        Boolean eliteFrame
+        Boolean eliteFrame,
+        String mediaType
 ) {
 }

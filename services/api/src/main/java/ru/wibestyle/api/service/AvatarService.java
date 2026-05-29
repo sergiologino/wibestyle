@@ -25,6 +25,9 @@ import java.util.UUID;
 @Service
 public class AvatarService {
 
+    public static final int MAX_AVATARS_PER_USER = 3;
+    public static final String AVATAR_LIMIT_REACHED = "AVATAR_LIMIT_REACHED";
+
     private final AvatarRepository avatarRepository;
     private final AvatarSnapshotRepository avatarSnapshotRepository;
     private final ProfileService profileService;
@@ -51,7 +54,11 @@ public class AvatarService {
     @Transactional(readOnly = true)
     public Map<String, Object> listAvatars(UUID userId) {
         List<AvatarEntity> avatars = avatarRepository.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, AvatarStatus.DELETED);
-        return Map.of("items", avatars.stream().map(this::toAvatarMap).toList());
+        return Map.of(
+                "items", avatars.stream().map(this::toAvatarMap).toList(),
+                "limit", MAX_AVATARS_PER_USER,
+                "count", avatars.size()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -61,6 +68,11 @@ public class AvatarService {
 
     @Transactional
     public Map<String, Object> createAvatar(UUID userId, CreateAvatarRequest request) {
+        long existing = avatarRepository.countByUserIdAndStatusNot(userId, AvatarStatus.DELETED);
+        if (existing >= MAX_AVATARS_PER_USER) {
+            throw new IllegalArgumentException(AVATAR_LIMIT_REACHED);
+        }
+
         UserProfileEntity profile = profileService.requireProfile(userId);
         Instant now = Instant.now();
         AvatarEntity avatar = new AvatarEntity(

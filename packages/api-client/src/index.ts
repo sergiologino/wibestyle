@@ -6,6 +6,7 @@ import type {
   CreateAvatarPayload,
   FavoriteRecord,
   FeatureFlag,
+  GarmentClassification,
   GalleryPost,
   LandingLeadPayload,
   LandingLeadRecord,
@@ -209,7 +210,7 @@ export class WibeStyleApiClient {
   }
 
   listAvatars() {
-    return this.request<{ items: AvatarRecord[] }>("/api/v1/avatars");
+    return this.request<{ items: AvatarRecord[]; limit?: number; count?: number }>("/api/v1/avatars");
   }
 
   createAvatar(payload: CreateAvatarPayload = {}) {
@@ -283,6 +284,7 @@ export class WibeStyleApiClient {
     category: string,
     sourceType: "garment_photo" | "gallery_upload" = "gallery_upload",
     selectedSize?: string,
+    productTitle?: string,
   ) {
     const body = new FormData();
     body.append("photo", file);
@@ -291,7 +293,19 @@ export class WibeStyleApiClient {
     if (selectedSize) {
       body.append("selectedSize", selectedSize);
     }
+    if (productTitle) {
+      body.append("productTitle", productTitle);
+    }
     return this.request<{ session: TryOnSessionRecord }>("/api/v1/try-on/sessions/photo", {
+      method: "POST",
+      body,
+    });
+  }
+
+  classifyGarmentPhoto(file: File) {
+    const body = new FormData();
+    body.append("photo", file);
+    return this.request<{ classification: GarmentClassification }>("/api/v1/try-on/classify-garment", {
       method: "POST",
       body,
     });
@@ -391,6 +405,7 @@ export class WibeStyleApiClient {
     productLinkVisible?: boolean;
     productVisibility?: string;
     eliteFrame?: boolean;
+    mediaType?: "image" | "video";
   }) {
     return this.request<{ post: GalleryPost }>("/api/v1/gallery/posts", {
       method: "POST",

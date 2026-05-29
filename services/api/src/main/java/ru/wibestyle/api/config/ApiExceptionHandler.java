@@ -127,6 +127,7 @@ public class ApiExceptionHandler {
             case "LEAD_STATUS_INVALID" -> "Неверный статус заявки";
             case "DELETE_CONFIRM_REQUIRED" -> "Для удаления аккаунта передайте confirm=DELETE";
             case "LAST_AVATAR_CANNOT_DELETE" -> "Нельзя удалить единственный аватар пользователя";
+            case "AVATAR_LIMIT_REACHED" -> "Можно хранить не больше 3 avatar. Удалите один, чтобы добавить новый.";
             case "ACCOUNT_DELETE_FAILED" -> "Не удалось удалить данные аккаунта";
             case "REPORT_REASON_INVALID" -> "Неверная причина жалобы";
             case "FILE_TOO_LARGE" -> "Файл слишком большой";

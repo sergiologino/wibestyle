@@ -5,9 +5,15 @@ export const fieldClassName =
 
 export const labelClassName = "text-sm font-medium text-[#4a4150]";
 
+export const fieldCaptionClassName = "text-xs font-medium text-[#6d6273]";
+
 export const sectionTitleClassName = "text-xl font-semibold tracking-tight text-[#302637]";
 
 export const mutedTextClassName = "text-sm font-normal leading-relaxed text-[#6d6273]";
+
+export function FieldCaption({ children }: { children: ReactNode }) {
+  return <span className={fieldCaptionClassName}>{children}</span>;
+}
 
 export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (

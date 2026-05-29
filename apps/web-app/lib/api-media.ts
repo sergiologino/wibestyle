@@ -12,6 +12,18 @@ export function appBaseUrl() {
   return (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001").replace(/\/$/, "");
 }
 
+export function landingSiteUrl() {
+  return (process.env.NEXT_PUBLIC_LANDING_URL ?? "https://vibestyle.art").replace(/\/$/, "");
+}
+
+export function brandDomain() {
+  try {
+    return new URL(landingSiteUrl()).hostname.replace(/^www\./, "");
+  } catch {
+    return "vibestyle.art";
+  }
+}
+
 /** Public gallery / post preview image (no auth on <img>). */
 export function resolveGalleryImageUrl(post: {
   id: string;
@@ -25,6 +37,18 @@ export function resolveGalleryImageUrl(post: {
     return `${appBaseUrl()}${post.imageUrl}`;
   }
   return resolveApiPath(post.imageUrl) ?? post.imageUrl ?? "";
+}
+
+/** Public gallery video (no auth on <video>). */
+export function resolveGalleryVideoUrl(post: {
+  id: string;
+  publicVideoUrl?: string | null;
+  videoUrl?: string | null;
+}) {
+  if (post.publicVideoUrl) {
+    return resolveApiPath(post.publicVideoUrl) ?? `${apiBaseUrl()}/api/v1/gallery/posts/${post.id}/video`;
+  }
+  return resolveApiPath(post.videoUrl) ?? post.videoUrl ?? "";
 }
 
 /** Fetch protected media with Bearer token and return a blob object URL. */

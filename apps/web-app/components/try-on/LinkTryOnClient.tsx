@@ -16,7 +16,7 @@ import { buildAuthRedirectPath } from "@/lib/auth-redirect";
 import { isAuthenticatedSession } from "@/lib/session-auth";
 import { useFeatureFlags } from "@/lib/use-feature-flags";
 
-const steps = ["Ссылка", "Товар", "Размер", "Генерация"];
+const steps = ["Ссылка", "Размер", "Генерация"];
 
 type ParseLinkPhase = "fetching" | "parsing";
 
@@ -56,7 +56,7 @@ export default function LinkTryOnClient() {
   }, [params]);
 
   useEffect(() => {
-    if (step === 2 && product && accessToken) {
+    if (step >= 1 && product && accessToken) {
       void loadSizeAdvice(size);
     }
   }, [step, product, size, accessToken]);
@@ -134,12 +134,17 @@ export default function LinkTryOnClient() {
       return;
     }
 
+    if (!product || !size || !product.sizes.includes(size)) {
+      setError("Выберите размер перед запуском примерки");
+      return;
+    }
+
     if (profile && !canStartGeneration(profile)) {
       router.push("/paywall?reason=trial_exhausted");
       return;
     }
 
-    setStep(3);
+    setStep(2);
     setLoading(true);
     setError(null);
     try {
@@ -147,13 +152,13 @@ export default function LinkTryOnClient() {
       const generated = await api.generateTryOn(created.session.id);
       await refreshProfile();
       if (generated.session.status === "failed") {
-        setStep(2);
+        setStep(1);
         setError(formatTryOnError(generated.session));
         return;
       }
       router.push(`/try-on/result/${created.session.id}`);
     } catch (err) {
-      setStep(2);
+      setStep(1);
       if (err instanceof ApiError && err.status === 401) {
         const restored = await ensureSession();
         if (restored) {
@@ -237,7 +242,7 @@ export default function LinkTryOnClient() {
                 </p>
               ) : null}
 
-              {step >= 2 ? (
+              {step >= 1 ? (
                 <div className="mt-6 border-t border-[#ffd1ed] pt-6">
                   <h3 className="text-display-md text-lg">Какой размер примерить?</h3>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -277,22 +282,7 @@ export default function LinkTryOnClient() {
             </div>
           </div>
 
-          {step === 1 ? (
-            <Button
-              className="mt-6"
-              size="md"
-              onClick={() => {
-                void (async () => {
-                  if (!(await requireAuth())) return;
-                  setStep(2);
-                })();
-              }}
-            >
-              Выбрать размер
-            </Button>
-          ) : null}
-
-          {step === 2 && sessionReady && !isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
+          {step >= 1 && sessionReady && !isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
             <p className="mt-6 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm font-normal text-[#6d6273]">
               Чтобы запустить примерку,{" "}
               <Link href={authRedirectPath()} className="text-link">
@@ -302,15 +292,20 @@ export default function LinkTryOnClient() {
             </p>
           ) : null}
 
-          {step === 2 && sessionReady && isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
-            <Button className="mt-6" disabled={loading} size="md" onClick={startGeneration}>
+          {step >= 1 && sessionReady && isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
+            <Button
+              className="mt-6"
+              disabled={loading || !size || !product.sizes.includes(size)}
+              size="md"
+              onClick={startGeneration}
+            >
               Запустить AI-примерку
             </Button>
           ) : null}
         </Card>
       ) : null}
 
-      {step === 3 ? (
+      {step === 2 ? (
         <Card>
           <h3 className="text-display-md text-xl">Собираем твой look…</h3>
           <p className="text-body mt-2">Нейростилист надевает {product?.title} на твой образ…</p>

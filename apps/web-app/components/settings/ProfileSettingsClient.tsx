@@ -9,6 +9,7 @@ import type { UpdateProfilePayload } from "@wibestyle/shared-types";
 import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
 import AvatarManager from "@/components/avatar/AvatarManager";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
+import AnthropometryFields from "@/components/profile/AnthropometryFields";
 import {
   FieldInput,
   FieldLabel,
@@ -192,19 +193,24 @@ export default function ProfileSettingsClient() {
             </FieldLabel>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <FieldInput placeholder="Рост, см" value={heightCm} onChange={(event) => setHeightCm(event.target.value)} />
-            <FieldInput placeholder="Грудь, см" value={bustCm} onChange={(event) => setBustCm(event.target.value)} />
-            <FieldInput placeholder="Талия, см" value={waistCm} onChange={(event) => setWaistCm(event.target.value)} />
-            <FieldInput placeholder="Бёдра, см" value={hipsCm} onChange={(event) => setHipsCm(event.target.value)} />
-            <FieldSelect value={clothingSize} onChange={(event) => setClothingSize(event.target.value)}>
-              {["XS", "S", "M", "L", "XL"].map((size) => (
-                <option key={size} value={size}>
-                  Размер одежды: {size}
-                </option>
-              ))}
-            </FieldSelect>
-            <FieldInput placeholder="Обувь EU" value={shoeSizeEu} onChange={(event) => setShoeSizeEu(event.target.value)} />
+          <div>
+            <p className={`${sectionTitleClassName} mb-3`}>Антропометрия</p>
+            <AnthropometryFields
+              bustCm={bustCm}
+              clothingSize={clothingSize}
+              heightCm={heightCm}
+              hipsCm={hipsCm}
+              shoeSizeEu={shoeSizeEu}
+              waistCm={waistCm}
+              onChange={(field, value) => {
+                if (field === "heightCm") setHeightCm(value);
+                if (field === "bustCm") setBustCm(value);
+                if (field === "waistCm") setWaistCm(value);
+                if (field === "hipsCm") setHipsCm(value);
+                if (field === "clothingSize") setClothingSize(value);
+                if (field === "shoeSizeEu") setShoeSizeEu(value);
+              }}
+            />
           </div>
 
           <Button disabled={saving} size="md" type="submit">

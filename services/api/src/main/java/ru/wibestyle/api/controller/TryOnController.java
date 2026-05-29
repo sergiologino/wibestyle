@@ -55,7 +55,8 @@ public class TryOnController {
             @RequestParam("photo") MultipartFile photo,
             @RequestParam(defaultValue = "other") String category,
             @RequestParam(defaultValue = "gallery_upload") String sourceType,
-            @RequestParam(required = false) String selectedSize
+            @RequestParam(required = false) String selectedSize,
+            @RequestParam(required = false) String productTitle
     ) throws IOException {
         TryOnSourceType parsedSourceType = parseSourceType(sourceType);
         return tryOnService.createPhotoSession(
@@ -63,7 +64,8 @@ public class TryOnController {
                 photo,
                 category,
                 parsedSourceType,
-                selectedSize
+                selectedSize,
+                productTitle
         );
     }
 

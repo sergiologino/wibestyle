@@ -167,11 +167,9 @@ public class GalleryService {
             }
             post.setTryOnSessionId(session.getId());
             post.setImageUrl(session.getAfterImageUrl());
-            if ("ready".equals(session.getVideoStatus()) && session.getAfterVideoUrl() != null) {
+            post.setMediaType(resolveGalleryMediaType(request.mediaType(), session));
+            if ("video".equals(post.getMediaType())) {
                 post.setVideoUrl(session.getAfterVideoUrl());
-                post.setMediaType("video");
-            } else {
-                post.setMediaType("image");
             }
             post.setTitle(request.title() != null ? request.title() : defaultTitle(session));
             post.setMarketplace(session.getMarketplace());
@@ -326,6 +324,16 @@ public class GalleryService {
             return session.getProductTitle();
         }
         return "Мой look";
+    }
+
+    private static String resolveGalleryMediaType(String requestedMediaType, TryOnSessionEntity session) {
+        if ("video".equals(requestedMediaType)) {
+            if (!"ready".equals(session.getVideoStatus()) || session.getAfterVideoUrl() == null) {
+                throw new IllegalArgumentException("VIDEO_NOT_READY");
+            }
+            return "video";
+        }
+        return "image";
     }
 
     private static boolean isPubliclyReadable(GalleryPostEntity post) {

@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import type { GalleryPost } from "@wibestyle/shared-types";
-import { apiBaseUrl, appBaseUrl, resolveGalleryImageUrl } from "@/lib/api-media";
+import { apiBaseUrl, appBaseUrl, brandDomain, resolveGalleryImageUrl } from "@/lib/api-media";
+
+export function buildPublicPostOpenGraphImageUrl(slug: string) {
+  return `${appBaseUrl()}/p/${slug}/opengraph-image`;
+}
 
 export async function fetchGalleryPostBySlug(slug: string): Promise<{
   post: GalleryPost;
@@ -13,18 +17,34 @@ export async function fetchGalleryPostBySlug(slug: string): Promise<{
   return response.json();
 }
 
+export function buildPublicPostShareTitle(post: GalleryPost) {
+  const author = post.authorDisplayName ?? "Участник WibeStyle";
+  return `${post.title} — ${author} | ${brandDomain()}`;
+}
+
+export function buildPublicPostShareDescription(post: GalleryPost) {
+  const author = post.authorDisplayName ?? "Участник WibeStyle";
+  if (post.description?.trim()) {
+    return post.description.trim();
+  }
+  if (post.productLinkVisible && post.productTitle) {
+    return `${author} примерила «${post.productTitle}». Примерь похожий look на себе до покупки.`;
+  }
+  return `${author} поделился образом «${post.title}». Примерь похожий look на себе до покупки.`;
+}
+
 export function buildPublicPostMetadata(
   post: GalleryPost,
   slug: string,
 ): Metadata {
   const appUrl = appBaseUrl();
   const pageUrl = `${appUrl}/p/${slug}`;
-  const imageUrl = resolveGalleryImageUrl(post);
-  const author = post.authorDisplayName ?? "Участник WibeStyle";
-  const title = `${post.title} — виртуальная примерка | Я на стиле`;
-  const description =
-    post.description?.trim() ||
-    `${author} поделился образом «${post.title}» в WibeStyle — примерь похожий look на себе до покупки.`;
+  const ogImageUrl = buildPublicPostOpenGraphImageUrl(slug);
+  const sourceImageUrl = resolveGalleryImageUrl(post);
+  const siteBrand = brandDomain();
+  const title = buildPublicPostShareTitle(post);
+  const description = buildPublicPostShareDescription(post);
+  const isUnlisted = post.visibility === "unlisted";
 
   return {
     title,
@@ -33,8 +53,7 @@ export function buildPublicPostMetadata(
       "виртуальная примерка",
       "примерка одежды онлайн",
       post.title,
-      author,
-      "WibeStyle",
+      siteBrand,
       "Я на стиле",
     ],
     alternates: { canonical: pageUrl },
@@ -42,20 +61,31 @@ export function buildPublicPostMetadata(
       type: "article",
       locale: "ru_RU",
       url: pageUrl,
-      siteName: "Я на стиле",
+      siteName: siteBrand,
       title,
       description,
-      images: imageUrl
-        ? [{ url: imageUrl, width: 1080, height: 1350, alt: post.title }]
+      images: sourceImageUrl
+        ? [
+            {
+              url: ogImageUrl,
+              secureUrl: ogImageUrl,
+              width: 1080,
+              height: 1350,
+              alt: post.title,
+              type: "image/jpeg",
+            },
+          ]
         : undefined,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: imageUrl ? [imageUrl] : undefined,
+      images: sourceImageUrl ? [ogImageUrl] : undefined,
     },
-    robots: { index: true, follow: true, "max-image-preview": "large" },
+    robots: isUnlisted
+      ? { index: false, follow: false, "max-image-preview": "large" }
+      : { index: true, follow: true, "max-image-preview": "large" },
   };
 }
 

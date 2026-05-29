@@ -1,11 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card, Pill } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
+import AnthropometryFields from "@/components/profile/AnthropometryFields";
 import {
   FieldInput,
   FieldLabel,
@@ -15,6 +17,8 @@ import {
 } from "@/components/ui/fields";
 import { estimateAnthropometryFromImage } from "@/lib/anthropometry-estimate";
 import { parsePositiveInt, validateRequiredAnthropometry } from "@/lib/avatar-validation";
+import { hasRequiredAnthropometry } from "@/lib/try-on-eligibility";
+import { MAX_AVATARS_PER_USER } from "@wibestyle/shared-types";
 
 export default function AvatarOnboardingForm() {
   const router = useRouter();
@@ -84,10 +88,12 @@ export default function AvatarOnboardingForm() {
     image.src = objectUrl;
   }
 
+  const anthropometryComplete = profile ? hasRequiredAnthropometry(profile) : false;
+
   function onPhotoSelected(file: File | null) {
     setPhotoFile(file);
     setSizesHint(null);
-    if (file) applyEstimatedSizes(file, gender);
+    if (file && !anthropometryComplete) applyEstimatedSizes(file, gender);
   }
 
   async function onSubmit(event: FormEvent) {
@@ -95,17 +101,20 @@ export default function AvatarOnboardingForm() {
     setError(null);
     setWarnings([]);
 
-    const anthropometry = {
-      heightCm: parsePositiveInt(heightCm),
-      bustCm: parsePositiveInt(bustCm),
-      waistCm: parsePositiveInt(waistCm),
-      hipsCm: parsePositiveInt(hipsCm),
-    };
-    const anthropometryError = validateRequiredAnthropometry(anthropometry);
-    if (anthropometryError) {
-      setError(anthropometryError);
-      return;
+    if (!anthropometryComplete) {
+      const anthropometry = {
+        heightCm: parsePositiveInt(heightCm),
+        bustCm: parsePositiveInt(bustCm),
+        waistCm: parsePositiveInt(waistCm),
+        hipsCm: parsePositiveInt(hipsCm),
+      };
+      const anthropometryError = validateRequiredAnthropometry(anthropometry);
+      if (anthropometryError) {
+        setError(anthropometryError);
+        return;
+      }
     }
+
     if (!photoFile) {
       setError("Загрузите фото в полный рост");
       return;
@@ -113,19 +122,37 @@ export default function AvatarOnboardingForm() {
 
     setLoading(true);
     try {
-      await api.updateProfile({
+      const profilePayload: Parameters<typeof api.updateProfile>[0] = {
         displayName: displayName.trim() || undefined,
         gender: gender || undefined,
-        heightCm: anthropometry.heightCm,
-        bustCm: anthropometry.bustCm,
-        waistCm: anthropometry.waistCm,
-        hipsCm: anthropometry.hipsCm,
-        shoeSizeEu: parsePositiveInt(shoeSizeEu),
-        clothingSize,
         privacyFaceHidden: hideFace,
         privacyBackgroundHidden: hideBackground,
         privacyFeaturesHidden: false,
-      });
+      };
+
+      if (!anthropometryComplete) {
+        const anthropometry = {
+          heightCm: parsePositiveInt(heightCm),
+          bustCm: parsePositiveInt(bustCm),
+          waistCm: parsePositiveInt(waistCm),
+          hipsCm: parsePositiveInt(hipsCm),
+        };
+        profilePayload.heightCm = anthropometry.heightCm;
+        profilePayload.bustCm = anthropometry.bustCm;
+        profilePayload.waistCm = anthropometry.waistCm;
+        profilePayload.hipsCm = anthropometry.hipsCm;
+        profilePayload.shoeSizeEu = parsePositiveInt(shoeSizeEu);
+        profilePayload.clothingSize = clothingSize;
+      }
+
+      await api.updateProfile(profilePayload);
+
+      const { items: existingAvatars } = await api.listAvatars();
+      const activeAvatars = existingAvatars.filter((item) => item.status !== "DELETED");
+      if (activeAvatars.length >= MAX_AVATARS_PER_USER) {
+        setError(`Можно хранить не больше ${MAX_AVATARS_PER_USER} avatar. Удалите один в настройках.`);
+        return;
+      }
 
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
@@ -189,7 +216,7 @@ export default function AvatarOnboardingForm() {
                 onChange={(event) => {
                   const next = event.target.value as typeof gender;
                   setGender(next);
-                  if (photoFile) applyEstimatedSizes(photoFile, next);
+                  if (photoFile && !anthropometryComplete) applyEstimatedSizes(photoFile, next);
                 }}
               >
                 <option value="">Не указан</option>
@@ -227,25 +254,40 @@ export default function AvatarOnboardingForm() {
           <section className="grid gap-4">
             <div>
               <p className={sectionTitleClassName}>Размеры</p>
-              <p className={`mt-1 ${mutedTextClassName}`}>
-                После загрузки фото подставляем примерные значения — вы можете их изменить.
-              </p>
+              {anthropometryComplete ? (
+                <p className={`mt-1 ${mutedTextClassName}`}>
+                  Мерки уже заданы в профиле и общие для всех avatar. Изменить можно в{" "}
+                  <Link className="text-link" href="/settings">
+                    настройках
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <p className={`mt-1 ${mutedTextClassName}`}>
+                  Задаются один раз на аккаунт. После загрузки фото подставляем примерные значения — вы можете их изменить.
+                </p>
+              )}
               {sizesHint ? <p className="mt-2 text-sm font-normal text-[#782cff]">{sizesHint}</p> : null}
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <FieldInput placeholder="Рост, см *" required value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
-              <FieldInput placeholder="Грудь, см *" required value={bustCm} onChange={(e) => setBustCm(e.target.value)} />
-              <FieldInput placeholder="Талия, см *" required value={waistCm} onChange={(e) => setWaistCm(e.target.value)} />
-              <FieldInput placeholder="Бёдра, см *" required value={hipsCm} onChange={(e) => setHipsCm(e.target.value)} />
-              <FieldSelect value={clothingSize} onChange={(e) => setClothingSize(e.target.value)}>
-                {["XS", "S", "M", "L", "XL"].map((size) => (
-                  <option key={size} value={size}>
-                    Размер одежды: {size}
-                  </option>
-                ))}
-              </FieldSelect>
-              <FieldInput placeholder="Обувь EU" value={shoeSizeEu} onChange={(e) => setShoeSizeEu(e.target.value)} />
-            </div>
+            {anthropometryComplete ? null : (
+              <AnthropometryFields
+                required
+                bustCm={bustCm}
+                clothingSize={clothingSize}
+                heightCm={heightCm}
+                hipsCm={hipsCm}
+                shoeSizeEu={shoeSizeEu}
+                waistCm={waistCm}
+                onChange={(field, value) => {
+                  if (field === "heightCm") setHeightCm(value);
+                  if (field === "bustCm") setBustCm(value);
+                  if (field === "waistCm") setWaistCm(value);
+                  if (field === "hipsCm") setHipsCm(value);
+                  if (field === "clothingSize") setClothingSize(value);
+                  if (field === "shoeSizeEu") setShoeSizeEu(value);
+                }}
+              />
+            )}
           </section>
 
           {warnings.length > 0 ? (

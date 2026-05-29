@@ -122,7 +122,8 @@ public class TryOnService {
             MultipartFile photo,
             String category,
             TryOnSourceType sourceType,
-            String selectedSize
+            String selectedSize,
+            String productTitle
     ) throws IOException {
         AvatarSnapshotEntity snapshot = requireTryOnProfileReady(userId);
         if (photo == null || photo.isEmpty()) {
@@ -148,7 +149,11 @@ public class TryOnService {
         session.setGarmentPhotoPath(storedPath);
         session.setProductImageUrl("/api/v1/try-on/sessions/" + sessionId + "/garment-photo");
         session.setMarketplace("other");
-        session.setProductTitle(categoryTitle(resolvedCategory));
+        session.setProductTitle(
+                productTitle != null && !productTitle.isBlank()
+                        ? productTitle.trim()
+                        : categoryTitle(resolvedCategory)
+        );
         session.setProductBrand("Фото из галереи");
         session.setProductSizes(serializeSizes(DEFAULT_PHOTO_SIZES));
         session.setSelectedSize(resolveSelectedSize(selectedSize, DEFAULT_PHOTO_SIZES));

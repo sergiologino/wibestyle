@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { AvatarRecord } from "@wibestyle/shared-types";
+import { MAX_AVATARS_PER_USER } from "@wibestyle/shared-types";
 import { ApiError } from "@wibestyle/api-client";
 import { Button, Pill } from "@wibestyle/ui";
 import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
@@ -152,17 +153,33 @@ export default function AvatarManager() {
     }
   }
 
+  const atAvatarLimit = avatars.length >= MAX_AVATARS_PER_USER;
+
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-[#302637]">Мои avatar</h2>
-          <p className={mutedTextClassName}>Можно хранить несколько образов и выбрать основной для примерки.</p>
+          <p className={mutedTextClassName}>
+            До {MAX_AVATARS_PER_USER} образов на аккаунт. Размеры задаются один раз в профиле ниже.
+          </p>
         </div>
-        <Button size="md" type="button" variant="secondary" onClick={() => setAdding((value) => !value)}>
+        <Button
+          disabled={atAvatarLimit}
+          size="md"
+          type="button"
+          variant="secondary"
+          onClick={() => setAdding((value) => !value)}
+        >
           {adding ? "Отмена" : "+ Новый avatar"}
         </Button>
       </div>
+
+      {atAvatarLimit ? (
+        <p className="rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm font-normal text-[#6d6273]">
+          Достигнут лимит — {MAX_AVATARS_PER_USER} avatar. Удалите неиспользуемый, чтобы добавить новый.
+        </p>
+      ) : null}
 
       {adding ? (
         <div className="rounded-[28px] border border-[#f0dce8] bg-gradient-to-br from-white to-[#fff8fd] p-4 shadow-sm">

@@ -7,17 +7,22 @@ import { Button, Card, ShareCard } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { SeasonHitVideoStatus, TryOnResult, TryOnSessionRecord } from "@wibestyle/shared-types";
 import TryOnReviewForm from "@/components/try-on/TryOnReviewForm";
-import { TryOnBeforeAfter } from "@/components/try-on/TryOnResultImages";
+import { TryOnBeforeAfter, TryOnResultVideo } from "@/components/try-on/TryOnResultImages";
 import AuthenticatedShareImage from "@/components/media/AuthenticatedShareImage";
-import AuthenticatedVideo from "@/components/media/AuthenticatedVideo";
+import FeedbackActionButton from "@/components/try-on/FeedbackActionButton";
+import OverlayModal from "@/components/ui/OverlayModal";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { formatTryOnError } from "@/lib/try-on-error-message";
+import { appBaseUrl, brandDomain, landingSiteUrl } from "@/lib/api-media";
+import { shareGalleryPost, buildSharePayloadFromPost } from "@/lib/share-post";
 
 const POLL_MS = 2000;
 /** ~3 minutes — aligned with backend AI timeout */
 const MAX_POLLS = 90;
 const VIDEO_POLL_MS = 3000;
 const VIDEO_MAX_POLLS = 60;
+
+type FeedbackState = "idle" | "loading" | "success";
 
 export default function ResultClient({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -27,12 +32,18 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showProductLink, setShowProductLink] = useState(true);
-  const [shared, setShared] = useState(false);
   const [galleryPostSlug, setGalleryPostSlug] = useState<string | null>(null);
   const [videoStatus, setVideoStatus] = useState<SeasonHitVideoStatus>("none");
   const [afterVideoUrl, setAfterVideoUrl] = useState<string | null>(null);
   const [videoGenerating, setVideoGenerating] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [saveFeedback, setSaveFeedback] = useState<FeedbackState>("idle");
+  const [shareFeedback, setShareFeedback] = useState<FeedbackState>("idle");
+  const [showSavePicker, setShowSavePicker] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [pendingSaveVisibility, setPendingSaveVisibility] = useState<"public" | "unlisted">("public");
+  const [shareError, setShareError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -160,27 +171,83 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   const productUrl = result?.product?.productUrl;
   const postSlug = galleryPostSlug ?? fallbackSlug;
   const hasVideo = videoStatus === "ready" && afterVideoUrl;
+  const landingUrl = landingSiteUrl();
+  const siteBrand = brandDomain();
+  const shareAppBase = appBaseUrl();
 
-  async function saveToGallery(visibility: "public" | "unlisted") {
+  async function saveToGallery(
+    visibility: "public" | "unlisted",
+    mediaType: "image" | "video" = "image",
+  ) {
     const created = await api.createGalleryPost({
       tryOnSessionId: sessionId,
       visibility,
       productLinkVisible: showProductLink,
       productVisibility: showProductLink ? "SHOW_PRODUCT_LINK" : "HIDE_PRODUCT_LINK",
       eliteFrame: result?.eliteFrame,
+      mediaType: hasVideo ? mediaType : "image",
     });
     setGalleryPostSlug(created.post.slug);
     return created.post;
   }
 
-  async function onShare() {
-    try {
-      const post = await saveToGallery("unlisted");
-      setGalleryPostSlug(post.slug);
-      setShared(true);
-    } catch {
-      setShared(true);
+  function flashSuccess(setter: (state: FeedbackState) => void) {
+    setter("success");
+    window.setTimeout(() => setter("idle"), 2200);
+  }
+
+  function openSavePicker(visibility: "public" | "unlisted") {
+    if (hasVideo) {
+      setPendingSaveVisibility(visibility);
+      setShowSavePicker(true);
+      return;
     }
+    void performSave(visibility, "image");
+  }
+
+  async function performSave(visibility: "public" | "unlisted", mediaType: "image" | "video") {
+    setShowSavePicker(false);
+    setSaveFeedback("loading");
+    try {
+      await saveToGallery(visibility, mediaType);
+      flashSuccess(setSaveFeedback);
+    } catch {
+      setSaveFeedback("idle");
+    }
+  }
+
+  async function onShare() {
+    setShareError(null);
+    setShareFeedback("loading");
+    try {
+      const post = await saveToGallery("unlisted", "image");
+      const sharePayload = buildSharePayloadFromPost({
+        slug: post.slug,
+        appBaseUrl: shareAppBase,
+        title: post.title,
+        productTitle,
+        showProductLink,
+      });
+      const outcome = await shareGalleryPost(sharePayload);
+      setGalleryPostSlug(post.slug);
+      setShowShareModal(false);
+      flashSuccess(setShareFeedback);
+      if (outcome === "copied") {
+        setShareError("Ссылка скопирована — вставь в чат, появится превью с фото.");
+        window.setTimeout(() => setShareError(null), 4000);
+      }
+    } catch (err) {
+      setShareFeedback("idle");
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+      setShareError("Не удалось поделиться. Попробуй ещё раз или сохрани в галерею.");
+    }
+  }
+
+  function openShareModal() {
+    setShareError(null);
+    setShowShareModal(true);
   }
 
   async function onMakeVideo() {
@@ -270,43 +337,116 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         </Card>
       ) : null}
 
-      <div className={`grid gap-6 ${hasVideo ? "lg:grid-cols-2" : ""}`}>
-        <TryOnBeforeAfter afterSrc={result.afterImageUrl} beforeSrc={result.beforeImageUrl} />
+      <div className={`mx-auto grid w-full gap-6 ${hasVideo ? "max-w-4xl md:grid-cols-2" : "max-w-md"}`}>
+        <TryOnBeforeAfter
+          afterSrc={result.afterImageUrl}
+          beforeSrc={result.beforeImageUrl}
+          onExpandClick={() => setShowImageModal(true)}
+        />
 
         {hasVideo && afterVideoUrl ? (
-          <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-[28px] border border-[#f0dce8] bg-[#f5eef3] shadow-[0_20px_60px_rgba(58,12,82,0.12)]">
-            <AuthenticatedVideo
-              autoPlay
-              className="absolute inset-0 h-full w-full object-cover"
-              loop
-              muted
-              src={afterVideoUrl}
-            />
-            <span className="absolute left-4 top-4 rounded-full bg-[#782cff] px-3 py-1 text-xs font-medium text-white">
-              Хит сезона
-            </span>
-          </div>
+          <TryOnResultVideo eliteFrame={result.eliteFrame} src={afterVideoUrl} />
         ) : null}
       </div>
 
+      <OverlayModal
+        ariaLabel="Увеличенный результат примерки"
+        className="max-w-2xl"
+        open={showImageModal}
+        onClose={() => setShowImageModal(false)}
+      >
+        <TryOnBeforeAfter afterSrc={result.afterImageUrl} beforeSrc={result.beforeImageUrl} />
+      </OverlayModal>
+
+      <OverlayModal
+        ariaLabel="Поделиться с подругой"
+        className="max-w-lg"
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+      >
+        <div className="pt-2">
+          <p className="text-eyebrow px-1">Отправить подруге</p>
+          <p className="mt-2 px-1 text-sm font-normal text-[#6d6273]">
+            Так будет выглядеть карточка в чате — с фото, QR и ссылкой на look.
+          </p>
+          <div className="mt-4">
+            <ShareCard
+              appBaseUrl={shareAppBase}
+              brandDomain={siteBrand}
+              eliteFrame={result.eliteFrame}
+              imageElement={
+                <AuthenticatedShareImage
+                  alt="Share card"
+                  className="aspect-[4/5] w-full object-cover"
+                  src={result.afterImageUrl}
+                />
+              }
+              landingUrl={landingUrl}
+              postSlug={postSlug}
+              productTitle={productTitle}
+              showProductLink={showProductLink}
+            />
+          </div>
+          <div className="mt-5 px-1">
+            <FeedbackActionButton
+              feedbackState={shareFeedback}
+              successLabel="Отправлено!"
+              onClick={() => void onShare()}
+            >
+              Отправить
+            </FeedbackActionButton>
+          </div>
+        </div>
+      </OverlayModal>
+
+      {videoStatus === "generating" || videoGenerating ? (
+        <Card className="border-[#782cff]/20 bg-[#fff4fb]">
+          <div className="flex items-center gap-3">
+            <span
+              aria-hidden
+              className="size-5 shrink-0 animate-spin rounded-full border-2 border-[#782cff] border-t-transparent"
+            />
+            <p className="font-normal text-[#302637]">Генерируем видео… Это может занять пару минут.</p>
+          </div>
+        </Card>
+      ) : null}
+
       <Card>
+        <label className="mb-4 flex items-center gap-3 font-normal text-[#302637]">
+          <input
+            checked={showProductLink}
+            type="checkbox"
+            onChange={(event) => setShowProductLink(event.target.checked)}
+          />
+          Показывать, где взяла одежду
+        </label>
+
         <div className="flex flex-wrap gap-3">
           {!hasVideo && videoStatus !== "generating" ? (
-            <Button disabled={videoGenerating} size="md" variant="secondary" onClick={() => void onMakeVideo()}>
+            <Button
+              className="animate-[attentionPulse_2.4s_ease-in-out_infinite]"
+              disabled={videoGenerating}
+              size="md"
+              onClick={() => void onMakeVideo()}
+            >
               Сделать видео
             </Button>
           ) : null}
-          {videoStatus === "generating" || videoGenerating ? (
-            <Button disabled size="md" variant="secondary">
-              Генерируем видео…
-            </Button>
-          ) : null}
-          <Button size="md" onClick={() => saveToGallery("public")}>
+          <FeedbackActionButton
+            feedbackState={saveFeedback}
+            successLabel="Сохранено!"
+            onClick={() => openSavePicker("public")}
+          >
             Сохранить в галерею
-          </Button>
-          <Button size="md" variant="secondary" onClick={onShare}>
+          </FeedbackActionButton>
+          <FeedbackActionButton
+            feedbackState={shareFeedback}
+            successLabel="Отправлено!"
+            variant="secondary"
+            onClick={openShareModal}
+          >
             Отправить подруге
-          </Button>
+          </FeedbackActionButton>
           {productUrl ? (
             <Link href={productUrl} target="_blank">
               <Button size="md" variant="ghost">
@@ -315,44 +455,48 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
             </Link>
           ) : null}
         </div>
-        {videoError ? <p className="mt-3 font-normal text-[#c01278]">{videoError}</p> : null}
         {!hasVideo && videoStatus !== "generating" ? (
           <p className="text-body mt-3 text-sm">
             Кинематографичное видео с look — эксклюзив Elite. Подходящая локация подбирается автоматически.
           </p>
         ) : null}
+        {videoError ? <p className="mt-3 font-normal text-[#c01278]">{videoError}</p> : null}
+        {shareError ? <p className="mt-3 text-sm font-normal text-[#6d6273]">{shareError}</p> : null}
       </Card>
 
-      {shared ? (
-        <div className="grid gap-4">
-          <label className="flex items-center gap-3 font-normal text-[#302637]">
-            <input
-              checked={showProductLink}
-              type="checkbox"
-              onChange={(event) => setShowProductLink(event.target.checked)}
-            />
-            Показывать, где взяла одежду
-          </label>
-          <ShareCard
-            appBaseUrl={process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001"}
-            eliteFrame={result.eliteFrame}
-            imageElement={
-              <AuthenticatedShareImage
-                alt="Share card"
-                className="aspect-[4/5] w-full object-cover"
-                src={result.afterImageUrl}
-              />
-            }
-            postSlug={postSlug}
-            productTitle={productTitle}
-            showProductLink={showProductLink}
-          />
-          {galleryPostSlug ? (
-            <Link href={`/p/${galleryPostSlug}`} className="text-link text-sm">
-              Открыть пост · app.wibestyle.ru/p/{galleryPostSlug}
-            </Link>
-          ) : null}
-        </div>
+      {showSavePicker ? (
+        <OverlayModal
+          ariaLabel="Выбор формата сохранения"
+          className="max-w-md"
+          open={showSavePicker}
+          onClose={() => setShowSavePicker(false)}
+        >
+          <Card className="animate-[fadeInUp_0.25s_ease-out]">
+            <p className="text-eyebrow">Сохранение</p>
+            <h2 className="text-display mt-2 text-2xl">Что сохранить в галерею?</h2>
+            <p className="text-body mt-2 text-sm">Выбери одно — фото или видео.</p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                className="rounded-[22px] border border-[#ffd1ed] bg-white p-4 text-left transition hover:border-[#ff1fa2] hover:shadow-[0_8px_24px_rgba(255,31,162,0.12)] active:scale-[0.98]"
+                onClick={() => void performSave(pendingSaveVisibility, "image")}
+              >
+                <span className="text-2xl" aria-hidden>📷</span>
+                <p className="mt-2 font-medium text-[#302637]">Фото</p>
+                <p className="mt-1 text-sm font-normal text-[#6d6273]">Look с плашкой и QR</p>
+              </button>
+              <button
+                type="button"
+                className="rounded-[22px] border border-[#ffd1ed] bg-white p-4 text-left transition hover:border-[#ff1fa2] hover:shadow-[0_8px_24px_rgba(255,31,162,0.12)] active:scale-[0.98]"
+                onClick={() => void performSave(pendingSaveVisibility, "video")}
+              >
+                <span className="text-2xl" aria-hidden>🎬</span>
+                <p className="mt-2 font-medium text-[#302637]">Видео</p>
+                <p className="mt-1 text-sm font-normal text-[#6d6273]">Видео с плашкой и QR</p>
+              </button>
+            </div>
+          </Card>
+        </OverlayModal>
       ) : null}
 
       <TryOnReviewForm api={api} sessionId={sessionId} />

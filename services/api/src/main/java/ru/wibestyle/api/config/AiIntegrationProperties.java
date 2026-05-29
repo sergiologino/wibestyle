@@ -105,4 +105,12 @@ public class AiIntegrationProperties {
     public boolean isSeasonVideoConfigured() {
         return enabled && apiKey != null && !apiKey.isBlank() && seasonVideoNetwork != null && !seasonVideoNetwork.isBlank();
     }
+
+    public boolean isChatNetworkConfigured() {
+        return enabled
+                && apiKey != null
+                && !apiKey.isBlank()
+                && sizeComplimentNetwork != null
+                && !sizeComplimentNetwork.isBlank();
+    }
 }

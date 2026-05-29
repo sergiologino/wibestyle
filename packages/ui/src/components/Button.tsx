@@ -8,7 +8,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const base =
-  "inline-flex max-w-full items-center justify-center gap-1.5 rounded-2xl border-0 font-medium leading-snug text-center transition-[transform,opacity,background-color,box-shadow] duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex max-w-full items-center justify-center gap-1.5 rounded-2xl border-0 font-medium leading-snug text-center transition-[transform,opacity,background-color,box-shadow] duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97] disabled:active:scale-100";
 
 const variants = {
   primary: "bg-[#ff1fa2] text-white shadow-[0_8px_24px_rgba(255,31,162,0.22)] hover:bg-[#eb1692]",

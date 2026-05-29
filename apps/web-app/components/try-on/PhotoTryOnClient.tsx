@@ -18,12 +18,7 @@ import {
   inferGarmentCategory,
 } from "@/lib/try-on-flow";
 
-const steps = ["Фото", "Товар", "Размер", "Генерация"];
-
-const categories = Object.entries(GARMENT_CATEGORY_LABELS).map(([id, label]) => ({
-  id: id as GarmentCategory,
-  label,
-}));
+const steps = ["Фото", "Размер", "Генерация"];
 
 export default function PhotoTryOnClient() {
   const router = useRouter();
@@ -35,8 +30,11 @@ export default function PhotoTryOnClient() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [category, setCategory] = useState<GarmentCategory>("other");
+  const [garmentTitle, setGarmentTitle] = useState("");
+  const [classificationSource, setClassificationSource] = useState<"ai" | "fallback" | null>(null);
   const [size, setSize] = useState("M");
   const [loading, setLoading] = useState(false);
+  const [classifying, setClassifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,8 +51,8 @@ export default function PhotoTryOnClient() {
     if (!photoFile || !previewUrl || step < 1) {
       return null;
     }
-    return buildPhotoProductPreview(photoFile, category, previewUrl);
-  }, [photoFile, previewUrl, category, step]);
+    return buildPhotoProductPreview(photoFile, category, previewUrl, garmentTitle);
+  }, [photoFile, previewUrl, category, garmentTitle, step]);
 
   function authRedirectPath() {
     const query = params.toString();
@@ -80,23 +78,46 @@ export default function PhotoTryOnClient() {
     const file = event.target.files?.[0];
     if (!file) return;
     setPhotoFile(file);
-    setCategory(inferGarmentCategory(file.name));
     setError(null);
+    setClassificationSource(null);
+    setGarmentTitle("");
   }
 
-  function continueToPreview(event: FormEvent) {
+  async function continueToPreview(event: FormEvent) {
     event.preventDefault();
     if (!photoFile) {
       setError("Загрузите фото одежды");
       return;
     }
+
     setError(null);
+    setClassifying(true);
     setSize("M");
-    setStep(1);
+
+    try {
+      const { classification } = await api.classifyGarmentPhoto(photoFile);
+      setCategory(classification.category);
+      setGarmentTitle(classification.title);
+      setClassificationSource(classification.source ?? "ai");
+      setStep(1);
+    } catch {
+      const fallbackCategory = inferGarmentCategory(photoFile.name);
+      setCategory(fallbackCategory);
+      setGarmentTitle(GARMENT_CATEGORY_LABELS[fallbackCategory]);
+      setClassificationSource("fallback");
+      setStep(1);
+    } finally {
+      setClassifying(false);
+    }
   }
 
   async function startGeneration() {
     if (!(await requireAuth())) {
+      return;
+    }
+
+    if (!product || !size || !product.sizes.includes(size)) {
+      setError("Выберите размер перед запуском примерки");
       return;
     }
 
@@ -111,22 +132,28 @@ export default function PhotoTryOnClient() {
       return;
     }
 
-    setStep(3);
+    setStep(2);
     setLoading(true);
     setError(null);
 
     try {
-      const created = await api.createPhotoTryOnSession(photoFile, category, "gallery_upload", size);
+      const created = await api.createPhotoTryOnSession(
+        photoFile,
+        category,
+        "gallery_upload",
+        size,
+        garmentTitle || product.title,
+      );
       const generated = await api.generateTryOn(created.session.id);
       await refreshProfile();
       if (generated.session.status === "failed") {
-        setStep(2);
+        setStep(1);
         setError(formatTryOnError(generated.session));
         return;
       }
       router.push(`/try-on/result/${created.session.id}`);
     } catch (err) {
-      setStep(2);
+      setStep(1);
       if (err instanceof ApiError && err.status === 401) {
         const restored = await ensureSession();
         if (restored) {
@@ -163,7 +190,7 @@ export default function PhotoTryOnClient() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
       <div>
         <h1 className="text-display text-3xl">Примерка по фото</h1>
-        <p className="text-body mt-2">Загрузи снимок одежды — посмотри превью, выбери размер и запусти примерку.</p>
+        <p className="text-body mt-2">Загрузи снимок — AI определит вещь, выбери размер и запусти примерку.</p>
       </div>
       <StepIndicator current={step} steps={steps} />
 
@@ -171,9 +198,9 @@ export default function PhotoTryOnClient() {
         <Card>
           <h2 className="text-display-md text-2xl">Загрузи фото одежды</h2>
           <p className="text-body mt-3">
-            Снимок из галереи или скрин карточки товара. Категорию можно поправить на следующем шаге.
+            Снимок из галереи или скрин карточки товара. Тип вещи определится автоматически.
           </p>
-          <form className="mt-6 grid gap-4" onSubmit={continueToPreview}>
+          <form className="mt-6 grid gap-4" onSubmit={(event) => void continueToPreview(event)}>
             <input
               accept="image/*"
               className="rounded-2xl border border-dashed border-[#ffb8e4] bg-[#fff8fd] px-4 py-8 font-normal text-[#6d6273]"
@@ -181,21 +208,9 @@ export default function PhotoTryOnClient() {
               onChange={onFileChange}
               required
             />
-            <div className="flex flex-wrap gap-2">
-              {categories.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`rounded-full px-4 py-2 text-sm font-medium ${category === item.id ? "bg-[#ff1fa2] text-white" : "bg-[#fff4fb] text-[#6d6273]"}`}
-                  onClick={() => setCategory(item.id)}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
             {photoFile ? <p className="font-normal text-[#302637]">Файл: {photoFile.name}</p> : null}
-            <Button disabled={!photoFile || loading} size="md" type="submit">
-              Продолжить
+            <Button disabled={!photoFile || classifying} loading={classifying} size="md" type="submit">
+              {classifying ? "Определяем вещь…" : "Продолжить"}
             </Button>
           </form>
         </Card>
@@ -212,64 +227,32 @@ export default function PhotoTryOnClient() {
             <div>
               <p className="text-eyebrow text-[#782cff]">{product.brand}</p>
               <h2 className="text-display-md mt-2 text-2xl">{product.title}</h2>
+              {classificationSource === "ai" ? (
+                <p className="mt-2 text-sm font-normal text-[#782cff]">Определено AI по фото</p>
+              ) : null}
               {photoFile ? (
                 <p className="mt-2 text-sm font-normal text-[#6d6273]">{photoFile.name}</p>
               ) : null}
 
-              {step === 1 ? (
-                <div className="mt-6 border-t border-[#ffd1ed] pt-6">
-                  <h3 className="text-display-md text-lg">Категория вещи</h3>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {categories.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${category === item.id ? "bg-[#ff1fa2] text-white" : "border border-[#ffd1ed] bg-white text-[#6d6273]"}`}
-                        onClick={() => setCategory(item.id)}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
+              <div className="mt-6 border-t border-[#ffd1ed] pt-6">
+                <h3 className="text-display-md text-lg">Какой размер примерить?</h3>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {product.sizes.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${size === item ? "bg-[#ff1fa2] text-white" : "border border-[#ffd1ed] bg-white text-[#6d6273]"}`}
+                      onClick={() => setSize(item)}
+                    >
+                      {item}
+                    </button>
+                  ))}
                 </div>
-              ) : null}
-
-              {step >= 2 ? (
-                <div className="mt-6 border-t border-[#ffd1ed] pt-6">
-                  <h3 className="text-display-md text-lg">Какой размер примерить?</h3>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {product.sizes.map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${size === item ? "bg-[#ff1fa2] text-white" : "border border-[#ffd1ed] bg-white text-[#6d6273]"}`}
-                        onClick={() => setSize(item)}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+              </div>
             </div>
           </div>
 
-          {step === 1 ? (
-            <Button
-              className="mt-6"
-              size="md"
-              onClick={() => {
-                void (async () => {
-                  if (!(await requireAuth())) return;
-                  setStep(2);
-                })();
-              }}
-            >
-              Выбрать размер
-            </Button>
-          ) : null}
-
-          {step === 2 && sessionReady && !isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
+          {step >= 1 && sessionReady && !isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
             <p className="mt-6 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm font-normal text-[#6d6273]">
               Чтобы запустить примерку,{" "}
               <Link href={authRedirectPath()} className="text-link">
@@ -279,15 +262,20 @@ export default function PhotoTryOnClient() {
             </p>
           ) : null}
 
-          {step === 2 && sessionReady && isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
-            <Button className="mt-6" disabled={loading} size="md" onClick={startGeneration}>
+          {step >= 1 && sessionReady && isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
+            <Button
+              className="mt-6"
+              disabled={loading || !size || !product.sizes.includes(size)}
+              size="md"
+              onClick={() => void startGeneration()}
+            >
               Запустить AI-примерку
             </Button>
           ) : null}
         </Card>
       ) : null}
 
-      {step === 3 ? (
+      {step === 2 ? (
         <Card>
           <h3 className="text-display-md text-xl">Собираем твой look…</h3>
           <p className="text-body mt-2">Нейростилист надевает {product?.title ?? "вещь"} на твой образ…</p>

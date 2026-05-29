@@ -18,12 +18,12 @@ export function buildMockProduct(url: string): ProductPreview {
     brand: marketplace === "wildberries" ? "Brand Look" : "Urban Line",
     priceRub: marketplace === "wildberries" ? 4290 : 6890,
     imageUrl: "/assets/demo-garment.svg",
-    sizes: ["XS", "S", "M", "L", "XL"],
+    sizes: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
     productUrl: url,
   };
 }
 
-export const DEFAULT_TRYON_SIZES = ["XS", "S", "M", "L", "XL"] as const;
+export const DEFAULT_TRYON_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"] as const;
 
 export const GARMENT_CATEGORY_LABELS: Record<GarmentCategory, string> = {
   dress: "Платье",
@@ -47,11 +47,12 @@ export function buildPhotoProductPreview(
   file: File,
   category: GarmentCategory,
   previewUrl: string,
+  title?: string,
 ): ProductPreview {
   return {
     id: `photo_${Date.now()}`,
     marketplace: "other",
-    title: GARMENT_CATEGORY_LABELS[category],
+    title: title?.trim() || GARMENT_CATEGORY_LABELS[category],
     brand: "Фото из галереи",
     priceRub: 0,
     imageUrl: previewUrl,

@@ -364,6 +364,21 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void avatarLimitIsThree() throws Exception {
+        String accessToken = authenticate("+79996667788");
+        createDraftAvatar(accessToken);
+        createDraftAvatar(accessToken);
+        createDraftAvatar(accessToken);
+
+        mockMvc.perform(post("/api/v1/avatars")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("AVATAR_LIMIT_REACHED"));
+    }
+
+    @Test
     void avatarRejectsInappropriateFilename() throws Exception {
         String accessToken = authenticate("+79993334455");
         String avatarId = createDraftAvatar(accessToken);
