@@ -24,6 +24,45 @@ h1,
 h2,
 h3 {
   font-family: var(--font-manrope), var(--font-inter), sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.text-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9a8f99;
+}
+
+.text-display {
+  font-family: var(--font-manrope), var(--font-inter), sans-serif;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  color: var(--black);
+}
+
+.text-display-md {
+  font-family: var(--font-manrope), var(--font-inter), sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--black);
+}
+
+.text-body {
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.text-link {
+  font-weight: 500;
+  color: var(--pink);
+}
+
+.text-link:hover {
+  opacity: 0.85;
 }
 
 .avatar-preview-image {

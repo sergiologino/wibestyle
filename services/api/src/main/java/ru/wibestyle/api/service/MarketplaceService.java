@@ -9,6 +9,7 @@ import ru.wibestyle.api.marketplace.ProductDetails;
 import ru.wibestyle.api.marketplace.ProductSizeChart;
 import ru.wibestyle.api.marketplace.SizeChartEntry;
 import ru.wibestyle.api.marketplace.SizeChartFitMatcher;
+import ru.wibestyle.api.marketplace.OzonAdapter;
 import ru.wibestyle.api.marketplace.WildberriesAdapter;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
 
@@ -25,15 +26,18 @@ public class MarketplaceService {
 
     private final MarketplaceAdapterRegistry marketplaceAdapterRegistry;
     private final WildberriesAdapter wildberriesAdapter;
+    private final OzonAdapter ozonAdapter;
     private final AvatarSnapshotRepository avatarSnapshotRepository;
 
     public MarketplaceService(
             MarketplaceAdapterRegistry marketplaceAdapterRegistry,
             WildberriesAdapter wildberriesAdapter,
+            OzonAdapter ozonAdapter,
             AvatarSnapshotRepository avatarSnapshotRepository
     ) {
         this.marketplaceAdapterRegistry = marketplaceAdapterRegistry;
         this.wildberriesAdapter = wildberriesAdapter;
+        this.ozonAdapter = ozonAdapter;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
     }
 
@@ -45,12 +49,7 @@ public class MarketplaceService {
         MarketplaceAdapter adapter = marketplaceAdapterRegistry.resolve(url);
         String normalizedUrl = adapter.normalizeUrl(url);
         String productId = adapter.extractProductId(normalizedUrl);
-        ProductDetails product;
-        try {
-            product = adapter.fetchProduct(productId, normalizedUrl);
-        } catch (RuntimeException ex) {
-            throw new IllegalArgumentException(TryOnErrorCodes.PRODUCT_PARSE_FAILED, ex);
-        }
+        ProductDetails product = fetchProductDetails(adapter, productId, normalizedUrl);
 
         if (product.images() == null || product.images().isEmpty()) {
             throw new IllegalArgumentException(TryOnErrorCodes.PRODUCT_IMAGE_NOT_FOUND);
@@ -66,6 +65,30 @@ public class MarketplaceService {
 
     public byte[] loadWildberriesImage(String productId) {
         return wildberriesAdapter.loadProductImage(productId);
+    }
+
+    public byte[] loadOzonImage(String productSlug) {
+        return ozonAdapter.loadProductImage(productSlug, null);
+    }
+
+    public static void rethrowProductFetchFailure(IllegalArgumentException ex) {
+        String code = ex.getMessage();
+        if (TryOnErrorCodes.PRODUCT_IMAGE_NOT_FOUND.equals(code)
+                || TryOnErrorCodes.PRODUCT_PARSE_FAILED.equals(code)) {
+            throw ex;
+        }
+        throw new IllegalArgumentException(TryOnErrorCodes.PRODUCT_PARSE_FAILED, ex);
+    }
+
+    static ProductDetails fetchProductDetails(MarketplaceAdapter adapter, String productId, String normalizedUrl) {
+        try {
+            return adapter.fetchProduct(productId, normalizedUrl);
+        } catch (IllegalArgumentException ex) {
+            rethrowProductFetchFailure(ex);
+            throw ex;
+        } catch (RuntimeException ex) {
+            throw new IllegalArgumentException(TryOnErrorCodes.PRODUCT_PARSE_FAILED, ex);
+        }
     }
 
     private void applySuggestedSize(Map<String, Object> preview, ProductDetails product, AvatarSnapshotEntity snapshot) {

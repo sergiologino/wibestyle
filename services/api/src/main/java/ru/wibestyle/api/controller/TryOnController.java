@@ -55,10 +55,17 @@ public class TryOnController {
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam("photo") MultipartFile photo,
             @RequestParam(defaultValue = "other") String category,
-            @RequestParam(defaultValue = "gallery_upload") String sourceType
+            @RequestParam(defaultValue = "gallery_upload") String sourceType,
+            @RequestParam(required = false) String selectedSize
     ) throws IOException {
         TryOnSourceType parsedSourceType = parseSourceType(sourceType);
-        return tryOnService.createPhotoSession(requireUserId(authorization), photo, category, parsedSourceType);
+        return tryOnService.createPhotoSession(
+                requireUserId(authorization),
+                photo,
+                category,
+                parsedSourceType,
+                selectedSize
+        );
     }
 
     @PostMapping("/{sessionId}/generate")

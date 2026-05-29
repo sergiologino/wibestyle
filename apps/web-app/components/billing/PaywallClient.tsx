@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button, Card, Pill } from "@wibestyle/ui";
+import { Button, Card } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { BillingPeriod, BillingPlanOffer, SubscriptionPlan } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
@@ -62,9 +62,9 @@ export default function PaywallClient() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
       <Card>
-        <Pill>{reason === "trial_exhausted" ? "Trial закончился" : "Подписка WibeStyle"}</Pill>
-        <h1 className="mt-4 text-4xl font-black tracking-tight">Продолжай с Wibe</h1>
-        <p className="mt-3 font-bold text-[#6d6273]">
+        <p className="text-eyebrow">{reason === "trial_exhausted" ? "Trial закончился" : "Подписка WibeStyle"}</p>
+        <h1 className="text-display mt-4 text-4xl">Продолжай с Wibe</h1>
+        <p className="text-body mt-3">
           Годовой Wibe выбран по умолчанию — экономия {annualDiscountPercent}% vs помесячно.
           {promoDiscountPercent > 0 ? ` Ваш промокод: −${promoDiscountPercent}%.` : ""}
         </p>
@@ -72,14 +72,14 @@ export default function PaywallClient() {
         <div className="mt-6 inline-flex rounded-full border border-[#ffd1ed] bg-white p-1">
           <button
             type="button"
-            className={`rounded-full px-5 py-2 text-sm font-black ${period === "monthly" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium ${period === "monthly" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
             onClick={() => setPeriod("monthly")}
           >
             Месяц
           </button>
           <button
             type="button"
-            className={`rounded-full px-5 py-2 text-sm font-black ${period === "annual" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium ${period === "annual" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
             onClick={() => setPeriod("annual")}
           >
             Год −{annualDiscountPercent}%
@@ -89,17 +89,17 @@ export default function PaywallClient() {
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <button
             type="button"
-            className={`rounded-[28px] border-2 p-6 text-left shadow-[0_20px_60px_rgba(255,31,162,0.14)] ${
+            className={`rounded-[28px] border-2 p-6 text-left ${
               selectedPlan === "wibe" ? "border-[#ff1fa2] bg-[#fff8fd]" : "border-[#ffd1ed] bg-white"
             }`}
             onClick={() => setSelectedPlan("wibe")}
           >
             {period === "annual" ? (
-              <p className="text-sm font-black uppercase tracking-[0.12em] text-[#ff1fa2]">Рекомендуем</p>
+              <p className="text-eyebrow text-[#ff1fa2]">Рекомендуем</p>
             ) : null}
-            <h2 className="mt-2 text-3xl font-black">Wibe</h2>
-            <p className="mt-2 text-3xl font-black">{wibeOffer ? formatRub(wibeOffer.priceRub) : "…"}</p>
-            <p className="mt-2 font-bold text-[#6d6273]">20 генераций · WB/Ozon · галерея · избранное</p>
+            <h2 className="text-display-md mt-2 text-3xl">Wibe</h2>
+            <p className="mt-2 text-3xl font-normal">{wibeOffer ? formatRub(wibeOffer.priceRub) : "…"}</p>
+            <p className="text-body mt-2">20 генераций · WB/Ozon · галерея · избранное</p>
           </button>
 
           <button
@@ -109,26 +109,26 @@ export default function PaywallClient() {
             }`}
             onClick={() => setSelectedPlan("elite")}
           >
-            <h2 className="text-3xl font-black">Elite</h2>
-            <p className="mt-2 text-3xl font-black">{eliteOffer ? formatRub(eliteOffer.priceRub) : "…"}</p>
-            <p className="mt-2 font-bold text-[#6d6273]">100 генераций · multi-item · priority · golden frame</p>
+            <h2 className="text-display-md text-3xl">Elite</h2>
+            <p className="mt-2 text-3xl font-normal">{eliteOffer ? formatRub(eliteOffer.priceRub) : "…"}</p>
+            <p className="text-body mt-2">100 генераций · multi-item · priority · golden frame</p>
           </button>
         </div>
 
         {currentOffer ? (
-          <p className="mt-4 font-bold text-[#302637]">
+          <p className="mt-4 font-normal text-[#302637]">
             Итого: {formatRub(currentOffer.priceRub)}
             {currentOffer.monthlyEquivalentRub ? ` · ~${formatRub(currentOffer.monthlyEquivalentRub)}/мес` : ""}
           </p>
         ) : null}
 
-        <Button className="mt-6" disabled={loading || submitting || !currentOffer} onClick={() => void onCheckout()} size="lg">
+        <Button className="mt-6" disabled={loading || submitting || !currentOffer} onClick={() => void onCheckout()} size="md">
           {submitting ? "Переходим к оплате…" : `Оформить ${selectedPlan === "elite" ? "Elite" : "Wibe"}`}
         </Button>
 
-        {error ? <p className="mt-3 font-bold text-[#ff1fa2]">{error}</p> : null}
+        {error ? <p className="mt-3 font-normal text-[#ff1fa2]">{error}</p> : null}
 
-        <Link href="/home" className="mt-6 inline-block font-bold text-[#ff1fa2]">← Пока пропустить</Link>
+        <Link href="/home" className="text-link mt-6 inline-block text-sm">← Пока пропустить</Link>
       </Card>
     </div>
   );

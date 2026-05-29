@@ -73,6 +73,13 @@ public class TryOnImageService {
         if (bytes == null || bytes.length == 0) {
             throw new IOException("Empty AI result image");
         }
+        return persistResultBytes(userId, sessionId, bytes);
+    }
+
+    public String persistResultBytes(UUID userId, UUID sessionId, byte[] bytes) throws IOException {
+        if (bytes == null || bytes.length == 0) {
+            throw new IOException("Empty AI result image");
+        }
         return localStorageService.storeTryOnResult(userId, sessionId, "after", new ByteArrayInputStream(bytes));
     }
 }

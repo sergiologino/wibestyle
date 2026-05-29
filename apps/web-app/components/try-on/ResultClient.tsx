@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Button, Card, Pill, ShareCard } from "@wibestyle/ui";
+import { Button, Card, ShareCard } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { TryOnResult, TryOnSessionRecord } from "@wibestyle/shared-types";
 import TryOnReviewForm from "@/components/try-on/TryOnReviewForm";
@@ -27,7 +27,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    let pollTimer: ReturnType<typeof setTimeout> | undefined;
+    let pollTimer: number | undefined;
     let polls = 0;
 
     async function pollOnce() {
@@ -110,11 +110,11 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   if (loading) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
-        <Pill>{session?.status === "generating" ? "Генерируем look…" : "Загружаем результат…"}</Pill>
+        <p className="text-eyebrow">{session?.status === "generating" ? "Генерируем look…" : "Загружаем результат…"}</p>
         <Card>
-          <p className="font-normal text-[#6d6273]">Нейростилист надевает вещь на твой образ…</p>
-          <div className="mt-6 h-3 overflow-hidden rounded-full bg-[#ffe4f5]">
-            <div className="h-full w-2/3 animate-pulse rounded-full bg-[linear-gradient(135deg,#ff1fa2,#b100ff)]" />
+          <p className="text-body">Нейростилист надевает вещь на твой образ…</p>
+          <div className="mt-6 h-2 overflow-hidden rounded-full bg-[#ffe4f5]">
+            <div className="h-full w-2/3 animate-pulse rounded-full bg-[#ff1fa2]" />
           </div>
         </Card>
       </div>
@@ -124,13 +124,13 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   if (error || !result) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
-        <Pill>Ошибка</Pill>
+        <p className="text-eyebrow">Ошибка</p>
         <Card>
-          <p className="font-bold text-[#c01278]">{error ?? "Результат недоступен"}</p>
+          <p className="font-normal text-[#c01278]">{error ?? "Результат недоступен"}</p>
           {session?.errorCode ? (
             <p className="mt-2 text-sm text-[#6d6273]">Код: {session.errorCode}</p>
           ) : null}
-          <Link href="/try-on" className="mt-4 inline-block font-bold text-[#ff1fa2]">
+          <Link href="/try-on" className="text-link mt-4 inline-block text-sm">
             ← Попробовать снова
           </Link>
         </Card>
@@ -140,19 +140,21 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-10">
-      <Pill>Готово ✦</Pill>
-      <h1 className="text-4xl font-black tracking-tight">Смотри, как смотрится на тебе</h1>
+      <div>
+        <p className="text-eyebrow">Готово</p>
+        <h1 className="text-display mt-2 text-4xl">Смотри, как смотрится на тебе</h1>
+      </div>
 
       {result.sizeFitMessage && result.recommendedSize ? (
         <Card className="border-[#ffb347] bg-[#fffaf3]">
-          <p className="font-bold text-[#302637]">{result.sizeFitMessage}</p>
-          <p className="mt-2 text-sm font-bold text-[#6d6273]">
+          <p className="font-normal text-[#302637]">{result.sizeFitMessage}</p>
+          <p className="mt-2 text-sm font-normal text-[#6d6273]">
             Выбран {result.selectedSize ?? "—"} · рекомендуем {result.recommendedSize}
           </p>
           {productUrl ? (
             <Link
               href={`/try-on/link?url=${encodeURIComponent(productUrl)}&size=${encodeURIComponent(result.recommendedSize)}`}
-              className="mt-4 inline-block font-black text-[#ff1fa2]"
+              className="text-link mt-4 inline-block text-sm"
             >
               Примерить размер {result.recommendedSize} →
             </Link>
@@ -166,16 +168,16 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       </div>
 
       <Card>
-        <div className="flex flex-wrap gap-4">
-          <Button size="lg" onClick={() => saveToGallery("public")}>
+        <div className="flex flex-wrap gap-3">
+          <Button size="md" onClick={() => saveToGallery("public")}>
             Сохранить в галерею
           </Button>
-          <Button size="lg" variant="secondary" onClick={onShare}>
+          <Button size="md" variant="secondary" onClick={onShare}>
             Отправить подруге
           </Button>
           {productUrl ? (
             <Link href={productUrl} target="_blank">
-              <Button size="lg" variant="ghost">
+              <Button size="md" variant="ghost">
                 Открыть товар
               </Button>
             </Link>
@@ -185,7 +187,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
 
       {shared ? (
         <div className="grid gap-4">
-          <label className="flex items-center gap-3 font-bold text-[#302637]">
+          <label className="flex items-center gap-3 font-normal text-[#302637]">
             <input
               checked={showProductLink}
               type="checkbox"
@@ -208,7 +210,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
             showProductLink={showProductLink}
           />
           {galleryPostSlug ? (
-            <Link href={`/p/${galleryPostSlug}`} className="font-bold text-[#ff1fa2]">
+            <Link href={`/p/${galleryPostSlug}`} className="text-link text-sm">
               Открыть пост · app.wibestyle.ru/p/{galleryPostSlug}
             </Link>
           ) : null}
@@ -217,7 +219,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
 
       <TryOnReviewForm api={api} sessionId={sessionId} />
 
-      <Link href="/try-on" className="font-bold text-[#ff1fa2]">
+      <Link href="/try-on" className="text-link text-sm">
         Примерить ещё одну вещь
       </Link>
     </div>

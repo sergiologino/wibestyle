@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Card, Pill } from "@wibestyle/ui";
+import { Button, Card } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { UpdateProfilePayload } from "@wibestyle/shared-types";
 import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
@@ -30,7 +30,6 @@ export default function ProfileSettingsClient() {
   const [shoeSizeEu, setShoeSizeEu] = useState("");
   const [hideFace, setHideFace] = useState(true);
   const [hideBackground, setHideBackground] = useState(false);
-  const [hideFeatures, setHideFeatures] = useState(false);
   const [activeAvatarPhotoPath, setActiveAvatarPhotoPath] = useState<string | null>(null);
   const [activeAvatarPreviewUrl, setActiveAvatarPreviewUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,7 +44,6 @@ export default function ProfileSettingsClient() {
     setGender(profile.gender ?? "");
     setHideFace(profile.privacy?.faceHidden ?? true);
     setHideBackground(profile.privacy?.backgroundHidden ?? false);
-    setHideFeatures(profile.privacy?.featuresHidden ?? false);
     setHeightCm(profile.anthropometry?.heightCm ? String(profile.anthropometry.heightCm) : "");
     setBustCm(profile.anthropometry?.bustCm ? String(profile.anthropometry.bustCm) : "");
     setWaistCm(profile.anthropometry?.waistCm ? String(profile.anthropometry.waistCm) : "");
@@ -75,6 +73,11 @@ export default function ProfileSettingsClient() {
     setActiveAvatarPreviewUrl(activeAvatarBlobUrl);
   }, [activeAvatarBlobUrl]);
 
+  function onLogout() {
+    logout();
+    router.replace("/welcome");
+  }
+
   async function onSave(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
@@ -91,7 +94,7 @@ export default function ProfileSettingsClient() {
       shoeSizeEu: shoeSizeEu ? Number(shoeSizeEu) : undefined,
       privacyFaceHidden: hideFace,
       privacyBackgroundHidden: hideBackground,
-      privacyFeaturesHidden: hideFeatures,
+      privacyFeaturesHidden: false,
     };
     try {
       await api.updateProfile(payload);
@@ -128,8 +131,7 @@ export default function ProfileSettingsClient() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-10">
       <section className="app-surface rounded-[32px] p-6">
-        <Pill>Настройки</Pill>
-        <h1 className="mt-4 font-[family-name:var(--font-manrope)] text-4xl font-semibold tracking-tight">Профиль</h1>
+        <h1 className="text-display text-4xl">Профиль</h1>
         <div className="mt-4 grid gap-1 text-sm font-normal text-[#6d6273]">
           {displayName ? <p>Имя: {displayName}</p> : null}
           {phone ? <p>Аккаунт: {phone}</p> : null}
@@ -141,6 +143,9 @@ export default function ProfileSettingsClient() {
             </p>
           ) : null}
         </div>
+        <Button className="mt-6" size="md" type="button" variant="secondary" onClick={onLogout}>
+          Выйти из профиля
+        </Button>
       </section>
 
       <Card>
@@ -151,11 +156,10 @@ export default function ProfileSettingsClient() {
           </div>
           <AvatarPrivacyPreview
             localPreviewUrl={activeAvatarPreviewUrl}
-            privacy={{ hideFace, hideBackground, hideFeatures }}
+            privacy={{ hideFace, hideBackground, hideFeatures: false }}
             onPrivacyChange={(next) => {
               if (next.hideFace !== undefined) setHideFace(next.hideFace);
               if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
-              if (next.hideFeatures !== undefined) setHideFeatures(next.hideFeatures);
             }}
           />
         </div>
@@ -169,7 +173,7 @@ export default function ProfileSettingsClient() {
         <form className="grid gap-6" onSubmit={onSave}>
           <div>
             <p className={sectionTitleClassName}>Данные профиля</p>
-            <p className={`mt-1 ${mutedTextClassName}`}>Имя, пол, размеры и приватность для новых avatar.</p>
+            <p className={`mt-1 ${mutedTextClassName}`}>Имя, пол и размеры для новых avatar.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -203,26 +207,7 @@ export default function ProfileSettingsClient() {
             <FieldInput placeholder="Обувь EU" value={shoeSizeEu} onChange={(event) => setShoeSizeEu(event.target.value)} />
           </div>
 
-          <fieldset className="rounded-[24px] border border-[#f0dce8] bg-[#fff8fd] p-4">
-            <legend className="px-2 text-sm font-medium text-[#302637]">Приватность для новых avatar</legend>
-            <p className={`mb-3 ${mutedTextClassName}`}>Снижаем узнаваемость — не полная анонимность.</p>
-            <div className="grid gap-2">
-              <label className="flex items-center gap-3 text-sm font-normal text-[#302637]">
-                <input checked={hideFace} type="checkbox" onChange={(e) => setHideFace(e.target.checked)} />
-                Скрыть лицо
-              </label>
-              <label className="flex items-center gap-3 text-sm font-normal text-[#302637]">
-                <input checked={hideBackground} type="checkbox" onChange={(e) => setHideBackground(e.target.checked)} />
-                Скрыть фон
-              </label>
-              <label className="flex items-center gap-3 text-sm font-normal text-[#302637]">
-                <input checked={hideFeatures} type="checkbox" onChange={(e) => setHideFeatures(e.target.checked)} />
-                Скрыть отличительные черты
-              </label>
-            </div>
-          </fieldset>
-
-          <Button disabled={saving} size="lg" type="submit">
+          <Button disabled={saving} size="md" type="submit">
             {saving ? "Сохраняем…" : "Сохранить профиль"}
           </Button>
         </form>
@@ -240,7 +225,7 @@ export default function ProfileSettingsClient() {
             value={confirmDelete}
             onChange={(event) => setConfirmDelete(event.target.value)}
           />
-          <Button disabled={deleting} size="lg" type="submit" variant="secondary">
+          <Button disabled={deleting} size="md" type="submit" variant="secondary">
             {deleting ? "Удаляем…" : "Удалить аккаунт навсегда"}
           </Button>
         </form>

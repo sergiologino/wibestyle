@@ -108,10 +108,10 @@ export default function AvatarPrivacyPreview({
             onChange={(checked) => onPrivacyChange({ hideBackground: checked })}
           />
           <FieldCheckbox
-            checked={privacy.hideFeatures}
-            description="Смягчаем отличительные детали"
+            checked={false}
+            description="Скоро — пока недоступно в MVP"
+            disabled
             label="Скрыть отличительные черты"
-            onChange={(checked) => onPrivacyChange({ hideFeatures: checked })}
           />
         </div>
       ) : null}

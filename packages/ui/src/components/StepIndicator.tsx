@@ -17,11 +17,10 @@ export function StepIndicator({ steps, current }: StepIndicatorProps) {
           <li
             key={label}
             className={clsx(
-              "rounded-full px-4 py-2 text-sm font-black transition-[transform,opacity,box-shadow] duration-200",
-              active &&
-                "bg-[linear-gradient(135deg,#ff1fa2,#b100ff)] text-white shadow-[0_10px_28px_rgba(255,31,162,0.28)]",
-              done && !active && "bg-[#fff4fb] text-[#ff1fa2] border border-[#ffd1ed]",
-              !active && !done && "bg-white text-[#6d6273] border border-[#f0d4ea]",
+              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors duration-200",
+              active && "bg-[#ff1fa2] text-white",
+              done && !active && "border border-[#ffd1ed] bg-[#fff4fb] text-[#ff1fa2]",
+              !active && !done && "border border-[#f0d4ea] bg-white text-[#6d6273]",
             )}
           >
             {index + 1}. {label}

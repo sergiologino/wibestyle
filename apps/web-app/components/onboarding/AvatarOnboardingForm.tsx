@@ -124,13 +124,13 @@ export default function AvatarOnboardingForm() {
         clothingSize,
         privacyFaceHidden: hideFace,
         privacyBackgroundHidden: hideBackground,
-        privacyFeaturesHidden: hideFeatures,
+        privacyFeaturesHidden: false,
       });
 
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
         privacyBackgroundHidden: hideBackground,
-        privacyFeaturesHidden: hideFeatures,
+        privacyFeaturesHidden: false,
       });
 
       await api.uploadAvatarPhoto(avatar.id, photoFile);
@@ -216,11 +216,10 @@ export default function AvatarOnboardingForm() {
             </label>
             <AvatarPrivacyPreview
               localPreviewUrl={photoPreviewUrl}
-              privacy={{ hideFace, hideBackground, hideFeatures }}
+              privacy={{ hideFace, hideBackground, hideFeatures: false }}
               onPrivacyChange={(next) => {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
                 if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
-                if (next.hideFeatures !== undefined) setHideFeatures(next.hideFeatures);
               }}
             />
           </section>

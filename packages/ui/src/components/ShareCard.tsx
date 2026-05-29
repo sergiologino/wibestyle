@@ -77,10 +77,8 @@ export function ShareCard({
           )
         )}
 
-        <div className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1 text-xs font-black text-[#ff1fa2] shadow-[0_8px_20px_rgba(52,7,76,0.12)]">
-
-          ✦ Я на стиле
-
+        <div className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1 text-xs font-medium text-[#ff1fa2]">
+          Я на стиле
         </div>
 
         {eliteFrame ? (
@@ -95,15 +93,15 @@ export function ShareCard({
 
         <div>
 
-          <p className="text-sm font-black uppercase tracking-[0.12em] text-[#ff1fa2]">Fashion share</p>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#ff1fa2]">Fashion share</p>
 
-          <p className="mt-1 font-bold text-[#302637]">
+          <p className="mt-1 font-normal text-[#302637]">
 
             {showProductLink && productTitle ? productTitle : "Образ без ссылки на магазин"}
 
           </p>
 
-          <p className="mt-1 text-sm font-bold text-[#6d6273]">{postUrl.replace(/^https?:\/\//, "")}</p>
+          <p className="mt-1 text-sm font-normal text-[#6d6273]">{postUrl.replace(/^https?:\/\//, "")}</p>
 
         </div>
 

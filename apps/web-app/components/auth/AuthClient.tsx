@@ -15,14 +15,14 @@ export default function AuthClient() {
       <div className="inline-flex rounded-full border border-[#ffd1ed] bg-white p-1">
         <button
           type="button"
-          className={`rounded-full px-5 py-2 text-sm font-black ${tab === "phone" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium ${tab === "phone" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
           onClick={() => setTab("phone")}
         >
           Телефон
         </button>
         <button
           type="button"
-          className={`rounded-full px-5 py-2 text-sm font-black ${tab === "password" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium ${tab === "password" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
           onClick={() => setTab("password")}
         >
           Логин / пароль

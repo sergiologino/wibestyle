@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, Pill } from "@wibestyle/ui";
+import { Card } from "@wibestyle/ui";
 import type { GalleryPost } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import ReportPostButton from "@/components/gallery/ReportPostButton";
@@ -39,20 +39,22 @@ export default function GalleryClient() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
-      <Pill>Галерея</Pill>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-4xl font-black tracking-tight">Образы сообщества</h1>
-        <div className="flex rounded-full border border-[#ffd1ed] bg-white p-1 text-sm font-black">
+        <div>
+          <p className="text-eyebrow">Галерея</p>
+          <h1 className="text-display mt-2 text-4xl">Образы сообщества</h1>
+        </div>
+        <div className="flex rounded-full border border-[#ffd1ed] bg-white p-1 text-sm font-medium">
           <button
             type="button"
-            className={`rounded-full px-4 py-2 ${view === "grid" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
+            className={`rounded-full px-4 py-1.5 ${view === "grid" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
             onClick={() => setView("grid")}
           >
             Плитка
           </button>
           <button
             type="button"
-            className={`rounded-full px-4 py-2 ${view === "list" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
+            className={`rounded-full px-4 py-1.5 ${view === "list" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
             onClick={() => setView("list")}
           >
             Список
@@ -62,7 +64,7 @@ export default function GalleryClient() {
 
       {loading ? (
         <Card>
-          <p className="font-bold text-[#6d6273]">Загружаем посты…</p>
+          <p className="text-body">Загружаем посты…</p>
         </Card>
       ) : null}
 
@@ -75,22 +77,22 @@ export default function GalleryClient() {
               <Link
                 key={post.id}
                 href={href}
-                className="group overflow-hidden rounded-[24px] border border-[#ffd1ed] bg-white shadow-[0_12px_40px_rgba(58,12,82,0.08)] transition hover:-translate-y-0.5 hover:border-[#ff1fa2]"
+                className="group overflow-hidden rounded-[24px] border border-[#ffd1ed] bg-white shadow-[0_8px_28px_rgba(58,12,82,0.05)] transition hover:border-[#ff1fa2]/40"
               >
                 <div className="aspect-[4/5] overflow-hidden bg-[#fff4fb]">
                   {imageSrc ? (
                     <img
                       src={imageSrc}
                       alt={post.title}
-                      className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                      className="h-full w-full object-cover transition group-hover:scale-[1.01]"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center font-bold text-[#6d6273]">Нет фото</div>
+                    <div className="flex h-full items-center justify-center text-sm font-normal text-[#6d6273]">Нет фото</div>
                   )}
                 </div>
                 <div className="space-y-1 px-4 py-3">
-                  <p className="line-clamp-2 font-black text-[#302637]">{post.title}</p>
-                  <p className="text-sm font-bold text-[#6d6273]">{post.authorDisplayName ?? "Участник WibeStyle"}</p>
+                  <p className="line-clamp-2 font-normal text-[#302637]">{post.title}</p>
+                  <p className="text-sm font-normal text-[#9a8f99]">{post.authorDisplayName ?? "Участник WibeStyle"}</p>
                 </div>
               </Link>
             );
@@ -108,20 +110,20 @@ export default function GalleryClient() {
                     {imageSrc ? (
                       <img src={imageSrc} alt={post.title} className="aspect-[4/5] w-full object-cover" />
                     ) : (
-                      <div className="flex aspect-[4/5] items-center justify-center font-bold text-[#6d6273]">Нет фото</div>
+                      <div className="flex aspect-[4/5] items-center justify-center text-sm font-normal text-[#6d6273]">Нет фото</div>
                     )}
                   </Link>
                   <div>
-                    <Link href={href} className="text-2xl font-black hover:text-[#ff1fa2]">
+                    <Link href={href} className="text-display-md text-2xl hover:text-[#ff1fa2]">
                       {post.title}
                     </Link>
-                    <p className="mt-1 text-sm font-bold text-[#6d6273]">{post.authorDisplayName ?? "Участник WibeStyle"}</p>
-                    <p className="mt-2 font-bold text-[#6d6273]">
+                    <p className="mt-1 text-sm font-normal text-[#9a8f99]">{post.authorDisplayName ?? "Участник WibeStyle"}</p>
+                    <p className="mt-2 text-sm font-normal text-[#6d6273]">
                       {post.likeCount} ♥ · {post.commentCount} комментариев
                     </p>
                     <button
                       type="button"
-                      className={`mt-4 rounded-full px-4 py-2 font-black ${post.likedByViewer ? "bg-[#ff1fa2] text-white" : "bg-[#fff4fb] text-[#ff1fa2]"}`}
+                      className={`mt-4 rounded-full px-4 py-2 text-sm font-medium ${post.likedByViewer ? "bg-[#ff1fa2] text-white" : "bg-[#fff4fb] text-[#ff1fa2]"}`}
                       onClick={(event) => void toggleLike(post, event)}
                     >
                       {post.likedByViewer ? "♥ Нравится" : "♡ Лайк"}
@@ -139,7 +141,7 @@ export default function GalleryClient() {
 
       {!loading && posts.length === 0 ? (
         <Card>
-          <p className="font-bold text-[#6d6273]">
+          <p className="text-body">
             Пока нет public-постов. Поделись результатом примерки — он появится здесь.
           </p>
         </Card>

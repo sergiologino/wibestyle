@@ -26,12 +26,12 @@ export function ResultReveal({ imageSrc, alt, eliteFrame = false }: ResultReveal
       )}
     >
       {eliteFrame ? (
-        <div className="pointer-events-none absolute inset-0 z-10 rounded-[28px] border-4 border-[linear-gradient(135deg,#ffb347,#ff1fa2)]" />
+        <div className="pointer-events-none absolute inset-0 z-10 rounded-[28px] border-2 border-[#ffb347]" />
       ) : null}
       <img src={imageSrc} alt={alt} className="h-full w-full rounded-[26px] object-cover" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-[26px] bg-[linear-gradient(180deg,transparent,rgba(20,16,26,0.55))] px-5 py-6">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-white/85">Я на стиле</p>
-        <p className="text-lg font-black text-white">Твой новый look ✦</p>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-[26px] bg-[rgba(20,16,26,0.45)] px-5 py-6">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-white/85">Я на стиле</p>
+        <p className="text-base font-normal text-white">Твой новый look</p>
       </div>
     </div>
   );

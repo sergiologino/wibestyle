@@ -34,19 +34,26 @@ export function FieldCheckbox({
   onChange,
   label,
   description,
+  disabled = false,
 }: {
   checked: boolean;
-  onChange: (checked: boolean) => void;
+  onChange?: (checked: boolean) => void;
   label: string;
   description?: string;
+  disabled?: boolean;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#f0dce8] bg-white/70 px-3 py-2.5 transition hover:border-[#ffb8e4]/80">
+    <label
+      className={`flex items-start gap-3 rounded-xl border border-[#f0dce8] bg-white/70 px-3 py-2.5 transition ${
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-[#ffb8e4]/80"
+      }`}
+    >
       <input
         checked={checked}
-        className="mt-1 size-4 rounded border-[#e8d4e3] text-[#ff1fa2] focus:ring-[#ff1fa2]/30"
+        className="mt-1 size-4 rounded border-[#e8d4e3] text-[#ff1fa2] focus:ring-[#ff1fa2]/30 disabled:cursor-not-allowed"
+        disabled={disabled}
         type="checkbox"
-        onChange={(event) => onChange(event.target.checked)}
+        onChange={(event) => onChange?.(event.target.checked)}
       />
       <span className="grid gap-0.5">
         <span className="text-sm font-medium text-[#302637]">{label}</span>

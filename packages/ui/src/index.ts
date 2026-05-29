@@ -28,6 +28,8 @@ export const wibeTokens = {
   },
 } as const;
 
+export { BrandLogo } from "./components/BrandLogo";
+export { BrandMark } from "./components/BrandMark";
 export { Button } from "./components/Button";
 export { Card } from "./components/Card";
 export { Pill } from "./components/Pill";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMockProduct, detectMarketplace, inferGarmentCategory } from "./try-on-flow";
+import { buildMockProduct, buildPhotoProductPreview, detectMarketplace, inferGarmentCategory } from "./try-on-flow";
 
 describe("detectMarketplace", () => {
   it("detects wildberries links", () => {
@@ -22,5 +22,16 @@ describe("buildMockProduct", () => {
 describe("inferGarmentCategory", () => {
   it("infers dress from filename", () => {
     expect(inferGarmentCategory("my-dress-photo.jpg")).toBe("dress");
+  });
+});
+
+describe("buildPhotoProductPreview", () => {
+  it("builds preview with blob image and default sizes", () => {
+    const file = new File(["x"], "look.jpg", { type: "image/jpeg" });
+    const product = buildPhotoProductPreview(file, "dress", "blob:preview");
+    expect(product.imageUrl).toBe("blob:preview");
+    expect(product.title).toBe("Платье");
+    expect(product.sizes).toContain("M");
+    expect(product.marketplace).toBe("other");
   });
 });

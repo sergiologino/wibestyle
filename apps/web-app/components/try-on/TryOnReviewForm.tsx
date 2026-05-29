@@ -45,7 +45,7 @@ export default function TryOnReviewForm({ sessionId, api }: TryOnReviewFormProps
   if (done) {
     return (
       <Card>
-        <p className="font-bold text-[#782cff]">
+        <p className="font-normal text-[#782cff]">
           Спасибо! Отзыв отправлен на модерацию
           {allowPublish ? " — после одобления может появиться на лендинге." : "."}
         </p>
@@ -55,13 +55,13 @@ export default function TryOnReviewForm({ sessionId, api }: TryOnReviewFormProps
 
   return (
     <Card>
-      <h2 className="text-2xl font-black">Как тебе результат?</h2>
-      <p className="mt-2 font-bold text-[#6d6273]">Помоги нам стать лучше — отзыв увидит команда и модератор.</p>
+      <h2 className="text-display-md text-2xl">Как тебе результат?</h2>
+      <p className="text-body mt-2">Помоги нам стать лучше — отзыв увидит команда и модератор.</p>
       <form className="mt-4 grid gap-4" onSubmit={onSubmit}>
-        <label className="font-bold text-[#302637]">
+        <label className="font-normal text-[#302637]">
           Оценка
           <select
-            className="mt-1 w-full rounded-2xl border border-[#ffd1ed] px-4 py-3 font-bold"
+            className="mt-1 w-full rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal"
             value={rating}
             onChange={(event) => setRating(Number(event.target.value))}
           >
@@ -72,10 +72,10 @@ export default function TryOnReviewForm({ sessionId, api }: TryOnReviewFormProps
             ))}
           </select>
         </label>
-        <label className="font-bold text-[#302637]">
+        <label className="font-normal text-[#302637]">
           Отзыв
           <textarea
-            className="mt-1 w-full rounded-2xl border border-[#ffd1ed] px-4 py-3 font-bold"
+            className="mt-1 w-full rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal"
             rows={4}
             maxLength={2000}
             placeholder="Что понравилось? Насколько реалистично село?"
@@ -84,17 +84,17 @@ export default function TryOnReviewForm({ sessionId, api }: TryOnReviewFormProps
             required
           />
         </label>
-        <label className="font-bold text-[#302637]">
+        <label className="font-normal text-[#302637]">
           Имя для публикации (необязательно)
           <input
-            className="mt-1 w-full rounded-2xl border border-[#ffd1ed] px-4 py-3 font-bold"
+            className="mt-1 w-full rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal"
             placeholder="Аня"
             maxLength={40}
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
           />
         </label>
-        <label className="flex items-start gap-3 font-bold text-[#302637]">
+        <label className="flex items-start gap-3 font-normal text-[#302637]">
           <input
             checked={allowPublish}
             type="checkbox"
@@ -105,8 +105,8 @@ export default function TryOnReviewForm({ sessionId, api }: TryOnReviewFormProps
             Разрешаю опубликовать отзыв на сайте после модерации (без фото и личных данных)
           </span>
         </label>
-        {error ? <p className="font-bold text-[#ff1fa2]">{error}</p> : null}
-        <Button disabled={submitting} size="lg" type="submit">
+        {error ? <p className="font-normal text-[#ff1fa2]">{error}</p> : null}
+        <Button disabled={submitting} size="md" type="submit">
           {submitting ? "Отправляем…" : "Отправить отзыв"}
         </Button>
       </form>

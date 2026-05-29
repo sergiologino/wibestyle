@@ -1,6 +1,28 @@
 # AI Changelog
 
-## 2026-05-28 (Personal try-on history + admin gallery delete)
+## 2026-05-28 (VTON result image inlining)
+- noteapp-ai-integration: Grok Imagine скачивает временный xAI URL и возвращает `imageBase64`; WibeStyle сохраняет байты локально без повторной загрузки с `imgen.x.ai`.
+
+## 2026-05-28 (Photo try-on UX parity)
+- Web-app `/try-on/photo`: те же шаги, что у ссылки — превью фото вещи, выбор категории/размера, затем «Запустить AI-примерку» (без мгновенной генерации после upload).
+- API: `selectedSize` для `POST /try-on/sessions/photo`.
+
+## 2026-05-28 (Ozon product card parsing)
+- API: реальный парсинг Ozon через composer/entrypoint API и HTML fallback (`webGallery`, `webSale`, SEO JSON-LD); прокси `/api/v1/marketplaces/ozon/{slug}/image`; убран stub с `/assets/demo-garment.svg`.
+- Ошибки `PRODUCT_IMAGE_NOT_FOUND` / `PRODUCT_PARSE_FAILED` больше не маскируются при разборе ссылки.
+
+## 2026-05-28 (Auth persistence hardening v2)
+- Session: JWT-based access token validity; do not logout when refresh fails but access JWT is still valid; restore from localStorage if React state desyncs; `ensureSession()` before gate redirects and try-on auth checks.
+
+## 2026-05-28 (Auth persistence + profile nav)
+- Web-app: fix overnight logout — re-read tokens from localStorage after refresh lock (multi-tab race), refresh when expiry unknown, keep session on transient refresh errors, only clear on rejected refresh token.
+- TopNavBar: «Профиль» when logged in, hide «Войти»; profile page logout button, removed duplicate privacy checkboxes; «Скрыть отличительные черты» disabled for MVP.
+
+## 2026-05-28 (UI refresh — lighter fashion typography)
+- `@wibestyle/ui`: solid buttons (no gradients), smaller button sizes, `BrandLogo`/`BrandMark` (cat-eye sunglasses), lighter ShareCard/ResultReveal/BeforeAfterSlider.
+- Web-app: section titles as elegant text instead of Pill tags; thinner typography (`text-display`, `text-body`, `text-eyebrow`); favicon `app/icon.svg`.
+- Link try-on: button copy «Подтянуть вещь по ссылке»; size pills and progress bars without gradients.
+
 - `GET /try-on/sessions/mine` — все завершённые примерки пользователя (private, без публикации в галерею).
 - Web-app `/home`: плитка «Твои примерки» с переходом на `/try-on/result/{id}`.
 - Admin `/gallery`: вкладки «Жалобы» и «Посты галереи»; `DELETE /admin/gallery/posts/{id}` — безвозвратное удаление; hide сохранён.

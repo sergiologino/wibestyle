@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button, Card, Pill } from "@wibestyle/ui";
+import { Button, Card } from "@wibestyle/ui";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import { promoErrorMessage, validatePromoCodeInput } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
@@ -101,16 +101,16 @@ export default function OtpForm() {
 
   return (
     <Card>
-      <Pill tone="soft">5 бесплатных AI-примерок</Pill>
-      <h1 className="mt-4 text-3xl font-black tracking-tight">Вход по телефону</h1>
-      <p className="mt-3 font-bold text-[#6d6273]">
+      <p className="text-eyebrow">5 бесплатных AI-примерок</p>
+      <h1 className="text-display-md mt-4 text-3xl">Вход по телефону</h1>
+      <p className="text-body mt-3">
         Получи код, войди и создай avatar-профиль для первой примерки.
       </p>
 
       {!requestId ? (
         <form className="mt-6 grid gap-3" onSubmit={startOtp}>
           <input
-            className="rounded-2xl border border-[#ffd1ed] px-4 py-4 font-bold outline-none focus:border-[#ff1fa2]"
+            className="rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal outline-none focus:border-[#ff1fa2]"
             placeholder="+7 900 000-00-00"
             type="tel"
             value={phone}
@@ -118,35 +118,35 @@ export default function OtpForm() {
             required
           />
           <input
-            className="rounded-2xl border border-[#ffd1ed] px-4 py-4 font-bold uppercase outline-none focus:border-[#ff1fa2]"
+            className="rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal uppercase outline-none focus:border-[#ff1fa2]"
             placeholder="Промокод (латиница A-Z, опционально)"
             value={promoCode}
             onChange={(event) => setPromoCode(event.target.value)}
             autoCapitalize="characters"
             spellCheck={false}
           />
-          <Button disabled={loading} size="lg" type="submit">
+          <Button disabled={loading} size="md" type="submit">
             {loading ? "Отправляем…" : "Получить код"}
           </Button>
         </form>
       ) : (
         <form className="mt-6 grid gap-3" onSubmit={verifyOtp}>
           <input
-            className="rounded-2xl border border-[#ffd1ed] px-4 py-4 font-bold outline-none focus:border-[#ff1fa2]"
+            className="rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal outline-none focus:border-[#ff1fa2]"
             inputMode="numeric"
             placeholder="Код из SMS (dev: 0000)"
             value={code}
             onChange={(event) => setCode(event.target.value)}
             required
           />
-          <Button disabled={loading} size="lg" type="submit">
+          <Button disabled={loading} size="md" type="submit">
             {loading ? "Проверяем…" : "Войти"}
           </Button>
         </form>
       )}
 
-      {promoMessage ? <p className="mt-3 font-bold text-[#782cff]">{promoMessage}</p> : null}
-      {error ? <p className="mt-3 font-bold text-[#ff1fa2]">{error}</p> : null}
+      {promoMessage ? <p className="mt-3 font-normal text-[#782cff]">{promoMessage}</p> : null}
+      {error ? <p className="mt-3 font-normal text-[#ff1fa2]">{error}</p> : null}
     </Card>
   );
 }

@@ -23,10 +23,40 @@ export function buildMockProduct(url: string): ProductPreview {
   };
 }
 
+export const DEFAULT_TRYON_SIZES = ["XS", "S", "M", "L", "XL"] as const;
+
+export const GARMENT_CATEGORY_LABELS: Record<GarmentCategory, string> = {
+  dress: "Платье",
+  top: "Верх",
+  pants: "Брюки",
+  jacket: "Пиджак",
+  shoes: "Обувь",
+  accessory: "Аксессуар",
+  other: "Другое",
+};
+
 export function inferGarmentCategory(fileName: string): GarmentCategory {
   const lower = fileName.toLowerCase();
   if (lower.includes("dress") || lower.includes("plat")) return "dress";
   if (lower.includes("shoe") || lower.includes("obuv")) return "shoes";
   if (lower.includes("jacket") || lower.includes("pidzh")) return "jacket";
   return "other";
+}
+
+export function buildPhotoProductPreview(
+  file: File,
+  category: GarmentCategory,
+  previewUrl: string,
+): ProductPreview {
+  return {
+    id: `photo_${Date.now()}`,
+    marketplace: "other",
+    title: GARMENT_CATEGORY_LABELS[category],
+    brand: "Фото из галереи",
+    priceRub: 0,
+    imageUrl: previewUrl,
+    sizes: [...DEFAULT_TRYON_SIZES],
+    productUrl: "",
+    categories: [category],
+  };
 }

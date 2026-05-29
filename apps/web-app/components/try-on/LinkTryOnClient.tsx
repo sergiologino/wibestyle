@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Button, Card, Pill, StepIndicator } from "@wibestyle/ui";
+import { Button, Card, StepIndicator } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { ProductPreview, SizeAdvice } from "@wibestyle/shared-types";
 import { isFeatureEnabled } from "@wibestyle/shared-types";
@@ -13,15 +13,27 @@ import { canStartGeneration } from "@/lib/onboarding-flow";
 import { formatMarketplaceLinkError } from "@/lib/marketplace-link-error";
 import { formatTryOnError } from "@/lib/try-on-error-message";
 import { buildAuthRedirectPath } from "@/lib/auth-redirect";
+import { isAuthenticatedSession } from "@/lib/session-auth";
 import { useFeatureFlags } from "@/lib/use-feature-flags";
 
 const steps = ["Ссылка", "Товар", "Размер", "Генерация"];
+
+type ParseLinkPhase = "fetching" | "parsing";
+
+const PARSE_PHASE_LABEL: Record<ParseLinkPhase, string> = {
+  fetching: "Получение карточки..",
+  parsing: "Разбираю карточку....",
+};
+
+/** After this delay we assume marketplace page is reached and parsing started. */
+const PARSE_FETCHING_MS = 900;
 
 export default function LinkTryOnClient() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const { api, profile, refreshProfile, accessToken, sessionReady } = useAppSession();
+  const { api, profile, refreshProfile, accessToken, refreshToken, accessTokenExpiresAt, sessionReady, ensureSession } =
+    useAppSession();
   const flags = useFeatureFlags();
   const [step, setStep] = useState(0);
   const [url, setUrl] = useState("");
@@ -29,6 +41,7 @@ export default function LinkTryOnClient() {
   const [size, setSize] = useState("M");
   const [sizeAdvice, setSizeAdvice] = useState<SizeAdvice | null>(null);
   const [loading, setLoading] = useState(false);
+  const [parsePhase, setParsePhase] = useState<ParseLinkPhase | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,9 +67,15 @@ export default function LinkTryOnClient() {
     return buildAuthRedirectPath(currentPath);
   }
 
-  function requireAuth(): boolean {
-    if (accessToken) {
-      return true;
+  async function requireAuth(): Promise<boolean> {
+    if (!sessionReady) {
+      return false;
+    }
+    if (accessToken || refreshToken || profile) {
+      const ok = await ensureSession();
+      if (ok) {
+        return true;
+      }
     }
     router.push(authRedirectPath());
     return false;
@@ -65,7 +84,13 @@ export default function LinkTryOnClient() {
   async function parseLink(event?: FormEvent) {
     event?.preventDefault();
     setLoading(true);
+    setParsePhase("fetching");
     setError(null);
+
+    const parsePhaseTimer = window.setTimeout(() => {
+      setParsePhase((current) => (current === "fetching" ? "parsing" : current));
+    }, PARSE_FETCHING_MS);
+
     try {
       const parsed = await api.parseLink(url);
       setProduct(parsed.product);
@@ -78,7 +103,9 @@ export default function LinkTryOnClient() {
       const code = err instanceof ApiError ? err.code : undefined;
       setError(formatMarketplaceLinkError(message, code));
     } finally {
+      window.clearTimeout(parsePhaseTimer);
       setLoading(false);
+      setParsePhase(null);
     }
   }
 
@@ -103,7 +130,7 @@ export default function LinkTryOnClient() {
   }
 
   async function startGeneration() {
-    if (!requireAuth()) {
+    if (!(await requireAuth())) {
       return;
     }
 
@@ -128,6 +155,11 @@ export default function LinkTryOnClient() {
     } catch (err) {
       setStep(2);
       if (err instanceof ApiError && err.status === 401) {
+        const restored = await ensureSession();
+        if (restored) {
+          setError("Сессия обновлена. Запустите примерку ещё раз.");
+          return;
+        }
         setError("Сессия истекла. Войди снова, чтобы запустить примерку.");
         router.push(authRedirectPath());
         return;
@@ -148,23 +180,31 @@ export default function LinkTryOnClient() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
-      <Pill>Примерка по ссылке</Pill>
+      <div>
+        <h1 className="text-display text-3xl">Примерка по ссылке</h1>
+        <p className="text-body mt-2">Вставь ссылку на WB или Ozon — мы подтянем карточку товара.</p>
+      </div>
       <StepIndicator current={step} steps={steps} />
 
       {step === 0 ? (
         <Card>
-          <h1 className="text-3xl font-black tracking-tight">Вставь ссылку WB или Ozon</h1>
+          <h2 className="text-display-md text-2xl">Вставь ссылку WB или Ozon</h2>
           <form className="mt-6 grid gap-3" onSubmit={parseLink}>
             <input
-              className="rounded-2xl border border-[#ffd1ed] px-4 py-4 font-bold outline-none focus:border-[#ff1fa2]"
+              className="rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal outline-none focus:border-[#ff1fa2]"
               placeholder="https://www.wildberries.ru/..."
               value={url}
               onChange={(event) => setUrl(event.target.value)}
               required
             />
-            <Button disabled={loading} size="lg" type="submit">
-              {loading ? "Загружаем карточку…" : "Разобрать товар"}
+            <Button disabled={loading} loading={loading} size="md" type="submit">
+              Подтянуть вещь по ссылке
             </Button>
+            {parsePhase ? (
+              <p aria-live="polite" className="text-center text-xs font-normal text-[#9a8f99]">
+                {PARSE_PHASE_LABEL[parsePhase]}
+              </p>
+            ) : null}
           </form>
         </Card>
       ) : null}
@@ -178,12 +218,12 @@ export default function LinkTryOnClient() {
               className="aspect-[3/4] w-full rounded-[22px] object-cover shadow-sm"
             />
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.12em] text-[#782cff]">{product.brand}</p>
-              <h2 className="mt-2 text-2xl font-black">{product.title}</h2>
-              <p className="mt-2 text-2xl font-black text-[#ff1fa2]">{product.priceRub.toLocaleString("ru-RU")} ₽</p>
+              <p className="text-eyebrow text-[#782cff]">{product.brand}</p>
+              <h2 className="text-display-md mt-2 text-2xl">{product.title}</h2>
+              <p className="mt-2 text-2xl font-normal text-[#ff1fa2]">{product.priceRub.toLocaleString("ru-RU")} ₽</p>
 
               {product.sizeChart?.found ? (
-                <p className="mt-4 rounded-2xl border border-[#d4c4ff] bg-[#f8f4ff] px-4 py-3 text-sm font-bold text-[#302637]">
+                <p className="mt-4 rounded-2xl border border-[#d4c4ff] bg-[#f8f4ff] px-4 py-3 text-sm font-normal text-[#302637]">
                   Нашли размерную сетку продавца
                   {product.suggestedSize ? ` — для вашей фигуры лучше начать с ${product.suggestedSize}` : ""}
                 </p>
@@ -191,13 +231,13 @@ export default function LinkTryOnClient() {
 
               {step >= 2 ? (
                 <div className="mt-6 border-t border-[#ffd1ed] pt-6">
-                  <h3 className="text-lg font-black">Какой размер примерить?</h3>
-                  <div className="mt-4 flex flex-wrap gap-3">
+                  <h3 className="text-display-md text-lg">Какой размер примерить?</h3>
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {product.sizes.map((item) => (
                       <button
                         key={item}
                         type="button"
-                        className={`rounded-full px-5 py-3 font-black transition-[transform,opacity] duration-200 ${size === item ? "bg-[linear-gradient(135deg,#ff1fa2,#b100ff)] text-white" : "border border-[#ffd1ed] bg-white text-[#6d6273]"}`}
+                        className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${size === item ? "bg-[#ff1fa2] text-white" : "border border-[#ffd1ed] bg-white text-[#6d6273]"}`}
                         onClick={() => {
                           setSize(item);
                           void loadSizeAdvice(item);
@@ -209,11 +249,11 @@ export default function LinkTryOnClient() {
                   </div>
                   {sizeAdvice && sizeAdvice.status === "warning" ? (
                     <div className="mt-4 rounded-2xl border border-[#ffb347] bg-[#fffaf3] px-4 py-3">
-                      <p className="text-sm font-bold text-[#302637]">{sizeAdvice.reasons.join(" ")}</p>
+                      <p className="text-sm font-normal text-[#302637]">{sizeAdvice.reasons.join(" ")}</p>
                       {sizeAdvice.recommendedSize && sizeAdvice.recommendedSize !== size ? (
                         <button
                           type="button"
-                          className="mt-3 font-black text-[#ff1fa2]"
+                          className="text-link mt-3 text-sm"
                           onClick={() => {
                             setSize(sizeAdvice.recommendedSize!);
                             void loadSizeAdvice(sizeAdvice.recommendedSize!);
@@ -232,29 +272,31 @@ export default function LinkTryOnClient() {
           {step === 1 ? (
             <Button
               className="mt-6"
-              size="lg"
+              size="md"
               onClick={() => {
-                if (!requireAuth()) return;
-                setStep(2);
+                void (async () => {
+                  if (!(await requireAuth())) return;
+                  setStep(2);
+                })();
               }}
             >
               Выбрать размер
             </Button>
           ) : null}
 
-          {step === 2 && !accessToken && sessionReady ? (
-            <p className="mt-6 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm font-bold text-[#6d6273]">
+          {step === 2 && sessionReady && !isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
+            <p className="mt-6 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm font-normal text-[#6d6273]">
               Чтобы запустить примерку,{" "}
-              <Link href={authRedirectPath()} className="text-[#ff1fa2] underline">
+              <Link href={authRedirectPath()} className="text-link">
                 войди в аккаунт
               </Link>
               .
             </p>
           ) : null}
 
-          {step === 2 && accessToken ? (
-            <Button className="mt-6" disabled={loading || !sessionReady} size="lg" onClick={startGeneration}>
-              Запустить AI-примерку ✨
+          {step === 2 && sessionReady && isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
+            <Button className="mt-6" disabled={loading} size="md" onClick={startGeneration}>
+              Запустить AI-примерку
             </Button>
           ) : null}
         </Card>
@@ -262,19 +304,19 @@ export default function LinkTryOnClient() {
 
       {step === 3 ? (
         <Card>
-          <h3 className="text-xl font-black">Собираем твой look…</h3>
-          <p className="mt-2 font-normal text-[#6d6273]">Нейростилист надевает {product?.title} на твой образ…</p>
-          <div className="mt-6 h-3 overflow-hidden rounded-full bg-[#ffe4f5]">
-            <div className="h-full w-2/3 animate-pulse rounded-full bg-[linear-gradient(135deg,#ff1fa2,#b100ff)]" />
+          <h3 className="text-display-md text-xl">Собираем твой look…</h3>
+          <p className="text-body mt-2">Нейростилист надевает {product?.title} на твой образ…</p>
+          <div className="mt-6 h-2 overflow-hidden rounded-full bg-[#ffe4f5]">
+            <div className="h-full w-2/3 animate-pulse rounded-full bg-[#ff1fa2]" />
           </div>
         </Card>
       ) : null}
 
       {error ? (
-        <p className="rounded-2xl border border-[#ffb8e4] bg-[#fff0f8] px-4 py-3 text-sm font-bold text-[#c01278]">{error}</p>
+        <p className="rounded-2xl border border-[#ffb8e4] bg-[#fff0f8] px-4 py-3 text-sm font-normal text-[#c01278]">{error}</p>
       ) : null}
 
-      <Link href="/try-on" className="font-bold text-[#ff1fa2]">← Назад к выбору сценария</Link>
+      <Link href="/try-on" className="text-link text-sm">← Назад к выбору сценария</Link>
     </div>
   );
 }

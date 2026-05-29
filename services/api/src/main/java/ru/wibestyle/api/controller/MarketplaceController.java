@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import ru.wibestyle.api.dto.ParseLinkRequest;
+import ru.wibestyle.api.marketplace.OzonCatalog;
 import ru.wibestyle.api.service.MarketplaceService;
 import ru.wibestyle.api.support.AuthSupport;
 
@@ -49,6 +50,14 @@ public class MarketplaceController {
         byte[] image = marketplaceService.loadWildberriesImage(productId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("image/webp"))
+                .body(image);
+    }
+
+    @GetMapping("/ozon/{productSlug}/image")
+    public ResponseEntity<byte[]> ozonImage(@PathVariable String productSlug) {
+        byte[] image = marketplaceService.loadOzonImage(productSlug);
+        return ResponseEntity.ok()
+                .contentType(OzonCatalog.detectImageMediaType(image))
                 .body(image);
     }
 }

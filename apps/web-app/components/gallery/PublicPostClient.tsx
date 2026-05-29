@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button, Card, Pill, ShareCard } from "@wibestyle/ui";
+import { Button, Card, ShareCard } from "@wibestyle/ui";
 import type { GalleryPost } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import ReportPostButton from "@/components/gallery/ReportPostButton";
@@ -51,7 +51,7 @@ export default function PublicPostClient({ slug, initialPost, initialComments }:
     return (
       <div className="mx-auto max-w-3xl px-4 py-10">
         <Card>
-          <p className="font-bold text-[#c01278]">{error ?? "Загрузка…"}</p>
+          <p className="font-normal text-[#c01278]">{error ?? "Загрузка…"}</p>
         </Card>
       </div>
     );
@@ -63,7 +63,7 @@ export default function PublicPostClient({ slug, initialPost, initialComments }:
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
       <div className="flex items-center justify-between gap-4">
-        <Pill>Я на стиле</Pill>
+        <p className="text-eyebrow">Я на стиле</p>
         <Link href="/auth">
           <Button size="md">Войти в приложение</Button>
         </Link>
@@ -72,12 +72,12 @@ export default function PublicPostClient({ slug, initialPost, initialComments }:
       {imageSrc ? (
         <img src={imageSrc} alt={post.title} className="rounded-[28px] object-cover" />
       ) : null}
-      <h1 className="text-4xl font-black">{post.title}</h1>
-      <p className="font-bold text-[#6d6273]">Образ от {author}</p>
-      {post.description ? <p className="font-bold text-[#6d6273]">{post.description}</p> : null}
+      <h1 className="text-display text-4xl">{post.title}</h1>
+      <p className="text-body">Образ от {author}</p>
+      {post.description ? <p className="text-body">{post.description}</p> : null}
 
       {post.productLinkVisible && post.productUrl ? (
-        <Link href={post.productUrl} target="_blank" className="font-bold text-[#ff1fa2]">
+        <Link href={post.productUrl} target="_blank" className="text-link text-sm">
           Открыть товар {post.productTitle ? `· ${post.productTitle}` : ""}
         </Link>
       ) : null}
@@ -94,17 +94,17 @@ export default function PublicPostClient({ slug, initialPost, initialComments }:
       <ReportPostButton postId={post.id} accessToken={accessToken} api={api} returnPath={`/p/${slug}`} />
 
       <Card>
-        <h2 className="text-xl font-black">Комментарии</h2>
+        <h2 className="text-display-md text-xl">Комментарии</h2>
         <div className="mt-4 grid gap-3">
           {comments.map((comment) => (
-            <p key={comment.id} className="rounded-2xl bg-[#fff8fd] px-4 py-3 font-bold text-[#302637]">
+            <p key={comment.id} className="rounded-2xl bg-[#fff8fd] px-4 py-3 font-normal text-[#302637]">
               {comment.body}
             </p>
           ))}
         </div>
         <div className="mt-4 flex gap-2">
           <input
-            className="flex-1 rounded-2xl border border-[#ffd1ed] px-4 py-3 font-bold outline-none focus:border-[#ff1fa2]"
+            className="flex-1 rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal outline-none focus:border-[#ff1fa2]"
             placeholder="Напиши комментарий"
             value={commentText}
             onChange={(event) => setCommentText(event.target.value)}
@@ -114,7 +114,7 @@ export default function PublicPostClient({ slug, initialPost, initialComments }:
       </Card>
 
       <Link href="/try-on">
-        <Button size="lg">Примерить на себе</Button>
+        <Button size="md">Примерить на себе</Button>
       </Link>
     </div>
   );

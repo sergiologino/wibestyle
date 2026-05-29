@@ -27,7 +27,8 @@ function OAuthCallbackInner() {
     });
     void meClient.me().then((me) => {
       const phone = me.user.phone ?? me.user.login ?? me.user.email ?? "";
-      setAuth(accessToken, phone, me.profile, refreshToken);
+      const expiresIn = Number(searchParams.get("expiresIn")) || undefined;
+      setAuth(accessToken, phone, me.profile, refreshToken, expiresIn);
       router.replace(
         resolvePostAuthRoute({
           newUser,

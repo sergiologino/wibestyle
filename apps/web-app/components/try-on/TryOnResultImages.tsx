@@ -36,7 +36,7 @@ export function TryOnBeforeAfter({ beforeSrc, afterSrc }: TryOnBeforeAfterProps)
       <span className="absolute bottom-4 left-4 rounded-full bg-white/92 px-3 py-1 text-xs font-medium text-[#ff1fa2]">
         До
       </span>
-      <span className="absolute bottom-4 right-4 rounded-full bg-[linear-gradient(135deg,#ff1fa2,#b100ff)] px-3 py-1 text-xs font-medium text-white">
+      <span className="absolute bottom-4 right-4 rounded-full bg-[#ff1fa2] px-3 py-1 text-xs font-medium text-white">
         После
       </span>
     </div>
@@ -51,9 +51,9 @@ export function TryOnResultHero({ imageSrc }: { imageSrc: string }) {
         className="h-full w-full rounded-[26px] object-contain object-center"
         src={imageSrc}
       />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-[26px] bg-[linear-gradient(180deg,transparent,rgba(20,16,26,0.55))] px-5 py-6">
-        <p className="text-sm font-medium uppercase tracking-[0.18em] text-white/85">Я на стиле</p>
-        <p className="text-lg font-semibold text-white">Твой новый look ✦</p>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-[26px] bg-[rgba(20,16,26,0.45)] px-5 py-6">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-white/85">Я на стиле</p>
+        <p className="text-base font-normal text-white">Твой новый look</p>
       </div>
     </div>
   );

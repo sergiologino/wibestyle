@@ -12,6 +12,7 @@ import ru.wibestyle.api.domain.AvatarSnapshotEntity;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.service.AiIntegrationLogService;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -184,24 +185,105 @@ public class NoteappAiClient {
                 return ProcessResult.failure("AI_GENERATION_FAILED", error);
             }
 
-            String imageUrl = extractImageUrl(response.path("response"));
-            if (imageUrl == null) {
-                log.warn("Noteapp try-on success but no image URL in response");
+            ImageResult imageResult = extractImageResult(response.path("response"));
+            if (imageResult == null) {
+                log.warn("Noteapp try-on success but no image in response");
                 logService.logInboundResponse(
                         session, false, requestId, networkUsed, provider, executionTimeMs,
-                        "No image URL in AI response", responseSummary
+                        "No image in AI response", responseSummary
                 );
-                return ProcessResult.failure("AI_GENERATION_FAILED", "No image URL in AI response");
+                return ProcessResult.failure("AI_GENERATION_FAILED", "No image in AI response");
             }
 
+            byte[] imageBytes = imageResult.bytes();
+            String sourceUrl = imageResult.sourceUrl();
             Map<String, Object> successSummary = new LinkedHashMap<>(responseSummary);
-            successSummary.put("imageUrl", imageUrl);
+            if (sourceUrl != null) {
+                successSummary.put("sourceImageUrl", sourceUrl);
+            }
+            successSummary.put("imageBytes", imageBytes != null ? imageBytes.length : 0);
             logService.logInboundResponse(session, true, requestId, networkUsed, provider, executionTimeMs, null, successSummary);
-            return ProcessResult.success(requestId, networkUsed, executionTimeMs, imageUrl);
+            return ProcessResult.success(requestId, networkUsed, executionTimeMs, sourceUrl, imageBytes);
         } catch (RestClientException ex) {
             log.warn("Noteapp AI call failed baseUrl={}: {}", properties.getBaseUrl(), ex.getMessage());
             logService.logInboundResponse(session, false, null, null, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()));
             return ProcessResult.failure("AI_PROVIDER_TIMEOUT", ex.getMessage());
+        }
+    }
+
+    private ImageResult extractImageResult(JsonNode responseBody) {
+        if (responseBody == null || responseBody.isMissingNode()) {
+            return null;
+        }
+
+        String topLevelBase64 = responseBody.path("imageBase64").asText(null);
+        if (topLevelBase64 != null && !topLevelBase64.isBlank()) {
+            byte[] bytes = decodeBase64Payload(topLevelBase64);
+            if (bytes != null && bytes.length > 0) {
+                return new ImageResult(bytes, responseBody.path("sourceImageUrl").asText(null));
+            }
+        }
+
+        JsonNode data = responseBody.path("data");
+        if (data.isArray()) {
+            for (JsonNode item : data) {
+                ImageResult fromItem = imageFromNode(item);
+                if (fromItem != null) {
+                    return fromItem;
+                }
+            }
+        }
+
+        JsonNode output = responseBody.path("output");
+        if (output.isArray()) {
+            for (JsonNode item : output) {
+                ImageResult fromItem = imageFromNode(item);
+                if (fromItem != null) {
+                    return fromItem;
+                }
+            }
+        }
+
+        String imageUrl = extractImageUrl(responseBody);
+        if (imageUrl != null) {
+            return ImageResult.fromUrl(imageUrl);
+        }
+        return null;
+    }
+
+    private ImageResult imageFromNode(JsonNode item) {
+        if (item == null || item.isMissingNode()) {
+            return null;
+        }
+        String base64 = item.path("base64").asText(null);
+        if (base64 != null && !base64.isBlank()) {
+            byte[] bytes = decodeBase64Payload(base64);
+            if (bytes != null && bytes.length > 0) {
+                return new ImageResult(bytes, item.path("sourceUrl").asText(null));
+            }
+        }
+        String url = firstUrl(item);
+        return url != null ? ImageResult.fromUrl(url) : null;
+    }
+
+    private static byte[] decodeBase64Payload(String value) {
+        String trimmed = value.trim();
+        if (trimmed.startsWith("data:")) {
+            int comma = trimmed.indexOf(',');
+            if (comma > 0 && comma < trimmed.length() - 1) {
+                trimmed = trimmed.substring(comma + 1);
+            }
+        }
+        try {
+            return Base64.getDecoder().decode(trimmed);
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private record ImageResult(byte[] bytes, String sourceUrl) {
+        static ImageResult fromUrl(String url) {
+            return new ImageResult(null, url);
         }
     }
 
@@ -303,15 +385,16 @@ public class NoteappAiClient {
             String provider,
             long executionTimeMs,
             String imageUrl,
+            byte[] imageBytes,
             String errorCode,
             String errorMessage
     ) {
-        static ProcessResult success(String requestId, String provider, long executionTimeMs, String imageUrl) {
-            return new ProcessResult(true, requestId, provider, executionTimeMs, imageUrl, null, null);
+        static ProcessResult success(String requestId, String provider, long executionTimeMs, String imageUrl, byte[] imageBytes) {
+            return new ProcessResult(true, requestId, provider, executionTimeMs, imageUrl, imageBytes, null, null);
         }
 
         static ProcessResult failure(String errorCode, String errorMessage) {
-            return new ProcessResult(false, null, null, 0, null, errorCode, errorMessage);
+            return new ProcessResult(false, null, null, 0, null, null, errorCode, errorMessage);
         }
 
         public static ProcessResult failed(String errorCode, String errorMessage) {

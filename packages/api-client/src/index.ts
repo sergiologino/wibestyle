@@ -277,11 +277,19 @@ export class WibeStyleApiClient {
     });
   }
 
-  createPhotoTryOnSession(file: File, category: string, sourceType: "garment_photo" | "gallery_upload" = "gallery_upload") {
+  createPhotoTryOnSession(
+    file: File,
+    category: string,
+    sourceType: "garment_photo" | "gallery_upload" = "gallery_upload",
+    selectedSize?: string,
+  ) {
     const body = new FormData();
     body.append("photo", file);
     body.append("category", category);
     body.append("sourceType", sourceType);
+    if (selectedSize) {
+      body.append("selectedSize", selectedSize);
+    }
     return this.request<{ session: TryOnSessionRecord }>("/api/v1/try-on/sessions/photo", {
       method: "POST",
       body,

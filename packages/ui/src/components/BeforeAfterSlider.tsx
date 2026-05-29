@@ -39,10 +39,10 @@ export function BeforeAfterSlider({
         value={position}
         onChange={(event) => setPosition(Number(event.target.value))}
       />
-      <span className="absolute left-4 bottom-4 rounded-full bg-white/92 px-3 py-1 text-xs font-black text-[#ff1fa2] shadow-[0_8px_20px_rgba(52,7,76,0.12)]">
+      <span className="absolute bottom-4 left-4 rounded-full bg-white/92 px-3 py-1 text-xs font-medium text-[#ff1fa2]">
         {beforeLabel}
       </span>
-      <span className="absolute right-4 bottom-4 rounded-full bg-[linear-gradient(135deg,#ff1fa2,#b100ff)] px-3 py-1 text-xs font-black text-white shadow-[0_8px_20px_rgba(255,31,162,0.28)]">
+      <span className="absolute bottom-4 right-4 rounded-full bg-[#ff1fa2] px-3 py-1 text-xs font-medium text-white">
         {afterLabel}
       </span>
     </div>

@@ -3,25 +3,47 @@ import type { ButtonHTMLAttributes } from "react";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost";
-  size?: "md" | "lg";
+  size?: "sm" | "md" | "lg";
+  loading?: boolean;
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-[18px] font-black border-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed transition-[transform,opacity,box-shadow] duration-200";
+  "inline-flex max-w-full items-center justify-center gap-1.5 rounded-2xl border-0 font-medium leading-snug text-center transition-[transform,opacity,background-color,box-shadow] duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60";
 
 const variants = {
-  primary:
-    "text-white bg-[linear-gradient(135deg,#ff1fa2,#b100ff)] shadow-[0_12px_34px_rgba(255,31,162,0.38),0_4px_10px_rgba(120,44,255,0.18)] hover:-translate-y-0.5",
-  secondary:
-    "text-[#ff1fa2] bg-white shadow-[0_10px_30px_rgba(52,7,76,0.12),0_2px_8px_rgba(255,31,162,0.08)] hover:-translate-y-0.5",
-  ghost: "text-[#6d6273] bg-transparent hover:text-[#ff1fa2]",
+  primary: "bg-[#ff1fa2] text-white shadow-[0_8px_24px_rgba(255,31,162,0.22)] hover:bg-[#eb1692]",
+  secondary: "border border-[#ffd1ed] bg-white text-[#ff1fa2] shadow-[0_6px_18px_rgba(58,12,82,0.06)] hover:bg-[#fff8fd]",
+  ghost: "bg-transparent text-[#6d6273] hover:bg-[#fff4fb] hover:text-[#ff1fa2]",
 };
 
 const sizes = {
-  md: "px-5 py-3 text-sm",
-  lg: "px-7 py-4 text-base",
+  sm: "min-h-8 px-3 py-1.5 text-xs",
+  md: "min-h-9 px-4 py-2 text-sm",
+  lg: "min-h-10 px-5 py-2.5 text-sm",
 };
 
-export function Button({ variant = "primary", size = "md", className, ...props }: ButtonProps) {
-  return <button className={clsx(base, variants[variant], sizes[size], className)} {...props} />;
+export function Button({
+  variant = "primary",
+  size = "md",
+  className,
+  loading = false,
+  disabled,
+  children,
+  ...props
+}: ButtonProps) {
+  return (
+    <button
+      className={clsx(base, variants[variant], sizes[size], className)}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading ? (
+        <span
+          aria-hidden
+          className="size-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+        />
+      ) : null}
+      {children}
+    </button>
+  );
 }

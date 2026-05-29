@@ -20,7 +20,7 @@ export default function TryOnHistoryGrid({
   if (loading) {
     return (
       <Card>
-        <p className="font-bold text-[#6d6273]">Загружаем твои примерки…</p>
+        <p className="text-body">Загружаем твои примерки…</p>
       </Card>
     );
   }
@@ -28,7 +28,7 @@ export default function TryOnHistoryGrid({
   if (items.length === 0) {
     return (
       <Card>
-        <p className="font-bold text-[#6d6273]">{emptyMessage}</p>
+        <p className="text-body">{emptyMessage}</p>
       </Card>
     );
   }
@@ -42,23 +42,23 @@ export default function TryOnHistoryGrid({
           <Link
             key={item.sessionId}
             href={href}
-            className="group overflow-hidden rounded-[24px] border border-[#ffd1ed] bg-white shadow-[0_12px_40px_rgba(58,12,82,0.08)] transition hover:-translate-y-0.5 hover:border-[#ff1fa2]"
+            className="group overflow-hidden rounded-[24px] border border-[#ffd1ed] bg-white shadow-[0_8px_28px_rgba(58,12,82,0.05)] transition hover:border-[#ff1fa2]/40"
           >
             <div className="aspect-[4/5] overflow-hidden bg-[#fff4fb]">
               {item.afterImageUrl ? (
                 <ApiImage
                   alt={title}
-                  className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                  className="h-full w-full object-cover transition group-hover:scale-[1.01]"
                   src={item.afterImageUrl}
                 />
               ) : (
-                <div className="flex h-full items-center justify-center font-bold text-[#6d6273]">Нет фото</div>
+                <div className="flex h-full items-center justify-center text-sm font-normal text-[#6d6273]">Нет фото</div>
               )}
             </div>
             <div className="space-y-1 px-4 py-3">
-              <p className="line-clamp-2 font-black text-[#302637]">{title}</p>
+              <p className="line-clamp-2 font-normal text-[#302637]">{title}</p>
               {item.selectedSize ? (
-                <p className="text-sm font-bold text-[#6d6273]">Размер {item.selectedSize}</p>
+                <p className="text-sm font-normal text-[#9a8f99]">Размер {item.selectedSize}</p>
               ) : null}
             </div>
           </Link>

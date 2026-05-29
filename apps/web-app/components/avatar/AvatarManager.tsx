@@ -135,7 +135,7 @@ export default function AvatarManager() {
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
         privacyBackgroundHidden: hideBackground,
-        privacyFeaturesHidden: hideFeatures,
+        privacyFeaturesHidden: false,
       });
       await api.uploadAvatarPhoto(avatar.id, newPhoto);
       await api.validateAvatar(avatar.id);
@@ -175,11 +175,10 @@ export default function AvatarManager() {
           <div className="mt-4">
             <AvatarPrivacyPreview
               localPreviewUrl={newPreviewUrl}
-              privacy={{ hideFace, hideBackground, hideFeatures }}
+              privacy={{ hideFace, hideBackground, hideFeatures: false }}
               onPrivacyChange={(next) => {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
                 if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
-                if (next.hideFeatures !== undefined) setHideFeatures(next.hideFeatures);
               }}
             />
           </div>

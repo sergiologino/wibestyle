@@ -40,6 +40,7 @@ import ru.wibestyle.api.repository.TryOnSessionRepository;
 
 
 
+import java.io.IOException;
 import java.time.Instant;
 
 import java.util.HashMap;
@@ -344,15 +345,16 @@ public class TryOnJobWorker {
         String afterUrl = aiResult.imageUrl();
 
         try {
-
-            tryOnImageService.persistRemoteResult(session.getUserId(), session.getId(), aiResult.imageUrl());
-
+            if (aiResult.imageBytes() != null && aiResult.imageBytes().length > 0) {
+                tryOnImageService.persistResultBytes(session.getUserId(), session.getId(), aiResult.imageBytes());
+            } else if (aiResult.imageUrl() != null && !aiResult.imageUrl().isBlank()) {
+                tryOnImageService.persistRemoteResult(session.getUserId(), session.getId(), aiResult.imageUrl());
+            } else {
+                throw new IOException("AI result has no image bytes or URL");
+            }
             afterUrl = "/api/v1/try-on/sessions/" + session.getId() + "/after-photo";
-
         } catch (Exception ex) {
-
             log.warn("Could not persist AI result locally, using remote URL: {}", ex.getMessage());
-
         }
 
 

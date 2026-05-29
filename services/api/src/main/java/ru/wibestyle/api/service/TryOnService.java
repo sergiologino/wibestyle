@@ -75,12 +75,7 @@ public class TryOnService {
 
         String normalizedUrl = adapter.normalizeUrl(url);
         String productId = adapter.extractProductId(normalizedUrl);
-        ProductDetails product;
-        try {
-            product = adapter.fetchProduct(productId, normalizedUrl);
-        } catch (RuntimeException ex) {
-            throw new IllegalArgumentException(TryOnErrorCodes.PRODUCT_PARSE_FAILED, ex);
-        }
+        ProductDetails product = MarketplaceService.fetchProductDetails(adapter, productId, normalizedUrl);
 
         if (product.images() == null || product.images().isEmpty()) {
             throw new IllegalArgumentException(TryOnErrorCodes.PRODUCT_IMAGE_NOT_FOUND);
@@ -112,12 +107,15 @@ public class TryOnService {
         return response;
     }
 
+    private static final List<String> DEFAULT_PHOTO_SIZES = List.of("XS", "S", "M", "L", "XL");
+
     @Transactional
     public Map<String, Object> createPhotoSession(
             UUID userId,
             MultipartFile photo,
             String category,
-            TryOnSourceType sourceType
+            TryOnSourceType sourceType,
+            String selectedSize
     ) throws IOException {
         AvatarSnapshotEntity snapshot = requireSnapshot(userId);
         if (photo == null || photo.isEmpty()) {
@@ -138,9 +136,15 @@ public class TryOnService {
                 now,
                 now
         );
-        session.setGarmentCategory(category == null || category.isBlank() ? "other" : category);
+        String resolvedCategory = category == null || category.isBlank() ? "other" : category;
+        session.setGarmentCategory(resolvedCategory);
         session.setGarmentPhotoPath(storedPath);
         session.setProductImageUrl("/api/v1/try-on/sessions/" + sessionId + "/garment-photo");
+        session.setMarketplace("other");
+        session.setProductTitle(categoryTitle(resolvedCategory));
+        session.setProductBrand("Фото из галереи");
+        session.setProductSizes(serializeSizes(DEFAULT_PHOTO_SIZES));
+        session.setSelectedSize(resolveSelectedSize(selectedSize, DEFAULT_PHOTO_SIZES));
         tryOnSessionRepository.save(session);
 
         Map<String, Object> response = new HashMap<>();
@@ -369,6 +373,18 @@ public class TryOnService {
             case MARKETPLACE_LINK -> "marketplace_link";
             case GARMENT_PHOTO -> "garment_photo";
             case GALLERY_UPLOAD -> "gallery_upload";
+        };
+    }
+
+    private static String categoryTitle(String category) {
+        return switch (category) {
+            case "dress" -> "Платье";
+            case "top" -> "Верх";
+            case "pants" -> "Брюки";
+            case "jacket" -> "Пиджак";
+            case "shoes" -> "Обувь";
+            case "accessory" -> "Аксессуар";
+            default -> "Одежда";
         };
     }
 

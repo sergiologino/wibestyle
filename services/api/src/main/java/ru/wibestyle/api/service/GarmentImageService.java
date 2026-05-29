@@ -3,6 +3,7 @@ package ru.wibestyle.api.service;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
+import ru.wibestyle.api.marketplace.OzonAdapter;
 import ru.wibestyle.api.marketplace.WildberriesAdapter;
 
 import java.io.ByteArrayInputStream;
@@ -17,18 +18,23 @@ public class GarmentImageService {
 
     private static final Pattern WILDBERRIES_PROXY =
             Pattern.compile("^/api/v1/marketplaces/wildberries/(\\d+)/image$");
+    private static final Pattern OZON_PROXY =
+            Pattern.compile("^/api/v1/marketplaces/ozon/([^/]+)/image$");
 
     private final LocalStorageService localStorageService;
     private final WildberriesAdapter wildberriesAdapter;
+    private final OzonAdapter ozonAdapter;
     private final RestClient restClient;
 
     public GarmentImageService(
             LocalStorageService localStorageService,
             WildberriesAdapter wildberriesAdapter,
+            OzonAdapter ozonAdapter,
             RestClient.Builder restClientBuilder
     ) {
         this.localStorageService = localStorageService;
         this.wildberriesAdapter = wildberriesAdapter;
+        this.ozonAdapter = ozonAdapter;
         this.restClient = restClientBuilder.build();
     }
 
@@ -63,9 +69,13 @@ public class GarmentImageService {
     }
 
     byte[] loadRemoteImageBytes(String imageUrl) throws IOException {
-        Matcher matcher = WILDBERRIES_PROXY.matcher(imageUrl);
-        if (matcher.matches()) {
-            return wildberriesAdapter.loadProductImage(matcher.group(1));
+        Matcher wbMatcher = WILDBERRIES_PROXY.matcher(imageUrl);
+        if (wbMatcher.matches()) {
+            return wildberriesAdapter.loadProductImage(wbMatcher.group(1));
+        }
+        Matcher ozonMatcher = OZON_PROXY.matcher(imageUrl);
+        if (ozonMatcher.matches()) {
+            return ozonAdapter.loadProductImage(ozonMatcher.group(1), null);
         }
         if (imageUrl.startsWith("/assets/")) {
             return null;

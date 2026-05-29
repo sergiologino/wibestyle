@@ -16,8 +16,12 @@ import { resolveApiPath } from "@/lib/api-media";
 
 import {
   computeAccessTokenExpiresAt,
+  hasPersistedCredentials,
+  isAccessTokenUsable,
+  isAuthenticatedSession,
   isRefreshTokenRejected,
   isTransientRefreshError,
+  needsAccessTokenRefresh,
   readStoredSessionRaw,
   SESSION_STORAGE_KEY,
   shouldRefreshAccessToken,
@@ -75,6 +79,9 @@ type AppSessionContextValue = AppSession & {
   /** Refetch avatar/media after access token refresh (401). */
 
   getAccessTokenForMedia: () => Promise<string | null>;
+
+  /** Restore session from storage and refresh access token if needed. */
+  ensureSession: () => Promise<boolean>;
 
 };
 
@@ -158,23 +165,33 @@ function isAuthFailure(err: unknown): boolean {
 
 
 
-function withSyncedOnboarding(session: AppSession): AppSession {
-
+function mergeSessionWithStorage(session: AppSession): AppSession {
+  const latest = readStoredSessionRaw();
+  if (!latest) {
+    return session;
+  }
   return {
-
     ...session,
-
-    onboarding: syncOnboardingFromProfile(session.onboarding, session.profile),
-
+    accessToken: latest.accessToken ?? session.accessToken,
+    refreshToken: latest.refreshToken ?? session.refreshToken,
+    accessTokenExpiresAt: latest.accessTokenExpiresAt ?? session.accessTokenExpiresAt,
+    phone: session.phone ?? latest.phone ?? null,
+    profile: session.profile ?? (latest.profile as UserProfile | null),
   };
+}
 
+function withSyncedOnboarding(session: AppSession): AppSession {
+  return {
+    ...session,
+    onboarding: syncOnboardingFromProfile(session.onboarding, session.profile),
+  };
 }
 
 
 
 export function AppSessionProvider({ children }: { children: React.ReactNode }) {
 
-  const [session, setSession] = useState<AppSession>(() => readStoredSession());
+  const [session, setSession] = useState<AppSession>(defaultSession);
 
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -224,11 +241,23 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
       const epochAtStart = logoutEpochRef.current;
 
-      const stored = sessionRef.current;
+      let stored = withSyncedOnboarding(mergeSessionWithStorage(sessionRef.current));
 
       if (!stored.refreshToken) {
 
         return false;
+
+      }
+
+      if (
+        stored.accessToken
+        && isAccessTokenUsable(stored.accessToken, stored.accessTokenExpiresAt)
+        && !shouldRefreshAccessToken(stored.accessToken, stored.accessTokenExpiresAt)
+      ) {
+
+        applySession(stored);
+
+        return true;
 
       }
 
@@ -281,7 +310,16 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
         }
 
         if (isRefreshTokenRejected(err)) {
+          if (isAccessTokenUsable(stored.accessToken, stored.accessTokenExpiresAt)) {
+            applySession(stored);
+            return true;
+          }
           return false;
+        }
+
+        if (isAccessTokenUsable(stored.accessToken, stored.accessTokenExpiresAt)) {
+          applySession(stored);
+          return true;
         }
 
         return false;
@@ -310,23 +348,37 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
 
 
-    async function tryRefresh(stored: AppSession): Promise<{ accessToken: string; refreshToken: string | null; expiresAt: number } | null> {
+    async function tryRefresh(stored: AppSession): Promise<{ accessToken: string; refreshToken: string | null; expiresAt: number } | "rejected"> {
 
-      if (!stored.refreshToken) return null;
+      if (!stored.refreshToken) return "rejected";
 
       return withRefreshLock(async () => {
+
+        const synced = withSyncedOnboarding(mergeSessionWithStorage(stored));
+
+        if (
+          synced.accessToken
+          && isAccessTokenUsable(synced.accessToken, synced.accessTokenExpiresAt)
+          && !shouldRefreshAccessToken(synced.accessToken, synced.accessTokenExpiresAt)
+        ) {
+          return {
+            accessToken: synced.accessToken,
+            refreshToken: synced.refreshToken,
+            expiresAt: synced.accessTokenExpiresAt ?? computeAccessTokenExpiresAt(null),
+          };
+        }
 
         const refreshClient = new WibeStyleApiClient({ baseUrl });
 
         try {
 
-          const refreshed = await refreshClient.refreshToken(stored.refreshToken!);
+          const refreshed = await refreshClient.refreshToken(synced.refreshToken!);
 
           return {
 
             accessToken: refreshed.accessToken,
 
-            refreshToken: refreshed.refreshToken ?? stored.refreshToken,
+            refreshToken: refreshed.refreshToken ?? synced.refreshToken,
 
             expiresAt: computeAccessTokenExpiresAt(refreshed.expiresIn),
 
@@ -338,7 +390,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
           if (
             latest?.refreshToken
-            && latest.refreshToken !== stored.refreshToken
+            && latest.refreshToken !== synced.refreshToken
             && latest.accessToken
           ) {
             return {
@@ -349,14 +401,14 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
           }
 
           if (isRefreshTokenRejected(err)) {
-            return null;
+            return "rejected";
           }
 
           if (isTransientRefreshError(err)) {
             throw err;
           }
 
-          return null;
+          throw err;
 
         }
 
@@ -454,9 +506,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
 
 
-      const needsRefresh =
-        Boolean(refreshToken)
-        && (!accessToken || shouldRefreshAccessToken(accessTokenExpiresAt));
+      const needsRefresh = needsAccessTokenRefresh(stored);
 
 
 
@@ -468,29 +518,38 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
           if (cancelled || logoutEpochRef.current !== epochAtStart) return;
 
-          if (!refreshed) {
+          if (refreshed === "rejected") {
 
-            if (!cancelled && logoutEpochRef.current === epochAtStart) {
+            if (!isAccessTokenUsable(stored.accessToken, stored.accessTokenExpiresAt)) {
 
-              applySession(defaultSession);
+              if (!cancelled && logoutEpochRef.current === epochAtStart) {
+
+                applySession(defaultSession);
+
+              }
+
+              if (!cancelled) setSessionReady(true);
+
+              return;
 
             }
 
-            if (!cancelled) setSessionReady(true);
+          } else {
 
-            return;
+            accessToken = refreshed.accessToken;
+
+            refreshToken = refreshed.refreshToken;
+
+            accessTokenExpiresAt = refreshed.expiresAt;
 
           }
 
-          accessToken = refreshed.accessToken;
-
-          refreshToken = refreshed.refreshToken;
-
-          accessTokenExpiresAt = refreshed.expiresAt;
-
         } catch {
 
-          if (!cancelled) setSessionReady(true);
+          if (!cancelled) {
+            applySession(stored);
+            setSessionReady(true);
+          }
 
           return;
 
@@ -546,7 +605,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
         if (cancelled || logoutEpochRef.current !== epochAtStart) return;
 
-        if (refreshed) {
+        if (refreshed !== "rejected") {
 
           try {
 
@@ -578,13 +637,26 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
       } catch {
 
-        if (!cancelled) setSessionReady(true);
+        if (!cancelled) {
+          applySession(stored);
+          setSessionReady(true);
+        }
 
         return;
 
       }
 
 
+
+      if (!cancelled && logoutEpochRef.current === epochAtStart && stored.refreshToken) {
+
+        applySession(stored);
+
+        setSessionReady(true);
+
+        return;
+
+      }
 
       if (!cancelled && logoutEpochRef.current === epochAtStart) {
 
@@ -622,7 +694,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
     function scheduleRefresh() {
 
-      const current = sessionRef.current;
+      const current = withSyncedOnboarding(mergeSessionWithStorage(sessionRef.current));
 
       if (!current.refreshToken) {
 
@@ -630,7 +702,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
       }
 
-      if (shouldRefreshAccessToken(current.accessTokenExpiresAt)) {
+      if (needsAccessTokenRefresh(current)) {
 
         void refreshAccessToken();
 
@@ -665,6 +737,26 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
     };
 
   }, [refreshAccessToken, session.refreshToken]);
+
+
+
+  useEffect(() => {
+
+    if (!sessionReady) return;
+
+    if (isAuthenticatedSession(sessionRef.current)) return;
+
+    if (!hasPersistedCredentials()) return;
+
+    const stored = withSyncedOnboarding(readStoredSession());
+
+    if (!isAuthenticatedSession(stored)) return;
+
+    applySession(stored);
+
+    void refreshAccessToken();
+
+  }, [applySession, refreshAccessToken, session.accessToken, session.profile, session.refreshToken, sessionReady]);
 
 
 
@@ -730,17 +822,61 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
   const getAccessTokenForMedia = useCallback(async (): Promise<string | null> => {
 
-    if (sessionRef.current.accessToken) {
+    const current = mergeSessionWithStorage(sessionRef.current);
 
-      return sessionRef.current.accessToken;
+    if (isAccessTokenUsable(current.accessToken, current.accessTokenExpiresAt)) {
+
+      return current.accessToken;
 
     }
 
     const ok = await refreshAccessToken();
 
-    return ok ? sessionRef.current.accessToken : null;
+    const next = sessionRef.current.accessToken;
+
+    return ok && next ? next : null;
 
   }, [refreshAccessToken]);
+
+
+
+  const ensureSession = useCallback(async (): Promise<boolean> => {
+
+    let current = withSyncedOnboarding(mergeSessionWithStorage(sessionRef.current));
+
+    if (!isAuthenticatedSession(current)) {
+
+      const stored = withSyncedOnboarding(readStoredSession());
+
+      if (isAuthenticatedSession(stored)) {
+
+        current = applySession(stored);
+
+      }
+
+    }
+
+    if (!isAuthenticatedSession(current)) {
+
+      return false;
+
+    }
+
+    if (isAccessTokenUsable(current.accessToken, current.accessTokenExpiresAt)) {
+
+      return true;
+
+    }
+
+    if (!current.refreshToken) {
+
+      return false;
+
+    }
+
+    return refreshAccessToken();
+
+  }, [applySession, refreshAccessToken]);
 
 
 
@@ -882,9 +1018,11 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
       getAccessTokenForMedia,
 
+      ensureSession,
+
     }),
 
-    [session, api, sessionReady, completeOnboardingStep, setAuth, logout, refreshProfile, getAccessTokenForMedia],
+    [session, api, sessionReady, completeOnboardingStep, setAuth, logout, refreshProfile, getAccessTokenForMedia, ensureSession],
 
   );
 
@@ -942,10 +1080,9 @@ export function useAuthenticatedBlob(path: string | null | undefined) {
 
     }
 
-
+    const mediaUrl = fullUrl;
 
     let revoked: string | null = null;
-
     let cancelled = false;
 
 
@@ -962,7 +1099,7 @@ export function useAuthenticatedBlob(path: string | null | undefined) {
 
       }
 
-      const url = await fetchAuthenticatedBlobUrl(fullUrl, token, {
+      const url = await fetchAuthenticatedBlobUrl(mediaUrl, token, {
 
         onUnauthorized: async () => {
 
