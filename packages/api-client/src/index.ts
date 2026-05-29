@@ -15,6 +15,7 @@ import type {
   PromoCodeRecord,
   PromoValidationResponse,
   SearchResultItem,
+  SeasonHitVideoStatus,
   SizeAdvice,
   SubscriptionPlan,
   TryOnResult,
@@ -309,6 +310,15 @@ export class WibeStyleApiClient {
     );
   }
 
+  generateSeasonHitVideo(sessionId: string) {
+    return this.request<{
+      sessionId: string;
+      videoStatus: SeasonHitVideoStatus;
+      afterVideoUrl?: string;
+      jobId?: string;
+    }>(`/api/v1/try-on/sessions/${sessionId}/generate-video`, { method: "POST" });
+  }
+
   listMyTryOnSessions() {
     return this.request<{ items: TryOnHistoryItem[] }>("/api/v1/try-on/sessions/mine");
   }
@@ -405,6 +415,7 @@ export class WibeStyleApiClient {
       annualDiscountPercent: number;
       defaultSelection: { plan: SubscriptionPlan; period: BillingPeriod };
       promoDiscountPercent: number;
+      subscriber?: { plan: SubscriptionPlan; billingPeriod: BillingPeriod; subscriptionActive: boolean };
     }>("/api/v1/billing/plans");
   }
 

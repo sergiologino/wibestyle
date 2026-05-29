@@ -316,6 +316,133 @@ public class NoteappAiClient {
         return firstUrl(responseBody);
     }
 
+    public VideoProcessResult generateSeasonHitVideo(
+            TryOnSessionEntity session,
+            String prompt,
+            String sourceImageBase64,
+            Map<String, String> metadata
+    ) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("prompt", prompt);
+        payload.put("sourceImageBase64", sourceImageBase64);
+        payload.put("settings", Map.of("aspectRatio", "3:4", "durationSec", 6));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", session.getUserId().toString());
+        body.put("networkName", properties.getSeasonVideoNetwork());
+        body.put("requestType", "video_generation");
+        body.put("payload", payload);
+        body.put("metadata", metadata == null ? Map.of() : metadata);
+
+        log.info(
+                "Noteapp season video call baseUrl={} network={} sessionId={} imageChars={} promptLen={}",
+                properties.getBaseUrl(),
+                properties.getSeasonVideoNetwork(),
+                session.getId(),
+                sourceImageBase64 != null ? sourceImageBase64.length() : 0,
+                prompt != null ? prompt.length() : 0
+        );
+        logService.logOutboundRequest(session, body);
+
+        try {
+            JsonNode response = restClient.post()
+                    .uri("/api/ai/process")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-API-Key", properties.getApiKey())
+                    .body(body)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            if (response == null) {
+                logService.logInboundResponse(session, false, null, null, null, 0, "Empty AI response", Map.of());
+                return VideoProcessResult.failed("EMPTY_RESPONSE", "Empty AI response");
+            }
+
+            String status = response.path("status").asText("");
+            String requestId = response.path("requestId").asText(null);
+            String networkUsed = response.path("networkUsed").asText(null);
+            long executionTimeMs = response.path("executionTimeMs").asLong(0);
+            String provider = response.path("response").path("provider").asText(null);
+
+            if (!"success".equalsIgnoreCase(status)) {
+                String error = response.path("errorMessage").asText("AI video request failed");
+                logService.logInboundResponse(session, false, requestId, networkUsed, provider, executionTimeMs, error, Map.of());
+                return VideoProcessResult.failed("AI_GENERATION_FAILED", error);
+            }
+
+            VideoResult videoResult = extractVideoResult(response.path("response"));
+            if (videoResult == null) {
+                logService.logInboundResponse(
+                        session, false, requestId, networkUsed, provider, executionTimeMs,
+                        "No video in AI response", Map.of()
+                );
+                return VideoProcessResult.failed("AI_GENERATION_FAILED", "No video in AI response");
+            }
+
+            byte[] videoBytes = videoResult.bytes();
+            Map<String, Object> successSummary = new LinkedHashMap<>();
+            successSummary.put("videoBytes", videoBytes != null ? videoBytes.length : 0);
+            logService.logInboundResponse(session, true, requestId, networkUsed, provider, executionTimeMs, null, successSummary);
+            return VideoProcessResult.success(requestId, networkUsed, executionTimeMs, videoBytes);
+        } catch (RestClientException ex) {
+            log.warn("Noteapp season video call failed: {}", ex.getMessage());
+            logService.logInboundResponse(session, false, null, null, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()));
+            return VideoProcessResult.failed("AI_PROVIDER_TIMEOUT", ex.getMessage());
+        }
+    }
+
+    private VideoResult extractVideoResult(JsonNode responseBody) {
+        if (responseBody == null || responseBody.isMissingNode()) {
+            return null;
+        }
+
+        String topLevelBase64 = responseBody.path("videoBase64").asText(null);
+        if (topLevelBase64 != null && !topLevelBase64.isBlank()) {
+            byte[] bytes = decodeBase64Payload(topLevelBase64);
+            if (bytes != null && bytes.length > 0) {
+                return new VideoResult(bytes);
+            }
+        }
+
+        JsonNode data = responseBody.path("data");
+        if (data.isArray()) {
+            for (JsonNode item : data) {
+                VideoResult fromItem = videoFromNode(item);
+                if (fromItem != null) {
+                    return fromItem;
+                }
+            }
+        }
+
+        JsonNode output = responseBody.path("output");
+        if (output.isArray()) {
+            for (JsonNode item : output) {
+                VideoResult fromItem = videoFromNode(item);
+                if (fromItem != null) {
+                    return fromItem;
+                }
+            }
+        }
+        return null;
+    }
+
+    private VideoResult videoFromNode(JsonNode item) {
+        if (item == null || item.isMissingNode()) {
+            return null;
+        }
+        String base64 = item.path("base64").asText(null);
+        if (base64 != null && !base64.isBlank()) {
+            byte[] bytes = decodeBase64Payload(base64);
+            if (bytes != null && bytes.length > 0) {
+                return new VideoResult(bytes);
+            }
+        }
+        return null;
+    }
+
+    private record VideoResult(byte[] bytes) {
+    }
+
     private static Map<String, Object> responseSummary(JsonNode response) {
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("status", response.path("status").asText(""));
@@ -399,6 +526,24 @@ public class NoteappAiClient {
 
         public static ProcessResult failed(String errorCode, String errorMessage) {
             return failure(errorCode, errorMessage);
+        }
+    }
+
+    public record VideoProcessResult(
+            boolean success,
+            String requestId,
+            String provider,
+            long executionTimeMs,
+            byte[] videoBytes,
+            String errorCode,
+            String errorMessage
+    ) {
+        static VideoProcessResult success(String requestId, String provider, long executionTimeMs, byte[] videoBytes) {
+            return new VideoProcessResult(true, requestId, provider, executionTimeMs, videoBytes, null, null);
+        }
+
+        public static VideoProcessResult failed(String errorCode, String errorMessage) {
+            return new VideoProcessResult(false, null, null, 0, null, errorCode, errorMessage);
         }
     }
 }

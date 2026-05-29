@@ -1,5 +1,11 @@
 # AI Changelog
 
+## 2026-05-28 (Season hit video — «Хит сезона»)
+- Elite-only: кнопка «Сделать видео» на странице результата; image-to-video по сохранённому `after.jpg` + промпт с локацией по категории одежды.
+- API: `POST /try-on/sessions/{id}/generate-video`, `GET .../after-video`; поля `videoStatus` / `afterVideoUrl` в сессии и результате; галерея поддерживает `mediaType=video`.
+- Billing: paywall `?reason=elite_perk`; годовой Wibe → Elite annual = доплата разницы; monthly/trial — полная цена Elite.
+- noteapp: сеть `wibestyle-season-video` (xAI Grok Imagine Video), скачивание MP4 и отдача base64.
+
 ## 2026-05-28 (Try-on result UI)
 - Web-app `/try-on/result`: один блок — слайдер «до/после»; отдельный hero с результатом убран. `afterImageUrl` по-прежнему сохраняется для галереи, истории и ShareCard.
 

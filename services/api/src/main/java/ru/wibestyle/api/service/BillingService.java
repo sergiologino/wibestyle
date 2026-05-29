@@ -40,17 +40,22 @@ public class BillingService {
     public Map<String, Object> listPlans(UserProfileEntity profile) {
         int promoDiscount = profile.getPromoDiscountPercent() == null ? 0 : profile.getPromoDiscountPercent();
         List<Map<String, Object>> items = new ArrayList<>();
-        items.add(planOffer("wibe", "monthly", billingProperties.getWibeMonthlyRub(), promoDiscount));
-        items.add(planOffer("wibe", "annual", billingProperties.getWibeAnnualRub(), promoDiscount));
-        items.add(planOffer("elite", "monthly", billingProperties.getEliteMonthlyRub(), promoDiscount));
-        items.add(planOffer("elite", "annual", billingProperties.getEliteAnnualRub(), promoDiscount));
+        items.add(planOffer(profile, "wibe", "monthly", billingProperties.getWibeMonthlyRub(), promoDiscount));
+        items.add(planOffer(profile, "wibe", "annual", billingProperties.getWibeAnnualRub(), promoDiscount));
+        items.add(planOffer(profile, "elite", "monthly", billingProperties.getEliteMonthlyRub(), promoDiscount));
+        items.add(planOffer(profile, "elite", "annual", billingProperties.getEliteAnnualRub(), promoDiscount));
 
-        return Map.of(
-                "items", items,
-                "annualDiscountPercent", billingProperties.getAnnualDiscountPercent(),
-                "defaultSelection", Map.of("plan", "wibe", "period", "annual"),
-                "promoDiscountPercent", promoDiscount
-        );
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", items);
+        response.put("annualDiscountPercent", billingProperties.getAnnualDiscountPercent());
+        response.put("defaultSelection", Map.of("plan", "wibe", "period", "annual"));
+        response.put("promoDiscountPercent", promoDiscount);
+        response.put("subscriber", Map.of(
+                "plan", profile.getPlan(),
+                "billingPeriod", profile.getBillingPeriod() == null ? "monthly" : profile.getBillingPeriod(),
+                "subscriptionActive", subscriptionActive(profile)
+        ));
+        return response;
     }
 
     @Transactional
@@ -181,15 +186,39 @@ public class BillingService {
         UserProfileEntity profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
         int basePrice = basePrice(plan, period);
-        int finalPrice = applyDiscount(basePrice, profile.getPromoDiscountPercent());
-        return new CheckoutPricing(basePrice, finalPrice);
+        int chargeBase = basePrice;
+        boolean upgradeFromWibe = qualifiesForUpgradeDiff(profile, plan, period);
+        if (upgradeFromWibe) {
+            chargeBase = basePrice - basePrice("wibe", period);
+        }
+        int finalPrice = applyDiscount(chargeBase, profile.getPromoDiscountPercent());
+        return new CheckoutPricing(basePrice, finalPrice, upgradeFromWibe);
     }
 
-    private record CheckoutPricing(int basePrice, int finalPrice) {
+    private boolean subscriptionActive(UserProfileEntity profile) {
+        return profile.getSubscriptionExpiresAt() != null
+                && profile.getSubscriptionExpiresAt().isAfter(Instant.now())
+                && !"trial".equals(profile.getPlan());
     }
 
-    private Map<String, Object> planOffer(String plan, String period, int basePriceRub, int promoDiscountPercent) {
-        int finalPrice = applyDiscount(basePriceRub, promoDiscountPercent);
+    private boolean qualifiesForUpgradeDiff(UserProfileEntity profile, String targetPlan, String targetPeriod) {
+        return "elite".equals(targetPlan)
+                && "wibe".equals(profile.getPlan())
+                && "annual".equals(profile.getBillingPeriod())
+                && "annual".equals(targetPeriod)
+                && subscriptionActive(profile);
+    }
+
+    private record CheckoutPricing(int basePrice, int finalPrice, boolean upgradeFromWibe) {
+        CheckoutPricing(int basePrice, int finalPrice) {
+            this(basePrice, finalPrice, false);
+        }
+    }
+
+    private Map<String, Object> planOffer(UserProfileEntity profile, String plan, String period, int basePriceRub, int promoDiscountPercent) {
+        boolean upgradeFromWibe = qualifiesForUpgradeDiff(profile, plan, period);
+        int chargeBase = upgradeFromWibe ? basePriceRub - basePrice("wibe", period) : basePriceRub;
+        int finalPrice = applyDiscount(chargeBase, promoDiscountPercent);
         Map<String, Object> map = new HashMap<>();
         map.put("plan", plan);
         map.put("period", period);
@@ -202,6 +231,11 @@ public class BillingService {
         }
         if ("wibe".equals(plan) && "annual".equals(period)) {
             map.put("recommended", true);
+        }
+        if (upgradeFromWibe) {
+            map.put("upgradeFromWibe", true);
+            map.put("upgradePriceRub", finalPrice);
+            map.put("fullPriceRub", applyDiscount(basePriceRub, promoDiscountPercent));
         }
         return map;
     }

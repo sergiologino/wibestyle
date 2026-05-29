@@ -56,6 +56,17 @@ public class GalleryController {
         }
     }
 
+    @GetMapping("/posts/{postId}/video")
+    public ResponseEntity<Resource> postVideo(@PathVariable UUID postId) {
+        try {
+            return galleryService.servePublicVideo(postId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "VIDEO_NOT_FOUND", ex);
+        }
+    }
+
     @GetMapping("/posts/slug/{slug}")
     public Map<String, Object> getBySlug(
             @RequestHeader(value = "Authorization", required = false) String authorization,

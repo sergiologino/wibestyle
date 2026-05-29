@@ -12,6 +12,8 @@ public class AiIntegrationProperties {
     private boolean asyncEnabled = true;
     private int timeoutSeconds = 90;
     private String virtualTryOnNetwork = "";
+    /** Image-to-video network in noteapp for season hit clips. */
+    private String seasonVideoNetwork = "";
     /** OpenAI-compatible chat network in noteapp (e.g. gpt-4o-mini) for size compliments. */
     private String sizeComplimentNetwork = "";
     private String webhookSecret = "";
@@ -72,6 +74,14 @@ public class AiIntegrationProperties {
         this.virtualTryOnNetwork = virtualTryOnNetwork;
     }
 
+    public String getSeasonVideoNetwork() {
+        return seasonVideoNetwork;
+    }
+
+    public void setSeasonVideoNetwork(String seasonVideoNetwork) {
+        this.seasonVideoNetwork = seasonVideoNetwork;
+    }
+
     public String getSizeComplimentNetwork() {
         return sizeComplimentNetwork;
     }
@@ -90,5 +100,9 @@ public class AiIntegrationProperties {
 
     public boolean isNoteappConfigured() {
         return enabled && apiKey != null && !apiKey.isBlank() && virtualTryOnNetwork != null && !virtualTryOnNetwork.isBlank();
+    }
+
+    public boolean isSeasonVideoConfigured() {
+        return enabled && apiKey != null && !apiKey.isBlank() && seasonVideoNetwork != null && !seasonVideoNetwork.isBlank();
     }
 }

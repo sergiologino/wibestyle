@@ -80,12 +80,23 @@ public class LocalStorageService {
         return target.toString();
     }
 
+    public String storeTryOnVideo(UUID userId, UUID sessionId, InputStream inputStream) throws IOException {
+        Path target = rootPath.resolve(userId.toString()).resolve("try-on").resolve(sessionId.toString()).resolve("season-hit.mp4");
+        Files.createDirectories(target.getParent());
+        Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+        return target.toString();
+    }
+
     public byte[] readBytes(String storedPath) throws IOException {
         return Files.readAllBytes(resolve(storedPath));
     }
 
     public String resolveTryOnResultPath(UUID userId, UUID sessionId, String variant) {
         return rootPath.resolve(userId.toString()).resolve("try-on").resolve(sessionId.toString()).resolve(variant + ".jpg").toString();
+    }
+
+    public String resolveTryOnVideoPath(UUID userId, UUID sessionId) {
+        return rootPath.resolve(userId.toString()).resolve("try-on").resolve(sessionId.toString()).resolve("season-hit.mp4").toString();
     }
 
     public Path resolve(String storedPath) {

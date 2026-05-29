@@ -41,7 +41,6 @@ public class TryOnController {
         this.tryOnService = tryOnService;
         this.localStorageService = localStorageService;
     }
-
     @PostMapping("/link")
     public Map<String, Object> createLinkSession(
             @RequestHeader(value = "Authorization", required = false) String authorization,
@@ -118,6 +117,32 @@ public class TryOnController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found");
         }
         return serveStoredFile(storedPath);
+    }
+
+    @GetMapping("/{sessionId}/after-video")
+    public ResponseEntity<Resource> afterVideo(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID sessionId
+    ) throws IOException {
+        UUID userId = requireUserId(authorization);
+        tryOnService.requireSession(userId, sessionId);
+        String storedPath = localStorageService.resolveTryOnVideoPath(userId, sessionId);
+        if (!localStorageService.exists(storedPath)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Video not found");
+        }
+        Path path = localStorageService.resolve(storedPath);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"season-hit.mp4\"")
+                .contentType(MediaType.parseMediaType("video/mp4"))
+                .body(new FileSystemResource(path));
+    }
+
+    @PostMapping("/{sessionId}/generate-video")
+    public Map<String, Object> generateVideo(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID sessionId
+    ) {
+        return tryOnService.generateSeasonHitVideo(requireUserId(authorization), sessionId);
     }
 
     private ResponseEntity<Resource> serveStoredFile(String storedPath) throws IOException {

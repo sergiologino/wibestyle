@@ -30,6 +30,12 @@ public class GalleryPostEntity {
     @Column(name = "image_url", length = 512)
     private String imageUrl;
 
+    @Column(name = "video_url", length = 512)
+    private String videoUrl;
+
+    @Column(name = "media_type", nullable = false, length = 16)
+    private String mediaType = "image";
+
     @Column(name = "try_on_session_id")
     private UUID tryOnSessionId;
 
@@ -124,6 +130,22 @@ public class GalleryPostEntity {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getVideoUrl() {
+        return videoUrl;
+    }
+
+    public void setVideoUrl(String videoUrl) {
+        this.videoUrl = videoUrl;
+    }
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
     }
 
     public UUID getTryOnSessionId() {

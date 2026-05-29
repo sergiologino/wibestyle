@@ -2,20 +2,25 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button, Card, ShareCard } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
-import type { TryOnResult, TryOnSessionRecord } from "@wibestyle/shared-types";
+import type { SeasonHitVideoStatus, TryOnResult, TryOnSessionRecord } from "@wibestyle/shared-types";
 import TryOnReviewForm from "@/components/try-on/TryOnReviewForm";
 import { TryOnBeforeAfter } from "@/components/try-on/TryOnResultImages";
 import AuthenticatedShareImage from "@/components/media/AuthenticatedShareImage";
+import AuthenticatedVideo from "@/components/media/AuthenticatedVideo";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { formatTryOnError } from "@/lib/try-on-error-message";
 
 const POLL_MS = 2000;
 /** ~3 minutes — aligned with backend AI timeout */
 const MAX_POLLS = 90;
+const VIDEO_POLL_MS = 3000;
+const VIDEO_MAX_POLLS = 60;
 
 export default function ResultClient({ sessionId }: { sessionId: string }) {
+  const router = useRouter();
   const { api } = useAppSession();
   const [result, setResult] = useState<TryOnResult | null>(null);
   const [session, setSession] = useState<TryOnSessionRecord | null>(null);
@@ -24,6 +29,10 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   const [showProductLink, setShowProductLink] = useState(true);
   const [shared, setShared] = useState(false);
   const [galleryPostSlug, setGalleryPostSlug] = useState<string | null>(null);
+  const [videoStatus, setVideoStatus] = useState<SeasonHitVideoStatus>("none");
+  const [afterVideoUrl, setAfterVideoUrl] = useState<string | null>(null);
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +48,8 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
 
         if (payload.result) {
           setResult(payload.result);
+          setVideoStatus(payload.result.videoStatus ?? payload.session.videoStatus ?? "none");
+          setAfterVideoUrl(payload.result.afterVideoUrl ?? payload.session.afterVideoUrl ?? null);
           setLoading(false);
           return;
         }
@@ -80,10 +91,72 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     };
   }, [api, sessionId]);
 
+  useEffect(() => {
+    if (videoStatus !== "generating") {
+      return;
+    }
+
+    let cancelled = false;
+    let pollTimer: number | undefined;
+    let polls = 0;
+
+    async function pollVideo() {
+      try {
+        const payload = await api.getTryOnSession(sessionId);
+        if (cancelled) return;
+
+        const status = payload.result?.videoStatus ?? payload.session.videoStatus ?? "none";
+        setVideoStatus(status);
+
+        if (status === "ready") {
+          const url = payload.result?.afterVideoUrl ?? payload.session.afterVideoUrl ?? null;
+          setAfterVideoUrl(url);
+          setVideoGenerating(false);
+          setVideoError(null);
+          if (payload.result) {
+            setResult(payload.result);
+          }
+          return;
+        }
+
+        if (status === "failed") {
+          setVideoGenerating(false);
+          setVideoError(payload.session.videoErrorMessage ?? "Не удалось создать видео");
+          return;
+        }
+
+        if (polls < VIDEO_MAX_POLLS) {
+          polls += 1;
+          pollTimer = window.setTimeout(() => {
+            void pollVideo();
+          }, VIDEO_POLL_MS);
+        } else {
+          setVideoGenerating(false);
+          setVideoError("Генерация видео занимает дольше обычного. Обнови страницу через минуту.");
+        }
+      } catch {
+        if (!cancelled) {
+          setVideoGenerating(false);
+          setVideoError("Не удалось проверить статус видео");
+        }
+      }
+    }
+
+    void pollVideo();
+
+    return () => {
+      cancelled = true;
+      if (pollTimer !== undefined) {
+        window.clearTimeout(pollTimer);
+      }
+    };
+  }, [api, sessionId, videoStatus]);
+
   const fallbackSlug = useMemo(() => sessionId.replace(/-/g, "").slice(0, 12), [sessionId]);
   const productTitle = result?.product?.title ?? "Look из галереи";
   const productUrl = result?.product?.productUrl;
   const postSlug = galleryPostSlug ?? fallbackSlug;
+  const hasVideo = videoStatus === "ready" && afterVideoUrl;
 
   async function saveToGallery(visibility: "public" | "unlisted") {
     const created = await api.createGalleryPost({
@@ -104,6 +177,38 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       setShared(true);
     } catch {
       setShared(true);
+    }
+  }
+
+  async function onMakeVideo() {
+    setVideoError(null);
+    try {
+      const { entitlements } = await api.getEntitlements();
+      if (!entitlements.videoTryOn) {
+        router.push("/paywall?reason=elite_perk");
+        return;
+      }
+    } catch {
+      router.push("/paywall?reason=elite_perk");
+      return;
+    }
+
+    setVideoGenerating(true);
+    setVideoStatus("generating");
+    try {
+      const response = await api.generateSeasonHitVideo(sessionId);
+      setVideoStatus(response.videoStatus);
+      if (response.afterVideoUrl) {
+        setAfterVideoUrl(response.afterVideoUrl);
+      }
+    } catch (err) {
+      setVideoGenerating(false);
+      setVideoStatus("none");
+      if (err instanceof ApiError && err.code === "VIDEO_ELITE_REQUIRED") {
+        router.push("/paywall?reason=elite_perk");
+        return;
+      }
+      setVideoError(err instanceof ApiError ? err.message : "Не удалось запустить генерацию видео");
     }
   }
 
@@ -139,7 +244,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10">
       <div>
         <p className="text-eyebrow">Готово</p>
         <h1 className="text-display mt-2 text-4xl">Смотри, как смотрится на тебе</h1>
@@ -162,10 +267,35 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         </Card>
       ) : null}
 
-      <TryOnBeforeAfter afterSrc={result.afterImageUrl} beforeSrc={result.beforeImageUrl} />
+      <div className={`grid gap-6 ${hasVideo ? "lg:grid-cols-2" : ""}`}>
+        <TryOnBeforeAfter afterSrc={result.afterImageUrl} beforeSrc={result.beforeImageUrl} />
+
+        {hasVideo && afterVideoUrl ? (
+          <Card>
+            <p className="text-eyebrow mb-3">Хит сезона</p>
+            <AuthenticatedVideo
+              autoPlay
+              className="aspect-[3/4] w-full rounded-2xl object-cover"
+              loop
+              muted
+              src={afterVideoUrl}
+            />
+          </Card>
+        ) : null}
+      </div>
 
       <Card>
         <div className="flex flex-wrap gap-3">
+          {!hasVideo && videoStatus !== "generating" ? (
+            <Button disabled={videoGenerating} size="md" variant="secondary" onClick={() => void onMakeVideo()}>
+              Сделать видео
+            </Button>
+          ) : null}
+          {videoStatus === "generating" || videoGenerating ? (
+            <Button disabled size="md" variant="secondary">
+              Генерируем видео…
+            </Button>
+          ) : null}
           <Button size="md" onClick={() => saveToGallery("public")}>
             Сохранить в галерею
           </Button>
@@ -180,6 +310,12 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
             </Link>
           ) : null}
         </div>
+        {videoError ? <p className="mt-3 font-normal text-[#c01278]">{videoError}</p> : null}
+        {!hasVideo && videoStatus !== "generating" ? (
+          <p className="text-body mt-3 text-sm">
+            Кинематографичное видео с look — эксклюзив Elite. Подходящая локация подбирается автоматически.
+          </p>
+        ) : null}
       </Card>
 
       {shared ? (

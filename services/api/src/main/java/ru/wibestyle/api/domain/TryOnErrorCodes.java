@@ -16,4 +16,6 @@ public final class TryOnErrorCodes {
     public static final String VTON_CONTENT_MODERATION = "VTON_CONTENT_MODERATION";
     public static final String INSUFFICIENT_GENERATIONS = "INSUFFICIENT_GENERATIONS";
     public static final String SESSION_NOT_FOUND = "SESSION_NOT_FOUND";
+    public static final String VIDEO_ELITE_REQUIRED = "VIDEO_ELITE_REQUIRED";
+    public static final String VIDEO_GENERATION_FAILED = "VIDEO_GENERATION_FAILED";
 }

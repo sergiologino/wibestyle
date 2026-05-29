@@ -40,6 +40,7 @@ public class TryOnService {
     private final ObjectMapper objectMapper;
     private final QuotaService quotaService;
     private final GarmentImageService garmentImageService;
+    private final SeasonHitVideoService seasonHitVideoService;
 
     public TryOnService(
             TryOnSessionRepository tryOnSessionRepository,
@@ -50,7 +51,8 @@ public class TryOnService {
             AiTryOnService aiTryOnService,
             ObjectMapper objectMapper,
             QuotaService quotaService,
-            GarmentImageService garmentImageService
+            GarmentImageService garmentImageService,
+            SeasonHitVideoService seasonHitVideoService
     ) {
         this.tryOnSessionRepository = tryOnSessionRepository;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
@@ -61,6 +63,7 @@ public class TryOnService {
         this.objectMapper = objectMapper;
         this.quotaService = quotaService;
         this.garmentImageService = garmentImageService;
+        this.seasonHitVideoService = seasonHitVideoService;
     }
 
     @Transactional
@@ -235,6 +238,12 @@ public class TryOnService {
         return response;
     }
 
+    @Transactional
+    public Map<String, Object> generateSeasonHitVideo(UUID userId, UUID sessionId) {
+        TryOnSessionEntity session = requireSession(userId, sessionId);
+        return seasonHitVideoService.generateVideo(userId, session);
+    }
+
     @Transactional(readOnly = true)
     public TryOnSessionEntity requireSession(UUID userId, UUID sessionId) {
         return tryOnSessionRepository.findByIdAndUserId(sessionId, userId)
@@ -328,6 +337,10 @@ public class TryOnService {
         map.put("sizeWarning", session.getSizeWarning());
         map.put("errorCode", session.getErrorCode());
         map.put("errorMessage", session.getErrorMessage());
+        map.put("videoStatus", session.getVideoStatus());
+        map.put("afterVideoUrl", session.getAfterVideoUrl());
+        map.put("videoErrorCode", session.getVideoErrorCode());
+        map.put("videoErrorMessage", session.getVideoErrorMessage());
         map.put("createdAt", session.getCreatedAt().toString());
         map.put("updatedAt", session.getUpdatedAt().toString());
         return map;
@@ -351,6 +364,8 @@ public class TryOnService {
         map.put("sessionId", session.getId().toString());
         map.put("beforeImageUrl", session.getBeforeImageUrl());
         map.put("afterImageUrl", session.getAfterImageUrl());
+        map.put("afterVideoUrl", session.getAfterVideoUrl());
+        map.put("videoStatus", session.getVideoStatus() == null ? "none" : session.getVideoStatus());
         map.put("selectedSize", session.getSelectedSize());
         map.put("eliteFrame", false);
         if (session.getSizeFitStatus() != null) {

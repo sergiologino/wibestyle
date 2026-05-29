@@ -119,6 +119,31 @@ public class GalleryService {
         throw new IllegalArgumentException("IMAGE_NOT_FOUND");
     }
 
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> servePublicVideo(UUID postId) throws IOException {
+        GalleryPostEntity post = galleryPostRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("POST_NOT_FOUND"));
+        if (!isPubliclyReadable(post)) {
+            throw new IllegalArgumentException("POST_NOT_FOUND");
+        }
+
+        if (post.getTryOnSessionId() != null) {
+            String storedPath = localStorageService.resolveTryOnVideoPath(
+                    post.getUserId(), post.getTryOnSessionId()
+            );
+            if (localStorageService.exists(storedPath)) {
+                Path path = localStorageService.resolve(storedPath);
+                Resource resource = new FileSystemResource(path);
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"season-hit.mp4\"")
+                        .contentType(MediaType.parseMediaType("video/mp4"))
+                        .body(resource);
+            }
+        }
+
+        throw new IllegalArgumentException("VIDEO_NOT_FOUND");
+    }
+
     @Transactional
     public Map<String, Object> create(UUID userId, CreateGalleryPostRequest request) {
         Instant now = Instant.now();
@@ -141,6 +166,12 @@ public class GalleryService {
             }
             post.setTryOnSessionId(session.getId());
             post.setImageUrl(session.getAfterImageUrl());
+            if ("ready".equals(session.getVideoStatus()) && session.getAfterVideoUrl() != null) {
+                post.setVideoUrl(session.getAfterVideoUrl());
+                post.setMediaType("video");
+            } else {
+                post.setMediaType("image");
+            }
             post.setTitle(request.title() != null ? request.title() : defaultTitle(session));
             post.setMarketplace(session.getMarketplace());
             post.setProductUrl(session.getProductUrl());
@@ -245,7 +276,12 @@ public class GalleryService {
         map.put("title", post.getTitle());
         map.put("description", post.getDescription());
         map.put("imageUrl", post.getImageUrl());
+        map.put("videoUrl", post.getVideoUrl());
+        map.put("mediaType", post.getMediaType() == null ? "image" : post.getMediaType());
         map.put("publicImageUrl", "/api/v1/gallery/posts/" + post.getId() + "/image");
+        if (post.getVideoUrl() != null) {
+            map.put("publicVideoUrl", "/api/v1/gallery/posts/" + post.getId() + "/video");
+        }
         map.put("authorDisplayName", authorDisplayName);
         map.put("visibility", post.getVisibility());
         map.put("moderationStatus", post.getModerationStatus());

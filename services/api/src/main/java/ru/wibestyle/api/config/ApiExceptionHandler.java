@@ -72,7 +72,9 @@ public class ApiExceptionHandler {
             case "AI_GENERATION_FAILED" -> "Не удалось сгенерировать результат";
             case "VTON_CONTENT_MODERATION" ->
                     "Сервис изображений отклонил примерку по модерации. Для домашней одежды это ложное срабатывание — попробуйте позже.";
-            case "SEARCH_DISABLED" -> "Поиск временно выключен";
+            case "VIDEO_ELITE_REQUIRED" ->
+                    "Видео «Хит сезона» доступно только подписчикам Elite. Оформите Elite, чтобы создавать кинематографичные ролики.";
+            case "VIDEO_GENERATION_FAILED" -> "Не удалось создать видео";
             case "SIZE_ADVISORY_DISABLED" -> "Size advisory временно выключен";
             case "POST_NOT_FOUND" -> "Пост не найден";
             case "PROMO_CYRILLIC_KEYBOARD" -> "Промокод нужно вводить латиницей. Переключи клавиатуру на EN.";

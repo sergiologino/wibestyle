@@ -89,6 +89,15 @@ export type BillingPlanOffer = {
   monthlyEquivalentRub?: number;
   savingsPercent?: number;
   recommended?: boolean;
+  upgradeFromWibe?: boolean;
+  upgradePriceRub?: number;
+  fullPriceRub?: number;
+};
+
+export type BillingSubscriberInfo = {
+  plan: SubscriptionPlan;
+  billingPeriod: BillingPeriod;
+  subscriptionActive: boolean;
 };
 
 export type PromoCodeRecord = {
@@ -178,7 +187,11 @@ export type TryOnErrorCode =
   | "AI_PROVIDER_TIMEOUT"
   | "AI_GENERATION_FAILED"
   | "INSUFFICIENT_GENERATIONS"
-  | "SESSION_NOT_FOUND";
+  | "SESSION_NOT_FOUND"
+  | "VIDEO_ELITE_REQUIRED"
+  | "VIDEO_GENERATION_FAILED";
+
+export type SeasonHitVideoStatus = "none" | "generating" | "ready" | "failed";
 
 export type TryOnSessionRecord = {
   id: string;
@@ -192,6 +205,10 @@ export type TryOnSessionRecord = {
   sizeWarning?: TryOnErrorCode;
   errorCode?: TryOnErrorCode;
   errorMessage?: string;
+  videoStatus?: SeasonHitVideoStatus;
+  afterVideoUrl?: string;
+  videoErrorCode?: TryOnErrorCode;
+  videoErrorMessage?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -249,6 +266,8 @@ export type TryOnResult = {
   sessionId: string;
   beforeImageUrl: string;
   afterImageUrl: string;
+  afterVideoUrl?: string;
+  videoStatus?: SeasonHitVideoStatus;
   product?: ProductPreview;
   selectedSize?: string;
   eliteFrame: boolean;
@@ -304,7 +323,10 @@ export type GalleryPost = {
   slug: string;
   title: string;
   imageUrl: string;
+  videoUrl?: string;
+  mediaType?: "image" | "video";
   publicImageUrl?: string;
+  publicVideoUrl?: string;
   authorDisplayName?: string;
   likeCount: number;
   commentCount: number;

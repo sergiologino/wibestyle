@@ -66,7 +66,7 @@ wibestyle:
     root: ${WIBESTYLE_STORAGE_ROOT:./data/storage}
   features:
     flags:
-      videoTryOn: false
+      videoTryOn: true
       multiItemTryOn: false
       search: true
       sizeAdvisory: true
@@ -83,6 +83,7 @@ wibestyle:
     async-enabled: ${WIBESTYLE_AI_ASYNC_ENABLED:true}
     timeout-seconds: ${WIBESTYLE_AI_TIMEOUT_SECONDS:180}
     virtual-try-on-network: ${WIBESTYLE_AI_TRYON_NETWORK:wibestyle-vton}
+    season-video-network: ${WIBESTYLE_AI_SEASON_VIDEO_NETWORK:wibestyle-season-video}
     size-compliment-network: ${WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK:gpt-4o-mini}
     webhook-secret: ${WIBESTYLE_AI_WEBHOOK_SECRET:}
 

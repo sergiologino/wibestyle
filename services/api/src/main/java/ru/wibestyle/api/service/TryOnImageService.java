@@ -82,4 +82,19 @@ public class TryOnImageService {
         }
         return localStorageService.storeTryOnResult(userId, sessionId, "after", new ByteArrayInputStream(bytes));
     }
+
+    public String encodeAfterImageBase64(TryOnSessionEntity session) throws IOException {
+        String path = localStorageService.resolveTryOnResultPath(session.getUserId(), session.getId(), "after");
+        if (!localStorageService.exists(path)) {
+            throw new IOException("After image missing");
+        }
+        return Base64.getEncoder().encodeToString(localStorageService.readBytes(path));
+    }
+
+    public String persistVideoBytes(UUID userId, UUID sessionId, byte[] bytes) throws IOException {
+        if (bytes == null || bytes.length == 0) {
+            throw new IOException("Empty AI result video");
+        }
+        return localStorageService.storeTryOnVideo(userId, sessionId, new ByteArrayInputStream(bytes));
+    }
 }

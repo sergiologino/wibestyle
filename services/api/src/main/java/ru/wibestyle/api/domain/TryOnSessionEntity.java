@@ -94,6 +94,18 @@ public class TryOnSessionEntity {
     @Column(name = "after_image_url", length = 512)
     private String afterImageUrl;
 
+    @Column(name = "video_status", nullable = false, length = 32)
+    private String videoStatus = "none";
+
+    @Column(name = "after_video_url", length = 512)
+    private String afterVideoUrl;
+
+    @Column(name = "video_error_code", length = 64)
+    private String videoErrorCode;
+
+    @Column(name = "video_error_message", length = 512)
+    private String videoErrorMessage;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -313,6 +325,38 @@ public class TryOnSessionEntity {
 
     public void setAfterImageUrl(String afterImageUrl) {
         this.afterImageUrl = afterImageUrl;
+    }
+
+    public String getVideoStatus() {
+        return videoStatus;
+    }
+
+    public void setVideoStatus(String videoStatus) {
+        this.videoStatus = videoStatus;
+    }
+
+    public String getAfterVideoUrl() {
+        return afterVideoUrl;
+    }
+
+    public void setAfterVideoUrl(String afterVideoUrl) {
+        this.afterVideoUrl = afterVideoUrl;
+    }
+
+    public String getVideoErrorCode() {
+        return videoErrorCode;
+    }
+
+    public void setVideoErrorCode(String videoErrorCode) {
+        this.videoErrorCode = videoErrorCode;
+    }
+
+    public String getVideoErrorMessage() {
+        return videoErrorMessage;
+    }
+
+    public void setVideoErrorMessage(String videoErrorMessage) {
+        this.videoErrorMessage = videoErrorMessage;
     }
 
     public Instant getCreatedAt() {
