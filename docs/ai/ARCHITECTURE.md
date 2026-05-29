@@ -48,7 +48,7 @@ Spring Boot модульный монолит.
 - Redis опционален (`docker-compose.yml` — только redis). Без Redis — in-memory stores.
 - PostgreSQL — локально установленный сервер; production — отдельный managed DB.
 - Backend: **Gradle** (`services/api/gradlew.bat`), Spring Boot 3.4.
-- **Local file storage** (`wibestyle.storage.root`) для avatar photos; production → private buckets + signed URLs.
+- **Blob storage** (`BlobStorage` / `LocalBlobStorage`): медиа в отдельном volume (`data/storage` в monorepo, `WIBESTYLE_STORAGE_ROOT` в prod/Coolify); в БД — object keys; production → S3-реализация того же интерфейса.
 
 ## Avatar module
 States: `DRAFT` → `PHOTO_UPLOADED` → `VALIDATING` → (`VALIDATION_FAILED`|`READY`) → `PREPROCESSING` → `READY` → activate.

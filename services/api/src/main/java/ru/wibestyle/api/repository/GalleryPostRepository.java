@@ -18,4 +18,6 @@ public interface GalleryPostRepository extends JpaRepository<GalleryPostEntity, 
     Optional<GalleryPostEntity> findBySlug(String slug);
 
     List<GalleryPostEntity> findTop100ByOrderByCreatedAtDesc();
+
+    java.util.Optional<GalleryPostEntity> findByTryOnSessionId(UUID tryOnSessionId);
 }

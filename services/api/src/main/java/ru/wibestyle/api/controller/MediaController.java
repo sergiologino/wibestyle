@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.wibestyle.api.domain.MediaAssetEntity;
 import ru.wibestyle.api.dto.CompleteUploadRequest;
 import ru.wibestyle.api.dto.UploadUrlRequest;
-import ru.wibestyle.api.service.LocalStorageService;
+import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.service.MediaService;
 import ru.wibestyle.api.support.AuthSupport;
 
@@ -33,11 +33,11 @@ import java.util.UUID;
 public class MediaController {
 
     private final MediaService mediaService;
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
 
-    public MediaController(MediaService mediaService, LocalStorageService localStorageService) {
+    public MediaController(MediaService mediaService, BlobStorage blobStorage) {
         this.mediaService = mediaService;
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
     }
 
     @PostMapping("/upload-url")
@@ -79,7 +79,7 @@ public class MediaController {
                 ? mediaService.requireReadableAssetByToken(assetId, accessToken)
                 : mediaService.requireReadableAssetForOwner(AuthSupport.requireUserId(authorization), assetId);
 
-        Path path = localStorageService.resolve(asset.getStoredPath());
+        Path path = blobStorage.resolveLocalFile(asset.getStoredPath());
         if (!Files.exists(path)) {
             throw new IllegalArgumentException("MEDIA_NOT_FOUND");
         }

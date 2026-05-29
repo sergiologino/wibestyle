@@ -20,6 +20,7 @@ import ru.wibestyle.api.marketplace.ProductSizeChartJson;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
 import ru.wibestyle.api.repository.TryOnSessionRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
+import ru.wibestyle.api.storage.BlobStorage;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -35,40 +36,43 @@ public class TryOnService {
     private final AvatarSnapshotRepository avatarSnapshotRepository;
     private final UserProfileRepository userProfileRepository;
     private final MarketplaceAdapterRegistry marketplaceAdapterRegistry;
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
     private final AiTryOnService aiTryOnService;
     private final ObjectMapper objectMapper;
     private final QuotaService quotaService;
     private final GarmentImageService garmentImageService;
     private final SeasonHitVideoService seasonHitVideoService;
+    private final ProfileService profileService;
 
     public TryOnService(
             TryOnSessionRepository tryOnSessionRepository,
             AvatarSnapshotRepository avatarSnapshotRepository,
             UserProfileRepository userProfileRepository,
             MarketplaceAdapterRegistry marketplaceAdapterRegistry,
-            LocalStorageService localStorageService,
+            BlobStorage blobStorage,
             AiTryOnService aiTryOnService,
             ObjectMapper objectMapper,
             QuotaService quotaService,
             GarmentImageService garmentImageService,
-            SeasonHitVideoService seasonHitVideoService
+            SeasonHitVideoService seasonHitVideoService,
+            ProfileService profileService
     ) {
         this.tryOnSessionRepository = tryOnSessionRepository;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
         this.userProfileRepository = userProfileRepository;
         this.marketplaceAdapterRegistry = marketplaceAdapterRegistry;
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
         this.aiTryOnService = aiTryOnService;
         this.objectMapper = objectMapper;
         this.quotaService = quotaService;
         this.garmentImageService = garmentImageService;
         this.seasonHitVideoService = seasonHitVideoService;
+        this.profileService = profileService;
     }
 
     @Transactional
     public Map<String, Object> createLinkSession(UUID userId, String url, String selectedSize) {
-        AvatarSnapshotEntity snapshot = requireSnapshot(userId);
+        AvatarSnapshotEntity snapshot = requireTryOnProfileReady(userId);
         MarketplaceAdapter adapter;
         try {
             adapter = marketplaceAdapterRegistry.resolve(url);
@@ -120,7 +124,7 @@ public class TryOnService {
             TryOnSourceType sourceType,
             String selectedSize
     ) throws IOException {
-        AvatarSnapshotEntity snapshot = requireSnapshot(userId);
+        AvatarSnapshotEntity snapshot = requireTryOnProfileReady(userId);
         if (photo == null || photo.isEmpty()) {
             throw new IllegalArgumentException(TryOnErrorCodes.PRODUCT_IMAGE_NOT_FOUND);
         }
@@ -128,7 +132,7 @@ public class TryOnService {
         Instant now = Instant.now();
         UUID sessionId = UUID.randomUUID();
         String extension = extensionFromContentType(photo.getContentType());
-        String storedPath = localStorageService.storeGarmentPhoto(userId, sessionId, extension, photo.getInputStream());
+        String storedPath = blobStorage.storeGarmentPhoto(userId, sessionId, extension, photo.getInputStream());
 
         TryOnSessionEntity session = new TryOnSessionEntity(
                 sessionId,
@@ -158,6 +162,7 @@ public class TryOnService {
 
     @Transactional
     public Map<String, Object> generate(UUID userId, UUID sessionId) {
+        requireTryOnProfileReady(userId);
         TryOnSessionEntity session = requireSession(userId, sessionId);
         if (session.getStatus() == TryOnSessionStatus.READY) {
             return buildGenerateResponse(session, null);
@@ -253,6 +258,16 @@ public class TryOnService {
     private AvatarSnapshotEntity requireSnapshot(UUID userId) {
         return avatarSnapshotRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
                 .orElseThrow(() -> new IllegalArgumentException(TryOnErrorCodes.AVATAR_NOT_READY));
+    }
+
+    private AvatarSnapshotEntity requireTryOnProfileReady(UUID userId) {
+        UserProfileEntity profile = userProfileRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
+        if (profile.getGender() == null || profile.getGender().isBlank()) {
+            throw new IllegalArgumentException(TryOnErrorCodes.PROFILE_GENDER_REQUIRED);
+        }
+        profileService.validateRequiredAnthropometry(profile);
+        return requireSnapshot(userId);
     }
 
     private void applyProduct(TryOnSessionEntity session, ProductDetails product, String selectedSize) {

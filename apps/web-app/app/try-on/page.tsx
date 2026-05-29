@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Button, Card } from "@wibestyle/ui";
+import TryOnGateClient from "@/components/try-on/TryOnGateClient";
 
 export default function TryOnHubPage() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
+    <TryOnGateClient>
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
       <div>
         <h1 className="text-display text-4xl">Примерка</h1>
         <p className="text-body mt-2">Как хочешь примерить вещь?</p>
@@ -24,6 +26,7 @@ export default function TryOnHubPage() {
           </Link>
         </Card>
       </div>
-    </div>
+      </div>
+    </TryOnGateClient>
   );
 }

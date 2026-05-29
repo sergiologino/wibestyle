@@ -172,6 +172,14 @@ export default function LinkTryOnClient() {
         router.push("/onboarding/avatar");
         return;
       }
+      if (err instanceof ApiError && err.code === "PROFILE_GENDER_REQUIRED") {
+        router.push("/settings?setup=try-on");
+        return;
+      }
+      if (err instanceof ApiError && err.code === "ANTHROPOMETRY_REQUIRED") {
+        router.push("/settings?setup=try-on");
+        return;
+      }
       setError(err instanceof ApiError ? err.message : "Не удалось запустить примерку");
     } finally {
       setLoading(false);

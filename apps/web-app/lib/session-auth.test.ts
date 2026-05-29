@@ -60,9 +60,11 @@ describe("session-auth", () => {
     ).toBe(true);
   });
 
-  it("treats refresh token or profile as authenticated", () => {
-    expect(isAuthenticatedSession({ refreshToken: "r" })).toBe(true);
-    expect(isAuthenticatedSession({ profile: { userId: "1" } })).toBe(true);
+  it("requires usable access token for authenticated session", () => {
+    const freshToken = jwtWithExp(Math.floor((Date.now() + 60 * 60 * 1000) / 1000));
+    expect(isAuthenticatedSession({ accessToken: freshToken, refreshToken: "r" })).toBe(true);
+    expect(isAuthenticatedSession({ refreshToken: "r" })).toBe(false);
+    expect(isAuthenticatedSession({ profile: { userId: "1" } })).toBe(false);
     expect(isAuthenticatedSession({ accessToken: null, refreshToken: null, profile: null })).toBe(false);
   });
 

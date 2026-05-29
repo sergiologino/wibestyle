@@ -3,6 +3,7 @@ package ru.wibestyle.api.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.wibestyle.api.auth.RefreshTokenStore;
+import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.repository.UserRepository;
 
 import java.io.IOException;
@@ -13,16 +14,16 @@ import java.util.UUID;
 public class AccountDeletionService {
 
     private final UserRepository userRepository;
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
     private final RefreshTokenStore refreshTokenStore;
 
     public AccountDeletionService(
             UserRepository userRepository,
-            LocalStorageService localStorageService,
+            BlobStorage blobStorage,
             RefreshTokenStore refreshTokenStore
     ) {
         this.userRepository = userRepository;
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
         this.refreshTokenStore = refreshTokenStore;
     }
 
@@ -36,7 +37,7 @@ public class AccountDeletionService {
         }
 
         try {
-            localStorageService.deleteUserData(userId);
+            blobStorage.deleteUserData(userId);
         } catch (IOException ex) {
             throw new IllegalArgumentException("ACCOUNT_DELETE_FAILED");
         }

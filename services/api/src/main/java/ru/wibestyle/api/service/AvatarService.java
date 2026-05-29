@@ -11,6 +11,7 @@ import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.dto.CreateAvatarRequest;
 import ru.wibestyle.api.repository.AvatarRepository;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
+import ru.wibestyle.api.storage.BlobStorage;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +28,7 @@ public class AvatarService {
     private final AvatarRepository avatarRepository;
     private final AvatarSnapshotRepository avatarSnapshotRepository;
     private final ProfileService profileService;
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
     private final AvatarValidationService avatarValidationService;
     private final AvatarPreprocessService avatarPreprocessService;
 
@@ -35,14 +36,14 @@ public class AvatarService {
             AvatarRepository avatarRepository,
             AvatarSnapshotRepository avatarSnapshotRepository,
             ProfileService profileService,
-            LocalStorageService localStorageService,
+            BlobStorage blobStorage,
             AvatarValidationService avatarValidationService,
             AvatarPreprocessService avatarPreprocessService
     ) {
         this.avatarRepository = avatarRepository;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
         this.profileService = profileService;
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
         this.avatarValidationService = avatarValidationService;
         this.avatarPreprocessService = avatarPreprocessService;
     }
@@ -97,7 +98,7 @@ public class AvatarService {
         }
 
         String extension = extensionFromContentType(photo.getContentType());
-        String storedPath = localStorageService.storeOriginal(userId, avatarId, extension, photo.getInputStream());
+        String storedPath = blobStorage.storeAvatarOriginal(userId, avatarId, extension, photo.getInputStream());
         avatar.setPhotoOriginalPath(storedPath);
         avatar.setStatus(AvatarStatus.PHOTO_UPLOADED);
         avatar.setUpdatedAt(Instant.now());
@@ -115,7 +116,7 @@ public class AvatarService {
         avatar.setStatus(AvatarStatus.VALIDATING);
         avatar.setUpdatedAt(Instant.now());
 
-        Path storedPhoto = localStorageService.resolve(avatar.getPhotoOriginalPath());
+        Path storedPhoto = blobStorage.resolveLocalFile(avatar.getPhotoOriginalPath());
         String filename = storedPhoto.getFileName().toString();
         long sizeBytes = Files.size(storedPhoto);
         String contentType = contentTypeFromFilename(filename);

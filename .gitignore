@@ -42,5 +42,10 @@ services/api/target/
 services/api/build/
 services/api/.gradle/
 
+# persistent media (separate from API)
+/data/storage/**
+!/data/storage/.gitkeep
+services/api/data/storage/**
+
 # typescript
 **/next-env.d.ts

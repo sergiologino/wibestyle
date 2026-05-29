@@ -798,6 +798,90 @@ export class WibeStyleApiClient {
     });
   }
 
+  getAdminUserDetail(adminKey: string, userId: string) {
+    return this.request<{
+      user: {
+        id: string;
+        phone?: string;
+        email?: string;
+        login?: string;
+        primaryAuth?: string;
+        createdAt: string;
+      };
+      profile: UserProfile;
+      avatars: {
+        items: Array<{
+          id: string;
+          status: string;
+          active: boolean;
+          qualityScore?: number;
+          warnings?: string[];
+          createdAt: string;
+          adminOriginalPhotoUrl?: string;
+          adminProcessedPhotoUrl?: string;
+        }>;
+      };
+      tryOnSessions: {
+        items: Array<{
+          sessionId: string;
+          status: string;
+          sourceType: string;
+          visibility?: string;
+          productTitle: string;
+          productUrl?: string;
+          marketplace?: string;
+          selectedSize?: string;
+          errorCode?: string;
+          errorMessage?: string;
+          createdAt: string;
+          galleryPostId?: string;
+          galleryVisibility?: string;
+          adminAfterPhotoUrl?: string;
+          adminGarmentPhotoUrl?: string;
+        }>;
+      };
+    }>(`/api/v1/admin/users/${userId}`, { headers: { "X-Admin-Key": adminKey } });
+  }
+
+  updateAdminUserProfile(adminKey: string, userId: string, payload: UpdateProfilePayload) {
+    return this.request<{ profile: UserProfile }>(`/api/v1/admin/users/${userId}/profile`, {
+      method: "PUT",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  deleteAdminUserAvatar(adminKey: string, userId: string, avatarId: string) {
+    return this.request<{ avatar: AvatarRecord }>(
+      `/api/v1/admin/users/${userId}/avatars/${avatarId}`,
+      {
+        method: "DELETE",
+        headers: { "X-Admin-Key": adminKey },
+      },
+    );
+  }
+
+  deleteAdminUserTryOnSession(adminKey: string, userId: string, sessionId: string) {
+    return this.request<{ deleted: boolean; sessionId: string }>(
+      `/api/v1/admin/users/${userId}/try-on-sessions/${sessionId}`,
+      {
+        method: "DELETE",
+        headers: { "X-Admin-Key": adminKey },
+      },
+    );
+  }
+
+  async fetchAdminBlob(adminKey: string, path: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      headers: { "X-Admin-Key": adminKey },
+    });
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as { error?: string; code?: string };
+      throw new ApiError(body.error ?? "Request failed", response.status, body.code);
+    }
+    return response.blob();
+  }
+
   listAdminAiLogs(adminKey: string, page = 0, size = 50) {
     return this.request<{
       items: Array<{

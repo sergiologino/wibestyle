@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.wibestyle.api.domain.AvatarEntity;
 import ru.wibestyle.api.dto.CreateAvatarRequest;
 import ru.wibestyle.api.service.AvatarService;
-import ru.wibestyle.api.service.LocalStorageService;
+import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.support.AuthSupport;
 
 import java.io.IOException;
@@ -34,11 +34,11 @@ import java.util.UUID;
 public class AvatarController {
 
     private final AvatarService avatarService;
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
 
-    public AvatarController(AvatarService avatarService, LocalStorageService localStorageService) {
+    public AvatarController(AvatarService avatarService, BlobStorage blobStorage) {
         this.avatarService = avatarService;
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
     }
 
     @GetMapping
@@ -81,11 +81,11 @@ public class AvatarController {
         UUID userId = requireUserId(authorization);
         AvatarEntity avatar = avatarService.requireAvatar(userId, avatarId);
         String storedPath = "original".equals(variant) ? avatar.getPhotoOriginalPath() : avatar.getPhotoProcessedPath();
-        if (storedPath == null || !localStorageService.exists(storedPath)) {
+        if (storedPath == null || !blobStorage.exists(storedPath)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found");
         }
 
-        Path path = localStorageService.resolve(storedPath);
+        Path path = blobStorage.resolveLocalFile(storedPath);
         String contentType = Files.probeContentType(path);
         MediaType mediaType = contentType == null ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(contentType);
         Resource resource = new FileSystemResource(path);

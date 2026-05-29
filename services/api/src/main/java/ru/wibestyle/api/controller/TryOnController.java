@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.domain.TryOnSourceType;
 import ru.wibestyle.api.dto.CreateLinkTryOnSessionRequest;
-import ru.wibestyle.api.service.LocalStorageService;
+import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.service.TryOnService;
 import ru.wibestyle.api.support.AuthSupport;
 
@@ -35,11 +35,11 @@ import java.util.UUID;
 public class TryOnController {
 
     private final TryOnService tryOnService;
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
 
-    public TryOnController(TryOnService tryOnService, LocalStorageService localStorageService) {
+    public TryOnController(TryOnService tryOnService, BlobStorage blobStorage) {
         this.tryOnService = tryOnService;
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
     }
     @PostMapping("/link")
     public Map<String, Object> createLinkSession(
@@ -98,7 +98,7 @@ public class TryOnController {
         UUID userId = requireUserId(authorization);
         TryOnSessionEntity session = tryOnService.requireSession(userId, sessionId);
         String storedPath = session.getGarmentPhotoPath();
-        if (storedPath == null || !localStorageService.exists(storedPath)) {
+        if (storedPath == null || !blobStorage.exists(storedPath)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found");
         }
 
@@ -112,8 +112,8 @@ public class TryOnController {
     ) throws IOException {
         UUID userId = requireUserId(authorization);
         tryOnService.requireSession(userId, sessionId);
-        String storedPath = localStorageService.resolveTryOnResultPath(userId, sessionId, "after");
-        if (!localStorageService.exists(storedPath)) {
+        String storedPath = blobStorage.keyTryOnResult(userId, sessionId, "after");
+        if (!blobStorage.exists(storedPath)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found");
         }
         return serveStoredFile(storedPath);
@@ -126,11 +126,11 @@ public class TryOnController {
     ) throws IOException {
         UUID userId = requireUserId(authorization);
         tryOnService.requireSession(userId, sessionId);
-        String storedPath = localStorageService.resolveTryOnVideoPath(userId, sessionId);
-        if (!localStorageService.exists(storedPath)) {
+        String storedPath = blobStorage.keyTryOnVideo(userId, sessionId);
+        if (!blobStorage.exists(storedPath)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Video not found");
         }
-        Path path = localStorageService.resolve(storedPath);
+        Path path = blobStorage.resolveLocalFile(storedPath);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"season-hit.mp4\"")
                 .contentType(MediaType.parseMediaType("video/mp4"))
@@ -146,7 +146,7 @@ public class TryOnController {
     }
 
     private ResponseEntity<Resource> serveStoredFile(String storedPath) throws IOException {
-        Path path = localStorageService.resolve(storedPath);
+        Path path = blobStorage.resolveLocalFile(storedPath);
         String contentType = Files.probeContentType(path);
         MediaType mediaType = contentType == null ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(contentType);
         return ResponseEntity.ok()

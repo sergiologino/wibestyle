@@ -8,6 +8,7 @@ import ru.wibestyle.api.domain.MediaAssetEntity;
 import ru.wibestyle.api.dto.CompleteUploadRequest;
 import ru.wibestyle.api.dto.UploadUrlRequest;
 import ru.wibestyle.api.repository.MediaAssetRepository;
+import ru.wibestyle.api.storage.BlobStorage;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -21,20 +22,20 @@ public class MediaService {
     private static final int UPLOAD_TTL_SECONDS = 900;
 
     private final MediaAssetRepository mediaAssetRepository;
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
     private final ImageSanitizerService imageSanitizerService;
     private final MediaAccessTokenService mediaAccessTokenService;
     private final SecurityProperties securityProperties;
 
     public MediaService(
             MediaAssetRepository mediaAssetRepository,
-            LocalStorageService localStorageService,
+            BlobStorage blobStorage,
             ImageSanitizerService imageSanitizerService,
             MediaAccessTokenService mediaAccessTokenService,
             SecurityProperties securityProperties
     ) {
         this.mediaAssetRepository = mediaAssetRepository;
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
         this.imageSanitizerService = imageSanitizerService;
         this.mediaAccessTokenService = mediaAccessTokenService;
         this.securityProperties = securityProperties;
@@ -77,9 +78,9 @@ public class MediaService {
         }
 
         String extension = extensionFromContentType(file.getContentType());
-        String storedPath = localStorageService.storeMediaAsset(userId, assetId, extension, file.getInputStream());
+        String storedPath = blobStorage.storeMediaAsset(userId, assetId, extension, file.getInputStream());
         if (file.getContentType() != null && file.getContentType().startsWith("image/")) {
-            imageSanitizerService.stripExifInPlace(localStorageService.resolve(storedPath), file.getContentType());
+            imageSanitizerService.stripExifInPlace(blobStorage.resolveLocalFile(storedPath), file.getContentType());
         }
         asset.setStoredPath(storedPath);
         asset.setContentType(file.getContentType());
@@ -92,7 +93,7 @@ public class MediaService {
     @Transactional
     public Map<String, Object> completeUpload(UUID userId, CompleteUploadRequest request) {
         MediaAssetEntity asset = requirePendingOrUploadedAsset(userId, request.assetId(), request.uploadToken());
-        if (asset.getStoredPath() == null || !localStorageService.exists(asset.getStoredPath())) {
+        if (asset.getStoredPath() == null || !blobStorage.exists(asset.getStoredPath())) {
             throw new IllegalArgumentException("UPLOAD_INCOMPLETE");
         }
 

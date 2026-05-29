@@ -30,7 +30,7 @@ export const adminSections = [
   {
     id: "users",
     title: "Пользователи",
-    description: "Тарифы для тестирования, impersonation, полное удаление аккаунтов.",
+    description: "Тарифы, impersonation, профиль/аватары/примерки для поддержки, удаление аккаунтов.",
     status: "Ready",
     href: "/users",
   },

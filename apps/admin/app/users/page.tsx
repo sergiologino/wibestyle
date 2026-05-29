@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Button, Card } from "@wibestyle/ui";
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { useAdminKey } from "@/components/admin-key-provider";
@@ -29,6 +30,7 @@ const planPresets = [
 export default function AdminUsersPage() {
   const { adminKey, configured } = useAdminKey();
   const [items, setItems] = useState<AdminUserItem[]>([]);
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -49,6 +51,24 @@ export default function AdminUsersPage() {
       setLoading(false);
     }
   }, [adminKey, configured, api]);
+
+  const filteredItems = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((user) => {
+      const haystack = [
+        user.id,
+        user.phone,
+        user.email,
+        user.login,
+        user.displayName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [items, query]);
 
   useEffect(() => {
     void load();
@@ -111,15 +131,25 @@ export default function AdminUsersPage() {
   return (
     <AdminPageShell
       title="Пользователи"
-      description="Тестовые тарифы, impersonation и полное удаление аккаунтов."
+      description="Тарифы, impersonation, поддержка профилей и удаление аккаунтов."
     >
       {!configured ? <p className="font-bold text-[#6d6273]">Сохраните X-Admin-Key в верхней панели.</p> : null}
       {message ? <p className="font-bold text-[#782cff]">{message}</p> : null}
       {localError ? <p className="font-bold text-[#ff1fa2]">{localError}</p> : null}
 
+      <label className="grid max-w-xl gap-1 text-sm font-bold">
+        Поиск по телефону, email, логину, имени или ID
+        <input
+          className="rounded-xl border border-[#ffd1ed] px-3 py-2 font-normal"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Например +7999 или user@mail.ru"
+        />
+      </label>
+
       <div className="grid gap-4">
         {loading ? <p className="font-bold text-[#6d6273]">Загружаем…</p> : null}
-        {items.map((user) => (
+        {filteredItems.map((user) => (
           <Card key={user.id}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -137,6 +167,9 @@ export default function AdminUsersPage() {
                 <p className="mt-1 text-xs font-bold text-[#6d6273]">ID: {user.id}</p>
               </div>
               <div className="flex flex-col gap-2">
+                <Link href={`/users/${user.id}`}>
+                  <Button size="md">Поддержка</Button>
+                </Link>
                 <div className="flex flex-wrap gap-2">
                   {planPresets.map((preset) => (
                     <Button

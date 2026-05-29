@@ -106,13 +106,13 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         if (cancelled) return;
 
         const status = payload.result?.videoStatus ?? payload.session.videoStatus ?? "none";
-        setVideoStatus(status);
 
         if (status === "ready") {
           const url = payload.result?.afterVideoUrl ?? payload.session.afterVideoUrl ?? null;
           setAfterVideoUrl(url);
           setVideoGenerating(false);
           setVideoError(null);
+          setVideoStatus("ready");
           if (payload.result) {
             setResult(payload.result);
           }
@@ -122,6 +122,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         if (status === "failed") {
           setVideoGenerating(false);
           setVideoError(payload.session.videoErrorMessage ?? "Не удалось создать видео");
+          setVideoStatus("failed");
           return;
         }
 
@@ -133,11 +134,13 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         } else {
           setVideoGenerating(false);
           setVideoError("Генерация видео занимает дольше обычного. Обнови страницу через минуту.");
+          setVideoStatus("failed");
         }
       } catch {
         if (!cancelled) {
           setVideoGenerating(false);
           setVideoError("Не удалось проверить статус видео");
+          setVideoStatus("failed");
         }
       }
     }
@@ -271,16 +274,18 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         <TryOnBeforeAfter afterSrc={result.afterImageUrl} beforeSrc={result.beforeImageUrl} />
 
         {hasVideo && afterVideoUrl ? (
-          <Card>
-            <p className="text-eyebrow mb-3">Хит сезона</p>
+          <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-[28px] border border-[#f0dce8] bg-[#f5eef3] shadow-[0_20px_60px_rgba(58,12,82,0.12)]">
             <AuthenticatedVideo
               autoPlay
-              className="aspect-[3/4] w-full rounded-2xl object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
               loop
               muted
               src={afterVideoUrl}
             />
-          </Card>
+            <span className="absolute left-4 top-4 rounded-full bg-[#782cff] px-3 py-1 text-xs font-medium text-white">
+              Хит сезона
+            </span>
+          </div>
         ) : null}
       </div>
 

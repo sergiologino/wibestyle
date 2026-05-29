@@ -15,4 +15,6 @@ public interface TryOnSessionRepository extends JpaRepository<TryOnSessionEntity
     long countByUserIdAndStatusAndQuotaReservedTrueAndQuotaConsumedFalse(UUID userId, TryOnSessionStatus status);
 
     List<TryOnSessionEntity> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, TryOnSessionStatus status);
+
+    List<TryOnSessionEntity> findByUserIdOrderByCreatedAtDesc(UUID userId);
 }

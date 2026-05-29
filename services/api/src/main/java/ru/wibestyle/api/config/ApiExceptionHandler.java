@@ -56,6 +56,7 @@ public class ApiExceptionHandler {
     private static String humanMessage(String code) {
         return switch (code) {
             case "ANTHROPOMETRY_REQUIRED" -> "Укажите рост, грудь, талию и бёдра";
+            case "PROFILE_GENDER_REQUIRED" -> "Укажите пол в профиле перед примеркой";
             case "PHOTO_REQUIRED" -> "Загрузите фото в полный рост";
             case "INAPPROPRIATE_PHOTO" -> "Обнажённые фото не нужны и не принимаются";
             case "INVALID_IMAGE_TYPE" -> "Поддерживаются только изображения";
@@ -125,6 +126,7 @@ public class ApiExceptionHandler {
             case "LEAD_NOT_FOUND" -> "Заявка не найдена";
             case "LEAD_STATUS_INVALID" -> "Неверный статус заявки";
             case "DELETE_CONFIRM_REQUIRED" -> "Для удаления аккаунта передайте confirm=DELETE";
+            case "LAST_AVATAR_CANNOT_DELETE" -> "Нельзя удалить единственный аватар пользователя";
             case "ACCOUNT_DELETE_FAILED" -> "Не удалось удалить данные аккаунта";
             case "REPORT_REASON_INVALID" -> "Неверная причина жалобы";
             case "FILE_TOO_LARGE" -> "Файл слишком большой";

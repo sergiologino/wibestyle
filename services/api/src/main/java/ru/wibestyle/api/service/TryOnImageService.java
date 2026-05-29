@@ -5,6 +5,7 @@ import org.springframework.web.client.RestClient;
 import ru.wibestyle.api.domain.AvatarSnapshotEntity;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
+import ru.wibestyle.api.storage.BlobStorage;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -17,16 +18,16 @@ import java.util.UUID;
 public class TryOnImageService {
 
     private final AvatarSnapshotRepository avatarSnapshotRepository;
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
     private final RestClient restClient;
 
     public TryOnImageService(
             AvatarSnapshotRepository avatarSnapshotRepository,
-            LocalStorageService localStorageService,
+            BlobStorage blobStorage,
             RestClient.Builder restClientBuilder
     ) {
         this.avatarSnapshotRepository = avatarSnapshotRepository;
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
         this.restClient = restClientBuilder.build();
     }
 
@@ -47,16 +48,16 @@ public class TryOnImageService {
         AvatarSnapshotEntity snapshot = findSnapshot(session)
                 .orElseThrow(() -> new IOException("Avatar snapshot not found"));
         String path = snapshot.getProcessedImagePath();
-        if (path == null || !localStorageService.exists(path)) {
+        if (path == null || !blobStorage.exists(path)) {
             throw new IOException("Avatar processed image missing");
         }
-        return Base64.getEncoder().encodeToString(localStorageService.readBytes(path));
+        return Base64.getEncoder().encodeToString(blobStorage.readBytes(path));
     }
 
     public String encodeGarmentImageBase64(TryOnSessionEntity session) throws IOException {
         String path = session.getGarmentPhotoPath();
-        if (path != null && localStorageService.exists(path)) {
-            return Base64.getEncoder().encodeToString(localStorageService.readBytes(path));
+        if (path != null && blobStorage.exists(path)) {
+            return Base64.getEncoder().encodeToString(blobStorage.readBytes(path));
         }
         String imageUrl = session.getProductImageUrl();
         if (imageUrl != null && imageUrl.startsWith("http")) {
@@ -80,21 +81,21 @@ public class TryOnImageService {
         if (bytes == null || bytes.length == 0) {
             throw new IOException("Empty AI result image");
         }
-        return localStorageService.storeTryOnResult(userId, sessionId, "after", new ByteArrayInputStream(bytes));
+        return blobStorage.storeTryOnResult(userId, sessionId, "after", new ByteArrayInputStream(bytes));
     }
 
     public String encodeAfterImageBase64(TryOnSessionEntity session) throws IOException {
-        String path = localStorageService.resolveTryOnResultPath(session.getUserId(), session.getId(), "after");
-        if (!localStorageService.exists(path)) {
+        String path = blobStorage.keyTryOnResult(session.getUserId(), session.getId(), "after");
+        if (!blobStorage.exists(path)) {
             throw new IOException("After image missing");
         }
-        return Base64.getEncoder().encodeToString(localStorageService.readBytes(path));
+        return Base64.getEncoder().encodeToString(blobStorage.readBytes(path));
     }
 
     public String persistVideoBytes(UUID userId, UUID sessionId, byte[] bytes) throws IOException {
         if (bytes == null || bytes.length == 0) {
             throw new IOException("Empty AI result video");
         }
-        return localStorageService.storeTryOnVideo(userId, sessionId, new ByteArrayInputStream(bytes));
+        return blobStorage.storeTryOnVideo(userId, sessionId, new ByteArrayInputStream(bytes));
     }
 }

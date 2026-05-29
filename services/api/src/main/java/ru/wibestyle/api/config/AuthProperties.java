@@ -8,8 +8,9 @@ public class AuthProperties {
     private int otpTtlSeconds = 300;
     private int otpResendCooldownSeconds = 60;
     private int otpMaxAttempts = 5;
-    private int accessTokenTtlSeconds = 3600;
+    private int accessTokenTtlSeconds = 2_592_000;
     private int refreshTokenTtlSeconds = 2_592_000;
+    private String refreshTokenStore = "jdbc";
     private String jwtSecret = "dev-jwt-secret-change-me-in-production-min-32-chars";
     private boolean legacyAccessTokenEnabled = true;
 
@@ -51,6 +52,14 @@ public class AuthProperties {
 
     public void setRefreshTokenTtlSeconds(int refreshTokenTtlSeconds) {
         this.refreshTokenTtlSeconds = refreshTokenTtlSeconds;
+    }
+
+    public String getRefreshTokenStore() {
+        return refreshTokenStore;
+    }
+
+    public void setRefreshTokenStore(String refreshTokenStore) {
+        this.refreshTokenStore = refreshTokenStore;
     }
 
     private static final String DEFAULT_JWT_SECRET = "dev-jwt-secret-change-me-in-production-min-32-chars";

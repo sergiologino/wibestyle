@@ -109,7 +109,8 @@ IDEA Run Configuration или env:
 | `SPRING_DATASOURCE_USERNAME` | `wibestyle` | DB user |
 | `SPRING_DATASOURCE_PASSWORD` | `wibestyle` | DB password |
 | `WIBESTYLE_JWT_SECRET` | `dev-jwt-secret-change-me-in-production-min-32-chars` | JWT secret (не менять между перезапусками, иначе access-токен из браузера станет невалидным) |
-| `WIBESTYLE_STORAGE_ROOT` | — | Абсолютный путь к фото аватаров/примерок (по умолчанию `./data/storage` в cwd или `~/.wibestyle/storage`) |
+| `WIBESTYLE_STORAGE_ROOT` | `../../data/storage` (от `services/api`) | Persistent volume для медиа (локально `wibestyle/data/storage`; в Coolify — отдельный mount) |
+| `WIBESTYLE_STORAGE_BACKEND` | `local` | `local` или будущий `s3` |
 | `WIBESTYLE_ADMIN_API_KEY` | `dev-admin-key` | `X-Admin-Key` |
 | `WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD` | `dev-admin-password` | admin@wibestyle.local |
 | `WIBESTYLE_OAUTH_*` | см. ниже | OAuth (опционально) |

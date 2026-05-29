@@ -22,6 +22,7 @@ import ru.wibestyle.api.repository.GalleryLikeRepository;
 import ru.wibestyle.api.repository.GalleryPostRepository;
 import ru.wibestyle.api.repository.TryOnSessionRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
+import ru.wibestyle.api.storage.BlobStorage;
 
 import java.io.IOException;
 import java.net.URI;
@@ -44,7 +45,7 @@ public class GalleryService {
     private final GalleryCommentRepository galleryCommentRepository;
     private final TryOnSessionRepository tryOnSessionRepository;
     private final UserProfileRepository userProfileRepository;
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
 
     public GalleryService(
             GalleryPostRepository galleryPostRepository,
@@ -52,14 +53,14 @@ public class GalleryService {
             GalleryCommentRepository galleryCommentRepository,
             TryOnSessionRepository tryOnSessionRepository,
             UserProfileRepository userProfileRepository,
-            LocalStorageService localStorageService
+            BlobStorage blobStorage
     ) {
         this.galleryPostRepository = galleryPostRepository;
         this.galleryLikeRepository = galleryLikeRepository;
         this.galleryCommentRepository = galleryCommentRepository;
         this.tryOnSessionRepository = tryOnSessionRepository;
         this.userProfileRepository = userProfileRepository;
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
     }
 
     @Transactional(readOnly = true)
@@ -108,10 +109,10 @@ public class GalleryService {
         }
 
         if (post.getTryOnSessionId() != null) {
-            String storedPath = localStorageService.resolveTryOnResultPath(
+            String storedPath = blobStorage.keyTryOnResult(
                     post.getUserId(), post.getTryOnSessionId(), "after"
             );
-            if (localStorageService.exists(storedPath)) {
+            if (blobStorage.exists(storedPath)) {
                 return serveStoredFile(storedPath);
             }
         }
@@ -128,11 +129,11 @@ public class GalleryService {
         }
 
         if (post.getTryOnSessionId() != null) {
-            String storedPath = localStorageService.resolveTryOnVideoPath(
+            String storedPath = blobStorage.keyTryOnVideo(
                     post.getUserId(), post.getTryOnSessionId()
             );
-            if (localStorageService.exists(storedPath)) {
-                Path path = localStorageService.resolve(storedPath);
+            if (blobStorage.exists(storedPath)) {
+                Path path = blobStorage.resolveLocalFile(storedPath);
                 Resource resource = new FileSystemResource(path);
                 return ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"season-hit.mp4\"")
@@ -335,7 +336,7 @@ public class GalleryService {
     }
 
     private ResponseEntity<Resource> serveStoredFile(String storedPath) throws IOException {
-        Path path = localStorageService.resolve(storedPath);
+        Path path = blobStorage.resolveLocalFile(storedPath);
         String contentType = Files.probeContentType(path);
         MediaType mediaType = contentType == null
                 ? MediaType.APPLICATION_OCTET_STREAM

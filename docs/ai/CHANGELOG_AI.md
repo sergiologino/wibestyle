@@ -1,5 +1,29 @@
 # AI Changelog
 
+## 2026-05-29 (Auth zombie session fix)
+- `isAuthenticatedSession` — только живой access token (не stale profile/refreshToken в localStorage).
+- Gates (`/home`, `/settings`, `/favorites`, `/try-on`) — всегда `ensureSession()` перед контентом; при провале — редирект на `/auth` и очистка storage.
+- Bootstrap больше не оставляет «зombie» сессию при неудачном refresh; `REFRESH_TOKEN_INVALID` очищает localStorage.
+
+## 2026-05-29 (Blob storage abstraction)
+- API: `BlobStorage` + `LocalBlobStorage` — медиа в отдельном volume `wibestyle/data/storage` (ключи `{userId}/...`, не пути API); legacy absolute paths still readable.
+- Config: `wibestyle.storage.backend=local`, `WIBESTYLE_STORAGE_ROOT` для Coolify persistent volume.
+- Удалён `LocalStorageService` — миграция на S3 = новая реализация `BlobStorage`.
+
+## 2026-05-29 (Admin user support)
+- Admin API: `GET /admin/users/{id}` — профиль, аватары, все примерки (включая приватные); `PUT .../profile`, `DELETE .../avatars/{id}` (нельзя удалить единственный), `DELETE .../try-on-sessions/{id}`; медиа через admin key.
+- Admin UI: `/users` — поиск и кнопка «Поддержка»; `/users/[userId]` — редактирование профиля, просмотр/удаление аватаров и примерок.
+
+## 2026-05-29 (Auth persistence + try-on profile gate)
+- Auth: access/refresh TTL 30 дней; refresh-токены в Postgres (`refresh-token-store: jdbc`) — переживают перезапуск API; bootstrap не вызывает refresh повторно со stale token после rotation.
+- Web-app: `AppSessionProvider` сохраняет новые токены сразу после refresh; `ensureSession()` подтягивает `/me` при живом access token; onboarding синхронизируется с профилем на `/home`.
+- Try-on: gate на `/try-on`, `/try-on/link`, `/try-on/photo` — нужны вход, пол, антропометрия и активный аватар; API проверяет то же в `createLinkSession` / `createPhotoSession` / `generate`.
+- Settings: страница профиля доступна без завершённого avatar onboarding (заполнение данных перед примеркой).
+
+## 2026-05-29 (Dev server CPU/RAM fix)
+- Web-app dev: `--webpack` по умолчанию + `watchOptions.ignored` для `services/api`, `data/storage`, Gradle — Turbopack больше не пересобирает фронт при записи MP4/try-on и не уходит в OOM.
+- `AppSessionProvider`: без лишних `setSession` при refresh; одноразовое восстановление сессии из storage.
+
 ## 2026-05-28 (Season hit video — «Хит сезона»)
 - Elite-only: кнопка «Сделать видео» на странице результата; image-to-video по сохранённому `after.jpg` + промпт с локацией по категории одежды.
 - API: `POST /try-on/sessions/{id}/generate-video`, `GET .../after-video`; поля `videoStatus` / `afterVideoUrl` в сессии и результате; галерея поддерживает `mediaType=video`.

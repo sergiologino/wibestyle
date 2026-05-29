@@ -39,10 +39,10 @@
 - Consequences: Единая сборка/тесты; dev-порты 3000/3001/3002/8080; turbopack.root на корень monorepo.
 
 ## ADR-0009: Local file storage для avatar MVP
-- Status: Accepted
+- Status: Accepted (extended 2026-05-29)
 - Context: TZ-04 требует upload/preprocess avatar до подключения S3/CDN.
-- Decision: `LocalStorageService` пишет в `wibestyle.storage.root`; пути хранятся в БД; production заменится на private bucket + signed URLs.
-- Consequences: Dev/test работает без облака; миграция на object storage — adapter swap без смены API контракта.
+- Decision: `BlobStorage` + `LocalBlobStorage` пишет object keys в отдельный volume (`wibestyle/data/storage` локально, `WIBESTYLE_STORAGE_ROOT` в Coolify); пути/keys в БД; production → `S3BlobStorage` без смены API контракта.
+- Consequences: Dev/test работает без облака; API и медиа разделены; миграция на object storage — новая реализация `BlobStorage`.
 
 ## ADR-0010: Avatar snapshot на activate
 - Status: Accepted

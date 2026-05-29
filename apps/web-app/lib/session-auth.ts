@@ -5,7 +5,7 @@ export const SESSION_STORAGE_KEY = "wibestyle.app.session";
 /** Refresh access token this many ms before JWT expiry. */
 export const ACCESS_TOKEN_REFRESH_LEAD_MS = 5 * 60 * 1000;
 
-export const DEFAULT_ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
+export const DEFAULT_ACCESS_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Clock skew tolerance when checking JWT expiry. */
 export const ACCESS_TOKEN_EXPIRY_SKEW_MS = 30_000;
@@ -85,24 +85,32 @@ export function needsAccessTokenRefresh(session: {
   return shouldRefreshAccessToken(session.accessToken, session.accessTokenExpiresAt);
 }
 
+export function hasStoredCredentials(session: {
+  accessToken?: string | null;
+  refreshToken?: string | null;
+}): boolean {
+  return Boolean(session.refreshToken || session.accessToken);
+}
+
 export function isAuthenticatedSession(session: {
   accessToken?: string | null;
   refreshToken?: string | null;
   profile?: unknown | null;
   accessTokenExpiresAt?: number | null;
 }): boolean {
-  if (session.refreshToken) return true;
-  if (session.profile) return true;
   return isAccessTokenUsable(session.accessToken, session.accessTokenExpiresAt);
+}
+
+export function isRefreshTokenRejected(err: unknown): boolean {
+  if (err instanceof ApiError) {
+    return err.code === "REFRESH_TOKEN_INVALID";
+  }
+  return false;
 }
 
 export function hasPersistedCredentials(): boolean {
   const raw = readStoredSessionRaw();
-  return Boolean(raw?.refreshToken || raw?.accessToken || raw?.profile);
-}
-
-export function isRefreshTokenRejected(err: unknown): boolean {
-  return err instanceof ApiError && err.status === 401;
+  return Boolean(raw?.refreshToken || raw?.accessToken);
 }
 
 export function isTransientRefreshError(err: unknown): boolean {

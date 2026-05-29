@@ -5,6 +5,7 @@ import org.springframework.web.client.RestClient;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.marketplace.OzonAdapter;
 import ru.wibestyle.api.marketplace.WildberriesAdapter;
+import ru.wibestyle.api.storage.BlobStorage;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,18 +22,18 @@ public class GarmentImageService {
     private static final Pattern OZON_PROXY =
             Pattern.compile("^/api/v1/marketplaces/ozon/([^/]+)/image$");
 
-    private final LocalStorageService localStorageService;
+    private final BlobStorage blobStorage;
     private final WildberriesAdapter wildberriesAdapter;
     private final OzonAdapter ozonAdapter;
     private final RestClient restClient;
 
     public GarmentImageService(
-            LocalStorageService localStorageService,
+            BlobStorage blobStorage,
             WildberriesAdapter wildberriesAdapter,
             OzonAdapter ozonAdapter,
             RestClient.Builder restClientBuilder
     ) {
-        this.localStorageService = localStorageService;
+        this.blobStorage = blobStorage;
         this.wildberriesAdapter = wildberriesAdapter;
         this.ozonAdapter = ozonAdapter;
         this.restClient = restClientBuilder.build();
@@ -42,7 +43,7 @@ public class GarmentImageService {
      * Downloads remote garment image into session storage for AI processing.
      */
     public void ensureLocalGarmentPhoto(UUID userId, TryOnSessionEntity session) throws IOException {
-        if (session.getGarmentPhotoPath() != null && localStorageService.exists(session.getGarmentPhotoPath())) {
+        if (session.getGarmentPhotoPath() != null && blobStorage.exists(session.getGarmentPhotoPath())) {
             return;
         }
         String imageUrl = session.getProductImageUrl();
@@ -58,7 +59,7 @@ public class GarmentImageService {
             throw new IOException("Empty garment image response");
         }
         String extension = imageUrl.toLowerCase().contains(".png") ? ".png" : ".webp";
-        String storedPath = localStorageService.storeGarmentPhoto(
+        String storedPath = blobStorage.storeGarmentPhoto(
                 userId,
                 session.getId(),
                 extension,

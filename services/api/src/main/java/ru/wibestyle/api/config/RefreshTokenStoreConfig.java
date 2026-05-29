@@ -1,7 +1,7 @@
 package ru.wibestyle.api.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -14,16 +14,17 @@ import ru.wibestyle.api.auth.RedisRefreshTokenStore;
 @Configuration
 public class RefreshTokenStoreConfig {
 
-    /** Survives API restarts when Redis is not running (local dev). */
+    /** Default: Postgres — refresh survives API restarts (local dev). */
     @Bean
     @Primary
-    @ConditionalOnMissingBean(StringRedisTemplate.class)
+    @ConditionalOnProperty(name = "wibestyle.auth.refresh-token-store", havingValue = "jdbc", matchIfMissing = true)
     RefreshTokenStore jdbcRefreshTokenStore(JdbcTemplate jdbcTemplate) {
         return new JdbcRefreshTokenStore(jdbcTemplate);
     }
 
     @Bean
     @Primary
+    @ConditionalOnProperty(name = "wibestyle.auth.refresh-token-store", havingValue = "redis")
     @ConditionalOnBean(StringRedisTemplate.class)
     RefreshTokenStore redisRefreshTokenStore(StringRedisTemplate redisTemplate) {
         return new RedisRefreshTokenStore(redisTemplate);
