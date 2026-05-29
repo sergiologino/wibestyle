@@ -6,7 +6,7 @@ import { Button, Card, ShareCard } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { TryOnResult, TryOnSessionRecord } from "@wibestyle/shared-types";
 import TryOnReviewForm from "@/components/try-on/TryOnReviewForm";
-import { TryOnBeforeAfter, TryOnResultHero } from "@/components/try-on/TryOnResultImages";
+import { TryOnBeforeAfter } from "@/components/try-on/TryOnResultImages";
 import AuthenticatedShareImage from "@/components/media/AuthenticatedShareImage";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { formatTryOnError } from "@/lib/try-on-error-message";
@@ -162,10 +162,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         </Card>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TryOnResultHero imageSrc={result.afterImageUrl} />
-        <TryOnBeforeAfter afterSrc={result.afterImageUrl} beforeSrc={result.beforeImageUrl} />
-      </div>
+      <TryOnBeforeAfter afterSrc={result.afterImageUrl} beforeSrc={result.beforeImageUrl} />
 
       <Card>
         <div className="flex flex-wrap gap-3">

@@ -1,5 +1,8 @@
 # AI Changelog
 
+## 2026-05-28 (Try-on result UI)
+- Web-app `/try-on/result`: один блок — слайдер «до/после»; отдельный hero с результатом убран. `afterImageUrl` по-прежнему сохраняется для галереи, истории и ShareCard.
+
 ## 2026-05-28 (VTON result image inlining)
 - noteapp-ai-integration: Grok Imagine скачивает временный xAI URL и возвращает `imageBase64`; WibeStyle сохраняет байты локально без повторной загрузки с `imgen.x.ai`.
 
