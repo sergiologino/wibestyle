@@ -57,7 +57,7 @@ public final class TryOnPromptVariablesBuilder {
             product.put("brand", session.getProductBrand().trim());
         }
         if (session.getProductTitle() != null && !session.getProductTitle().isBlank()) {
-            product.put("title", session.getProductTitle().trim());
+            product.put("title", GarmentTitleSanitizer.forPrompt(session.getProductTitle().trim()));
         }
         if (session.getGarmentCategory() != null && !session.getGarmentCategory().isBlank()) {
             product.put("category", session.getGarmentCategory().trim());

@@ -8,7 +8,8 @@ import java.util.Locale;
 public class SeasonHitVideoPromptBuilder {
 
     public String buildPrompt(String garmentCategory, String productTitle) {
-        String location = resolveLocation(garmentCategory, productTitle);
+        String safeTitle = GarmentTitleSanitizer.forPrompt(productTitle);
+        String location = resolveLocation(garmentCategory, safeTitle);
         return """
                 Create a creative cinematic fashion video featuring the person from the reference photo wearing the exact outfit shown.
                 Studio-quality lighting, smooth camera movement, shallow depth of field, premium fashion film aesthetic.

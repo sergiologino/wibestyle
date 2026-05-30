@@ -150,7 +150,7 @@ public class NoteappAiClient {
         Map<String, Object> payload = new HashMap<>();
         payload.put("prompt", prompt);
         payload.put("settings", Map.of("aspectRatio", "3:4", "width", 768, "height", 1024));
-        payload.put("garmentTitle", session.getProductTitle());
+        payload.put("garmentTitle", GarmentTitleSanitizer.forPrompt(session.getProductTitle()));
         payload.put("garmentBrand", session.getProductBrand());
         if (session.getGarmentCategory() != null && !session.getGarmentCategory().isBlank()) {
             payload.put("garmentCategory", session.getGarmentCategory().trim());
