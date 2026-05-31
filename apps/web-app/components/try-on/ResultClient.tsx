@@ -8,6 +8,8 @@ import { ApiError } from "@wibestyle/api-client";
 import type { SeasonHitVideoStatus, TryOnResult, TryOnSessionRecord } from "@wibestyle/shared-types";
 import TryOnReviewForm from "@/components/try-on/TryOnReviewForm";
 import { TryOnBeforeAfter, TryOnResultVideo } from "@/components/try-on/TryOnResultImages";
+import TryOnProductBanner from "@/components/try-on/TryOnProductBanner";
+import TryOnFavoriteButton from "@/components/try-on/TryOnFavoriteButton";
 import AuthenticatedShareImage from "@/components/media/AuthenticatedShareImage";
 import FeedbackActionButton from "@/components/try-on/FeedbackActionButton";
 import OverlayModal from "@/components/ui/OverlayModal";
@@ -15,6 +17,11 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { formatTryOnError } from "@/lib/try-on-error-message";
 import { appBaseUrl, brandDomain, landingSiteUrl } from "@/lib/api-media";
 import { shareGalleryPost, buildSharePayloadFromPost } from "@/lib/share-post";
+import {
+  canFavoriteTryOnProduct,
+  favoriteProductKey,
+  shouldShowProductBanner,
+} from "@/lib/try-on-product";
 
 const POLL_MS = 2000;
 /** ~3 minutes — aligned with backend AI timeout */
@@ -44,6 +51,8 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [pendingSaveVisibility, setPendingSaveVisibility] = useState<"public" | "unlisted">("public");
   const [shareError, setShareError] = useState<string | null>(null);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -174,6 +183,56 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   const landingUrl = landingSiteUrl();
   const siteBrand = brandDomain();
   const shareAppBase = appBaseUrl();
+  const product = result?.product;
+  const selectedSize = result?.selectedSize ?? session?.selectedSize;
+  const favoriteKey = product && canFavoriteTryOnProduct(product) ? favoriteProductKey(product) : null;
+
+  useEffect(() => {
+    if (!favoriteKey) {
+      return;
+    }
+    let cancelled = false;
+    void api.listFavorites().then(({ items }) => {
+      if (cancelled) return;
+      const found = items.some((item) => `${item.marketplace}:${item.externalProductId}` === favoriteKey);
+      setIsFavorite(found);
+    }).catch(() => {
+      /* ignore — heart stays inactive */
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, favoriteKey]);
+
+  async function toggleFavorite() {
+    if (!product || !canFavoriteTryOnProduct(product)) {
+      return;
+    }
+    setFavoriteLoading(true);
+    try {
+      if (isFavorite) {
+        await api.removeFavorite(product.marketplace, product.id);
+        setIsFavorite(false);
+      } else {
+        await api.addFavorite({
+          marketplace: product.marketplace,
+          externalProductId: product.id,
+          title: product.title,
+          brand: product.brand,
+          priceRub: product.priceRub,
+          imageUrl: product.imageUrl,
+          productUrl: product.productUrl,
+          sizes: product.sizes,
+        });
+        setIsFavorite(true);
+      }
+    } catch (err) {
+      setShareError(err instanceof ApiError ? err.message : "Не удалось обновить избранное");
+      window.setTimeout(() => setShareError(null), 4000);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  }
 
   async function saveToGallery(
     visibility: "public" | "unlisted",
@@ -337,6 +396,10 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         </Card>
       ) : null}
 
+      {product && shouldShowProductBanner(product, selectedSize) ? (
+        <TryOnProductBanner product={product} selectedSize={selectedSize} />
+      ) : null}
+
       <div className={`mx-auto grid w-full gap-6 ${hasVideo ? "max-w-4xl md:grid-cols-2" : "max-w-md"}`}>
         <TryOnBeforeAfter
           afterSrc={result.afterImageUrl}
@@ -421,6 +484,17 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
           Показывать, где взяла одежду
         </label>
 
+        {product && canFavoriteTryOnProduct(product) ? (
+          <div className="mb-3">
+            <TryOnFavoriteButton
+              isFavorite={isFavorite}
+              loading={favoriteLoading}
+              product={product}
+              onToggle={() => void toggleFavorite()}
+            />
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap gap-3">
           {!hasVideo && videoStatus !== "generating" ? (
             <Button
@@ -447,13 +521,6 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
           >
             Отправить подруге
           </FeedbackActionButton>
-          {productUrl ? (
-            <Link href={productUrl} target="_blank">
-              <Button size="md" variant="ghost">
-                Открыть товар
-              </Button>
-            </Link>
-          ) : null}
         </div>
         {!hasVideo && videoStatus !== "generating" ? (
           <p className="text-body mt-3 text-sm">

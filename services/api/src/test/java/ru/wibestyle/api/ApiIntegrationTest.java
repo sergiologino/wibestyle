@@ -125,6 +125,12 @@ class ApiIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
 
         String checkoutId = objectMapper.readTree(body).get("checkoutId").asText();
+        mockMvc.perform(get("/api/v1/billing/checkout/" + checkoutId)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("pending"))
+                .andExpect(jsonPath("$.provider").value("mock"));
+
         mockMvc.perform(post("/api/v1/billing/webhooks/mock/simulate?checkoutId=" + checkoutId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("active"))

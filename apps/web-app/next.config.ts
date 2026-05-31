@@ -22,6 +22,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: monorepoRoot,
   },
+  async rewrites() {
+    const apiBase = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
+    return [
+      {
+        source: "/api/v1/marketplaces/:path*",
+        destination: `${apiBase}/api/v1/marketplaces/:path*`,
+      },
+    ];
+  },
   webpack(config, { dev }) {
     if (dev) {
       config.watchOptions = {

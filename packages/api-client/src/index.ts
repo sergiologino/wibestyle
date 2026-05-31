@@ -430,6 +430,7 @@ export class WibeStyleApiClient {
       annualDiscountPercent: number;
       defaultSelection: { plan: SubscriptionPlan; period: BillingPeriod };
       promoDiscountPercent: number;
+      paymentProvider?: string;
       subscriber?: { plan: SubscriptionPlan; billingPeriod: BillingPeriod; subscriptionActive: boolean };
     }>("/api/v1/billing/plans");
   }
@@ -471,6 +472,23 @@ export class WibeStyleApiClient {
       method: "POST",
       body: JSON.stringify({ plan, period }),
     });
+  }
+
+  getCheckout(checkoutId: string) {
+    return this.request<{
+      checkoutId: string;
+      status: "pending" | "completed" | "canceled";
+      plan: SubscriptionPlan;
+      period: BillingPeriod;
+      priceRub: number;
+      provider: string;
+      subscription?: {
+        plan: SubscriptionPlan;
+        period: BillingPeriod;
+        subscriptionExpiresAt: string;
+        planGenerationsLeft: number;
+      };
+    }>(`/api/v1/billing/checkout/${encodeURIComponent(checkoutId)}`);
   }
 
   simulateMockCheckout(checkoutId: string) {

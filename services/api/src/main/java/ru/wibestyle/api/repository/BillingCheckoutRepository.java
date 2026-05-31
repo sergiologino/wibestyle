@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface BillingCheckoutRepository extends JpaRepository<BillingCheckoutEntity, UUID> {
     Optional<BillingCheckoutEntity> findByIdAndUserId(UUID id, UUID userId);
+
+    Optional<BillingCheckoutEntity> findByExternalPaymentId(String externalPaymentId);
 }

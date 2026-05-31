@@ -3,7 +3,7 @@
 > Живой чеклист: что сделано и что осталось. Обновляется по мере реализации.
 > Оплата: **YooKassa позже** — сейчас mock checkout без реального провайдера.
 
-**Последнее обновление:** 2026-05-28
+**Последнее обновление:** 2026-05-31
 
 ## План работ
 
@@ -28,7 +28,8 @@
 | Admin full user delete | ✅ |
 | Admin `/users` UI | ✅ |
 | RUNBOOK (local + prod) | ✅ |
-| YooKassa | ❌ отложено |
+| YooKassa checkout + webhook | ✅ код готов — нужны env |
+| Paywall UX + trial nudges | ✅ |
 | Mobile app | ❌ skeleton |
 
 ---
@@ -65,7 +66,8 @@
 ## Не сделано
 
 ### Оплата
-- YooKassa checkout + webhook signatures
+- YooKassa: задать env (см. RUNBOOK), webhook URL в личном кабинете YooKassa
+- Fiscal receipts 54-FZ (опционально)
 
 ### Production / infra
 - Redis OTP, rate limiting, refresh revokeAll

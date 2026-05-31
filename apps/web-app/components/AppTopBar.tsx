@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BrandLogo, Button } from "@wibestyle/ui";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { isAuthenticatedSession } from "@/lib/session-auth";
+import { isPaidSubscription } from "@/lib/billing-plan";
 
 const nav = [
   { href: "/home", label: "Главная" },
@@ -33,6 +34,11 @@ export default function AppTopBar() {
           ))}
         </nav>
         <div className="flex items-center gap-1.5">
+          {sessionReady && isAuthenticated && profile && !isPaidSubscription(profile) ? (
+            <Link href="/paywall">
+              <Button size="sm" variant="secondary">Подписка</Button>
+            </Link>
+          ) : null}
           {sessionReady && isAuthenticated ? (
             <Link href="/settings">
               <Button size="sm" variant="ghost">

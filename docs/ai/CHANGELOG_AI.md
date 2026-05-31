@@ -1,5 +1,18 @@
 # AI Changelog
 
+## 2026-05-31 (Try-on result — product banner image fix)
+- После примерки `product.imageUrl` → `/api/v1/try-on/sessions/{id}/garment-photo` (требует Bearer); баннер использует `useAuthenticatedBlob`, а не голый `<img>`.
+- Публичные WB/Ozon proxy — same-origin через rewrite в `next.config.ts` + `resolveProductImageUrl`.
+
+## 2026-05-31 (Try-on result — product banner + favorites)
+- `/try-on/result`: компактный баннер товара над фото (маркетплейс, название, размер, цена); клик → карточка WB/Ozon.
+- Кнопка «Понравилось» (♥) над действиями — добавление в избранное; «Открыть товар» убрана.
+
+## 2026-05-31 (YooKassa + paywall UX)
+- Backend: `YooKassaClient`, checkout redirect, webhook `/billing/webhooks/yookassa`, poll `GET /billing/checkout/{id}`.
+- Env: `WIBESTYLE_BILLING_PROVIDER`, `WIBESTYLE_YOOKASSA_SHOP_ID`, `WIBESTYLE_YOOKASSA_SECRET_KEY`, `WIBESTYLE_BILLING_RETURN_URL`.
+- Web-app: улучшенный paywall, return/cancel после YooKassa, nudge-баннер для trial, подписка в settings/topbar.
+
 ## 2026-05-31 (VTON face lock — лицо только с аватара)
 - Промпт примерки: блок **ЛИЦО И ИДЕНТИЧНОСТЬ** (`FaceLockPromptBuilder`) в начале и конце промпта + JSON `faceLock`.
 - Flyway **V17**: усилен шаблон `vton.base_ru` — явный запрет брать лицо/голову модели с image2 (карточка маркетплейса).

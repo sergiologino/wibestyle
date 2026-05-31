@@ -52,6 +52,13 @@ wibestyle:
     media-access-ttl-seconds: 900
     max-upload-bytes: 10485760
   billing:
+    provider: ${WIBESTYLE_BILLING_PROVIDER:mock}
+    subscribe-dev-enabled: ${WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED:true}
+    return-url: ${WIBESTYLE_BILLING_RETURN_URL:http://localhost:3001/paywall/return}
+    yookassa:
+      shop-id: ${WIBESTYLE_YOOKASSA_SHOP_ID:}
+      secret-key: ${WIBESTYLE_YOOKASSA_SECRET_KEY:}
+      api-base-url: ${WIBESTYLE_YOOKASSA_API_BASE:https://api.yookassa.ru}
     wibe-monthly-rub: 400
     wibe-annual-rub: 3840
     elite-monthly-rub: 900

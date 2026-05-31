@@ -10,6 +10,7 @@ import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppS
 import AvatarManager from "@/components/avatar/AvatarManager";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
 import AnthropometryFields from "@/components/profile/AnthropometryFields";
+import { isPaidSubscription } from "@/lib/billing-plan";
 import {
   FieldInput,
   FieldLabel,
@@ -148,6 +149,31 @@ export default function ProfileSettingsClient() {
           Выйти из профиля
         </Button>
       </section>
+
+      <Card>
+        <p className={sectionTitleClassName}>Подписка</p>
+        {profile ? (
+          <div className="mt-3 space-y-2 text-sm text-[#6d6273]">
+            <p>
+              Тариф: <strong className="text-[#302637]">{profile.plan.toUpperCase()}</strong>
+              {profile.billingPeriod ? ` · ${profile.billingPeriod === "annual" ? "год" : "месяц"}` : ""}
+            </p>
+            {profile.plan === "trial" ? (
+              <p>Бесплатных примерок осталось: {profile.trialGenerationsLeft}</p>
+            ) : profile.planGenerationsLeft != null ? (
+              <p>Генераций в периоде: {profile.planGenerationsLeft}</p>
+            ) : null}
+            {profile.subscriptionExpiresAt ? (
+              <p>Действует до: {new Date(profile.subscriptionExpiresAt).toLocaleDateString("ru-RU")}</p>
+            ) : null}
+          </div>
+        ) : null}
+        <Link href={isPaidSubscription(profile) ? "/paywall?reason=elite_perk" : "/paywall"}>
+          <Button className="mt-4" size="md" variant={isPaidSubscription(profile) ? "secondary" : "primary"}>
+            {isPaidSubscription(profile) ? "Upgrade на Elite" : "Оформить подписку"}
+          </Button>
+        </Link>
+      </Card>
 
       <Card>
         <div className="grid gap-6">

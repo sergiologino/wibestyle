@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getNextOnboardingRoute } from "@/lib/onboarding-flow";
 import { syncOnboardingFromProfile } from "@/lib/session-onboarding";
@@ -34,5 +34,13 @@ export default function HomeGateClient() {
     return null;
   }
 
-  return <HomeDashboardClient />;
+  return (
+    <Suspense fallback={(
+      <div className="mx-auto max-w-3xl px-4 py-16 text-center text-sm font-normal text-[#6d6273]">
+        Загружаем…
+      </div>
+    )}>
+      <HomeDashboardClient />
+    </Suspense>
+  );
 }

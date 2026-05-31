@@ -232,6 +232,34 @@ cd services\api
 - [ ] TLS на всех доменах
 - [ ] OAuth redirect URIs
 
+| `WIBESTYLE_BILLING_PROVIDER` | `mock` | `mock` или `yookassa` |
+| `WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED` | `true` | `false` в prod (мгновенный subscribe без оплаты) |
+| `WIBESTYLE_BILLING_RETURN_URL` | `http://localhost:3001/paywall/return` | URL возврата после YooKassa |
+| `WIBESTYLE_YOOKASSA_SHOP_ID` | — | Shop ID из личного кабинета |
+| `WIBESTYLE_YOOKASSA_SECRET_KEY` | — | Secret key |
+| `WIBESTYLE_YOOKASSA_API_BASE` | `https://api.yookassa.ru` | API base (обычно не менять) |
+
+### YooKassa — подключение
+
+1. В [личном кабинете YooKassa](https://yookassa.ru/) создайте магазин, получите **shopId** и **secret key**.
+2. **Webhook URL** (HTTP notifications): `https://api.wibestyle.ru/api/v1/billing/webhooks/yookassa`  
+   События: `payment.succeeded`, `payment.canceled`.
+3. **Return URL** в env API: `https://app.wibestyle.ru/paywall/return` (`WIBESTYLE_BILLING_RETURN_URL`).
+4. Env на API-сервере:
+
+```env
+WIBESTYLE_BILLING_PROVIDER=yookassa
+WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=false
+WIBESTYLE_BILLING_RETURN_URL=https://app.wibestyle.ru/paywall/return
+WIBESTYLE_YOOKASSA_SHOP_ID=123456
+WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
+```
+
+5. Перезапустите API. Paywall покажет «Оплатить через YooKassa» и редирект на страницу оплаты.
+6. После оплаты пользователь возвращается на `/paywall/return` — фронт опрашивает `GET /billing/checkout/{id}` до `completed`.
+
+Локально без ключей оставьте `WIBESTYLE_BILLING_PROVIDER=mock` — работает `/paywall/payment` с mock-кнопкой.
+
 ---
 
 ## Полный справочник переменных

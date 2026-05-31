@@ -32,8 +32,8 @@
 - Flyway `V6__billing_promo.sql`.
 
 ## Что дальше
-- Реальный платёжный провайдер (YooKassa/Stripe).
-- Redis OTP store (production).
+- Production: Redis OTP, S3, age gate.
+- YooKassa: код готов — задать env и webhook URL (см. RUNBOOK).
 - Admin RBAC (роли SUPER_ADMIN/MODERATOR).
 - Age gate, блокировка пользователей.
 

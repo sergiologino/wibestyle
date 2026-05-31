@@ -1,6 +1,9 @@
 package ru.wibestyle.api.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +24,12 @@ public class BillingWebhookController {
 
     public BillingWebhookController(BillingService billingService) {
         this.billingService = billingService;
+    }
+
+    @PostMapping("/yookassa")
+    public ResponseEntity<Void> yookassaWebhook(@RequestBody JsonNode notification) {
+        billingService.handleYooKassaNotification(notification);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{provider}")

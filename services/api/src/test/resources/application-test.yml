@@ -30,6 +30,9 @@ wibestyle:
     enabled: false
     fallback-to-demo: true
     async-enabled: false
+  billing:
+    provider: mock
+    subscribe-dev-enabled: true
   features:
     flags:
       search: true

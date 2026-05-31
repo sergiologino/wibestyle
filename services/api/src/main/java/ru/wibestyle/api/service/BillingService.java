@@ -1,7 +1,10 @@
 package ru.wibestyle.api.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.wibestyle.api.billing.yookassa.YooKassaClient;
+import ru.wibestyle.api.billing.yookassa.YooKassaPaymentResult;
 import ru.wibestyle.api.config.BillingProperties;
 import ru.wibestyle.api.domain.BillingCheckoutEntity;
 import ru.wibestyle.api.domain.UserProfileEntity;
@@ -9,6 +12,8 @@ import ru.wibestyle.api.dto.BillingWebhookRequest;
 import ru.wibestyle.api.repository.BillingCheckoutRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -24,17 +29,20 @@ public class BillingService {
     private final UserProfileRepository userProfileRepository;
     private final QuotaService quotaService;
     private final BillingCheckoutRepository billingCheckoutRepository;
+    private final YooKassaClient yooKassaClient;
 
     public BillingService(
             BillingProperties billingProperties,
             UserProfileRepository userProfileRepository,
             QuotaService quotaService,
-            BillingCheckoutRepository billingCheckoutRepository
+            BillingCheckoutRepository billingCheckoutRepository,
+            YooKassaClient yooKassaClient
     ) {
         this.billingProperties = billingProperties;
         this.userProfileRepository = userProfileRepository;
         this.quotaService = quotaService;
         this.billingCheckoutRepository = billingCheckoutRepository;
+        this.yooKassaClient = yooKassaClient;
     }
 
     public Map<String, Object> listPlans(UserProfileEntity profile) {
@@ -50,6 +58,7 @@ public class BillingService {
         response.put("annualDiscountPercent", billingProperties.getAnnualDiscountPercent());
         response.put("defaultSelection", Map.of("plan", "wibe", "period", "annual"));
         response.put("promoDiscountPercent", promoDiscount);
+        response.put("paymentProvider", activeProvider());
         response.put("subscriber", Map.of(
                 "plan", profile.getPlan(),
                 "billingPeriod", profile.getBillingPeriod() == null ? "monthly" : profile.getBillingPeriod(),
@@ -60,6 +69,9 @@ public class BillingService {
 
     @Transactional
     public Map<String, Object> subscribe(UUID userId, String plan, String period) {
+        if (!billingProperties.isSubscribeDevEnabled()) {
+            throw new IllegalArgumentException("SUBSCRIBE_DEV_DISABLED");
+        }
         CheckoutPricing pricing = resolvePricing(userId, plan, period);
         activateSubscription(userId, plan, period, pricing.finalPrice(), pricing.basePrice());
         UserProfileEntity profile = userProfileRepository.findById(userId)
@@ -71,15 +83,33 @@ public class BillingService {
     public Map<String, Object> createCheckout(UUID userId, String plan, String period) {
         CheckoutPricing pricing = resolvePricing(userId, plan, period);
         Instant now = Instant.now();
+        UUID checkoutId = UUID.randomUUID();
+        String provider = activeProvider();
+
         BillingCheckoutEntity checkout = new BillingCheckoutEntity(
-                UUID.randomUUID(),
+                checkoutId,
                 userId,
                 plan,
                 period,
                 pricing.finalPrice(),
-                "mock",
+                provider,
                 now
         );
+
+        String paymentUrl;
+        if ("yookassa".equals(provider)) {
+            YooKassaPaymentResult payment = yooKassaClient.createRedirectPayment(
+                    checkoutId,
+                    pricing.finalPrice(),
+                    checkoutDescription(plan, period),
+                    userId
+            );
+            checkout.setExternalPaymentId(payment.paymentId());
+            paymentUrl = payment.confirmationUrl();
+        } else {
+            paymentUrl = "/api/v1/billing/webhooks/mock/simulate?checkoutId=" + checkoutId;
+        }
+
         billingCheckoutRepository.save(checkout);
 
         Map<String, Object> response = new HashMap<>();
@@ -89,9 +119,19 @@ public class BillingService {
         response.put("period", period);
         response.put("priceRub", pricing.finalPrice());
         response.put("basePriceRub", pricing.basePrice());
-        response.put("provider", "mock");
-        response.put("paymentUrl", "/api/v1/billing/webhooks/mock/simulate?checkoutId=" + checkout.getId());
+        response.put("provider", provider);
+        response.put("paymentUrl", paymentUrl);
         return response;
+    }
+
+    @Transactional
+    public Map<String, Object> getCheckout(UUID userId, UUID checkoutId) {
+        BillingCheckoutEntity checkout = billingCheckoutRepository.findByIdAndUserId(checkoutId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("CHECKOUT_NOT_FOUND"));
+        if ("pending".equals(checkout.getStatus()) && "yookassa".equals(checkout.getProvider())) {
+            syncYooKassaCheckout(checkout);
+        }
+        return toCheckoutResponse(checkout);
     }
 
     @Transactional
@@ -108,6 +148,46 @@ public class BillingService {
 
         BillingCheckoutEntity checkout = billingCheckoutRepository.findById(request.checkoutId())
                 .orElseThrow(() -> new IllegalArgumentException("CHECKOUT_NOT_FOUND"));
+        return completeCheckout(checkout, request.externalPaymentId());
+    }
+
+    @Transactional
+    public void handleYooKassaNotification(JsonNode notification) {
+        String event = notification.path("event").asText("");
+        JsonNode payment = notification.path("object");
+        String paymentId = payment.path("id").asText(null);
+        if (paymentId == null || paymentId.isBlank()) {
+            return;
+        }
+
+        JsonNode verified = yooKassaClient.fetchPayment(paymentId);
+        String verifiedStatus = verified.path("status").asText("");
+        UUID checkoutId = parseCheckoutId(verified.path("metadata").path("checkout_id").asText(null));
+
+        BillingCheckoutEntity checkout = checkoutId == null
+                ? billingCheckoutRepository.findByExternalPaymentId(paymentId).orElse(null)
+                : billingCheckoutRepository.findById(checkoutId).orElse(null);
+        if (checkout == null) {
+            return;
+        }
+
+        if ("payment.succeeded".equals(event) && "succeeded".equals(verifiedStatus)) {
+            verifyPaymentAmount(checkout, verified);
+            try {
+                completeCheckout(checkout, paymentId);
+            } catch (IllegalArgumentException ex) {
+                if (!"CHECKOUT_ALREADY_PROCESSED".equals(ex.getMessage())) {
+                    throw ex;
+                }
+            }
+            return;
+        }
+        if ("payment.canceled".equals(event) || "canceled".equals(verifiedStatus)) {
+            markCheckoutCanceled(checkout);
+        }
+    }
+
+    private Map<String, Object> completeCheckout(BillingCheckoutEntity checkout, String externalPaymentId) {
         if (!"pending".equals(checkout.getStatus())) {
             throw new IllegalArgumentException("CHECKOUT_ALREADY_PROCESSED");
         }
@@ -121,7 +201,7 @@ public class BillingService {
         );
 
         checkout.setStatus("completed");
-        checkout.setExternalPaymentId(request.externalPaymentId());
+        checkout.setExternalPaymentId(externalPaymentId);
         checkout.setCompletedAt(Instant.now());
         billingCheckoutRepository.save(checkout);
 
@@ -136,6 +216,89 @@ public class BillingService {
         );
         response.put("checkoutId", checkout.getId().toString());
         return response;
+    }
+
+    private void syncYooKassaCheckout(BillingCheckoutEntity checkout) {
+        if (checkout.getExternalPaymentId() == null || checkout.getExternalPaymentId().isBlank()) {
+            return;
+        }
+        JsonNode payment = yooKassaClient.fetchPayment(checkout.getExternalPaymentId());
+        String status = payment.path("status").asText("");
+        if ("succeeded".equals(status)) {
+            verifyPaymentAmount(checkout, payment);
+            try {
+                completeCheckout(checkout, checkout.getExternalPaymentId());
+            } catch (IllegalArgumentException ex) {
+                if (!"CHECKOUT_ALREADY_PROCESSED".equals(ex.getMessage())) {
+                    throw ex;
+                }
+            }
+        } else if ("canceled".equals(status)) {
+            markCheckoutCanceled(checkout);
+        }
+    }
+
+    private void verifyPaymentAmount(BillingCheckoutEntity checkout, JsonNode payment) {
+        String value = payment.path("amount").path("value").asText("0");
+        int paidRub = new BigDecimal(value).setScale(0, RoundingMode.HALF_UP).intValue();
+        if (paidRub != checkout.getPriceRub()) {
+            throw new IllegalStateException("YOOKASSA_AMOUNT_MISMATCH");
+        }
+    }
+
+    private void markCheckoutCanceled(BillingCheckoutEntity checkout) {
+        if ("pending".equals(checkout.getStatus())) {
+            checkout.setStatus("canceled");
+            billingCheckoutRepository.save(checkout);
+        }
+    }
+
+    private Map<String, Object> toCheckoutResponse(BillingCheckoutEntity checkout) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("checkoutId", checkout.getId().toString());
+        response.put("status", checkout.getStatus());
+        response.put("plan", checkout.getPlan());
+        response.put("period", checkout.getBillingPeriod());
+        response.put("priceRub", checkout.getPriceRub());
+        response.put("provider", checkout.getProvider());
+        if ("completed".equals(checkout.getStatus())) {
+            UserProfileEntity profile = userProfileRepository.findById(checkout.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
+            response.put("subscription", Map.of(
+                    "plan", profile.getPlan(),
+                    "period", profile.getBillingPeriod(),
+                    "subscriptionExpiresAt", profile.getSubscriptionExpiresAt().toString(),
+                    "planGenerationsLeft", profile.getPlanGenerationsLeft()
+            ));
+        }
+        return response;
+    }
+
+    private String activeProvider() {
+        if (billingProperties.yooKassaConfigured()) {
+            return "yookassa";
+        }
+        if (billingProperties.usesYooKassa()) {
+            throw new IllegalStateException("YOOKASSA_NOT_CONFIGURED");
+        }
+        return "mock";
+    }
+
+    private static UUID parseCheckoutId(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(raw);
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private static String checkoutDescription(String plan, String period) {
+        String planLabel = "elite".equals(plan) ? "Elite" : "Wibe";
+        String periodLabel = "annual".equals(period) ? "год" : "месяц";
+        return "WibeStyle подписка " + planLabel + " (" + periodLabel + ")";
     }
 
     private void activateSubscription(UUID userId, String plan, String period, int finalPrice, int basePrice) {

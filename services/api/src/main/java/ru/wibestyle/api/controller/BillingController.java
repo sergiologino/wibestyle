@@ -2,6 +2,8 @@ package ru.wibestyle.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -16,6 +18,7 @@ import ru.wibestyle.api.service.PromoService;
 import ru.wibestyle.api.support.AuthSupport;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.UUID;
 
 @RestController
@@ -69,6 +72,15 @@ public class BillingController {
     ) {
         UUID userId = AuthSupport.requireUserId(authorization);
         return billingService.subscribe(userId, request.plan(), request.period());
+    }
+
+    @GetMapping("/checkout/{checkoutId}")
+    public Map<String, Object> checkoutStatus(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID checkoutId
+    ) {
+        UUID userId = AuthSupport.requireUserId(authorization);
+        return billingService.getCheckout(userId, checkoutId);
     }
 
     @PostMapping("/checkout")

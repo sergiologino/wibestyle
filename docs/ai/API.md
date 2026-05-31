@@ -70,8 +70,10 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 | GET | `/billing/plans` |
 | GET | `/billing/entitlements` |
 | POST | `/billing/promo/validate` |
-| POST | `/billing/subscribe` | *(dev: мгновенная активация)* |
-| POST | `/billing/checkout` | pending checkout + mock `paymentUrl` |
+| POST | `/billing/checkout` | pending checkout; `paymentUrl` = YooKassa redirect or mock simulate |
+| GET | `/billing/checkout/{checkoutId}` | status poll after return from YooKassa |
+| POST | `/billing/subscribe` | *(dev only if `WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=true`)* |
+| POST | `/billing/webhooks/yookassa` | YooKassa notification (verify via API) |
 | POST | `/billing/webhooks/{provider}` | webhook провайдера (`mock` + `payment.succeeded`) |
 | POST | `/billing/webhooks/mock/simulate?checkoutId=` | dev shortcut для завершения оплаты |
 
@@ -133,7 +135,7 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 
 ## Planned
 
-- Real payment provider (YooKassa/Stripe) вместо mock webhook
+- Fiscal receipts (54-FZ) metadata for YooKassa
 - Redis OTP store (production)
 
 ## Data model (implemented tables)
