@@ -313,7 +313,8 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 | Примерка «не то платье» / белое бельё | Сеть `wibestyle-vton` без xAI ключа → Pollinations только по тексту; нужен Grok Imagine (см. ниже) |
 | Пеньюар/сорочка → белое бельё или ошибка модерации | В логах: `content moderation` → обновите **noteapp** (retail-safe prompt + retry). Код `VTON_CONTENT_MODERATION` — не Pollinations fallback. Перезапуск noteapp + API |
 | Изменить текст запроса к Grok | Админка → **Промпт примерки** (`http://localhost:3002/ai-prompts`). JSON-переменные не трогать — их добавляет API |
-| После примерки фигура «уменьшилась» / грудь и бёдра уже | Блок **FIGURE LOCK** в начале и конце промпта Grok (фото image1 + см из профиля). Миграция **V14** (`product_size_chart`). Перезапуск API + noteapp |
+| После примерки фигура «уменьшилась» / грудь и бёдра уже | Блок **FIGURE LOCK** в JSON + см из профиля. Миграция **V14** (`product_size_chart`). Перезапуск API + noteapp |
+| Лицо на примерке «чужое» (модель с карточки WB/Ozon) | Блок **FACE LOCK** в начале/конце промпта + **V17** (`vton.base_ru`). Перезапуск API; в админке `/ai-prompts` не удаляйте акцент на image1 |
 | Размерная сетка с карточки | При parse-link ищем таблицу в WB card/product.json и HTML карточки; `suggestedSize` — если пользователь авторизован |
 | Запрос не доходит до noteapp | В логах **wibestyle API** ищите `Noteapp try-on call`; в noteapp — `[AI-TRAFFIC] IN`. Нет `IN` → неверный `WIBESTYLE_AI_BASE_URL` / ключ / `ENABLED=false` |
 | Диагностика noteapp | Консоль: `[AI-TRAFFIC]` (request/response, base64 заменён на длину). UI: noteapp Admin → **Логи запросов**. API: `GET /api/admin/logs` (Bearer admin). В логе VTON смотрите `provider`: `virtual_try_on_grok` vs `virtual_try_on_pollinations` |

@@ -108,7 +108,7 @@ class VirtualTryOnPromptBuilderTest {
 
         when(avatarSnapshotRepository.findById(snapshotId)).thenReturn(Optional.of(snapshot));
 
-        when(garmentFitAnalyzer.analyze(session, snapshot, org.mockito.ArgumentMatchers.any())).thenReturn(
+        when(garmentFitAnalyzer.analyze(eq(session), eq(snapshot), org.mockito.ArgumentMatchers.any())).thenReturn(
 
                 GarmentFitAnalyzer.GarmentFitAssessment.tooSmall(
 
@@ -130,9 +130,15 @@ class VirtualTryOnPromptBuilderTest {
 
 
 
-        assertThat(prompt).startsWith("Базовый промпт из админки.");
+        assertThat(prompt).startsWith("ЛИЦО И ИДЕНТИЧНОСТЬ");
+
+        assertThat(prompt).contains("Базовый промпт из админки.");
 
         assertThat(prompt).contains("ДАННЫЕ ПРИМЕРКИ (JSON");
+
+        assertThat(prompt).contains("\"faceLock\"");
+
+        assertThat(prompt).contains("ЛИЦО И ИДЕНТИЧНОСТЬ");
 
         assertThat(prompt).contains("\"marketplaceLabelSize\" : \"M\"");
 

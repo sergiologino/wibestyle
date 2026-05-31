@@ -30,9 +30,13 @@ public class VirtualTryOnPromptBuilder {
 
             Виртуальная примерка одежды для интернет-магазина (как на Wildberries/Ozon).
 
-            На фото image1 — покупатель (эталон фигуры и лица). На фото image2 — товар с карточки маркетплейса.
+            На фото image1 — покупатель: единственный источник лица, волос, тона кожи и фигуры.
 
-            Одень человека с image1 точно в вещь с image2. Сохрани лицо и пропорции тела с image1.
+            На фото image2 — товар с карточки маркетплейса (часто с моделью в одежде).
+
+            С image2 возьми только одежду; лицо и тело модели на image2 не использовать.
+
+            Одень человека с image1 в вещь с image2. Лицо, причёска и пропорции тела — строго с image1.
 
             Фотореализм, нейтральный студийный фон, вертикаль 3:4, PG-каталог, не эротика.
 
@@ -90,6 +94,8 @@ public class VirtualTryOnPromptBuilder {
 
         ProductSizeChart chart = ProductSizeChartJson.deserialize(objectMapper, session.getProductSizeChart());
 
+        String faceLock = FaceLockPromptBuilder.build();
+
         String figureLock = FigureLockPromptBuilder.build(snapshot, session.getSelectedSize(), chart);
 
         String fitHint = snapshot == null
@@ -116,6 +122,8 @@ public class VirtualTryOnPromptBuilder {
 
                 snapshot,
 
+                faceLock,
+
                 figureLock,
 
                 fitHint,
@@ -124,7 +132,9 @@ public class VirtualTryOnPromptBuilder {
 
         );
 
-        return (base.trim() + VARIABLES_HEADER + variablesJson).trim();
+        String core = base.trim() + VARIABLES_HEADER + variablesJson;
+
+        return (faceLock + "\n\n" + core + "\n\n" + faceLock).trim();
 
     }
 

@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-05-31 (VTON face lock — лицо только с аватара)
+- Промпт примерки: блок **ЛИЦО И ИДЕНТИЧНОСТЬ** (`FaceLockPromptBuilder`) в начале и конце промпта + JSON `faceLock`.
+- Flyway **V17**: усилен шаблон `vton.base_ru` — явный запрет брать лицо/голову модели с image2 (карточка маркетплейса).
+- После деплоя перезапустить wibestyle API (миграция V17 + новый код).
+
 ## 2026-05-29 (Auth zombie session fix)
 - `isAuthenticatedSession` — только живой access token (не stale profile/refreshToken в localStorage).
 - Gates (`/home`, `/settings`, `/favorites`, `/try-on`) — всегда `ensureSession()` перед контентом; при провале — редирект на `/auth` и очистка storage.
