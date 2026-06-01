@@ -22,7 +22,7 @@ apps/landing       apps/web-app           apps/mobile-app
 - `apps/landing` — SEO-лендинг, локальные leads (миграция на API в процессе).
 - `apps/web-app` — Next.js примерочная, порт 3001.
 - `apps/admin` — админка, порт 3002.
-- `apps/mobile-app` — RN skeleton (foundation config).
+- `apps/mobile-app` — Expo React Native, Android 12+ (см. MOBILE_APP.md).
 
 ## Packages
 - `@wibestyle/shared-types` — доменные типы, feature flags, avatar/profile types.

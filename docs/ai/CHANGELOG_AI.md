@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-06-01 (Mobile app — Android Expo)
+- `apps/mobile-app`: нативное Android-приложение (Expo SDK 52, RN 0.76, minSdk 31) — auth, avatar onboarding, try-on link/photo, result before/after, gallery, favorites, settings, paywall.
+- Design: Manrope, тонкие borders, bottom tabs, `@wibestyle/api-client` + mobile multipart uploads.
+- Docs: [MOBILE_APP.md](./MOBILE_APP.md); `npm run start:mobile` / `npm run dev:mobile`.
+
 ## 2026-06-01 (Admin support — try-on photo preview + pagination)
 - Admin after-photo: читаем `{userId}/try-on/{sessionId}/after.jpg` из blob storage (не `after_image_url` из БД); fallback garment / временный xAI URL.
 - Admin UI: пагинация примерок по 10 на странице.

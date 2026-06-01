@@ -11,6 +11,8 @@
     "dev:web": "npm run dev -w @wibestyle/web-app",
     "dev:admin": "npm run dev -w @wibestyle/admin",
     "dev:api": "cd services/api && gradlew.bat bootRun",
+    "dev:mobile": "npm run android -w @wibestyle/mobile-app",
+    "start:mobile": "npm run start -w @wibestyle/mobile-app",
     "test": "npm run test --workspaces --if-present",
     "test:api": "cd services/api && gradlew.bat test",
     "build": "npm run build --workspaces --if-present",

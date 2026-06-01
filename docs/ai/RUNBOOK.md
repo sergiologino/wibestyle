@@ -147,6 +147,8 @@ npm run dev:api      # :8080 — Flyway применит миграции к л�
 npm run dev:web      # :3001
 npm run dev:admin    # :3002
 npm run dev:landing  # :3000 (опционально)
+npm run start:mobile # Expo dev server
+npm run dev:mobile   # expo run:android (после npm install)
 ```
 
 Gradle напрямую:
@@ -359,6 +361,7 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 
 ## Связанные документы
 
+- [MOBILE_APP.md](./MOBILE_APP.md)
 - [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md)
 - [CURRENT_STATE.md](./CURRENT_STATE.md)
 - [API.md](./API.md)

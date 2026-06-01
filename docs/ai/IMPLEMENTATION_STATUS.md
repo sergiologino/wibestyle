@@ -3,7 +3,7 @@
 > Живой чеклист: что сделано и что осталось. Обновляется по мере реализации.
 > Оплата: **YooKassa позже** — сейчас mock checkout без реального провайдера.
 
-**Последнее обновление:** 2026-05-31
+**Последнее обновление:** 2026-06-01
 
 ## План работ
 
@@ -30,7 +30,7 @@
 | RUNBOOK (local + prod) | ✅ |
 | YooKassa checkout + webhook | ✅ код готов — нужны env |
 | Paywall UX + trial nudges | ✅ |
-| Mobile app | ❌ skeleton |
+| Mobile app | ✅ Android (Expo RN) |
 
 ---
 
@@ -78,7 +78,8 @@
 - Privacy mode execution, consents, age gate, user blocking
 
 ### Этап 3+ roadmap
-- Multi-item, video, new marketplaces, mobile app
+- Multi-item, video, new marketplaces
+- Mobile: iOS, push, YooKassa in-app
 
 ---
 

@@ -1,11 +1,11 @@
 # Current State
 
 ## Фактическое состояние
-- **Monorepo** WibeStyle: лендинг, web-app, admin, mobile skeleton, backend API, shared packages.
+- **Monorepo** WibeStyle: лендинг, web-app, admin, **mobile Android (Expo)**, backend API, shared packages.
 - **Web app**: полный UX-flow + search/gallery + billing paywall + promo deep links.
 - **API**: auth (OTP + promo redeem), billing, admin promo CRUD, entitlements, quota reserve/consume/refund.
 - **Admin** (`:3002`): `/promo`, `/reviews`, `/leads`, `/gallery`.
-- Автотесты: **42 npm** (web-app + packages) — проходят; API unit (WildberriesCatalog) — проходят.
+- Автотесты: **npm** (web-app + packages + mobile) — проходят; API unit (WildberriesCatalog) — проходят.
 
 ## Недавние фиксы (2026-05-28)
 - **Auth persistence**: refresh token 30 дней в localStorage + PostgreSQL; proactive refresh; logout только при явном выходе или invalid refresh.
@@ -31,6 +31,10 @@
 - Deep links: `?promo=CODE` на `/welcome` и `/auth`; кириллица → `PROMO_CYRILLIC_KEYBOARD`.
 - Flyway `V6__billing_promo.sql`.
 
+## Mobile app (Android)
+- Expo React Native в `apps/mobile-app`: OTP/логин, onboarding аватар, try-on link/photo, result slider, gallery, favorites, settings, paywall (dev subscribe).
+- Bottom tabs, Manrope, design tokens как web-app. См. [MOBILE_APP.md](./MOBILE_APP.md).
+
 ## Что дальше
 - Production: Redis OTP, S3, age gate.
 - YooKassa: код готов — задать env и webhook URL (см. RUNBOOK).
@@ -41,6 +45,7 @@
 - [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) — чеклист сделано / не сделано (актуальный)
 - [API.md](./API.md) — endpoints MVP
 - [PROMO_CODES_GUIDE.md](./PROMO_CODES_GUIDE.md) — промокоды: создание, ссылки VK, использование
+- [MOBILE_APP.md](./MOBILE_APP.md) — Android-приложение
 
 ## Этап 10 (Backend API) — выполнен
 - JWT access tokens + refresh/logout.
