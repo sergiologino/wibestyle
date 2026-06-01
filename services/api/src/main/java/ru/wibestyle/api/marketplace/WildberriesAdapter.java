@@ -42,9 +42,9 @@ public class WildberriesAdapter implements MarketplaceAdapter {
     @Override
     public ProductDetails fetchProduct(String productId, String url) {
         String id = productId == null ? "unknown" : productId;
-        return catalog.fetchProductCard(id)
+        return catalog.fetchProductCard(id, url)
                 .map(card -> {
-                    if (!hasDownloadableImage(card.productId())) {
+                    if (!catalog.probeProductImage(card.productId(), url)) {
                         throw new IllegalArgumentException("PRODUCT_IMAGE_NOT_FOUND");
                     }
                     return new ProductDetails(
@@ -64,11 +64,6 @@ public class WildberriesAdapter implements MarketplaceAdapter {
                     );
                 })
                 .orElseThrow(() -> new IllegalArgumentException("PRODUCT_PARSE_FAILED"));
-    }
-
-    private boolean hasDownloadableImage(String productId) {
-        byte[] image = catalog.downloadProductImage(productId);
-        return image != null && image.length > 0;
     }
 
     public byte[] loadProductImage(String productId) {

@@ -70,6 +70,12 @@ public class ProfileService {
         return Map.of("profile", toProfileMap(requireProfile(userId)));
     }
 
+    /** Ensures profile row exists and returns the admin/user profile map. */
+    @Transactional
+    public Map<String, Object> ensureProfileMap(UUID userId) {
+        return toProfileMap(ensureProfile(userId));
+    }
+
     @Transactional
     public Map<String, Object> updateProfile(UUID userId, UpdateProfileRequest request) {
         UserProfileEntity profile = requireProfile(userId);

@@ -29,6 +29,7 @@ import ru.wibestyle.api.repository.AdminUserRepository;
 import ru.wibestyle.api.service.AdminAuditService;
 import ru.wibestyle.api.service.AdminUserManagementService;
 import ru.wibestyle.api.service.AdminUserSupportService;
+import ru.wibestyle.api.service.TryOnStoredMediaService;
 import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.support.AdminSupport;
 
@@ -43,6 +44,7 @@ public class AdminUserController {
 
     private final AdminUserManagementService adminUserManagementService;
     private final AdminUserSupportService adminUserSupportService;
+    private final TryOnStoredMediaService tryOnStoredMediaService;
     private final BlobStorage blobStorage;
     private final AdminAuditService adminAuditService;
     private final AdminProperties adminProperties;
@@ -52,6 +54,7 @@ public class AdminUserController {
     public AdminUserController(
             AdminUserManagementService adminUserManagementService,
             AdminUserSupportService adminUserSupportService,
+            TryOnStoredMediaService tryOnStoredMediaService,
             BlobStorage blobStorage,
             AdminAuditService adminAuditService,
             AdminProperties adminProperties,
@@ -60,6 +63,7 @@ public class AdminUserController {
     ) {
         this.adminUserManagementService = adminUserManagementService;
         this.adminUserSupportService = adminUserSupportService;
+        this.tryOnStoredMediaService = tryOnStoredMediaService;
         this.blobStorage = blobStorage;
         this.adminAuditService = adminAuditService;
         this.adminProperties = adminProperties;
@@ -171,7 +175,7 @@ public class AdminUserController {
         requireManageUsers(adminKey, authorization);
         try {
             TryOnSessionEntity session = adminUserSupportService.requireTryOnSession(userId, sessionId);
-            return serveStoredFile(session.getAfterImageUrl());
+            return serveResolvedMedia(tryOnStoredMediaService.resolveAfterPhoto(userId, sessionId, session));
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         }
@@ -187,9 +191,33 @@ public class AdminUserController {
         requireManageUsers(adminKey, authorization);
         try {
             TryOnSessionEntity session = adminUserSupportService.requireTryOnSession(userId, sessionId);
-            return serveStoredFile(session.getGarmentPhotoPath());
+            return serveResolvedMedia(tryOnStoredMediaService.resolveGarmentPhoto(session));
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    private ResponseEntity<Resource> serveResolvedMedia(TryOnStoredMediaService.ResolvedMedia resolved) {
+        if (resolved instanceof TryOnStoredMediaService.ResolvedMedia.Stored stored) {
+            return serveStoredPath(stored.media().path(), stored.media().contentType());
+        }
+        if (resolved instanceof TryOnStoredMediaService.ResolvedMedia.Remote remote) {
+            return ResponseEntity.ok()
+                    .contentType(remote.media().contentType())
+                    .body(new org.springframework.core.io.ByteArrayResource(remote.media().bytes()));
+        }
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "PHOTO_NOT_FOUND");
+    }
+
+    private ResponseEntity<Resource> serveStoredPath(Path path, MediaType mediaType) {
+        try {
+            Resource resource = new FileSystemResource(path);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName() + "\"")
+                    .contentType(mediaType)
+                    .body(resource);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "PHOTO_NOT_FOUND", ex);
         }
     }
 
@@ -201,11 +229,7 @@ public class AdminUserController {
             Path path = blobStorage.resolveLocalFile(storedPath);
             String contentType = Files.probeContentType(path);
             MediaType mediaType = contentType == null ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(contentType);
-            Resource resource = new FileSystemResource(path);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName() + "\"")
-                    .contentType(mediaType)
-                    .body(resource);
+            return serveStoredPath(path, mediaType);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "PHOTO_NOT_FOUND", ex);
         }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import ru.wibestyle.api.dto.ParseLinkRequest;
 import ru.wibestyle.api.marketplace.OzonCatalog;
+import ru.wibestyle.api.marketplace.WildberriesMediaUtils;
 import ru.wibestyle.api.service.MarketplaceService;
 import ru.wibestyle.api.support.AuthSupport;
 
@@ -49,7 +50,7 @@ public class MarketplaceController {
     public ResponseEntity<byte[]> wildberriesImage(@PathVariable String productId) {
         byte[] image = marketplaceService.loadWildberriesImage(productId);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("image/webp"))
+                .contentType(WildberriesMediaUtils.detectImageMediaType(image))
                 .body(image);
     }
 

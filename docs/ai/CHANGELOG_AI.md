@@ -1,5 +1,21 @@
 # AI Changelog
 
+## 2026-06-01 (Admin support — try-on photo preview + pagination)
+- Admin after-photo: читаем `{userId}/try-on/{sessionId}/after.jpg` из blob storage (не `after_image_url` из БД); fallback garment / временный xAI URL.
+- Admin UI: пагинация примерок по 10 на странице.
+
+## 2026-06-01 (Admin user support — duplicate gallery posts)
+- `GET /admin/users/{id}`: несколько постов галереи на одну примерку больше не падают с `DATABASE_ERROR` (`findByTryOnSessionId` → list + последний пост).
+- Удаление примерки в поддержке удаляет все связанные посты галереи.
+
+## 2026-06-01 (Admin user support — load fix)
+- `GET /admin/users/{id}`: профиль создаётся через `ensureProfileMap` в одной writable-транзакции (раньше `readOnly` + отдельный `getProfile` → `PROFILE_NOT_FOUND` для пользователей без строки в `user_profiles`).
+- Admin UI: на странице поддержки показывается текст ошибки API (HTTP-код + code).
+
+## 2026-06-01 (Flyway checksum repair — dev)
+- Gradle: `flywayRepair` в `services/api` — если локально правили уже применённые V15–V17.
+- RUNBOOK: строка troubleshooting про `Migration checksum mismatch`.
+
 ## 2026-05-31 (Try-on result — product banner image fix)
 - После примерки `product.imageUrl` → `/api/v1/try-on/sessions/{id}/garment-photo` (требует Bearer); баннер использует `useAuthenticatedBlob`, а не голый `<img>`.
 - Публичные WB/Ozon proxy — same-origin через rewrite в `next.config.ts` + `resolveProductImageUrl`.

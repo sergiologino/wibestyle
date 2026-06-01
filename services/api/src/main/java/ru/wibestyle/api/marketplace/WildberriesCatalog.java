@@ -3,6 +3,7 @@ package ru.wibestyle.api.marketplace;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -13,21 +14,47 @@ import org.springframework.web.client.RestClientException;
 @Component
 public class WildberriesCatalog {
 
+    static final int MAX_PRODUCT_IMAGE_INDEX = WildberriesMediaRules.MAX_PRODUCT_IMAGE_INDEX;
+
     private static final String WB_USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
     private final RestClient restClient;
+    private final RestClient imageRestClient;
+    private final RestClient pageRestClient;
     private final SizeChartExtractor sizeChartExtractor;
+    private final WildberriesBasketResolver basketResolver;
+    private final WildberriesMediaRules mediaRules;
 
-    public WildberriesCatalog(RestClient.Builder restClientBuilder, SizeChartExtractor sizeChartExtractor) {
+    public WildberriesCatalog(
+            RestClient.Builder restClientBuilder,
+            SizeChartExtractor sizeChartExtractor,
+            WildberriesBasketResolver basketResolver,
+            WildberriesMediaRules mediaRules
+    ) {
         this.restClient = restClientBuilder
                 .defaultHeader("User-Agent", WB_USER_AGENT)
                 .defaultHeader("Accept", "application/json")
                 .build();
+        this.imageRestClient = restClientBuilder
+                .defaultHeader("User-Agent", WB_USER_AGENT)
+                .defaultHeader("Accept", "image/avif,image/webp,image/apng,image/*,*/*;q=0.8")
+                .build();
+        this.pageRestClient = restClientBuilder
+                .defaultHeader("User-Agent", WB_USER_AGENT)
+                .defaultHeader("Accept-Language", "ru-RU,ru;q=0.9")
+                .defaultHeader("Accept", "text/html,application/xhtml+xml")
+                .build();
         this.sizeChartExtractor = sizeChartExtractor;
+        this.basketResolver = basketResolver;
+        this.mediaRules = mediaRules;
     }
 
     public Optional<WbProductCard> fetchProductCard(String productId) {
+        return fetchProductCard(productId, null);
+    }
+
+    public Optional<WbProductCard> fetchProductCard(String productId, String productPageUrl) {
         long article;
         try {
             article = Long.parseLong(productId);
@@ -35,28 +62,45 @@ public class WildberriesCatalog {
             return Optional.empty();
         }
 
-        Optional<WbProductCard> fromCardApi = fetchFromCardApi(article);
-        if (fromCardApi.isPresent()) {
-            return fromCardApi;
+        Optional<WildberriesBasketResolver.ResolvedBasketCard> resolved = basketResolver.resolveCard(article);
+        if (resolved.isPresent()) {
+            WildberriesBasketResolver.ResolvedBasketCard basketCard = resolved.get();
+            String productUrl = productPageUrl == null || productPageUrl.isBlank()
+                    ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
+                    : productPageUrl;
+            long vol = article / 100_000;
+            long part = article / 1_000;
+            String productJson = fetchProductJsonText(basketCard.host(), vol, part, article);
+            ProductSizeChart chart = sizeChartExtractor.extract(productUrl, basketCard.card(), productJson);
+            return Optional.of(parseCard(article, basketCard.host(), basketCard.card(), chart));
         }
 
-        long vol = article / 100_000;
-        long part = article / 1_000;
-        for (String host : basketHostsToTry(vol)) {
-            String cardUrl = host + "/vol" + vol + "/part" + part + "/" + article + "/info/ru/card.json";
-            try {
-                JsonNode card = restClient.get().uri(cardUrl).retrieve().body(JsonNode.class);
-                if (card != null && !card.isMissingNode()) {
-                    String productUrl = "https://www.wildberries.ru/catalog/" + article + "/detail.aspx";
-                    String productJson = fetchProductJsonText(host, vol, part, article);
-                    ProductSizeChart chart = sizeChartExtractor.extract(productUrl, card, productJson);
-                    return Optional.of(parseCard(article, host, card, chart));
-                }
-            } catch (RestClientException ignored) {
-                // try next basket host
-            }
+        Optional<WbProductCard> fromPageGallery = fetchFromPageGallery(article, productPageUrl);
+        if (fromPageGallery.isPresent()) {
+            return fromPageGallery;
         }
-        return Optional.empty();
+
+        return fetchFromCardApi(article);
+    }
+
+    private Optional<WbProductCard> fetchFromPageGallery(long article, String productPageUrl) {
+        String pageUrl = productPageUrl == null || productPageUrl.isBlank()
+                ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
+                : productPageUrl;
+        List<String> galleryUrls = fetchGalleryPhotoUrls(pageUrl, article);
+        if (galleryUrls.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(new WbProductCard(
+                Long.toString(article),
+                "Товар Wildberries",
+                "Brand Look",
+                4290,
+                galleryUrls.get(0),
+                List.of("XS", "S", "M", "L", "XL"),
+                ProductSizeChart.empty(),
+                galleryUrls.size()
+        ));
     }
 
     Optional<WbProductCard> fetchFromCardApi(long article) {
@@ -93,9 +137,10 @@ public class WildberriesCatalog {
                 sizes = List.of("XS", "S", "M", "L", "XL");
             }
 
-            long vol = article / 100_000;
-            String host = resolveBasketHost(vol);
-            String imageUrl = buildImageUrl(article, host);
+            int photoCount = resolvePhotoCount(product, null);
+            String host = basketResolver.resolveBasketHost(article)
+                    .orElseGet(() -> resolveBasketHost(article / 100_000));
+            String imageUrl = resolvePreviewImageUrl(article, host, photoCount);
             return Optional.of(new WbProductCard(
                     Long.toString(article),
                     title,
@@ -103,7 +148,8 @@ public class WildberriesCatalog {
                     priceRub,
                     imageUrl,
                     sizes,
-                    ProductSizeChart.empty()
+                    ProductSizeChart.empty(),
+                    photoCount
             ));
         } catch (RestClientException ignored) {
             return Optional.empty();
@@ -125,16 +171,16 @@ public class WildberriesCatalog {
     }
 
     public String buildImageUrl(long article, String host, int imageIndex) {
-        long vol = article / 100_000;
-        long part = article / 1_000;
-        int idx = Math.max(1, Math.min(imageIndex, 15));
-        return host + "/vol" + vol + "/part" + part + "/" + article + "/images/big/" + idx + ".webp";
+        return mediaRules.buildImageUrl(article, host, imageIndex);
     }
 
     public byte[] downloadImage(String imageUrl) {
+        if (mediaRules.isVideoMediaUrl(imageUrl)) {
+            return null;
+        }
         try {
-            byte[] body = restClient.get().uri(imageUrl).retrieve().body(byte[].class);
-            if (body != null && body.length > 0) {
+            byte[] body = imageRestClient.get().uri(imageUrl).retrieve().body(byte[].class);
+            if (mediaRules.isProductImageBytes(body)) {
                 return body;
             }
         } catch (RestClientException ignored) {
@@ -143,38 +189,84 @@ public class WildberriesCatalog {
         return null;
     }
 
-    /** Tries basket hosts and image indices until WB CDN returns bytes. */
+    /** Fast check for parse-link: HEAD/GET first photo candidate without full card re-download loop. */
+    public boolean probeProductImage(String productId, String productPageUrl) {
+        for (String candidate : listPhotoCandidates(productId, productPageUrl)) {
+            if (probeImageUrl(candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public byte[] downloadProductImage(String productId) {
+        return downloadProductImage(productId, null);
+    }
+
+    /** Downloads first gallery photo; skips video slots by URL rules and response bytes. */
+    public byte[] downloadProductImage(String productId, String productPageUrl) {
+        for (String candidate : listPhotoCandidates(productId, productPageUrl)) {
+            byte[] image = downloadImage(candidate);
+            if (image != null) {
+                return image;
+            }
+        }
+        return null;
+    }
+
+    private List<String> listPhotoCandidates(String productId, String productPageUrl) {
         long article;
         try {
             article = Long.parseLong(productId);
         } catch (NumberFormatException ex) {
-            return null;
+            return List.of();
         }
 
-        Optional<WbProductCard> card = fetchProductCard(productId);
-        if (card.isPresent()) {
-            String host = extractHost(card.get().imageUrl());
-            if (host != null) {
-                for (int imageIndex = 1; imageIndex <= 5; imageIndex++) {
-                    byte[] fromCardHost = downloadImage(buildImageUrl(article, host, imageIndex));
-                    if (fromCardHost != null) {
-                        return fromCardHost;
-                    }
-                }
+        LinkedHashSet<String> candidates = new LinkedHashSet<>();
+
+        Optional<WildberriesBasketResolver.ResolvedBasketCard> resolved = basketResolver.resolveCard(article);
+        if (resolved.isPresent()) {
+            int photoCount = resolvePhotoCount(null, resolved.get().card());
+            candidates.addAll(mediaRules.photoDownloadCandidates(article, resolved.get().host(), photoCount));
+        }
+
+        String pageUrl = productPageUrl == null || productPageUrl.isBlank()
+                ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
+                : productPageUrl;
+        candidates.addAll(fetchGalleryPhotoUrls(pageUrl, article));
+
+        if (resolved.isEmpty()) {
+            long vol = article / 100_000;
+            for (String host : WildberriesBasketResolver.orderedBasketHosts(vol)) {
+                candidates.addAll(mediaRules.photoDownloadCandidates(article, host, 3));
             }
         }
 
-        long vol = article / 100_000;
-        for (String host : basketHostsToTry(vol)) {
-            for (int imageIndex = 1; imageIndex <= 5; imageIndex++) {
-                byte[] image = downloadImage(buildImageUrl(article, host, imageIndex));
-                if (image != null) {
-                    return image;
-                }
-            }
+        return new ArrayList<>(candidates);
+    }
+
+    private List<String> fetchGalleryPhotoUrls(String productPageUrl, long article) {
+        if (productPageUrl == null || productPageUrl.isBlank()) {
+            return List.of();
         }
-        return null;
+        try {
+            String html = pageRestClient.get().uri(productPageUrl).retrieve().body(String.class);
+            return WildberriesGalleryExtractor.extractPhotoUrls(html, article);
+        } catch (RestClientException ignored) {
+            return List.of();
+        }
+    }
+
+    private boolean probeImageUrl(String imageUrl) {
+        if (mediaRules.isVideoMediaUrl(imageUrl)) {
+            return false;
+        }
+        try {
+            var response = imageRestClient.head().uri(imageUrl).retrieve().toBodilessEntity();
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (RestClientException ignored) {
+            return downloadImage(imageUrl) != null;
+        }
     }
 
     public String resolveImageUrl(String productId) {
@@ -184,7 +276,7 @@ public class WildberriesCatalog {
             return card.get().imageUrl();
         }
         long vol = article / 100_000;
-        String host = basketHostsToTry(vol).get(0);
+        String host = WildberriesBasketResolver.orderedBasketHosts(vol).get(0);
         return buildImageUrl(article, host);
     }
 
@@ -218,15 +310,45 @@ public class WildberriesCatalog {
             sizes = List.of("XS", "S", "M", "L", "XL");
         }
 
+        int photoCount = resolvePhotoCount(null, card);
         return new WbProductCard(
                 Long.toString(article),
                 title,
                 brand,
                 priceRub,
-                buildImageUrl(article, host),
+                resolvePreviewImageUrl(article, host, photoCount),
                 sizes,
-                sizeChart
+                sizeChart,
+                photoCount
         );
+    }
+
+    private String resolvePreviewImageUrl(long article, String host, int photoCount) {
+        int maxIndex = Math.max(1, Math.min(photoCount > 0 ? photoCount : MAX_PRODUCT_IMAGE_INDEX, MAX_PRODUCT_IMAGE_INDEX));
+        for (int imageIndex = 1; imageIndex <= maxIndex; imageIndex++) {
+            String candidate = buildImageUrl(article, host, imageIndex);
+            if (!mediaRules.isVideoMediaUrl(candidate)) {
+                return candidate;
+            }
+        }
+        return buildImageUrl(article, host);
+    }
+
+    private static int resolvePhotoCount(JsonNode cardApiProduct, JsonNode cardJson) {
+        if (cardJson != null && !cardJson.isMissingNode()) {
+            JsonNode media = cardJson.path("media");
+            int photoCount = media.path("photo_count").asInt(0);
+            if (photoCount > 0) {
+                return photoCount;
+            }
+        }
+        if (cardApiProduct != null && !cardApiProduct.isMissingNode()) {
+            int pics = cardApiProduct.path("pics").asInt(0);
+            if (pics > 0) {
+                return pics;
+            }
+        }
+        return MAX_PRODUCT_IMAGE_INDEX;
     }
 
     private List<String> parseSizes(JsonNode card) {
@@ -253,15 +375,7 @@ public class WildberriesCatalog {
     }
 
     static List<String> basketHostsToTry(long vol) {
-        List<String> hosts = new ArrayList<>();
-        hosts.add(resolveBasketHost(vol));
-        for (int basket = 1; basket <= 40; basket++) {
-            String host = "https://basket-%02d.wbbasket.ru".formatted(basket);
-            if (!hosts.contains(host)) {
-                hosts.add(host);
-            }
-        }
-        return hosts;
+        return WildberriesBasketResolver.orderedBasketHosts(vol);
     }
 
     static String resolveBasketHost(long vol) {
@@ -406,7 +520,19 @@ public class WildberriesCatalog {
             int priceRub,
             String imageUrl,
             List<String> sizes,
-            ProductSizeChart sizeChart
+            ProductSizeChart sizeChart,
+            int photoCount
     ) {
+        WbProductCard(
+                String productId,
+                String title,
+                String brand,
+                int priceRub,
+                String imageUrl,
+                List<String> sizes,
+                ProductSizeChart sizeChart
+        ) {
+            this(productId, title, brand, priceRub, imageUrl, sizes, sizeChart, 0);
+        }
     }
 }

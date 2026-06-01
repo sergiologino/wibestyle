@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -20,6 +21,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.util.UUID;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -30,6 +33,9 @@ class ApiIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     void healthEndpointReturnsOk() throws Exception {
@@ -297,7 +303,7 @@ class ApiIntegrationTest {
     void parseLinkReturnsProductPreview() throws Exception {
         mockMvc.perform(post("/api/v1/marketplaces/parse-link")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"url\":\"https://www.wildberries.ru/catalog/1/detail.aspx\"}"))
+                        .content("{\"url\":\"https://www.wildberries.ru/catalog/208285191/detail.aspx\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.product.marketplace").value("wildberries"))
                 .andExpect(jsonPath("$.product.sizes").isArray());
@@ -1094,6 +1100,108 @@ class ApiIntegrationTest {
                         .header("X-Admin-Key", "test-admin-key"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.deleted").value(true));
+    }
+
+    @Test
+    void adminCanLoadUserSupportDetail() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "supportview",
+                                  "password": "Secret123",
+                                  "captchaId": "skip",
+                                  "captchaAnswer": "0"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        String listBody = mockMvc.perform(get("/api/v1/admin/users")
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        String userId = null;
+        for (JsonNode item : objectMapper.readTree(listBody).get("items")) {
+            if (item.hasNonNull("login") && "supportview".equals(item.get("login").asText())) {
+                userId = item.get("id").asText();
+                break;
+            }
+        }
+        org.junit.jupiter.api.Assertions.assertNotNull(userId);
+
+        mockMvc.perform(get("/api/v1/admin/users/" + userId)
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.id").value(userId))
+                .andExpect(jsonPath("$.profile.plan").value("trial"))
+                .andExpect(jsonPath("$.avatars.items").isArray())
+                .andExpect(jsonPath("$.tryOnSessions.items").isArray());
+
+        jdbcTemplate.update("DELETE FROM user_profiles WHERE user_id = ?", userId);
+
+        mockMvc.perform(get("/api/v1/admin/users/" + userId)
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.plan").value("trial"));
+    }
+
+    @Test
+    void adminCanLoadUserSupportDetailWithDuplicateGalleryPosts() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "dupgallery",
+                                  "password": "Secret123",
+                                  "captchaId": "skip",
+                                  "captchaAnswer": "0"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        String listBody = mockMvc.perform(get("/api/v1/admin/users")
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        String userId = null;
+        for (JsonNode item : objectMapper.readTree(listBody).get("items")) {
+            if (item.hasNonNull("login") && "dupgallery".equals(item.get("login").asText())) {
+                userId = item.get("id").asText();
+                break;
+            }
+        }
+        org.junit.jupiter.api.Assertions.assertNotNull(userId);
+
+        UUID sessionId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO try_on_sessions (
+                    id, user_id, source_type, status, visibility,
+                    created_at, updated_at, quota_reserved, quota_consumed, video_status
+                ) VALUES (?, ?, 'MARKETPLACE_LINK', 'READY', 'private', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE, FALSE, 'none')
+                """, sessionId, UUID.fromString(userId));
+
+        jdbcTemplate.update("""
+                INSERT INTO gallery_posts (
+                    id, user_id, slug, visibility, moderation_status, try_on_session_id,
+                    created_at, updated_at, media_type
+                ) VALUES (?, ?, 'dup-gallery-a', 'public', 'PUBLIC', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'image')
+                """, UUID.randomUUID(), UUID.fromString(userId), sessionId);
+        jdbcTemplate.update("""
+                INSERT INTO gallery_posts (
+                    id, user_id, slug, visibility, moderation_status, try_on_session_id,
+                    created_at, updated_at, media_type
+                ) VALUES (?, ?, 'dup-gallery-b', 'unlisted', 'PUBLIC', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'image')
+                """, UUID.randomUUID(), UUID.fromString(userId), sessionId);
+
+        mockMvc.perform(get("/api/v1/admin/users/" + userId)
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tryOnSessions.items[?(@.sessionId=='" + sessionId + "')].galleryPostCount")
+                        .value(2))
+                .andExpect(jsonPath("$.tryOnSessions.items[?(@.sessionId=='" + sessionId + "')].galleryVisibility")
+                        .exists());
     }
 
     @Test

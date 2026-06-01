@@ -335,6 +335,9 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 |----------|---------|
 | `403 Forbidden` на `POST /auth/login` | Перезапустите API после обновления CORS (`allowCredentials=false`, явные `allowedHeaders`). Web: `http://localhost:3001` |
 | Flyway / connection refused | PostgreSQL запущен? БД `wibestyle` создана? Проверьте в DBeaver |
+| Flyway `Migration checksum mismatch` (V15–V17) | Локально миграции уже применены, но файлы правили после этого. **Не правьте применённые миграции** — только новые V18+. Починка dev-БД: `cd services/api && .\gradlew.bat flywayRepair`, затем снова `bootRun` |
+| Admin «Поддержка» → `DATABASE_ERROR` | Часто: несколько постов галереи на одну примерку. Обновите API до последней версии; перезапустите `bootRun` |
+| Admin «Поддержка» → «Не загрузилось» у превью | Раньше admin брал `after_image_url` из БД (это API-путь, не файл). Обновите API: читается `{userId}/try-on/{sessionId}/after.jpg` из storage |
 | `role "wibestyle" does not exist` | Выполните `scripts/create-local-database.sql` |
 | OTP не приходит | Dev-код: `0000` |
 | Примерка показывает SVG-человечков | AI не настроен или `WIBESTYLE_AI_FALLBACK_TO_DEMO=true`; проверьте noteapp на :8091 |

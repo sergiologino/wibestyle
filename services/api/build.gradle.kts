@@ -1,7 +1,18 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.flywaydb:flyway-database-postgresql:10.20.1")
+        classpath("org.postgresql:postgresql:42.7.4")
+    }
+}
+
 plugins {
     java
     id("org.springframework.boot") version "3.4.1"
     id("io.spring.dependency-management") version "1.1.7"
+    id("org.flywaydb.flyway") version "10.20.1"
 }
 
 group = "ru.wibestyle"
@@ -15,6 +26,17 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+val dbUrl = System.getenv("SPRING_DATASOURCE_URL") ?: "jdbc:postgresql://localhost:5432/wibestyle"
+val dbUser = System.getenv("SPRING_DATASOURCE_USERNAME") ?: "wibestyle"
+val dbPassword = System.getenv("SPRING_DATASOURCE_PASSWORD") ?: "wibestyle"
+
+flyway {
+    url = dbUrl
+    user = dbUser
+    password = dbPassword
+    locations = arrayOf("filesystem:src/main/resources/db/migration")
 }
 
 dependencies {

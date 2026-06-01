@@ -56,15 +56,14 @@ public class AdminUserSupportService {
         this.avatarValidationService = avatarValidationService;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> getUserDetail(UUID userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
-        profileService.ensureProfile(userId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("user", toUserMap(user));
-        response.put("profile", profileService.getProfile(userId).get("profile"));
+        response.put("profile", profileService.ensureProfileMap(userId));
         response.put("avatars", listAvatarsForAdmin(userId));
         response.put("tryOnSessions", listTryOnSessionsForAdmin(userId));
         return response;
@@ -95,7 +94,8 @@ public class AdminUserSupportService {
         TryOnSessionEntity session = tryOnSessionRepository.findByIdAndUserId(sessionId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("SESSION_NOT_FOUND"));
 
-        galleryPostRepository.findByTryOnSessionId(sessionId).ifPresent(galleryPostRepository::delete);
+        galleryPostRepository.findAllByTryOnSessionIdOrderByCreatedAtDesc(sessionId)
+                .forEach(galleryPostRepository::delete);
         tryOnSessionRepository.delete(session);
 
         try {
@@ -188,10 +188,15 @@ public class AdminUserSupportService {
         map.put("errorMessage", session.getErrorMessage());
         map.put("createdAt", session.getCreatedAt().toString());
 
-        galleryPostRepository.findByTryOnSessionId(sessionId).ifPresent(post -> {
+        var galleryPosts = galleryPostRepository.findAllByTryOnSessionIdOrderByCreatedAtDesc(sessionId);
+        if (!galleryPosts.isEmpty()) {
+            GalleryPostEntity post = galleryPosts.get(0);
             map.put("galleryPostId", post.getId().toString());
             map.put("galleryVisibility", post.getVisibility());
-        });
+            if (galleryPosts.size() > 1) {
+                map.put("galleryPostCount", galleryPosts.size());
+            }
+        }
 
         if (session.getStatus() == TryOnSessionStatus.READY && session.getAfterImageUrl() != null) {
             map.put("adminAfterPhotoUrl",

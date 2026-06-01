@@ -19,5 +19,5 @@ public interface GalleryPostRepository extends JpaRepository<GalleryPostEntity, 
 
     List<GalleryPostEntity> findTop100ByOrderByCreatedAtDesc();
 
-    java.util.Optional<GalleryPostEntity> findByTryOnSessionId(UUID tryOnSessionId);
+    java.util.List<GalleryPostEntity> findAllByTryOnSessionIdOrderByCreatedAtDesc(UUID tryOnSessionId);
 }

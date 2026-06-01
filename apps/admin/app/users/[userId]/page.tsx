@@ -8,6 +8,7 @@ import type { UpdateProfilePayload, UserProfile } from "@wibestyle/shared-types"
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { AdminMediaImage } from "@/components/admin-media-image";
 import { useAdminKey } from "@/components/admin-key-provider";
+import { ApiError } from "@wibestyle/api-client";
 import { createAdminApi } from "@/lib/api";
 import { formatLocalDateTime } from "@/lib/format-local-date";
 
@@ -61,6 +62,8 @@ const statusLabels: Record<string, string> = {
   draft: "Черновик",
 };
 
+const TRY_ON_PAGE_SIZE = 10;
+
 export default function AdminUserSupportPage() {
   const params = useParams<{ userId: string }>();
   const userId = params.userId;
@@ -83,12 +86,30 @@ export default function AdminUserSupportPage() {
   const [hipsCm, setHipsCm] = useState("");
   const [clothingSize, setClothingSize] = useState("");
   const [shoeSizeEu, setShoeSizeEu] = useState("");
+  const [tryOnPage, setTryOnPage] = useState(0);
 
   const userLabel = useMemo(() => {
     if (!detail) return userId;
     const u = detail.user;
     return detail.profile.displayName ?? u.login ?? u.email ?? u.phone ?? u.id.slice(0, 8);
   }, [detail, userId]);
+
+  const tryOnItems = detail?.tryOnSessions.items ?? [];
+  const tryOnPageCount = Math.max(1, Math.ceil(tryOnItems.length / TRY_ON_PAGE_SIZE));
+  const pagedTryOnItems = useMemo(() => {
+    const start = tryOnPage * TRY_ON_PAGE_SIZE;
+    return tryOnItems.slice(start, start + TRY_ON_PAGE_SIZE);
+  }, [tryOnItems, tryOnPage]);
+
+  useEffect(() => {
+    setTryOnPage(0);
+  }, [userId, tryOnItems.length]);
+
+  useEffect(() => {
+    if (tryOnPage > tryOnPageCount - 1) {
+      setTryOnPage(Math.max(0, tryOnPageCount - 1));
+    }
+  }, [tryOnPage, tryOnPageCount]);
 
   const load = useCallback(async () => {
     if (!configured || !adminKey || !userId) return;
@@ -107,8 +128,12 @@ export default function AdminUserSupportPage() {
       setHipsCm(profile.anthropometry?.hipsCm ? String(profile.anthropometry.hipsCm) : "");
       setClothingSize(profile.anthropometry?.clothingSize ?? "");
       setShoeSizeEu(profile.anthropometry?.shoeSizeEu ? String(profile.anthropometry.shoeSizeEu) : "");
-    } catch {
-      setError("Не удалось загрузить данные пользователя");
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? `${err.message}${err.code ? ` (${err.code})` : ""}${err.status ? ` · HTTP ${err.status}` : ""}`
+          : "Не удалось загрузить данные пользователя";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -344,12 +369,12 @@ export default function AdminUserSupportPage() {
           </Card>
 
           <Card>
-            <h2 className="text-xl font-black">Примерки ({detail.tryOnSessions.items.length})</h2>
+            <h2 className="text-xl font-black">Примерки ({tryOnItems.length})</h2>
             <p className="mt-1 text-sm font-bold text-[#6d6273]">
-              Все сессии пользователя — опубликованные в галерее и приватные.
+              Все сессии пользователя — опубликованные в галерее и приватные. По {TRY_ON_PAGE_SIZE} на странице.
             </p>
             <div className="mt-4 grid gap-4">
-              {detail.tryOnSessions.items.map((session) => (
+              {pagedTryOnItems.map((session) => (
                 <div
                   key={session.sessionId}
                   className="grid gap-4 rounded-2xl border border-[#ffd1ed] p-4 md:grid-cols-[160px_1fr_auto]"
@@ -404,10 +429,37 @@ export default function AdminUserSupportPage() {
                   </Button>
                 </div>
               ))}
-              {detail.tryOnSessions.items.length === 0 ? (
+              {tryOnItems.length === 0 ? (
                 <p className="text-sm font-bold text-[#6d6273]">Нет примерок</p>
               ) : null}
             </div>
+            {tryOnItems.length > TRY_ON_PAGE_SIZE ? (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-bold text-[#6d6273]">
+                  Страница {tryOnPage + 1} из {tryOnPageCount}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    disabled={tryOnPage <= 0}
+                    size="md"
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setTryOnPage((page) => Math.max(0, page - 1))}
+                  >
+                    ← Назад
+                  </Button>
+                  <Button
+                    disabled={tryOnPage >= tryOnPageCount - 1}
+                    size="md"
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setTryOnPage((page) => Math.min(tryOnPageCount - 1, page + 1))}
+                  >
+                    Вперёд →
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </Card>
         </div>
       ) : null}
