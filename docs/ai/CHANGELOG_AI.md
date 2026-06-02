@@ -1,5 +1,9 @@
 # AI Changelog
 
+## 2026-06-01 (Mobile Gradle — Expo SDK lock in monorepo)
+- Root `package.json` overrides: фиксация `expo@52.0.49`, `expo-asset@11.0.5`, `@expo/vector-icons@14.0.4` — иначе npm hoisting тянул SDK 56 и Gradle падал на `expo-module-gradle-plugin`.
+- MOBILE_APP.md: troubleshooting Gradle + закрыть Android Studio перед prebuild.
+
 ## 2026-06-01 (Mobile app — Android Expo)
 - `apps/mobile-app`: нативное Android-приложение (Expo SDK 52, RN 0.76, minSdk 31) — auth, avatar onboarding, try-on link/photo, result before/after, gallery, favorites, settings, paywall.
 - Design: Manrope, тонкие borders, bottom tabs, `@wibestyle/api-client` + mobile multipart uploads.
