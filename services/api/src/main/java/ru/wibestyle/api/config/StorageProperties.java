@@ -8,8 +8,8 @@ public class StorageProperties {
     /** local = filesystem volume; s3 = planned (Coolify / object storage). */
     private String backend = "local";
 
-    /** Root directory for local backend (ignored when WIBESTYLE_STORAGE_ROOT is set). */
-    private String root = "../../data/storage";
+    /** Root directory for local backend; blank = auto-detect monorepo `data/storage`. */
+    private String root = "";
 
     public String getRoot() {
         return root;

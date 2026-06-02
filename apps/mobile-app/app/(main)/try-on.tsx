@@ -13,6 +13,7 @@ const OPTIONS = [
     subtitle: "Wildberries или Ozon — вставь URL карточки",
     icon: "link" as const,
     href: "/try-on/link",
+    badge: "Быстрее",
   },
   {
     id: "photo",
@@ -44,6 +45,7 @@ export default function TryOnHubScreen() {
                 <Feather name={option.icon} size={22} color={colors.pink} />
               </View>
               <View style={styles.optionText}>
+                {"badge" in option ? <Text style={styles.badge}>{option.badge}</Text> : null}
                 <Text style={styles.optionTitle}>{option.title}</Text>
                 <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
               </View>
@@ -79,9 +81,14 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.lg,
     backgroundColor: colors.white,
-    borderRadius: radius.xl,
+    borderRadius: radius.xxl,
     borderWidth: hairline,
     borderColor: colors.borderLight,
+    shadowColor: "#3a0c52",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 18,
+    elevation: 2,
   },
   optionPressed: {
     backgroundColor: colors.pinkBg,
@@ -99,6 +106,17 @@ const styles = StyleSheet.create({
   optionText: {
     flex: 1,
     gap: 4,
+  },
+  badge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.pinkBg,
+    overflow: "hidden",
+    fontFamily: "Manrope_500Medium",
+    fontSize: 11,
+    color: colors.pink,
   },
   optionTitle: {
     fontFamily: "Manrope_500Medium",

@@ -1,21 +1,17 @@
-import { Feather } from "@expo/vector-icons";
-import { StyleSheet, View } from "react-native";
-import { colors } from "@/theme/tokens";
+import { Image } from "expo-image";
 
-export function BrandMark({ size = 28 }: { size?: number }) {
+type BrandMarkProps = {
+  size?: number;
+};
+
+/** VibeStyle mark — same PNG as mobile app icon (vibestyle.art). */
+export function BrandMark({ size = 28 }: BrandMarkProps) {
   return (
-    <View style={[styles.wrap, { width: size, height: size, borderRadius: size / 4 }]}>
-      <Feather name="aperture" size={size * 0.55} color={colors.pink} />
-    </View>
+    <Image
+      source={require("../../../assets/icon.png")}
+      style={{ width: size, height: size, borderRadius: size * 0.22 }}
+      contentFit="cover"
+      transition={150}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.pinkBg,
-    borderWidth: 0.5,
-    borderColor: colors.borderLight,
-  },
-});

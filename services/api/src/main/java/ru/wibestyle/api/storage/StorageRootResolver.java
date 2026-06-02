@@ -6,6 +6,8 @@ import java.nio.file.Path;
 /** Resolves persistent media root — separate from API process / JAR directory. */
 public final class StorageRootResolver {
 
+    private static final String STORAGE_MARKER = "data/storage/.gitkeep";
+
     private StorageRootResolver() {
     }
 
@@ -18,25 +20,36 @@ public final class StorageRootResolver {
         String configured = configuredRoot == null ? "" : configuredRoot.trim();
         if (!configured.isBlank()) {
             Path path = Path.of(configured);
-            if (!path.isAbsolute()) {
-                path = Path.of(System.getProperty("user.dir")).resolve(path);
+            if (path.isAbsolute()) {
+                return path.normalize();
             }
-            return path.toAbsolutePath().normalize();
         }
 
-        Path monorepoStorage = Path.of(System.getProperty("user.dir"))
-                .resolve("../../data/storage")
-                .normalize()
-                .toAbsolutePath();
-        if (Files.exists(monorepoStorage.getParent())) {
-            return monorepoStorage;
+        Path monorepoRoot = findMonorepoRoot();
+        if (monorepoRoot != null) {
+            return monorepoRoot.resolve("data/storage").toAbsolutePath().normalize();
         }
 
-        Path cwdData = Path.of(System.getProperty("user.dir")).resolve("data").resolve("storage");
-        if (Files.exists(cwdData)) {
-            return cwdData.toAbsolutePath().normalize();
+        if (!configured.isBlank()) {
+            return Path.of(System.getProperty("user.dir"))
+                    .resolve(configured)
+                    .toAbsolutePath()
+                    .normalize();
         }
 
-        return Path.of(System.getProperty("user.home"), ".wibestyle", "storage").toAbsolutePath().normalize();
+        return Path.of(System.getProperty("user.home"), ".wibestyle", "storage")
+                .toAbsolutePath()
+                .normalize();
+    }
+
+    static Path findMonorepoRoot() {
+        Path cursor = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
+        for (int depth = 0; depth < 10 && cursor != null; depth++) {
+            if (Files.isRegularFile(cursor.resolve(STORAGE_MARKER))) {
+                return cursor;
+            }
+            cursor = cursor.getParent();
+        }
+        return null;
     }
 }

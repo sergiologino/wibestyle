@@ -51,8 +51,18 @@ export default function HomeScreen() {
               ? profile?.plan === "trial"
                 ? `Осталось бесплатных примерок: ${gensLeft}`
                 : `Генераций в подписке: ${gensLeft}`
-              : "Подписка активна — примеряй без ограничений trial."}
+              : "Подписка активна — можно примерять без trial-лимита."}
           </BodyText>
+          <View style={styles.metrics}>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{history.length}</Text>
+              <Text style={styles.metricLabel}>образов</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{profile?.activeAvatarId ? "Да" : "Нет"}</Text>
+              <Text style={styles.metricLabel}>аватар</Text>
+            </View>
+          </View>
           <View style={styles.actions}>
             <Button label="Примерить по ссылке" onPress={() => router.push("/try-on/link")} />
             <Button label="Примерить по фото" variant="secondary" onPress={() => router.push("/try-on/photo")} />
@@ -108,6 +118,30 @@ const styles = StyleSheet.create({
   actions: {
     marginTop: spacing.lg,
     gap: spacing.sm,
+  },
+  metrics: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  metric: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.pinkBg,
+  },
+  metricValue: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 18,
+    color: colors.black,
+  },
+  metricLabel: {
+    marginTop: 2,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    color: colors.muted,
   },
   section: {
     gap: 4,

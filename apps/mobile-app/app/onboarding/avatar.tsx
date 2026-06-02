@@ -16,7 +16,7 @@ import { ApiError } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
-import { TextField } from "@/components/ui/TextField";
+import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import type { RNFile } from "@/lib/mobile-api";
 
@@ -25,6 +25,11 @@ export default function AvatarOnboardingScreen() {
   const { api, uploads, refreshProfile, completeOnboardingStep, ensureSession } = useSession();
   const [gender, setGender] = useState<"female" | "male">("female");
   const [heightCm, setHeightCm] = useState("170");
+  const [bustCm, setBustCm] = useState("");
+  const [waistCm, setWaistCm] = useState("");
+  const [hipsCm, setHipsCm] = useState("");
+  const [clothingSize, setClothingSize] = useState("M");
+  const [shoeSizeEu, setShoeSizeEu] = useState("");
   const [photo, setPhoto] = useState<RNFile | null>(null);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,12 +66,21 @@ export default function AvatarOnboardingScreen() {
       setError("Загрузи фото в полный рост");
       return;
     }
+    if (!heightCm || !bustCm || !waistCm || !hipsCm) {
+      setError("Заполни рост, грудь, талию и бёдра — они нужны для примерки");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       await api.updateProfile({
         gender,
         heightCm: Number(heightCm) || undefined,
+        bustCm: Number(bustCm) || undefined,
+        waistCm: Number(waistCm) || undefined,
+        hipsCm: Number(hipsCm) || undefined,
+        clothingSize,
+        shoeSizeEu: shoeSizeEu ? Number(shoeSizeEu) : undefined,
       });
       const created = await api.createAvatar({});
       await uploads.uploadAvatarPhoto(api, created.avatar.id, photo);
@@ -113,11 +127,22 @@ export default function AvatarOnboardingScreen() {
             ))}
           </View>
 
-          <TextField
-            label="Рост (см)"
-            keyboardType="number-pad"
-            value={heightCm}
-            onChangeText={setHeightCm}
+          <AnthropometryFields
+            required
+            heightCm={heightCm}
+            bustCm={bustCm}
+            waistCm={waistCm}
+            hipsCm={hipsCm}
+            clothingSize={clothingSize}
+            shoeSizeEu={shoeSizeEu}
+            onChange={(field, value) => {
+              if (field === "heightCm") setHeightCm(value);
+              if (field === "bustCm") setBustCm(value);
+              if (field === "waistCm") setWaistCm(value);
+              if (field === "hipsCm") setHipsCm(value);
+              if (field === "clothingSize") setClothingSize(value);
+              if (field === "shoeSizeEu") setShoeSizeEu(value);
+            }}
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}

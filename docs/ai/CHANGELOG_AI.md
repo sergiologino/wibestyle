@@ -1,5 +1,14 @@
 # AI Changelog
 
+## 2026-06-02 (Stabilization — UI, auth, storage)
+- Web-app: responsive navigation polish — desktop active states + mobile bottom nav; `/try-on` hub получил более понятные CTA, иконки и подсказку истории.
+- Mobile app: bottom tabs, home metrics, try-on cards and input primitives polished; `Screen`/UI primitive types fixed for monorepo RN TypeScript.
+- Shared refactor: `CLOTHING_SIZES` and JWT/session expiry helpers moved to `@wibestyle/shared-types`, web/mobile keep local re-exports.
+- Auth: refresh-token TTL по умолчанию увеличен до 365 дней; mobile session refresh теперь не очищает AsyncStorage на transient errors и обновляет токен по таймеру/AppState.
+- API auth: новый пользователь flush'ится до записи JDBC refresh-token, чтобы не ловить FK race в `auth_refresh_tokens`.
+- Storage: `LocalBlobStorage` принимает для новых записей только relative object keys внутри storage root; legacy absolute refs остаются читаемыми.
+- Tests/build: `npm test`, `npm run test:api`, `npm run build -w @wibestyle/web-app`, `npm run lint -w @wibestyle/mobile-app`, `npm run build:api` — проходят.
+
 ## 2026-06-01 (Mobile Gradle — Expo SDK lock in monorepo)
 - Root `package.json` overrides: фиксация `expo@52.0.49`, `expo-asset@11.0.5`, `@expo/vector-icons@14.0.4` — иначе npm hoisting тянул SDK 56 и Gradle падал на `expo-module-gradle-plugin`.
 - MOBILE_APP.md: troubleshooting Gradle + закрыть Android Studio перед prebuild.

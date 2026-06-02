@@ -5,14 +5,14 @@
 - **Web app**: полный UX-flow + search/gallery + billing paywall + promo deep links.
 - **API**: auth (OTP + promo redeem), billing, admin promo CRUD, entitlements, quota reserve/consume/refund.
 - **Admin** (`:3002`): `/promo`, `/reviews`, `/leads`, `/gallery`.
-- Автотесты: **npm** (web-app + packages + mobile) — проходят; API unit (WildberriesCatalog) — проходят.
+- Автотесты и сборки: **npm test**, **API tests**, **web build**, **mobile TypeScript**, **API bootJar** — проходят.
 
-## Недавние фиксы (2026-05-28)
-- **Auth persistence**: refresh token 30 дней в localStorage + PostgreSQL; proactive refresh; logout только при явном выходе или invalid refresh.
-- **Share card**: фото примерки в «Отправить подруге» через authenticated media URL.
-- **Wildberries**: card.wb.ru + расширенные basket-хосты; ошибка с подсказкой «Фото из галереи» если CDN недоступен.
-- **Home**: личная лента всех завершённых примерок (`GET /try-on/sessions/mine`).
-- **Admin gallery**: удаление постов (`DELETE /admin/gallery/posts/{id}`) + просмотр постов для модерации.
+## Недавние фиксы (2026-06-02)
+- **UI/UX**: web-app получил active desktop nav + mobile bottom nav; `/try-on` hub обновлён; mobile tabs/home/try-on/input primitives отполированы.
+- **Auth persistence**: refresh token по умолчанию 365 дней в PostgreSQL; web/mobile session helpers единые; mobile не очищает AsyncStorage на временных refresh/me сбоях и обновляет token по таймеру/AppState.
+- **Storage**: новые avatar/try-on/media записи принимают только relative object keys под `data/storage`; legacy absolute refs остаются читаемыми.
+- **Refactor**: размеры одежды и JWT/session expiry helpers вынесены в `@wibestyle/shared-types`.
+- **API stability**: flush нового пользователя перед JDBC refresh-token устраняет FK race в тестах и runtime.
 
 ## Этап 12 (Security + Compliance) — выполнен
 - Flyway `V9__security_compliance.sql`: admin_audit_logs, gallery_reports.

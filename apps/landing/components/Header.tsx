@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BrandMarkGraphicSvg } from "@wibestyle/ui";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { handleHashLinkClick } from "@/lib/navigation";
@@ -25,9 +26,12 @@ export default function Header() {
 
   return (
     <header className="topbar">
-      <Link className="brand" href="/" aria-label="Я на стиле — на главную">
-        <span className="spark">✦</span>
-        <span>Я на стиле</span>
+      <Link className="brand" href="/" aria-label="VibeStyle — на главную">
+        <BrandMarkGraphicSvg className="brand-mark" title="" />
+        <span>
+          vibe<span className="brand-accent">style</span>
+          <span className="brand-domain">.art</span>
+        </span>
       </Link>
       <button
         type="button"

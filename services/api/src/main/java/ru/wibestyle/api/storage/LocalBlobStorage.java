@@ -1,6 +1,8 @@
 package ru.wibestyle.api.storage;
 
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import ru.wibestyle.api.config.StorageProperties;
@@ -17,6 +19,8 @@ import java.util.UUID;
 @ConditionalOnProperty(name = "wibestyle.storage.backend", havingValue = "local", matchIfMissing = true)
 public class LocalBlobStorage implements BlobStorage {
 
+    private static final Logger log = LoggerFactory.getLogger(LocalBlobStorage.class);
+
     private final StorageProperties storageProperties;
     private Path rootPath;
 
@@ -28,6 +32,7 @@ public class LocalBlobStorage implements BlobStorage {
     void init() throws IOException {
         rootPath = StorageRootResolver.resolveRoot(storageProperties.getRoot());
         Files.createDirectories(rootPath);
+        log.info("Local blob storage root: {}", rootPath);
     }
 
     Path rootPath() {
@@ -36,18 +41,20 @@ public class LocalBlobStorage implements BlobStorage {
 
     @Override
     public String put(String key, InputStream input) throws IOException {
-        Path target = resolvePhysicalPath(normalizeKey(key));
+        String normalizedKey = normalizeObjectKey(key);
+        Path target = resolveObjectPath(normalizedKey);
         Files.createDirectories(target.getParent());
         Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
-        return normalizeKey(key);
+        return normalizedKey;
     }
 
     @Override
     public String putFile(String key, Path source) throws IOException {
-        Path target = resolvePhysicalPath(normalizeKey(key));
+        String normalizedKey = normalizeObjectKey(key);
+        Path target = resolveObjectPath(normalizedKey);
         Files.createDirectories(target.getParent());
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-        return normalizeKey(key);
+        return normalizedKey;
     }
 
     @Override
@@ -70,7 +77,7 @@ public class LocalBlobStorage implements BlobStorage {
 
     @Override
     public void deletePrefix(String prefix) throws IOException {
-        Path dir = resolvePhysicalPath(normalizeKey(prefix));
+        Path dir = resolveObjectPath(normalizeObjectKey(prefix));
         if (!Files.exists(dir)) {
             return;
         }
@@ -139,7 +146,30 @@ public class LocalBlobStorage implements BlobStorage {
             }
             return asPath.normalize();
         }
-        return rootPath.resolve(normalized).normalize();
+        return resolveObjectPath(normalized);
+    }
+
+    private Path resolveObjectPath(String key) {
+        Path target = rootPath.resolve(normalizeObjectKey(key)).normalize();
+        if (!target.startsWith(rootPath)) {
+            throw new IllegalArgumentException("STORAGE_KEY_OUTSIDE_ROOT");
+        }
+        return target;
+    }
+
+    static String normalizeObjectKey(String key) {
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("STORAGE_KEY_REQUIRED");
+        }
+        String normalized = normalizeKey(key).trim();
+        Path asPath = Path.of(normalized);
+        if (asPath.isAbsolute()) {
+            throw new IllegalArgumentException("STORAGE_KEY_MUST_BE_RELATIVE");
+        }
+        if (normalized.startsWith("/") || normalized.startsWith("../") || normalized.contains("/../")) {
+            throw new IllegalArgumentException("STORAGE_KEY_OUTSIDE_ROOT");
+        }
+        return normalized;
     }
 
     static String normalizeKey(String ref) {

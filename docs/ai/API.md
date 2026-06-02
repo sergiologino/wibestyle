@@ -14,7 +14,7 @@ Auth header: `Authorization: Bearer <JWT access token>`
 | POST | `/auth/logout` | `{ refreshToken }` → `{ loggedOut: true }` |
 | GET | `/me` | Current user + profile + entitlements |
 
-Access token — JWT (HS256). Refresh token — opaque UUID, хранится in-memory (test) или Redis (prod).
+Access token — JWT (HS256). Refresh token — opaque UUID, хранится в PostgreSQL/JDBC по умолчанию (или Redis), TTL **365 дней**. Сессия сбрасывается при `/auth/logout`, очистке client storage или `REFRESH_TOKEN_INVALID`.
 
 Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.auth.legacy-access-token-enabled=true`.
 

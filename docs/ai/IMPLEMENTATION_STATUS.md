@@ -3,7 +3,7 @@
 > Живой чеклист: что сделано и что осталось. Обновляется по мере реализации.
 > Оплата: **YooKassa позже** — сейчас mock checkout без реального провайдера.
 
-**Последнее обновление:** 2026-06-01
+**Последнее обновление:** 2026-06-02
 
 ## План работ
 
@@ -31,6 +31,9 @@
 | YooKassa checkout + webhook | ✅ код готов — нужны env |
 | Paywall UX + trial nudges | ✅ |
 | Mobile app | ✅ Android (Expo RN) |
+| Auth persistence | ✅ refresh 365 дней + web/mobile hardening |
+| Local blob storage | ✅ `data/storage` object keys + legacy read |
+| Web/mobile UI polish | ✅ responsive nav, mobile tabs/home/try-on |
 
 ---
 
@@ -71,7 +74,7 @@
 
 ### Production / infra
 - Redis OTP, rate limiting, refresh revokeAll
-- S3 private bucket
+- S3 private bucket (интерфейс готов через `BlobStorage`, adapter не реализован)
 - OpenAPI spec
 
 ### TZ 12 остаток

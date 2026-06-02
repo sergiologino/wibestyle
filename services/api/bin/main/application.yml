@@ -28,7 +28,7 @@ wibestyle:
     otp-resend-cooldown-seconds: 60
     otp-max-attempts: 5
     access-token-ttl-seconds: 2592000
-    refresh-token-ttl-seconds: 2592000
+    refresh-token-ttl-seconds: 31536000
     refresh-token-store: jdbc
     jwt-secret: ${WIBESTYLE_JWT_SECRET:dev-jwt-secret-change-me-in-production-min-32-chars}
     legacy-access-token-enabled: true
@@ -72,7 +72,8 @@ wibestyle:
   storage:
     backend: ${WIBESTYLE_STORAGE_BACKEND:local}
     # Persistent volume root (local/Coolify). Override: WIBESTYLE_STORAGE_ROOT=/data/wibestyle-media
-    root: ${WIBESTYLE_STORAGE_ROOT:../../data/storage}
+    # Leave unset locally — StorageRootResolver finds wibestyle/data/storage via data/storage/.gitkeep
+    root: ${WIBESTYLE_STORAGE_ROOT:}
   features:
     flags:
       videoTryOn: true

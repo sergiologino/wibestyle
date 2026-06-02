@@ -79,7 +79,7 @@ public class AuthService {
 
         boolean isNewUser = userRepository.findByPhone(challenge.phone()).isEmpty();
         UserEntity user = userRepository.findByPhone(challenge.phone())
-                .orElseGet(() -> userRepository.save(new UserEntity(UUID.randomUUID(), challenge.phone(), Instant.now())));
+                .orElseGet(() -> userRepository.saveAndFlush(new UserEntity(UUID.randomUUID(), challenge.phone(), Instant.now())));
         profileService.ensureProfile(user.getId());
 
         Map<String, Object> promoResult = Map.of("redeemed", false);

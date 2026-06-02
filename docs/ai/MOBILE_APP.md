@@ -13,7 +13,11 @@ Native **Expo (React Native)** приложение «Я на стиле» — p
 ```powershell
 cd E:\1_MyProjects\Look\wibestyle
 npm install
+cd apps\mobile-app
+npm run verify:bundle
 ```
+
+`verify:bundle` проверяет, что Metro не подтянет `webidl-conversions@8` (источник ошибки `SharedArrayBuffer`). Перед `npm run android` проверка запускается автоматически (`preandroid`).
 
 Скопируйте `apps/mobile-app/.env.example` → `apps/mobile-app/.env`:
 
@@ -47,14 +51,35 @@ npx expo start -c
 - **Не закрывайте** этот терминал, пока тестируете приложение.
 - Флаг `-c` сбрасывает кэш Metro (рекомендуется после правок `babel.config.js`).
 
-### Шаг 3. Проброс порта Metro в эмулятор (терминал 3, один раз после старта эмулятора)
+### Шаг 3. Запустить эмулятор, затем adb reverse
+
+**Сначала** запустите эмулятор в Android Studio (**Device Manager → ▶**) и дождитесь рабочего стола Android.
+
+**Потом** (терминал 3):
 
 ```powershell
 cd E:\1_MyProjects\Look\wibestyle\apps\mobile-app
 npm run android:reverse
 ```
 
-Скрипт пробрасывает **8081** и **8082** — подойдёт, даже если Metro занял второй порт.
+Скрипт сам ищет `adb.exe` (PATH → `ANDROID_HOME` → `%LOCALAPPDATA%\Android\Sdk`). Пробрасывает **8081** и **8082**.
+
+Если видите **`no devices/emulators found`** — эмулятор ещё не запущен или adb его не видит. Проверка:
+
+```powershell
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" devices
+```
+
+Должно быть: `emulator-5554   device` (не `offline`, не пустой список).
+
+Если видите `adb not found`, один раз в PowerShell:
+
+```powershell
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+npm run android:reverse
+```
+
+Чтобы не задавать каждый раз — добавьте `ANDROID_HOME` в переменные среды Windows и в PATH папку `%ANDROID_HOME%\platform-tools`.
 
 ### Шаг 4. Удалить старое приложение (если был красный экран)
 
@@ -146,6 +171,35 @@ npx expo start -c
 ```
 
 Удалите приложение из эмулятора и запустите снова (шаги 4–5).
+
+### Runtime: `SharedArrayBuffer` / `URLSearchParams` / `"main" has not been registered`
+
+```
+ReferenceError: Property 'SharedArrayBuffer' doesn't exist
+TypeError: Cannot read property 'URLSearchParams' of undefined
+```
+
+**Причина:** monorepo hoisting — Metro брал `webidl-conversions@8` из корня (нужен `SharedArrayBuffer` в Hermes). Expo winter URL требует v5.
+
+**Исправление (зафиксировано в репо):**
+- vendored `apps/mobile-app/shims/webidl-conversions@5`
+- `metro.config.js` → `resolveRequest` принудительно на shim
+- явные deps + `overrides` в корневом `package.json`
+- проверка: `npm run verify:bundle -w @wibestyle/mobile-app`
+
+**Не ставьте** `react-native-url-polyfill`.
+
+После `git pull`:
+
+```powershell
+cd E:\1_MyProjects\Look\wibestyle
+npm install
+cd apps\mobile-app
+npm run verify:bundle
+npm run start:clean
+```
+
+Удалите приложение из эмулятора → `npm run android:reverse` → `npm run dev:mobile`.
 
 ### Gradle: `expo-module-gradle-plugin was not found`
 

@@ -318,6 +318,7 @@ class ApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "gender": "female",
                                   "heightCm": 170,
                                   "bustCm": 90,
                                   "waistCm": 70,
@@ -377,7 +378,7 @@ class ApiIntegrationTest {
 
     @Test
     void avatarLimitIsThree() throws Exception {
-        String accessToken = authenticate("+79996667788");
+        String accessToken = authenticate("+79996667789");
         createDraftAvatar(accessToken);
         createDraftAvatar(accessToken);
         createDraftAvatar(accessToken);
@@ -585,7 +586,7 @@ class ApiIntegrationTest {
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"url":"https://www.wildberries.ru/catalog/555/detail.aspx","selectedSize":"M"}
+                                {"url":"https://www.wildberries.ru/catalog/888/detail.aspx","selectedSize":"M"}
                                 """))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
@@ -829,14 +830,19 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.post.moderationStatus").value("HIDDEN"));
 
-        mockMvc.perform(get("/api/v1/gallery/posts"))
+        String galleryBody = mockMvc.perform(get("/api/v1/gallery/posts"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items.length()").value(0));
+                .andReturn().getResponse().getContentAsString();
+        JsonNode items = objectMapper.readTree(galleryBody).get("items");
+        org.junit.jupiter.api.Assertions.assertFalse(
+                items.findValuesAsText("id").contains(postId),
+                "deleted gallery post should not be returned in public feed"
+        );
     }
 
     @Test
     void adminDeleteGalleryPostRemovesFromPublicList() throws Exception {
-        String accessToken = authenticate("+79990007788");
+        String accessToken = authenticate("+79990007789");
         activateAvatar(accessToken);
         String sessionBody = mockMvc.perform(post("/api/v1/try-on/sessions/link")
                         .header("Authorization", "Bearer " + accessToken)
@@ -870,14 +876,19 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.deleted").value(true));
 
-        mockMvc.perform(get("/api/v1/gallery/posts"))
+        String galleryBody = mockMvc.perform(get("/api/v1/gallery/posts"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items.length()").value(0));
+                .andReturn().getResponse().getContentAsString();
+        JsonNode items = objectMapper.readTree(galleryBody).get("items");
+        org.junit.jupiter.api.Assertions.assertFalse(
+                items.findValuesAsText("id").contains(postId),
+                "deleted gallery post should not be returned in public feed"
+        );
     }
 
     @Test
     void listMyTryOnSessionsReturnsReadyHistory() throws Exception {
-        String accessToken = authenticate("+79990008899");
+        String accessToken = authenticate("+79990008900");
         activateAvatar(accessToken);
 
         mockMvc.perform(get("/api/v1/try-on/sessions/mine")
@@ -927,6 +938,7 @@ class ApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "gender": "female",
                                   "heightCm": 170,
                                   "bustCm": 90,
                                   "waistCm": 70,

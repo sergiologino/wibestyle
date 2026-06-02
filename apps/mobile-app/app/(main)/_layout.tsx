@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { colors, hairline } from "@/theme/tokens";
+import { colors, hairline, radius } from "@/theme/tokens";
 
 export default function MainTabsLayout() {
   return (
@@ -11,16 +11,32 @@ export default function MainTabsLayout() {
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: {
           backgroundColor: colors.white,
-          borderTopWidth: hairline,
+          borderWidth: hairline,
           borderTopColor: colors.borderLight,
-          height: 64,
+          borderColor: colors.borderLight,
+          borderRadius: radius.xxl,
+          height: 68,
+          marginHorizontal: 12,
+          marginBottom: 10,
           paddingBottom: 8,
           paddingTop: 8,
+          shadowColor: "#3a0c52",
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.12,
+          shadowRadius: 28,
+          elevation: 10,
         },
         tabBarLabelStyle: {
           fontFamily: "Manrope_500Medium",
           fontSize: 11,
           letterSpacing: 0.2,
+        },
+        tabBarItemStyle: {
+          borderRadius: radius.xl,
+          marginHorizontal: 2,
+        },
+        tabBarIconStyle: {
+          marginTop: 2,
         },
       }}
     >
@@ -28,28 +44,28 @@ export default function MainTabsLayout() {
         name="home"
         options={{
           title: "Главная",
-          tabBarIcon: ({ color, size }) => <Feather name="home" size={size - 1} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Feather name="home" size={focused ? 22 : 20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="try-on"
         options={{
           title: "Примерка",
-          tabBarIcon: ({ color, size }) => <Feather name="shopping-bag" size={size - 1} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Feather name="shopping-bag" size={focused ? 22 : 20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="gallery"
         options={{
           title: "Галерея",
-          tabBarIcon: ({ color, size }) => <Feather name="grid" size={size - 1} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Feather name="grid" size={focused ? 22 : 20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Профиль",
-          tabBarIcon: ({ color, size }) => <Feather name="user" size={size - 1} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Feather name="user" size={focused ? 22 : 20} color={color} />,
         }}
       />
     </Tabs>

@@ -19,9 +19,6 @@ export const metadata: Metadata = {
     title: "Я на стиле — виртуальная примерочная",
     description: "Примерь одежду с маркетплейса на себе до покупки.",
   },
-  icons: {
-    icon: "/icon.svg",
-  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

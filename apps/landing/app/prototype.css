@@ -49,13 +49,22 @@ button, input { font: inherit; }
 }
 .brand {
   display: inline-flex;
-  gap: 8px;
+  gap: 14px;
   align-items: center;
-  font-weight: 900;
-  font-size: clamp(21px, 2vw, 30px);
-  letter-spacing: -0.04em;
-  color: var(--pink);
+  font-weight: 800;
+  font-size: clamp(18px, 1.8vw, 26px);
+  letter-spacing: -0.03em;
+  color: #14101a;
 }
+.brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  box-shadow: 0 10px 24px rgba(255, 31, 162, 0.22);
+  flex-shrink: 0;
+}
+.brand-accent { color: var(--pink); }
+.brand-domain { color: #9a8f99; font-weight: 700; }
 .spark { filter: drop-shadow(0 0 8px rgba(255,31,162,.55)); }
 .nav {
   display: flex;

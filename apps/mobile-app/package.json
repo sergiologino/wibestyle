@@ -5,9 +5,13 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
+    "start:clean": "node scripts/clean-metro-cache.js && expo start -c",
+    "verify:bundle": "node scripts/verify-mobile-bundle.js",
+    "generate:logo": "python scripts/generate-logo.py",
+    "preandroid": "node scripts/verify-mobile-bundle.js",
     "start:android": "expo start --android",
     "android": "expo run:android",
-    "android:reverse": "adb reverse tcp:8081 tcp:8081 && adb reverse tcp:8082 tcp:8082",
+    "android:reverse": "node scripts/android-reverse.js",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
     "test": "vitest run",
@@ -44,7 +48,9 @@
     "react-native-reanimated": "~3.16.7",
     "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.4.0",
-    "schema-utils": "^4.0.1"
+    "schema-utils": "^4.0.1",
+    "webidl-conversions": "5.0.0",
+    "whatwg-url-without-unicode": "8.0.0-3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

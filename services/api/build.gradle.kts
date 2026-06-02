@@ -67,3 +67,10 @@ tasks.withType<Test> {
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("wibestyle-api.jar")
 }
+
+val monorepoRoot = rootDir.parentFile.parentFile
+val storageRoot = monorepoRoot.resolve("data/storage")
+
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    environment("WIBESTYLE_STORAGE_ROOT", storageRoot.absolutePath)
+}

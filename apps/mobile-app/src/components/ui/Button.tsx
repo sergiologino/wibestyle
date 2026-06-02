@@ -1,4 +1,15 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type PressableProps, type ViewStyle } from "react-native";
+import type { ReactNode } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type PressableProps,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { colors, hairline, radius, shadows, typography } from "@/theme/tokens";
 
@@ -7,7 +18,7 @@ type ButtonProps = PressableProps & {
   size?: "sm" | "md" | "lg";
   loading?: boolean;
   label: string;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 };
 
 export function Button({
@@ -49,8 +60,8 @@ export function Button({
 }
 
 type CardProps = {
-  children: React.ReactNode;
-  style?: ViewStyle;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
   padded?: boolean;
 };
 
@@ -70,7 +81,7 @@ export function SectionTitle({ children }: { children: string }) {
   return <Text style={styles.sectionTitle}>{children}</Text>;
 }
 
-export function BodyText({ children, style }: { children: string; style?: object }) {
+export function BodyText({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
   return <Text style={[styles.body, style]}>{children}</Text>;
 }
 

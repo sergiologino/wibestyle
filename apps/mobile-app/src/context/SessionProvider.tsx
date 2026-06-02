@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { AppState } from "react-native";
 import { WibeStyleApiClient } from "@wibestyle/api-client";
 import type { UserProfile } from "@wibestyle/shared-types";
 import { getApiBaseUrl } from "@/lib/config";
@@ -86,6 +87,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (err) {
       if (isRefreshTokenRejected(err)) {
+        if (isAuthenticatedSession(current)) {
+          return true;
+        }
         await clearStoredSession();
         sessionRef.current = EMPTY_SESSION;
         setSession(EMPTY_SESSION);
@@ -134,6 +138,35 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, [refreshAccessToken]);
+
+  useEffect(() => {
+    if (!session.refreshToken) {
+      return;
+    }
+
+    function refreshIfNeeded() {
+      const current = sessionRef.current;
+      if (!current.refreshToken) {
+        return;
+      }
+      if (shouldRefreshAccessToken(current.accessToken, current.accessTokenExpiresAt)) {
+        void withRefreshLock(refreshAccessToken);
+      }
+    }
+
+    refreshIfNeeded();
+    const intervalId = setInterval(refreshIfNeeded, 60_000);
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        refreshIfNeeded();
+      }
+    });
+
+    return () => {
+      clearInterval(intervalId);
+      subscription.remove();
+    };
+  }, [refreshAccessToken, session.refreshToken]);
 
   const setAuth = useCallback(
     (
@@ -193,8 +226,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (!current.profile) {
         try {
           await refreshProfile();
-        } catch {
-          return false;
+        } catch (err) {
+          return isTransientRefreshError(err);
         }
       }
       return true;

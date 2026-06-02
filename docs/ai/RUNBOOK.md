@@ -109,7 +109,8 @@ IDEA Run Configuration или env:
 | `SPRING_DATASOURCE_USERNAME` | `wibestyle` | DB user |
 | `SPRING_DATASOURCE_PASSWORD` | `wibestyle` | DB password |
 | `WIBESTYLE_JWT_SECRET` | `dev-jwt-secret-change-me-in-production-min-32-chars` | JWT secret (не менять между перезапусками, иначе access-токен из браузера станет невалидным) |
-| `WIBESTYLE_STORAGE_ROOT` | `../../data/storage` (от `services/api`) | Persistent volume для медиа (локально `wibestyle/data/storage`; в Coolify — отдельный mount) |
+| `WIBESTYLE_AUTH_REFRESH_TOKEN_TTL_SECONDS` | `31536000` | Refresh token TTL: 365 дней по умолчанию; сессия живёт до logout / очистки storage / invalid refresh |
+| `WIBESTYLE_STORAGE_ROOT` | auto (`wibestyle/data/storage`) | Persistent volume для медиа. `bootRun` задаёт абсолютный путь; иначе API ищет `data/storage/.gitkeep` в monorepo. **Не** `services/api/data/storage`. |
 | `WIBESTYLE_STORAGE_BACKEND` | `local` | `local` или будущий `s3` |
 | `WIBESTYLE_ADMIN_API_KEY` | `dev-admin-key` | `X-Admin-Key` |
 | `WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD` | `dev-admin-password` | admin@wibestyle.local |
@@ -336,6 +337,9 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 | Проблема | Решение |
 |----------|---------|
 | `403 Forbidden` на `POST /auth/login` | Перезапустите API после обновления CORS (`allowCredentials=false`, явные `allowedHeaders`). Web: `http://localhost:3001` |
+| Авторизация пропала раньше года | Проверьте, что не менялся `WIBESTYLE_JWT_SECRET`, таблица `auth_refresh_tokens` не очищалась, пользователь не нажимал logout на другом клиенте, а web/mobile storage не очищен браузером/ОС. |
+| Mobile выкинуло на `/auth` после ошибки сети | Ожидаемое поведение после 2026-06-02: transient refresh/me ошибки не очищают `AsyncStorage`; если сброс повторяется, проверьте `EXPO_PUBLIC_API_URL` и ответ `/auth/refresh` на `REFRESH_TOKEN_INVALID`. |
+| Новые медиа появились не в `data/storage` | Проверьте `WIBESTYLE_STORAGE_ROOT` и наличие `data/storage/.gitkeep`. Новые записи должны быть relative object keys; абсолютные refs поддерживаются только как legacy read. |
 | Flyway / connection refused | PostgreSQL запущен? БД `wibestyle` создана? Проверьте в DBeaver |
 | Flyway `Migration checksum mismatch` (V15–V17) | Локально миграции уже применены, но файлы правили после этого. **Не правьте применённые миграции** — только новые V18+. Починка dev-БД: `cd services/api && .\gradlew.bat flywayRepair`, затем снова `bootRun` |
 | Admin «Поддержка» → `DATABASE_ERROR` | Часто: несколько постов галереи на одну примерку. Обновите API до последней версии; перезапустите `bootRun` |

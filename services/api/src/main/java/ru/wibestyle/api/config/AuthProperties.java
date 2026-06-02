@@ -9,7 +9,7 @@ public class AuthProperties {
     private int otpResendCooldownSeconds = 60;
     private int otpMaxAttempts = 5;
     private int accessTokenTtlSeconds = 2_592_000;
-    private int refreshTokenTtlSeconds = 2_592_000;
+    private int refreshTokenTtlSeconds = 31_536_000;
     private String refreshTokenStore = "jdbc";
     private String jwtSecret = "dev-jwt-secret-change-me-in-production-min-32-chars";
     private boolean legacyAccessTokenEnabled = true;

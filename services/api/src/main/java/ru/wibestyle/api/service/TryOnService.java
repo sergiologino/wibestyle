@@ -266,13 +266,14 @@ public class TryOnService {
     }
 
     private AvatarSnapshotEntity requireTryOnProfileReady(UUID userId) {
+        AvatarSnapshotEntity snapshot = requireSnapshot(userId);
         UserProfileEntity profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
         if (profile.getGender() == null || profile.getGender().isBlank()) {
             throw new IllegalArgumentException(TryOnErrorCodes.PROFILE_GENDER_REQUIRED);
         }
         profileService.validateRequiredAnthropometry(profile);
-        return requireSnapshot(userId);
+        return snapshot;
     }
 
     private void applyProduct(TryOnSessionEntity session, ProductDetails product, String selectedSize) {

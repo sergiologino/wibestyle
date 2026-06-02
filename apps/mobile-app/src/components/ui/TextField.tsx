@@ -1,4 +1,4 @@
-import { StyleSheet, TextInput, View, type TextInputProps, type ViewStyle } from "react-native";
+import { StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from "react-native";
 import { colors, hairline, radius, typography } from "@/theme/tokens";
 
 type TextFieldProps = TextInputProps & {
@@ -10,13 +10,13 @@ type TextFieldProps = TextInputProps & {
 export function TextField({ label, error, containerStyle, style, ...props }: TextFieldProps) {
   return (
     <View style={[styles.wrap, containerStyle]}>
-      {label ? <TextInput editable={false} style={styles.label} value={label} /> : null}
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
         placeholderTextColor={colors.eyebrow}
         style={[styles.input, error && styles.inputError, style]}
         {...props}
       />
-      {error ? <TextInput editable={false} style={styles.error} value={error} /> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: hairline,
     borderColor: colors.borderLight,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.white,
     paddingHorizontal: 14,
     paddingVertical: 12,
