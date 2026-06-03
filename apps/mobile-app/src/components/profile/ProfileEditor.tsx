@@ -231,7 +231,11 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
         </Card>
 
         <Card>
-          <AvatarManager hideFace={hideFace} hideBackground={hideBackground} />
+          <AvatarManager
+            activeAvatarId={profile?.activeAvatarId}
+            hideFace={hideFace}
+            hideBackground={hideBackground}
+          />
         </Card>
 
         <Card>

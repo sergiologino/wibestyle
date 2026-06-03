@@ -398,6 +398,9 @@ public class TryOnService {
         if (session.getSizeFitMessage() != null) {
             map.put("sizeFitMessage", session.getSizeFitMessage());
         }
+        if (session.getStyleCompliment() != null) {
+            map.put("styleCompliment", session.getStyleCompliment());
+        }
         if (session.getProductTitle() != null) {
             map.put("product", toProductMap(session));
         }

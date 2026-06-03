@@ -58,7 +58,11 @@ function AvatarThumb({
   );
 }
 
-export default function AvatarManager() {
+type AvatarManagerProps = {
+  activeAvatarId?: string | null;
+};
+
+export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const { api, accessToken, refreshProfile } = useAppSession();
   const [avatars, setAvatars] = useState<AvatarRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -154,6 +158,7 @@ export default function AvatarManager() {
   }
 
   const atAvatarLimit = avatars.length >= MAX_AVATARS_PER_USER;
+  const additionalAvatars = avatars.filter((avatar) => avatar.id !== activeAvatarId && !avatar.active);
 
   return (
     <div className="grid gap-4">
@@ -207,11 +212,11 @@ export default function AvatarManager() {
 
       {loading ? <p className={mutedTextClassName}>Загружаем avatar…</p> : null}
 
-      {!loading && avatars.length === 0 ? (
-        <p className={mutedTextClassName}>Пока нет сохранённых avatar. Добавьте первый образ.</p>
+      {!loading && additionalAvatars.length === 0 ? (
+        <p className={mutedTextClassName}>Дополнительных avatar пока нет. Основной образ показан выше.</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {avatars.map((avatar) => (
+          {additionalAvatars.map((avatar) => (
             <AvatarThumb
               key={avatar.id}
               active={avatar.active}

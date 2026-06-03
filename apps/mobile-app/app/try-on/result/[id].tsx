@@ -151,6 +151,13 @@ export default function TryOnResultScreen() {
           height={480}
         />
 
+        {result?.styleCompliment ? (
+          <View style={styles.complimentCard}>
+            <Text style={styles.complimentLabel}>Комментарий стилиста</Text>
+            <Text style={styles.complimentText}>{result.styleCompliment}</Text>
+          </View>
+        ) : null}
+
         {result?.sizeFitMessage ? <Text style={styles.fit}>{result.sizeFitMessage}</Text> : null}
 
         <View style={styles.actions}>
@@ -212,6 +219,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.violet,
     lineHeight: 20,
+  },
+  complimentCard: {
+    padding: spacing.lg,
+    borderRadius: radius.xl,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.white,
+  },
+  complimentLabel: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: colors.eyebrow,
+  },
+  complimentText: {
+    marginTop: spacing.sm,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.black,
   },
   actions: {
     gap: spacing.sm,

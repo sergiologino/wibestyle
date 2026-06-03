@@ -1,5 +1,19 @@
 # AI Changelog
 
+## 2026-06-03 (Profile UX polish)
+- Mobile branding/gallery: `icon.png`, `adaptive-icon.png`, `splash-icon.png` и нативные Android `res/mipmap-*` + `res/drawable-*` перегенерированы с полноразмерной V-mark, без edge ring и без жирной обводки у `Style`; launcher resources пишутся как `.webp`, чтобы не конфликтовать с Expo prebuild. Mobile gallery теперь резолвит `publicImageUrl` через API base URL, поэтому фото примерок отображаются как в web.
+- Mobile profile: `TextField` inputs стали компактнее по vertical/horizontal padding, чтобы больше полей помещалось при открытой клавиатуре.
+- Web/mobile settings: блок дополнительных avatar больше не дублирует основной avatar, который уже показан выше.
+- Mobile anthropometry: горизонтальный список размеров одежды показывает маленькие треугольники у краёв, где есть скрытые размеры для свайпа.
+- Mobile home: вместо метрик показывается `Осталось примерок`, счётчик перенесён в заголовок `Твои примерки (N)`, при отсутствии avatar есть CTA в профиль, subtitle учитывает мужской/женский профиль (`публиковал`/`публиковала`).
+- Tests/build: mobile TypeScript, web/mobile unit tests, web production build — проходят.
+
+## 2026-06-02 (Try-on engagement + WB video-first fix)
+- API: после успешной примерки сохраняется `style_compliment` / `styleCompliment` — короткий комментарий стилиста через noteapp `gpt-4o-mini`; prompt редактируется в `ai_prompt_templates` ключом `tryon.result_compliment_ru` (Flyway V18).
+- UX: web/mobile result screens показывают блок «Комментарий стилиста»; trial users получают мягкий subscription nudge, share hint появляется детерминированно по session id.
+- Wildberries: HTML gallery photo URLs теперь имеют приоритет перед synthetic card candidates; extractor явно пропускает `video-js` / `.mp4` и берёт следующее фото `webp/jpg/png`.
+- Tests/build: `npm run test:api`, web/mobile unit tests, web production build, mobile TypeScript, API bootJar — проходят.
+
 ## 2026-06-02 (Stabilization — UI, auth, storage)
 - Web-app: responsive navigation polish — desktop active states + mobile bottom nav; `/try-on` hub получил более понятные CTA, иконки и подсказку истории.
 - Mobile app: bottom tabs, home metrics, try-on cards and input primitives polished; `Screen`/UI primitive types fixed for monorepo RN TypeScript.

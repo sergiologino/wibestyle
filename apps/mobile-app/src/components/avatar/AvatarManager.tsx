@@ -57,9 +57,10 @@ function AvatarThumb({ avatar, active, accessToken, busy, onSelect, onDelete }: 
 type AvatarManagerProps = {
   hideFace: boolean;
   hideBackground: boolean;
+  activeAvatarId?: string | null;
 };
 
-export function AvatarManager({ hideFace, hideBackground }: AvatarManagerProps) {
+export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: AvatarManagerProps) {
   const { api, uploads, accessToken, refreshProfile } = useSession();
   const [avatars, setAvatars] = useState<AvatarRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -176,6 +177,7 @@ export function AvatarManager({ hideFace, hideBackground }: AvatarManagerProps) 
   }
 
   const atAvatarLimit = avatars.length >= MAX_AVATARS_PER_USER;
+  const additionalAvatars = avatars.filter((avatar) => avatar.id !== activeAvatarId && !avatar.active);
 
   return (
     <View style={styles.wrap}>
@@ -220,11 +222,11 @@ export function AvatarManager({ hideFace, hideBackground }: AvatarManagerProps) 
 
       {loading ? <BodyText>Загружаем аватары…</BodyText> : null}
 
-      {!loading && avatars.length === 0 ? (
-        <BodyText>Пока нет сохранённых аватаров. Добавьте первый образ.</BodyText>
+      {!loading && additionalAvatars.length === 0 ? (
+        <BodyText>Дополнительных аватаров пока нет. Основной образ показан выше.</BodyText>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbRow}>
-          {avatars.map((avatar) => (
+          {additionalAvatars.map((avatar) => (
             <AvatarThumb
               key={avatar.id}
               avatar={avatar}

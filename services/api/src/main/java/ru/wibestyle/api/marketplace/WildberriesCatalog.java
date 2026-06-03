@@ -3,7 +3,6 @@ package ru.wibestyle.api.marketplace;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -72,7 +71,12 @@ public class WildberriesCatalog {
             long part = article / 1_000;
             String productJson = fetchProductJsonText(basketCard.host(), vol, part, article);
             ProductSizeChart chart = sizeChartExtractor.extract(productUrl, basketCard.card(), productJson);
-            return Optional.of(parseCard(article, basketCard.host(), basketCard.card(), chart));
+            WbProductCard card = parseCard(article, basketCard.host(), basketCard.card(), chart);
+            List<String> galleryUrls = fetchGalleryPhotoUrls(productUrl, article);
+            if (!galleryUrls.isEmpty()) {
+                return Optional.of(withImageUrl(card, galleryUrls.get(0), galleryUrls.size()));
+            }
+            return Optional.of(card);
         }
 
         Optional<WbProductCard> fromPageGallery = fetchFromPageGallery(article, productPageUrl);
@@ -224,16 +228,16 @@ public class WildberriesCatalog {
 
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
 
+        String pageUrl = productPageUrl == null || productPageUrl.isBlank()
+                ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
+                : productPageUrl;
+        candidates.addAll(fetchGalleryPhotoUrls(pageUrl, article));
+
         Optional<WildberriesBasketResolver.ResolvedBasketCard> resolved = basketResolver.resolveCard(article);
         if (resolved.isPresent()) {
             int photoCount = resolvePhotoCount(null, resolved.get().card());
             candidates.addAll(mediaRules.photoDownloadCandidates(article, resolved.get().host(), photoCount));
         }
-
-        String pageUrl = productPageUrl == null || productPageUrl.isBlank()
-                ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
-                : productPageUrl;
-        candidates.addAll(fetchGalleryPhotoUrls(pageUrl, article));
 
         if (resolved.isEmpty()) {
             long vol = article / 100_000;
@@ -278,18 +282,6 @@ public class WildberriesCatalog {
         long vol = article / 100_000;
         String host = WildberriesBasketResolver.orderedBasketHosts(vol).get(0);
         return buildImageUrl(article, host);
-    }
-
-    private static String extractHost(String imageUrl) {
-        if (imageUrl == null || imageUrl.isBlank()) {
-            return null;
-        }
-        int schemeEnd = imageUrl.indexOf("://");
-        if (schemeEnd < 0) {
-            return null;
-        }
-        int pathStart = imageUrl.indexOf('/', schemeEnd + 3);
-        return pathStart > 0 ? imageUrl.substring(0, pathStart) : imageUrl;
     }
 
     private WbProductCard parseCard(long article, String host, JsonNode card, ProductSizeChart sizeChart) {
@@ -349,6 +341,19 @@ public class WildberriesCatalog {
             }
         }
         return MAX_PRODUCT_IMAGE_INDEX;
+    }
+
+    private static WbProductCard withImageUrl(WbProductCard card, String imageUrl, int photoCount) {
+        return new WbProductCard(
+                card.productId(),
+                card.title(),
+                card.brand(),
+                card.priceRub(),
+                imageUrl,
+                card.sizes(),
+                card.sizeChart(),
+                Math.max(card.photoCount(), photoCount)
+        );
     }
 
     private List<String> parseSizes(JsonNode card) {

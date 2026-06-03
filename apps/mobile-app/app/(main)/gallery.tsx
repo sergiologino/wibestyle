@@ -8,6 +8,8 @@ import { Screen } from "@/components/ui/Screen";
 import { BodyText, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { Image } from "expo-image";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
+import { getApiBaseUrl } from "@/lib/config";
+import { resolveApiPath } from "@/lib/mobile-api";
 
 export default function GalleryScreen() {
   const router = useRouter();
@@ -15,6 +17,7 @@ export default function GalleryScreen() {
   const [posts, setPosts] = useState<GalleryPost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const apiBaseUrl = getApiBaseUrl();
 
   const load = useCallback(async () => {
     const payload = await api.listGalleryPosts();
@@ -49,7 +52,7 @@ export default function GalleryScreen() {
         renderItem={({ item }) => (
           <Pressable style={styles.card}>
             <Image
-              source={{ uri: item.publicImageUrl ?? item.imageUrl }}
+              source={{ uri: resolveApiPath(apiBaseUrl, item.publicImageUrl ?? item.imageUrl) }}
               style={styles.image}
               contentFit="cover"
               transition={200}

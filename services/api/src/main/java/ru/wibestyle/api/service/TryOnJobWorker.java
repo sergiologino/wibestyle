@@ -38,6 +38,8 @@ import ru.wibestyle.api.repository.TryOnJobRepository;
 
 import ru.wibestyle.api.repository.TryOnSessionRepository;
 
+import ru.wibestyle.api.repository.UserProfileRepository;
+
 
 
 import java.io.IOException;
@@ -58,8 +60,6 @@ public class TryOnJobWorker {
 
 
     private static final Logger log = LoggerFactory.getLogger(TryOnJobWorker.class);
-
-    private static final String DEMO_BEFORE = "/assets/demo-before.svg";
 
     private static final String DEMO_AFTER = "/assets/demo-after.svg";
 
@@ -86,6 +86,8 @@ public class TryOnJobWorker {
     private final GarmentFitAnalyzer garmentFitAnalyzer;
 
     private final SizeComplimentService sizeComplimentService;
+
+    private final UserProfileRepository userProfileRepository;
 
     private final ObjectMapper objectMapper;
 
@@ -115,6 +117,8 @@ public class TryOnJobWorker {
 
             SizeComplimentService sizeComplimentService,
 
+            UserProfileRepository userProfileRepository,
+
             ObjectMapper objectMapper
 
     ) {
@@ -140,6 +144,8 @@ public class TryOnJobWorker {
         this.garmentFitAnalyzer = garmentFitAnalyzer;
 
         this.sizeComplimentService = sizeComplimentService;
+
+        this.userProfileRepository = userProfileRepository;
 
         this.objectMapper = objectMapper;
 
@@ -366,6 +372,7 @@ public class TryOnJobWorker {
         session.setUpdatedAt(Instant.now());
 
         applySizeFitAdvice(session);
+        applyResultCompliment(session);
 
 
 
@@ -398,6 +405,9 @@ public class TryOnJobWorker {
         session.setStatus(TryOnSessionStatus.READY);
 
         session.setUpdatedAt(Instant.now());
+
+        applySizeFitAdvice(session);
+        applyResultCompliment(session);
 
 
 
@@ -493,6 +503,20 @@ public class TryOnJobWorker {
         } else {
             session.setSizeFitMessage(null);
         }
+    }
+
+    private void applyResultCompliment(TryOnSessionEntity session) {
+        AvatarSnapshotEntity snapshot = tryOnImageService.findSnapshot(session).orElse(null);
+        if (snapshot == null) {
+            session.setStyleCompliment(null);
+            return;
+        }
+        ProductSizeChart chart = ProductSizeChartJson.deserialize(objectMapper, session.getProductSizeChart());
+        GarmentFitAnalyzer.GarmentFitAssessment assessment = garmentFitAnalyzer.analyze(session, snapshot, chart);
+        String plan = userProfileRepository.findById(session.getUserId())
+                .map(profile -> profile.getPlan())
+                .orElse("trial");
+        session.setStyleCompliment(sizeComplimentService.buildResultCompliment(session, assessment, snapshot, plan));
     }
 
 

@@ -193,7 +193,7 @@ export default function ProfileSettingsClient() {
       </Card>
 
       <Card>
-        <AvatarManager />
+        <AvatarManager activeAvatarId={profile?.activeAvatarId} />
       </Card>
 
       <Card>

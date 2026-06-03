@@ -285,6 +285,7 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 | `WIBESTYLE_AI_ENABLED` | `false` | Включить noteapp-ai-integration |
 | `WIBESTYLE_AI_API_KEY` | — | API key клиента noteapp (`aikey_...`) |
 | `WIBESTYLE_AI_TRYON_NETWORK` | `wibestyle-vton` | Сеть virtual try-on в noteapp |
+| `WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK` | `gpt-4o-mini` | Chat-сеть noteapp для size advice и post-try-on `styleCompliment` |
 | `WIBESTYLE_AI_BASE_URL` | `http://localhost:8091` | URL noteapp-ai-integration |
 | `WIBESTYLE_AI_FALLBACK_TO_DEMO` | `false` | Fallback на demo SVG при ошибке AI |
 
@@ -310,7 +311,7 @@ WIBESTYLE_AI_BASE_URL=http://localhost:8091
 WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 ```
 
-В **noteapp** добавьте сеть `gpt-4o-mini` (provider `openai`, type `chat`, model `gpt-4o-mini`) и выдайте доступ клиенту wibestyle — для вежливых подсказок «возьмите размер побольше» после примерки. Если сети нет, используются шаблоны с ротацией.
+В **noteapp** добавьте сеть `gpt-4o-mini` (provider `openai`, type `chat`, model `gpt-4o-mini`) и выдайте доступ клиенту wibestyle — для вежливых подсказок «возьмите размер побольше» и коротких комментариев стилиста после примерки (`styleCompliment`). Если сети нет, используются шаблоны с ротацией.
 
 7. Перезапустите noteapp и wibestyle API.
 
@@ -318,7 +319,7 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 С xAI ключом: **Grok Imagine image edit** (одевает человека с image1 вещью с image2).  
 Без xAI: Pollinations text-to-image (ненадёжно для примерки).
 
-**Промпт на русском:** админка → **Промпт примерки** (`/ai-prompts`) — базовый текст в БД (`vton.base_ru`, миграция **V15**). API дописывает блок `ДАННЫЕ ПРИМЕРКИ (JSON)` с товаром, замерами и посадкой. Grok в noteapp использует этот полный `prompt` + короткий контекст модерации. **После правки шаблона обязательно перезапустите wibestyle API** — иначе в noteapp уйдёт старый английский текст из прошлой сборки. В логах noteapp поле `prompt` во входящем payload = то, что собрал API; в консоли noteapp строка `preview=` — финальный текст для Grok.
+**Промпты на русском:** админка → **Промпт примерки** (`/ai-prompts`). Базовый VTON template — `vton.base_ru`; post-try-on compliment template — `tryon.result_compliment_ru` (Flyway **V18**). API дописывает блок `ДАННЫЕ ПРИМЕРКИ (JSON)` с товаром, замерами и посадкой. Grok в noteapp использует полный VTON `prompt` + короткий контекст модерации. **После правки VTON шаблона перезапустите wibestyle API**, чтобы в noteapp ушёл актуальный текст. В логах noteapp поле `prompt` во входящем payload = то, что собрал API; в консоли noteapp строка `preview=` — финальный текст для Grok.
 
 **Сессия и аватар:** access token обновляется автоматически при 401 (refresh). Флаги onboarding синхронизируются с `activeAvatarId` из профиля. Фото аватара перезапрашиваются после refresh токена.
 

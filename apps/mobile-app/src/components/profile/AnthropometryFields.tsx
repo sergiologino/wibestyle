@@ -1,4 +1,12 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from "react-native";
 import { TextField } from "@/components/ui/TextField";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { CLOTHING_SIZES } from "@/lib/clothing-sizes";
@@ -29,6 +37,19 @@ export function AnthropometryFields({
   shoeSizeEu,
 }: AnthropometryFieldsProps) {
   const mark = required ? " *" : "";
+  const [sizeScrollX, setSizeScrollX] = useState(0);
+  const [sizeViewportWidth, setSizeViewportWidth] = useState(0);
+  const [sizeContentWidth, setSizeContentWidth] = useState(0);
+  const hiddenSizeWidth = Math.max(0, sizeContentWidth - sizeViewportWidth);
+  const showLeftArrow = sizeScrollX > 4;
+  const showRightArrow = hiddenSizeWidth - sizeScrollX > 4;
+
+  const handleSizeScroll = useMemo(
+    () => (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      setSizeScrollX(event.nativeEvent.contentOffset.x);
+    },
+    []
+  );
 
   return (
     <View style={styles.wrap}>
@@ -62,17 +83,29 @@ export function AnthropometryFields({
       />
       <View style={styles.sizeBlock}>
         <Text style={styles.sizeLabel}>Размер одежды</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sizeRow}>
-          {CLOTHING_SIZES.map((size) => (
-            <Pressable
-              key={size}
-              style={[styles.sizePill, clothingSize === size && styles.sizePillActive]}
-              onPress={() => onChange("clothingSize", size)}
-            >
-              <Text style={[styles.sizeText, clothingSize === size && styles.sizeTextActive]}>{size}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <View style={styles.sizeScroller}>
+          <ScrollView
+            horizontal
+            scrollEventThrottle={16}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.sizeRow}
+            onContentSizeChange={(width) => setSizeContentWidth(width)}
+            onLayout={(event) => setSizeViewportWidth(event.nativeEvent.layout.width)}
+            onScroll={handleSizeScroll}
+          >
+            {CLOTHING_SIZES.map((size) => (
+              <Pressable
+                key={size}
+                style={[styles.sizePill, clothingSize === size && styles.sizePillActive]}
+                onPress={() => onChange("clothingSize", size)}
+              >
+                <Text style={[styles.sizeText, clothingSize === size && styles.sizeTextActive]}>{size}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          {showLeftArrow ? <View pointerEvents="none" style={[styles.sizeArrow, styles.sizeArrowLeft]} /> : null}
+          {showRightArrow ? <View pointerEvents="none" style={[styles.sizeArrow, styles.sizeArrowRight]} /> : null}
+        </View>
       </View>
       <TextField
         label="Обувь, EU"
@@ -97,9 +130,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.black,
   },
+  sizeScroller: {
+    position: "relative",
+  },
   sizeRow: {
     gap: spacing.sm,
+    paddingHorizontal: 2,
     paddingVertical: 2,
+  },
+  sizeArrow: {
+    position: "absolute",
+    top: "50%",
+    marginTop: -6,
+    width: 0,
+    height: 0,
+    borderTopWidth: 6,
+    borderBottomWidth: 6,
+    borderTopColor: "transparent",
+    borderBottomColor: "transparent",
+  },
+  sizeArrowLeft: {
+    left: -2,
+    borderRightWidth: 8,
+    borderRightColor: colors.eyebrow,
+  },
+  sizeArrowRight: {
+    right: -2,
+    borderLeftWidth: 8,
+    borderLeftColor: colors.eyebrow,
   },
   sizePill: {
     paddingHorizontal: 14,

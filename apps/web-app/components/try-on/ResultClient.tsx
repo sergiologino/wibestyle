@@ -379,6 +379,13 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         <h1 className="text-display mt-2 text-4xl">Смотри, как смотрится на тебе</h1>
       </div>
 
+      {result.styleCompliment ? (
+        <Card className="border-[#ffd1ed]/80 bg-[#fff8fd]">
+          <p className="text-eyebrow">Комментарий стилиста</p>
+          <p className="mt-2 text-lg font-normal text-[#302637]">{result.styleCompliment}</p>
+        </Card>
+      ) : null}
+
       {result.sizeFitMessage && result.recommendedSize ? (
         <Card className="border-[#ffb347] bg-[#fffaf3]">
           <p className="font-normal text-[#302637]">{result.sizeFitMessage}</p>

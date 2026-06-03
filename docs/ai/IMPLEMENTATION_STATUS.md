@@ -34,6 +34,8 @@
 | Auth persistence | ✅ refresh 365 дней + web/mobile hardening |
 | Local blob storage | ✅ `data/storage` object keys + legacy read |
 | Web/mobile UI polish | ✅ responsive nav, mobile tabs/home/try-on |
+| Try-on result compliments | ✅ noteapp `gpt-4o-mini` + prompt table `tryon.result_compliment_ru` |
+| Wildberries video-first media | ✅ HTML photo candidates skip `video-js`/mp4 and are tried first |
 
 ---
 

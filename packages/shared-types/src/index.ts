@@ -377,6 +377,7 @@ export type TryOnResult = {
   sizeFitStatus?: TryOnSizeFit["status"];
   recommendedSize?: string;
   sizeFitMessage?: string;
+  styleCompliment?: string;
 };
 
 /** Completed try-on entry for user's personal history (home feed). */

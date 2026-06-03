@@ -79,6 +79,9 @@ public class TryOnSessionEntity {
     @Column(name = "size_fit_message", length = 512)
     private String sizeFitMessage;
 
+    @Column(name = "style_compliment", length = 512)
+    private String styleCompliment;
+
     @Column(name = "product_size_chart", columnDefinition = "TEXT")
     private String productSizeChart;
 
@@ -285,6 +288,14 @@ public class TryOnSessionEntity {
 
     public void setSizeFitMessage(String sizeFitMessage) {
         this.sizeFitMessage = sizeFitMessage;
+    }
+
+    public String getStyleCompliment() {
+        return styleCompliment;
+    }
+
+    public void setStyleCompliment(String styleCompliment) {
+        this.styleCompliment = styleCompliment;
     }
 
     public String getProductSizeChart() {

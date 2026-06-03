@@ -31,6 +31,24 @@ class WildberriesGalleryExtractorTest {
     }
 
     @Test
+    void usesFollowingImageWhenFirstMediaIsVideoJs() {
+        String html = """
+                <video-js class="vjs-big-play-centered">
+                  <video src="https://videonme-basket-04.wbcontent.net/vol45/part74571/745716141/mp4/360p/1.mp4"></video>
+                </video-js>
+                <img data-src-pb="https://basket-35.wbbasket.ru/vol7457/part745716/745716141/images/c246x328/1.webp"
+                     src="https://basket-35.wbcontent.net/vol7457/part745716/745716141/images/c246x328/1.webp">
+                <img data-src-pb="https://basket-40.wbbasket.ru/vol9434/part943456/943456648/images/c246x328/1.webp"
+                     src="https://basket-40.wbcontent.net/vol9434/part943456/943456648/images/c246x328/1.webp">
+                """;
+
+        List<String> photos = WildberriesGalleryExtractor.extractPhotoUrls(html, 745716141L);
+
+        assertEquals(1, photos.size());
+        assertEquals("https://basket-35.wbbasket.ru/vol7457/part745716/745716141/images/big/1.webp", photos.get(0));
+    }
+
+    @Test
     void extractsBasketHostFromPhotoUrl() {
         assertEquals(
                 "https://basket-35.wbbasket.ru",

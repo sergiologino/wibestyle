@@ -7,7 +7,12 @@
 - **Admin** (`:3002`): `/promo`, `/reviews`, `/leads`, `/gallery`.
 - Автотесты и сборки: **npm test**, **API tests**, **web build**, **mobile TypeScript**, **API bootJar** — проходят.
 
-## Недавние фиксы (2026-06-02)
+## Недавние фиксы (2026-06-03)
+- **Mobile branding/gallery**: Expo assets и нативные Android launcher/splash resources используют полноразмерную V-mark без edge ring; launcher resources остаются `.webp`, чтобы не ловить Gradle duplicate resources; mobile gallery строит абсолютный API URL для `publicImageUrl`.
+- **Profile UX (2026-06-03)**: mobile profile inputs компактнее; дополнительные avatar в web/mobile не дублируют основной; mobile size tags показывают edge-треугольники, если список можно свайпать.
+- **Mobile home UX**: главный экран показывает `Осталось примерок`, счётчик в `Твои примерки (N)`, CTA на avatar при его отсутствии и gender-aware subtitle.
+- **Try-on engagement**: результат примерки отдаёт `styleCompliment`, сгенерированный через noteapp `gpt-4o-mini` по prompt table key `tryon.result_compliment_ru`; web/mobile показывают отдельный блок «Комментарий стилиста».
+- **Wildberries video-first**: если первое медиа карточки — видео (`video-js`/mp4), API предпочитает следующие HTML gallery фото (`webp/jpg/png`) и не пытается использовать видео как garment image.
 - **UI/UX**: web-app получил active desktop nav + mobile bottom nav; `/try-on` hub обновлён; mobile tabs/home/try-on/input primitives отполированы.
 - **Auth persistence**: refresh token по умолчанию 365 дней в PostgreSQL; web/mobile session helpers единые; mobile не очищает AsyncStorage на временных refresh/me сбоях и обновляет token по таймеру/AppState.
 - **Storage**: новые avatar/try-on/media записи принимают только relative object keys под `data/storage`; legacy absolute refs остаются читаемыми.

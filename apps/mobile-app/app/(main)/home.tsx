@@ -39,6 +39,7 @@ export default function HomeScreen() {
     profile?.plan === "trial"
       ? profile.trialGenerationsLeft
       : profile?.planGenerationsLeft ?? null;
+  const publishedVerb = profile?.gender === "male" ? "публиковал" : "публиковала";
 
   return (
     <Screen>
@@ -48,21 +49,14 @@ export default function HomeScreen() {
           <DisplayTitle>Готова примерить новый look?</DisplayTitle>
           <BodyText>
             {gensLeft != null
-              ? profile?.plan === "trial"
-                ? `Осталось бесплатных примерок: ${gensLeft}`
-                : `Генераций в подписке: ${gensLeft}`
+              ? `Осталось примерок: ${gensLeft}`
               : "Подписка активна — можно примерять без trial-лимита."}
           </BodyText>
-          <View style={styles.metrics}>
-            <View style={styles.metric}>
-              <Text style={styles.metricValue}>{history.length}</Text>
-              <Text style={styles.metricLabel}>образов</Text>
-            </View>
-            <View style={styles.metric}>
-              <Text style={styles.metricValue}>{profile?.activeAvatarId ? "Да" : "Нет"}</Text>
-              <Text style={styles.metricLabel}>аватар</Text>
-            </View>
-          </View>
+          {!profile?.activeAvatarId ? (
+            <Pressable style={styles.avatarCta} onPress={() => router.push("/settings")}>
+              <Text style={styles.avatarCtaText}>Добавьте аватар в профиле</Text>
+            </Pressable>
+          ) : null}
           <View style={styles.actions}>
             <Button label="Примерить по ссылке" onPress={() => router.push("/try-on/link")} />
             <Button label="Примерить по фото" variant="secondary" onPress={() => router.push("/try-on/photo")} />
@@ -70,8 +64,8 @@ export default function HomeScreen() {
         </Card>
 
         <View style={styles.section}>
-          <SectionTitle>Твои примерки</SectionTitle>
-          <BodyText>Все образы — даже если не публиковала в галерее.</BodyText>
+          <SectionTitle>{`Твои примерки (${history.length})`}</SectionTitle>
+          <BodyText>Все образы — даже если не {publishedVerb} в галерее.</BodyText>
         </View>
 
         {loading ? (
@@ -119,29 +113,20 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     gap: spacing.sm,
   },
-  metrics: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-  },
-  metric: {
-    flex: 1,
-    padding: spacing.md,
+  avatarCta: {
+    alignSelf: "flex-start",
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: radius.lg,
     borderWidth: hairline,
     borderColor: colors.borderLight,
     backgroundColor: colors.pinkBg,
   },
-  metricValue: {
-    fontFamily: "Manrope_600SemiBold",
-    fontSize: 18,
-    color: colors.black,
-  },
-  metricLabel: {
-    marginTop: 2,
-    fontFamily: "Manrope_400Regular",
-    fontSize: 12,
-    color: colors.muted,
+  avatarCtaText: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 14,
+    color: colors.pink,
   },
   section: {
     gap: 4,
