@@ -1,8 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { SeoPageContent } from "@/content/seo-pages";
-import { imageSlots } from "@/content/image-slots";
 import JsonLd from "@/components/JsonLd";
+import AppPreviewPhones from "@/components/home/AppPreviewPhones";
+import BeforeAfterSection from "@/components/home/BeforeAfterSection";
+import HeroBeforeCard from "@/components/home/HeroBeforeCard";
+import HeroCollage from "@/components/home/HeroCollage";
 import EarlyAccessBlock from "@/components/seo/EarlyAccessBlock";
 import ProductFeaturesBlock from "@/components/seo/ProductFeaturesBlock";
 import { breadcrumbSchema, faqSchema } from "@/lib/schema";
@@ -39,14 +41,8 @@ export default function HowItWorksPage({ page }: Props) {
               <h1>{page.h1}</h1>
               <p className="lead">{page.intro}</p>
             </div>
-            <div className="seo-hero-band-img">
-              <Image
-                src={imageSlots.phoneMockups.src}
-                alt={imageSlots.phoneMockups.alt}
-                width={800}
-                height={900}
-                priority
-              />
+            <div className="seo-hero-band-img seo-hero-band-img--phones">
+              <AppPreviewPhones />
             </div>
           </div>
         </div>
@@ -67,9 +63,8 @@ export default function HowItWorksPage({ page }: Props) {
               ))}
             </div>
           </div>
-          <div className="phones-wrap">
-            <Image src={imageSlots.beforeAfter.src} alt={imageSlots.beforeAfter.alt} width={900} height={660} />
-            <div className="love-sticker">Вау! 😍</div>
+          <div className="seo-how-before-after">
+            <BeforeAfterSection />
           </div>
         </div>
       </section>
@@ -77,12 +72,22 @@ export default function HowItWorksPage({ page }: Props) {
       <section className="hot-band">
         <div className="container-wide examples-grid">
           <div>
-            <h2>До</h2>
-            <Image className="showcase-img" src={imageSlots.heroBefore.src} alt={imageSlots.heroBefore.alt} width={660} height={900} />
+            <div className="hot-showcase-intro seo-how-intro">
+              <p className="eyebrow">до</p>
+              <h2>Фото до примерки</h2>
+              <p>Базовое фото в полный рост: без обнажения, с возможностью скрыть лицо и фон.</p>
+            </div>
+            <div className="seo-how-hero-before">
+              <HeroBeforeCard />
+            </div>
           </div>
           <div>
-            <h2>После — готовый look</h2>
-            <Image className="showcase-img" src={imageSlots.heroCollage.src} alt={imageSlots.heroCollage.alt} width={1200} height={900} />
+            <div className="hot-showcase-intro seo-how-intro">
+              <p className="eyebrow">после</p>
+              <h2>После — готовый look</h2>
+              <p>Несколько вариантов образа из вещей с маркетплейсов, которые можно сохранить и обсудить.</p>
+            </div>
+            <HeroCollage />
           </div>
         </div>
       </section>

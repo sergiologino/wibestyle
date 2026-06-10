@@ -73,6 +73,7 @@ export const seoPages: SeoPageContent[] = [
     keywords: [...baseKeywords, "примерка одежды онлайн"],
     priority: 0.95,
     intro: `${t.stylist} покажет, как вещь может преобразить вас и создать неповторимый визуальный образ — не сухие цифры из таблицы, а живой look на вашем фото.`,
+    badge: "Уже в приложении",
     visuals: {
       type: "split",
       leftTitle: "До и после",

@@ -7,6 +7,21 @@
 - **Admin** (`:3002`): `/promo`, `/reviews`, `/leads`, `/gallery`.
 - Автотесты и сборки: **npm test**, **API tests**, **web build**, **mobile TypeScript**, **API bootJar** — проходят.
 
+## Лендинг: production-баннеры (старт 2026-06-10)
+- Начата замена raster-моков лендинга на компонентные production-ready секции.
+- Первый заменённый тип: главный блок «До / после» вместо единого `before-after.png` на главной странице landing.
+- Новый `BeforeAfterSection` собирается из двух широких пар before image, after poster и after video; лейблы «до»/«после» рендерятся DOM-текстом.
+- Второй заменённый тип: правый блок «Подходит всем стилям» вместо единого `styles.png`; новый `StyleShowcaseSection` использует отдельные карточки Casual, Office, Party, Romantic и Men's style.
+- Оба верхних production-баннера в `hot-band` используют общий intro-ритм и согласованную общую высоту: правый блок не имеет лишнего белого поля снизу, левый блок компенсирует свой внутренний card-header меньшей высотой media.
+- Hero before-фото под логотипом вынесено в `HeroBeforeCard`: лейбл «ты / без образа» хранится в данных, а края изображения смешиваются с фоном через gradient overlays и mask, чтобы не было жёсткого перехода фото → фон.
+- Остальные цельные баннеры главной заменены компонентами: `HeroCollage` вместо `hero-collage.png`, `AppPreviewPhones` вместо `phone-mockups.png`, `FinalCtaArt` вместо `cta-bags.png`/`qr-demo.png`.
+- Для новых компонентных баннеров добавлены data-файлы с replaceable image paths: `hero-collage-data.ts`, `app-preview-data.ts`, `final-cta-art-data.ts`; когда production-фото будут готовы, менять нужно данные/ассеты, а не JSX-разметку.
+- SEO-страницы тоже используют новые компонентные баннеры: `/ai-primerka` рендерит `BeforeAfterSection` + `StyleShowcaseSection` вместо старых split PNG, `/kak-rabotaet` рендерит `AppPreviewPhones`, `BeforeAfterSection`, `HeroBeforeCard` и `HeroCollage` вместо четырёх raster-моков.
+- Для SEO split на `/ai-primerka` добавлены отдельные CSS-настройки фиксированной высоты, чтобы `BeforeAfterSection` и `StyleShowcaseSection` были одной высоты; eyebrow внутри розового градиента белый, иконки style-карточек не перекрывают подписи, badge страницы заменён на «Уже в приложении».
+- Header CTA лендинга ведёт в веб-версию приложения через `siteConfig.appUrl` (`NEXT_PUBLIC_APP_URL`, fallback `http://localhost:3001/welcome`). Hero storefront CTA: `Скоро в App Store`, `Скачать в Google Play`, `Скачать в RuStore`.
+- Демо-ассеты для быстрой замены лежат в `apps/landing/public/assets/before-after-demo/`.
+- Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
+
 ## Недавние фиксы (2026-06-03)
 - **Mobile branding/gallery**: Expo assets и нативные Android launcher/splash resources используют полноразмерную V-mark без edge ring; launcher resources остаются `.webp`, чтобы не ловить Gradle duplicate resources; mobile gallery строит абсолютный API URL для `publicImageUrl`.
 - **Profile UX (2026-06-03)**: mobile profile inputs компактнее; дополнительные avatar в web/mobile не дублируют основной; mobile size tags показывают edge-треугольники, если список можно свайпать.

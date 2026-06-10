@@ -1,6 +1,7 @@
 export const siteConfig = {
   name: "Я на стиле",
   domain: process.env.NEXT_PUBLIC_SITE_URL ?? "https://yanastile.app",
+  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001/welcome",
   description:
     "Виртуальный персональный стилист и нейропримерочная с маркетплейсов: загрузи фото, вставь ссылку на товар и посмотри, как вещь преобразит твой образ до покупки.",
   locale: "ru_RU",

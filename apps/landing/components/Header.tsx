@@ -5,6 +5,7 @@ import { BrandMarkGraphicSvg } from "@wibestyle/ui";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { handleHashLinkClick } from "@/lib/navigation";
+import { siteConfig } from "@/lib/site";
 
 const navLinks = [
   { href: "/kak-rabotaet", label: "Как работает" },
@@ -51,11 +52,10 @@ export default function Header() {
       </nav>
       <Link
         className="download-cta"
-        href="/#lead"
-        data-analytics="header_cta"
-        onClick={(event) => onNavClick(event, "/#lead")}
+        href={siteConfig.appUrl}
+        data-analytics="header_web_app"
       >
-        Ранний доступ ✨
+        Открыть веб-версию
       </Link>
     </header>
   );

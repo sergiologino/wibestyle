@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { pricing } from "./site";
+import { pricing, siteConfig } from "./site";
+
+describe("siteConfig", () => {
+  it("contains web app entry URL", () => {
+    expect(siteConfig.appUrl).toMatch(/\/welcome$/);
+  });
+});
 
 describe("pricing", () => {
   it("annual price is 6990 RUB", () => {

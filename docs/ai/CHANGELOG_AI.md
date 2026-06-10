@@ -1,5 +1,21 @@
 # AI Changelog
 
+## 2026-06-10 (Landing before/after banner component)
+- Landing: заменён главный raster-баннер `before-after.png` на компонентный `BeforeAfterSection` в `apps/landing/components/home/`.
+- Добавлены `BeforeAfterCard`-карточки с DOM-лейблами «до»/«после», before image, after poster и after video.
+- Landing: заменён правый raster-баннер `styles.png` на компонентный `StyleShowcaseSection` с отдельными style-карточками и доступными alt-текстами.
+- Верхние баннеры hot-band выровнены по общему intro-ритму и высоте визуальной части, чтобы «До / после» и «Подходит всем стилям» снова стояли на одном уровне.
+- По UX-правке: `BeforeAfterSection` сокращён до двух широких пар, media-height левого блока уменьшен под высоту правого, а у `StyleShowcaseSection` убрано лишнее белое поле снизу.
+- Hero: первое фото под логотипом вынесено в `HeroBeforeCard`; добавлены edge-gradient overlays и CSS mask для плавного перехода от фото к hero-фону.
+- Landing: остальные цельные баннеры главной заменены на production-ready компоненты: `HeroCollage`, `AppPreviewPhones`, `FinalCtaArt`.
+- SEO: `/ai-primerka` теперь использует те же компонентные `BeforeAfterSection` и `StyleShowcaseSection`, что и главная; `/kak-rabotaet` заменил четыре старых PNG на `AppPreviewPhones`, `BeforeAfterSection`, `HeroBeforeCard`, `HeroCollage`.
+- SEO polish: на `/ai-primerka` выровнена высота соседних компонентных баннеров через фиксированные media/panel heights, eyebrow `стили` стал белым на градиенте, иконки style-card перенесены так, чтобы не перекрывать текст; badge `Скоро в приложении` заменён на `Уже в приложении`.
+- CTA: в header `Ранний доступ` заменён на переход в веб-версию приложения (`siteConfig.appUrl` / `NEXT_PUBLIC_APP_URL`); hero App Store CTA стал `Скоро в App Store`, добавлена кнопка `Скачать в RuStore`.
+- Добавлены data-файлы для будущей замены production-фото без переписывания JSX: `hero-collage-data.ts`, `app-preview-data.ts`, `final-cta-art-data.ts`.
+- Добавлены временные replaceable-ассеты в `apps/landing/public/assets/before-after-demo/`.
+- Поведение after-side: poster 2 секунды → плавное появление muted autoplay video; IntersectionObserver стартует/останавливает видео по видимости, reduced motion оставляет poster.
+- Добавлены тесты `before-after-data.test.ts`, `style-showcase-data.test.ts`, `hero-before-card-data.test.ts`, `component-banners-data.test.ts`; `npm.cmd test -w @wibestyle/landing` и `npm.cmd run build -w @wibestyle/landing` проходят.
+
 ## 2026-06-03 (Profile UX polish)
 - Mobile branding/gallery: `icon.png`, `adaptive-icon.png`, `splash-icon.png` и нативные Android `res/mipmap-*` + `res/drawable-*` перегенерированы с полноразмерной V-mark, без edge ring и без жирной обводки у `Style`; launcher resources пишутся как `.webp`, чтобы не конфликтовать с Expo prebuild. Mobile gallery теперь резолвит `publicImageUrl` через API base URL, поэтому фото примерок отображаются как в web.
 - Mobile profile: `TextField` inputs стали компактнее по vertical/horizontal padding, чтобы больше полей помещалось при открытой клавиатуре.

@@ -1,5 +1,7 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import type { PageVisuals } from "@/content/seo-pages";
+import BeforeAfterSection from "@/components/home/BeforeAfterSection";
+import StyleShowcaseSection from "@/components/home/StyleShowcaseSection";
 
 type Props = { visuals: PageVisuals; compact?: boolean };
 
@@ -64,6 +66,19 @@ export default function SeoVisuals({ visuals, compact }: Props) {
   }
 
   if (visuals.type === "split") {
+    const isMainBeforeAfterStyles =
+      visuals.left.src === "/assets/before-after.png" &&
+      visuals.right?.src === "/assets/styles.png";
+
+    if (isMainBeforeAfterStyles) {
+      return (
+        <div className="seo-split-visual seo-split-visual--components">
+          <BeforeAfterSection />
+          <StyleShowcaseSection />
+        </div>
+      );
+    }
+
     return (
       <div className="seo-split-visual">
         <div>

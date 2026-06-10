@@ -5,6 +5,12 @@ import { homeFaq } from "@/content/home-faq";
 import LeadForm from "@/components/LeadForm";
 import PricingBanner from "@/components/PricingBanner";
 import PublishedReviewsSection from "@/components/PublishedReviewsSection";
+import AppPreviewPhones from "@/components/home/AppPreviewPhones";
+import BeforeAfterSection from "@/components/home/BeforeAfterSection";
+import FinalCtaArt from "@/components/home/FinalCtaArt";
+import HeroBeforeCard from "@/components/home/HeroBeforeCard";
+import HeroCollage from "@/components/home/HeroCollage";
+import StyleShowcaseSection from "@/components/home/StyleShowcaseSection";
 import ProductFeaturesBlock from "@/components/seo/ProductFeaturesBlock";
 
 const exampleCards = [
@@ -42,21 +48,7 @@ export default function HomePage() {
         <div className="hero-bg-orb hero-bg-orb-a" />
         <div className="hero-bg-orb hero-bg-orb-b" />
         <div className="hero-layout container-wide">
-          <div className="hero-person-card" aria-label="Фото до примерки">
-            <Image
-              src={imageSlots.heroBefore.src}
-              alt={imageSlots.heroBefore.alt}
-              width={660}
-              height={1180}
-              priority
-              className="h-[590px] w-full object-cover"
-            />
-            <div className="tag tag-before">
-              ты
-              <br />
-              <span>без образа</span>
-            </div>
-          </div>
+          <HeroBeforeCard />
           <div className="hero-copy">
             <div className="pill">Стилист уже внутри ♡</div>
             <h1 id="hero-title">
@@ -72,10 +64,13 @@ export default function HomePage() {
             </ul>
             <div className="cta-row">
               <Link className="store-button store-apple" href="#lead" data-analytics="hero_appstore">
-                 <span>Скачать в<br /><b>App Store</b></span>
+                 <span>Скоро в<br /><b>App Store</b></span>
               </Link>
               <Link className="store-button store-google" href="#lead" data-analytics="hero_googleplay">
                 ▶ <span>Скачать в<br /><b>Google Play</b></span>
+              </Link>
+              <Link className="store-button store-rustore" href="#lead" data-analytics="hero_rustore">
+                Ru <span>Скачать в<br /><b>RuStore</b></span>
               </Link>
             </div>
             <p className="scribble">
@@ -84,24 +79,17 @@ export default function HomePage() {
               Твои правила.
             </p>
           </div>
-          <div className="hero-collage" aria-label="Примеры образов после AI-примерки">
-            <Image src={imageSlots.heroCollage.src} alt={imageSlots.heroCollage.alt} width={1200} height={900} priority />
-            <span className="floating-label label-summer">Летний вайб ♡</span>
-            <span className="floating-label label-wow">вау!</span>
-            <span className="floating-label label-city">Стиль в городе ♡</span>
-          </div>
+          <HeroCollage />
         </div>
       </section>
 
-      <section id="examples" className="hot-band" aria-labelledby="examples-title">
+      <section id="examples" className="hot-band" aria-label="Примеры до и после и стили">
         <div className="container-wide examples-grid">
           <div>
-            <h2 id="examples-title">До и после</h2>
-            <Image className="showcase-img" src={imageSlots.beforeAfter.src} alt={imageSlots.beforeAfter.alt} width={900} height={660} />
+            <BeforeAfterSection />
           </div>
           <div id="styles">
-            <h2>Подходит всем стилям</h2>
-            <Image className="showcase-img" src={imageSlots.styles.src} alt={imageSlots.styles.alt} width={900} height={660} />
+            <StyleShowcaseSection />
           </div>
         </div>
       </section>
@@ -135,14 +123,7 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-          <div className="phones-wrap">
-            <Image src={imageSlots.phoneMockups.src} alt={imageSlots.phoneMockups.alt} width={800} height={900} />
-            <div className="love-sticker">
-              Это
-              <br />
-              любовь! 😍
-            </div>
-          </div>
+          <AppPreviewPhones />
         </div>
       </section>
 
@@ -201,10 +182,7 @@ export default function HomePage() {
             <PricingBanner />
             <LeadForm interest="clothing" variant="full" />
           </div>
-          <div className="cta-art">
-            <Image src={imageSlots.ctaBags.src} alt={imageSlots.ctaBags.alt} width={840} height={600} />
-            <Image className="qr" src={imageSlots.qrDemo.src} alt={imageSlots.qrDemo.alt} width={150} height={150} />
-          </div>
+          <FinalCtaArt />
         </div>
       </section>
 
