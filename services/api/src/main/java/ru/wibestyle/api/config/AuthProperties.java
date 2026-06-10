@@ -13,6 +13,8 @@ public class AuthProperties {
     private String refreshTokenStore = "jdbc";
     private String jwtSecret = "dev-jwt-secret-change-me-in-production-min-32-chars";
     private boolean legacyAccessTokenEnabled = true;
+    /** When set, OTP codes use this value (tests/dev). Empty = random code. */
+    private String otpDevFixedCode = "";
 
     public int getOtpTtlSeconds() {
         return otpTtlSeconds;
@@ -85,5 +87,17 @@ public class AuthProperties {
 
     public void setLegacyAccessTokenEnabled(boolean legacyAccessTokenEnabled) {
         this.legacyAccessTokenEnabled = legacyAccessTokenEnabled;
+    }
+
+    public String getOtpDevFixedCode() {
+        return otpDevFixedCode;
+    }
+
+    public void setOtpDevFixedCode(String otpDevFixedCode) {
+        this.otpDevFixedCode = otpDevFixedCode == null ? "" : otpDevFixedCode.trim();
+    }
+
+    public boolean hasOtpDevFixedCode() {
+        return otpDevFixedCode != null && !otpDevFixedCode.isBlank();
     }
 }

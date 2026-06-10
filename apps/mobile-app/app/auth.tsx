@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useRouter } from "expo-router";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
@@ -10,30 +11,20 @@ import { getApiBaseUrl } from "@/lib/config";
 import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
-type AuthTab = "phone" | "login";
+type AuthTab = "phone" | "email";
 
 export default function AuthScreen() {
   const router = useRouter();
   const { api, setAuth } = useSession();
   const [tab, setTab] = useState<AuthTab>("phone");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [requestId, setRequestId] = useState<string | null>(null);
   const [code, setCode] = useState("");
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [captchaQuestion, setCaptchaQuestion] = useState("");
-  const [captchaId, setCaptchaId] = useState("");
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function loadCaptcha() {
-    const captcha = await api.getCaptcha();
-    setCaptchaId(captcha.challengeId);
-    setCaptchaQuestion(captcha.question);
-  }
-
-  async function startOtp() {
+  async function startPhoneOtp() {
     setError(null);
     setLoading(true);
     try {
@@ -46,12 +37,27 @@ export default function AuthScreen() {
     }
   }
 
+  async function startEmailOtp() {
+    setError(null);
+    setLoading(true);
+    try {
+      const result = await api.startEmailOtp(email);
+      setRequestId(result.requestId);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось отправить код на email");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function verifyOtp() {
     if (!requestId) return;
     setError(null);
     setLoading(true);
     try {
-      const auth = await api.verifyOtp(requestId, code);
+      const auth = tab === "phone"
+        ? await api.verifyOtp(requestId, code)
+        : await api.verifyEmailOtp(requestId, code);
       const meClient = new WibeStyleApiClient({
         baseUrl: getApiBaseUrl(),
         getAccessToken: () => auth.accessToken,
@@ -59,7 +65,7 @@ export default function AuthScreen() {
       const me = await meClient.me();
       setAuth(
         auth.accessToken,
-        auth.user.phone ?? me.user.login ?? me.user.email ?? "",
+        auth.user.phone ?? auth.user.email ?? me.user.login ?? me.user.email ?? "",
         me.profile,
         auth.refreshToken,
         auth.expiresIn,
@@ -71,48 +77,16 @@ export default function AuthScreen() {
         }) as never,
       );
     } catch {
-      setError("Неверный код. Для dev используй 0000.");
+      setError(tab === "phone" ? "Неверный код. Для dev используй 0000." : "Неверный код из письма.");
     } finally {
       setLoading(false);
     }
   }
 
-  async function loginPassword() {
+  function resetChallenge() {
+    setRequestId(null);
+    setCode("");
     setError(null);
-    setLoading(true);
-    try {
-      if (!captchaId) await loadCaptcha();
-      const captcha = captchaId ? { challengeId: captchaId } : await api.getCaptcha();
-      const auth = await api.loginWithPassword({
-        identifier,
-        password,
-        captchaId: captcha.challengeId,
-        captchaAnswer,
-      });
-      const meClient = new WibeStyleApiClient({
-        baseUrl: getApiBaseUrl(),
-        getAccessToken: () => auth.accessToken,
-      });
-      const me = await meClient.me();
-      setAuth(
-        auth.accessToken,
-        auth.user.phone ?? auth.user.login ?? auth.user.email ?? "",
-        me.profile,
-        auth.refreshToken,
-        auth.expiresIn,
-      );
-      router.replace(
-        resolvePostAuthRoute({
-          newUser: false,
-          hasActiveAvatar: Boolean(me.profile.activeAvatarId),
-        }) as never,
-      );
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось войти");
-      await loadCaptcha();
-    } finally {
-      setLoading(false);
-    }
   }
 
   return (
@@ -121,30 +95,29 @@ export default function AuthScreen() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Eyebrow>Вход</Eyebrow>
           <DisplayTitle>Добро пожаловать</DisplayTitle>
-          <BodyText>Войди по телефону или логину — данные синхронизируются с web-app.</BodyText>
+          <BodyText>Войди по телефону, email или через Яндекс / Google.</BodyText>
 
           <View style={styles.tabs}>
-            {(["phone", "login"] as AuthTab[]).map((value) => (
+            {(["phone", "email"] as AuthTab[]).map((value) => (
               <Pressable
                 key={value}
                 style={[styles.tab, tab === value && styles.tabActive]}
                 onPress={() => {
                   setTab(value);
-                  setError(null);
-                  if (value === "login" && !captchaId) void loadCaptcha();
+                  resetChallenge();
                 }}
               >
                 <Text style={[styles.tabText, tab === value && styles.tabTextActive]}>
-                  {value === "phone" ? "Телефон" : "Логин"}
+                  {value === "phone" ? "Телефон" : "Email"}
                 </Text>
               </Pressable>
             ))}
           </View>
 
-          {tab === "phone" ? (
-            <View style={styles.form}>
-              {!requestId ? (
-                <>
+          <View style={styles.form}>
+            {!requestId ? (
+              <>
+                {tab === "phone" ? (
                   <TextField
                     label="Телефон"
                     placeholder="+7 900 000-00-00"
@@ -152,37 +125,38 @@ export default function AuthScreen() {
                     value={phone}
                     onChangeText={setPhone}
                   />
-                  <Button label="Получить код" loading={loading} onPress={startOtp} />
-                </>
-              ) : (
-                <>
+                ) : (
                   <TextField
-                    label="Код из SMS"
-                    placeholder="0000"
-                    keyboardType="number-pad"
-                    value={code}
-                    onChangeText={setCode}
+                    label="Email"
+                    placeholder="email@example.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
                   />
-                  <Button label="Подтвердить" loading={loading} onPress={verifyOtp} />
-                  <Button label="Изменить номер" variant="ghost" onPress={() => setRequestId(null)} />
-                </>
-              )}
-            </View>
-          ) : (
-            <View style={styles.form}>
-              <TextField label="Логин или email" value={identifier} onChangeText={setIdentifier} autoCapitalize="none" />
-              <TextField label="Пароль" value={password} onChangeText={setPassword} secureTextEntry />
-              {captchaQuestion ? (
-                <TextField
-                  label={`Пример: ${captchaQuestion}`}
-                  value={captchaAnswer}
-                  onChangeText={setCaptchaAnswer}
-                  keyboardType="number-pad"
+                )}
+                <Button
+                  label="Получить код"
+                  loading={loading}
+                  onPress={tab === "phone" ? startPhoneOtp : startEmailOtp}
                 />
-              ) : null}
-              <Button label="Войти" loading={loading} onPress={loginPassword} />
-            </View>
-          )}
+              </>
+            ) : (
+              <>
+                <TextField
+                  label={tab === "phone" ? "Код из SMS" : "Код из письма"}
+                  placeholder={tab === "phone" ? "0000" : "123456"}
+                  keyboardType="number-pad"
+                  value={code}
+                  onChangeText={setCode}
+                />
+                <Button label="Подтвердить" loading={loading} onPress={verifyOtp} />
+                <Button label="Изменить" variant="ghost" onPress={resetChallenge} />
+              </>
+            )}
+          </View>
+
+          <OAuthButtons />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </ScrollView>

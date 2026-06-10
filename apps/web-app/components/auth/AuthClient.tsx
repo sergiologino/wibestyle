@@ -2,10 +2,10 @@
 
 import { Suspense, useState } from "react";
 import OtpForm from "@/components/auth/OtpForm";
-import PasswordAuthForm from "@/components/auth/PasswordAuthForm";
+import EmailOtpForm from "@/components/auth/EmailOtpForm";
 import OAuthButtons from "@/components/auth/OAuthButtons";
 
-type AuthTab = "phone" | "password";
+type AuthTab = "phone" | "email";
 
 export default function AuthClient() {
   const [tab, setTab] = useState<AuthTab>("phone");
@@ -22,15 +22,15 @@ export default function AuthClient() {
         </button>
         <button
           type="button"
-          className={`rounded-full px-4 py-1.5 text-sm font-medium ${tab === "password" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
-          onClick={() => setTab("password")}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium ${tab === "email" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
+          onClick={() => setTab("email")}
         >
-          Логин / пароль
+          Email
         </button>
       </div>
 
       <Suspense fallback={null}>
-        {tab === "phone" ? <OtpForm /> : <PasswordAuthForm />}
+        {tab === "phone" ? <OtpForm /> : <EmailOtpForm />}
       </Suspense>
       <OAuthButtons />
     </div>

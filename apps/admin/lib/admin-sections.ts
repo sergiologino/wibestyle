@@ -49,6 +49,13 @@ export const adminSections = [
     href: "/ai-prompts",
   },
   {
+    id: "settings",
+    title: "Настройки",
+    description: "Блокировка Google OAuth и другие глобальные опции.",
+    status: "Ready",
+    href: "/settings",
+  },
+  {
     id: "providers",
     title: "AI providers",
     description: "Приоритеты noteapp-ai-integration, fallback и health.",

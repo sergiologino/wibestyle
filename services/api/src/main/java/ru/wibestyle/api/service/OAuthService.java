@@ -1,6 +1,7 @@
 package ru.wibestyle.api.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -26,36 +27,46 @@ public class OAuthService {
     private final UserOAuthIdentityRepository userOAuthIdentityRepository;
     private final ProfileService profileService;
     private final TokenIssuanceService tokenIssuanceService;
-    private final Map<String, Instant> states = new ConcurrentHashMap<>();
+    private final PlatformSettingsService platformSettingsService;
+    private final GeoIpService geoIpService;
+    private final Map<String, OAuthState> states = new ConcurrentHashMap<>();
 
     public OAuthService(
             OAuthProperties oauthProperties,
             UserRepository userRepository,
             UserOAuthIdentityRepository userOAuthIdentityRepository,
             ProfileService profileService,
-            TokenIssuanceService tokenIssuanceService
+            TokenIssuanceService tokenIssuanceService,
+            PlatformSettingsService platformSettingsService,
+            GeoIpService geoIpService
     ) {
         this.oauthProperties = oauthProperties;
         this.userRepository = userRepository;
         this.userOAuthIdentityRepository = userOAuthIdentityRepository;
         this.profileService = profileService;
         this.tokenIssuanceService = tokenIssuanceService;
+        this.platformSettingsService = platformSettingsService;
+        this.geoIpService = geoIpService;
     }
 
-    public Map<String, Object> providerStatus() {
+    public Map<String, Object> providerStatus(HttpServletRequest request) {
         return Map.of(
                 "yandex", Map.of("enabled", oauthProperties.getYandex().isConfigured()),
-                "google", Map.of("enabled", oauthProperties.getGoogle().isConfigured())
+                "google", Map.of("enabled", isGoogleVisible(request))
         );
     }
 
-    public Map<String, Object> start(String provider) {
+    public Map<String, Object> start(String provider, String returnUrl, HttpServletRequest request) {
+        if ("google".equalsIgnoreCase(provider) && !isGoogleVisible(request)) {
+            throw new IllegalArgumentException("OAUTH_PROVIDER_DISABLED");
+        }
         OAuthProperties.Provider config = providerConfig(provider);
         if (!config.isConfigured()) {
             throw new IllegalArgumentException("OAUTH_PROVIDER_DISABLED");
         }
         String state = UUID.randomUUID().toString();
-        states.put(state, Instant.now().plusSeconds(600));
+        String redirectTarget = normalizeReturnUrl(returnUrl);
+        states.put(state, new OAuthState(Instant.now().plusSeconds(600), redirectTarget));
         String redirectUri = callbackUri(provider);
         String authorizationUrl = switch (provider.toLowerCase()) {
             case "yandex" -> UriComponentsBuilder
@@ -86,8 +97,8 @@ public class OAuthService {
         if (code == null || code.isBlank() || state == null || state.isBlank()) {
             throw new IllegalArgumentException("OAUTH_CALLBACK_INVALID");
         }
-        Instant expiresAt = states.remove(state);
-        if (expiresAt == null || expiresAt.isBefore(Instant.now())) {
+        OAuthState oauthState = states.remove(state);
+        if (oauthState == null || oauthState.expiresAt().isBefore(Instant.now())) {
             throw new IllegalArgumentException("OAUTH_STATE_EXPIRED");
         }
         OAuthProfile profile = fetchProfile(provider, code);
@@ -134,12 +145,25 @@ public class OAuthService {
             }
         }
         Map<String, Object> tokens = tokenIssuanceService.issueUserTokens(user, isNewUser, Map.of("redeemed", false));
-        return UriComponentsBuilder.fromUriString(oauthProperties.getWebAppCallbackUrl())
+        return UriComponentsBuilder.fromUriString(oauthState.returnUrl())
                 .queryParam("accessToken", tokens.get("accessToken"))
                 .queryParam("refreshToken", tokens.get("refreshToken"))
                 .queryParam("newUser", String.valueOf(tokens.get("newUser")))
                 .build(true)
                 .toUri();
+    }
+
+    public boolean isGoogleVisible(HttpServletRequest request) {
+        if (!oauthProperties.getGoogle().isConfigured()) {
+            return false;
+        }
+        if (platformSettingsService.isBlockGoogleOAuth()) {
+            return false;
+        }
+        if (geoIpService.isRussian(request)) {
+            return false;
+        }
+        return true;
     }
 
     private OAuthProfile fetchProfile(String provider, String code) {
@@ -238,8 +262,24 @@ public class OAuthService {
                 + "/api/v1/auth/oauth/" + provider.toLowerCase() + "/callback";
     }
 
+    private String normalizeReturnUrl(String returnUrl) {
+        if (returnUrl == null || returnUrl.isBlank()) {
+            return oauthProperties.getWebAppCallbackUrl();
+        }
+        String trimmed = returnUrl.trim();
+        if (trimmed.startsWith(oauthProperties.getWebAppCallbackUrl())
+                || trimmed.startsWith(oauthProperties.getMobileAppCallbackUrl())
+                || trimmed.startsWith("wibestyle://")) {
+            return trimmed;
+        }
+        throw new IllegalArgumentException("OAUTH_RETURN_URL_INVALID");
+    }
+
     private static String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private record OAuthState(Instant expiresAt, String returnUrl) {
     }
 
     private record OAuthProfile(String providerUserId, String email, String displayName) {

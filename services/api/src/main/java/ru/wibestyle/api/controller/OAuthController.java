@@ -1,5 +1,6 @@
 package ru.wibestyle.api.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,14 +26,18 @@ public class OAuthController {
     }
 
     @GetMapping("/providers")
-    public Map<String, Object> providers() {
-        return oAuthService.providerStatus();
+    public Map<String, Object> providers(HttpServletRequest request) {
+        return oAuthService.providerStatus(request);
     }
 
     @GetMapping("/{provider}/start")
-    public Map<String, Object> start(@PathVariable String provider) {
+    public Map<String, Object> start(
+            @PathVariable String provider,
+            @RequestParam(required = false) String returnUrl,
+            HttpServletRequest request
+    ) {
         try {
-            return oAuthService.start(provider);
+            return oAuthService.start(provider, returnUrl, request);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }

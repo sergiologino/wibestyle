@@ -1,6 +1,17 @@
 spring:
   application:
     name: wibestyle-api
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SMTP_AUTH:false}
+          starttls:
+            enable: ${SMTP_STARTTLS:false}
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wibestyle}
     username: ${SPRING_DATASOURCE_USERNAME:wibestyle}
@@ -23,6 +34,15 @@ spring:
 server:
   port: 8080
 wibestyle:
+  mail:
+    enabled: ${WIBESTYLE_MAIL_ENABLED:false}
+    from: ${WIBESTYLE_MAIL_FROM:noreply@vibestyle.art}
+    dev-log-only: ${WIBESTYLE_MAIL_DEV_LOG_ONLY:true}
+  sms:
+    api-id: ${WIBESTYLE_SMS_RU_API_ID:}
+    dev-stub-code: "0000"
+  geoip:
+    default-country: ${WIBESTYLE_GEOIP_DEFAULT_COUNTRY:}
   auth:
     otp-ttl-seconds: 300
     otp-resend-cooldown-seconds: 60
@@ -37,6 +57,7 @@ wibestyle:
     bootstrap-password: ${WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD:dev-admin-password}
   oauth:
     web-app-callback-url: ${WIBESTYLE_OAUTH_WEB_CALLBACK:http://localhost:3001/auth/oauth/callback}
+    mobile-app-callback-url: ${WIBESTYLE_OAUTH_MOBILE_CALLBACK:wibestyle://auth/oauth/callback}
     api-public-base-url: ${WIBESTYLE_OAUTH_API_PUBLIC_BASE:http://localhost:8080}
     yandex:
       enabled: ${WIBESTYLE_OAUTH_YANDEX_ENABLED:false}

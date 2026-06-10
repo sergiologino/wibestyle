@@ -10,8 +10,8 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.wibestyle.api.dto.StartOtpRequest;
 import ru.wibestyle.api.dto.VerifyOtpRequest;
 import ru.wibestyle.api.service.AuthService;
+import ru.wibestyle.api.support.AuthResponseSupport;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -42,21 +42,9 @@ public class AuthController {
                     request.code(),
                     request.promoCode()
             );
-            return authResponse(result);
+            return AuthResponseSupport.fromAuthResult(result);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid OTP", ex);
         }
-    }
-
-    private Map<String, Object> authResponse(AuthService.AuthResult result) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("accessToken", result.accessToken());
-        response.put("refreshToken", result.refreshToken());
-        response.put("expiresIn", result.expiresIn());
-        response.put("tokenType", "Bearer");
-        response.put("user", Map.of("id", result.user().getId(), "phone", result.user().getPhone()));
-        response.put("newUser", result.newUser());
-        response.put("promo", result.promo());
-        return response;
     }
 }

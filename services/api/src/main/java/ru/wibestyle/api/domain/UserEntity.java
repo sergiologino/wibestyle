@@ -58,6 +58,16 @@ public class UserEntity {
         return user;
     }
 
+    public static UserEntity createWithEmail(UUID id, String email, Instant createdAt) {
+        UserEntity user = new UserEntity();
+        user.id = id;
+        user.email = email;
+        user.createdAt = createdAt;
+        user.primaryAuth = "email";
+        user.status = "active";
+        return user;
+    }
+
     public static UserEntity createWithOAuth(UUID id, String email, String provider, Instant createdAt) {
         UserEntity user = new UserEntity();
         user.id = id;

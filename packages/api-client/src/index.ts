@@ -121,55 +121,43 @@ export class WibeStyleApiClient {
     });
   }
 
+  startEmailOtp(email: string) {
+    return this.request<{ requestId: string; expiresIn: number }>("/api/v1/auth/email-otp/start", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  verifyEmailOtp(requestId: string, code: string, promoCode?: string) {
+    return this.request<
+      AuthTokens & {
+        user: { id: string; phone?: string; email?: string; login?: string };
+        newUser?: boolean;
+        promo?: { redeemed: boolean; promo?: PromoCodeRecord };
+        tokenType?: string;
+      }
+    >("/api/v1/auth/email-otp/verify", {
+      method: "POST",
+      body: JSON.stringify({ requestId, code, promoCode: promoCode || undefined }),
+    });
+  }
+
   getCaptcha() {
     return this.request<{ challengeId: string; question: string; expiresIn: number }>("/api/v1/auth/captcha");
-  }
-
-  register(payload: {
-    login: string;
-    email?: string;
-    password: string;
-    captchaId: string;
-    captchaAnswer: string;
-    displayName?: string;
-  }) {
-    return this.request<
-      AuthTokens & {
-        user: { id: string; login?: string; email?: string };
-        newUser?: boolean;
-        tokenType?: string;
-      }
-    >("/api/v1/auth/register", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  }
-
-  loginWithPassword(payload: {
-    identifier: string;
-    password: string;
-    captchaId: string;
-    captchaAnswer: string;
-  }) {
-    return this.request<
-      AuthTokens & {
-        user: { id: string; login?: string; email?: string; phone?: string };
-        newUser?: boolean;
-        tokenType?: string;
-      }
-    >("/api/v1/auth/login", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
   }
 
   getOAuthProviders() {
     return this.request<{ yandex: { enabled: boolean }; google: { enabled: boolean } }>("/api/v1/auth/oauth/providers");
   }
 
-  startOAuth(provider: "yandex" | "google") {
+  startOAuth(provider: "yandex" | "google", options?: { returnUrl?: string }) {
+    const params = new URLSearchParams();
+    if (options?.returnUrl) {
+      params.set("returnUrl", options.returnUrl);
+    }
+    const query = params.toString();
     return this.request<{ provider: string; authorizationUrl: string; state: string }>(
-      `/api/v1/auth/oauth/${provider}/start`,
+      `/api/v1/auth/oauth/${provider}/start${query ? `?${query}` : ""}`,
     );
   }
 
@@ -913,6 +901,20 @@ export class WibeStyleApiClient {
       throw new ApiError(body.error ?? "Request failed", response.status, body.code);
     }
     return response.blob();
+  }
+
+  getAdminSettings(adminKey: string) {
+    return this.request<{ blockGoogleOAuth: boolean }>("/api/v1/admin/settings", {
+      headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  updateAdminSettings(adminKey: string, payload: { blockGoogleOAuth?: boolean }) {
+    return this.request<{ blockGoogleOAuth: boolean }>("/api/v1/admin/settings", {
+      method: "PATCH",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
   }
 
   listAdminAiLogs(adminKey: string, page = 0, size = 50) {

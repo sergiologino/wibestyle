@@ -5,16 +5,21 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.wibestyle.api.auth.JwtService;
 import ru.wibestyle.api.auth.RefreshTokenStore;
 import ru.wibestyle.api.config.AuthProperties;
+import ru.wibestyle.api.config.SmsProperties;
 import ru.wibestyle.api.domain.UserEntity;
 import ru.wibestyle.api.repository.UserRepository;
+import ru.wibestyle.api.support.OtpCodeGenerator;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 @Service
 public class AuthService {
+
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final UserRepository userRepository;
     private final ProfileService profileService;
@@ -22,8 +27,13 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenStore refreshTokenStore;
     private final AuthProperties authProperties;
-    private final Map<String, OtpChallenge> challenges = new ConcurrentHashMap<>();
+    private final SmsProperties smsProperties;
+    private final SmsSender smsSender;
+    private final EmailSender emailSender;
+    private final Map<String, PhoneOtpChallenge> phoneChallenges = new ConcurrentHashMap<>();
+    private final Map<String, EmailOtpChallenge> emailChallenges = new ConcurrentHashMap<>();
     private final Map<String, Instant> lastStartByPhone = new ConcurrentHashMap<>();
+    private final Map<String, Instant> lastStartByEmail = new ConcurrentHashMap<>();
 
     public AuthService(
             UserRepository userRepository,
@@ -31,7 +41,10 @@ public class AuthService {
             PromoService promoService,
             JwtService jwtService,
             RefreshTokenStore refreshTokenStore,
-            AuthProperties authProperties
+            AuthProperties authProperties,
+            SmsProperties smsProperties,
+            SmsSender smsSender,
+            EmailSender emailSender
     ) {
         this.userRepository = userRepository;
         this.profileService = profileService;
@@ -39,6 +52,9 @@ public class AuthService {
         this.jwtService = jwtService;
         this.refreshTokenStore = refreshTokenStore;
         this.authProperties = authProperties;
+        this.smsProperties = smsProperties;
+        this.smsSender = smsSender;
+        this.emailSender = emailSender;
     }
 
     public OtpStartResult startOtp(String phone) {
@@ -53,33 +69,84 @@ public class AuthService {
             throw new IllegalArgumentException("OTP_RESEND_COOLDOWN");
         }
 
+        String code = smsProperties.isConfigured() ? nextOtpCode(6) : smsProperties.getDevStubCode();
         String requestId = UUID.randomUUID().toString();
-        String code = "0000";
-        challenges.put(requestId, new OtpChallenge(normalized, code, now.plusSeconds(authProperties.getOtpTtlSeconds()), 0));
+        phoneChallenges.put(requestId, new PhoneOtpChallenge(normalized, code, now.plusSeconds(authProperties.getOtpTtlSeconds()), 0));
         lastStartByPhone.put(normalized, now);
+        smsSender.sendOtpCode(normalized, code);
+        return new OtpStartResult(requestId, authProperties.getOtpTtlSeconds());
+    }
+
+    public OtpStartResult startEmailOtp(String email) {
+        String normalized = normalizeEmail(email);
+        if (!EMAIL_PATTERN.matcher(normalized).matches()) {
+            throw new IllegalArgumentException("INVALID_EMAIL");
+        }
+
+        Instant now = Instant.now();
+        Instant lastStart = lastStartByEmail.get(normalized);
+        if (lastStart != null && lastStart.plusSeconds(authProperties.getOtpResendCooldownSeconds()).isAfter(now)) {
+            throw new IllegalArgumentException("OTP_RESEND_COOLDOWN");
+        }
+
+        String code = nextOtpCode(6);
+        String requestId = UUID.randomUUID().toString();
+        emailChallenges.put(requestId, new EmailOtpChallenge(normalized, code, now.plusSeconds(authProperties.getOtpTtlSeconds()), 0));
+        lastStartByEmail.put(normalized, now);
+        emailSender.sendOtpCode(normalized, code);
         return new OtpStartResult(requestId, authProperties.getOtpTtlSeconds());
     }
 
     @Transactional
     public AuthResult verifyOtp(String requestId, String code, String promoCode) {
-        OtpChallenge challenge = challenges.get(requestId);
+        PhoneOtpChallenge challenge = phoneChallenges.get(requestId);
         if (challenge == null || challenge.expiresAt().isBefore(Instant.now())) {
-            challenges.remove(requestId);
+            phoneChallenges.remove(requestId);
             throw new IllegalArgumentException("OTP_EXPIRED");
         }
         if (challenge.attempts() >= authProperties.getOtpMaxAttempts()) {
-            challenges.remove(requestId);
+            phoneChallenges.remove(requestId);
             throw new IllegalArgumentException("OTP_MAX_ATTEMPTS");
         }
         if (!challenge.code().equals(code)) {
-            challenges.put(requestId, challenge.withAttempts(challenge.attempts() + 1));
+            phoneChallenges.put(requestId, challenge.withAttempts(challenge.attempts() + 1));
             throw new IllegalArgumentException("OTP_INVALID");
         }
-        challenges.remove(requestId);
+        phoneChallenges.remove(requestId);
 
         boolean isNewUser = userRepository.findByPhone(challenge.phone()).isEmpty();
         UserEntity user = userRepository.findByPhone(challenge.phone())
                 .orElseGet(() -> userRepository.saveAndFlush(new UserEntity(UUID.randomUUID(), challenge.phone(), Instant.now())));
+        profileService.ensureProfile(user.getId());
+
+        Map<String, Object> promoResult = Map.of("redeemed", false);
+        if (promoCode != null && !promoCode.isBlank()) {
+            promoResult = promoService.redeemForUser(user.getId(), promoCode);
+        }
+
+        return issueTokens(user, isNewUser, promoResult);
+    }
+
+    @Transactional
+    public AuthResult verifyEmailOtp(String requestId, String code, String promoCode) {
+        EmailOtpChallenge challenge = emailChallenges.get(requestId);
+        if (challenge == null || challenge.expiresAt().isBefore(Instant.now())) {
+            emailChallenges.remove(requestId);
+            throw new IllegalArgumentException("OTP_EXPIRED");
+        }
+        if (challenge.attempts() >= authProperties.getOtpMaxAttempts()) {
+            emailChallenges.remove(requestId);
+            throw new IllegalArgumentException("OTP_MAX_ATTEMPTS");
+        }
+        if (!challenge.code().equals(code)) {
+            emailChallenges.put(requestId, challenge.withAttempts(challenge.attempts() + 1));
+            throw new IllegalArgumentException("OTP_INVALID");
+        }
+        emailChallenges.remove(requestId);
+
+        boolean isNewUser = userRepository.findByEmailIgnoreCase(challenge.email()).isEmpty();
+        UserEntity user = userRepository.findByEmailIgnoreCase(challenge.email())
+                .orElseGet(() -> userRepository.saveAndFlush(UserEntity.createWithEmail(UUID.randomUUID(), challenge.email(), Instant.now())));
         profileService.ensureProfile(user.getId());
 
         Map<String, Object> promoResult = Map.of("redeemed", false);
@@ -118,13 +185,30 @@ public class AuthService {
         );
     }
 
+    private String nextOtpCode(int length) {
+        if (authProperties.hasOtpDevFixedCode()) {
+            return authProperties.getOtpDevFixedCode();
+        }
+        return OtpCodeGenerator.generateNumericCode(length);
+    }
+
     private String normalizePhone(String phone) {
         return phone.replaceAll("[^0-9+]", "");
     }
 
-    private record OtpChallenge(String phone, String code, Instant expiresAt, int attempts) {
-        OtpChallenge withAttempts(int nextAttempts) {
-            return new OtpChallenge(phone, code, expiresAt, nextAttempts);
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase();
+    }
+
+    private record PhoneOtpChallenge(String phone, String code, Instant expiresAt, int attempts) {
+        PhoneOtpChallenge withAttempts(int nextAttempts) {
+            return new PhoneOtpChallenge(phone, code, expiresAt, nextAttempts);
+        }
+    }
+
+    private record EmailOtpChallenge(String email, String code, Instant expiresAt, int attempts) {
+        EmailOtpChallenge withAttempts(int nextAttempts) {
+            return new EmailOtpChallenge(email, code, expiresAt, nextAttempts);
         }
     }
 

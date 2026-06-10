@@ -1035,51 +1035,8 @@ class ApiIntegrationTest {
     }
 
     @Test
-    void passwordRegisterAndLoginFlow() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "login": "testuser01",
-                                  "email": "testuser01@example.com",
-                                  "password": "Secret123",
-                                  "captchaId": "skip",
-                                  "captchaAnswer": "0",
-                                  "displayName": "Test User"
-                                }
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").exists())
-                .andExpect(jsonPath("$.newUser").value(true));
-
-        mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "identifier": "testuser01",
-                                  "password": "Secret123",
-                                  "captchaId": "skip",
-                                  "captchaAnswer": "0"
-                                }
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").exists())
-                .andExpect(jsonPath("$.newUser").value(false));
-    }
-
-    @Test
     void adminCanOverrideSubscriptionAndDeleteUser() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "login": "deleteme",
-                                  "password": "Secret123",
-                                  "captchaId": "skip",
-                                  "captchaAnswer": "0"
-                                }
-                                """))
-                .andExpect(status().isOk());
+        createUserViaEmailOtp("deleteme@example.com");
 
         String listBody = mockMvc.perform(get("/api/v1/admin/users")
                         .header("X-Admin-Key", "test-admin-key"))
@@ -1088,7 +1045,7 @@ class ApiIntegrationTest {
 
         String userId = null;
         for (JsonNode item : objectMapper.readTree(listBody).get("items")) {
-            if (item.hasNonNull("login") && "deleteme".equals(item.get("login").asText())) {
+            if (item.hasNonNull("email") && "deleteme@example.com".equals(item.get("email").asText())) {
                 userId = item.get("id").asText();
                 break;
             }
@@ -1116,17 +1073,7 @@ class ApiIntegrationTest {
 
     @Test
     void adminCanLoadUserSupportDetail() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "login": "supportview",
-                                  "password": "Secret123",
-                                  "captchaId": "skip",
-                                  "captchaAnswer": "0"
-                                }
-                                """))
-                .andExpect(status().isOk());
+        createUserViaEmailOtp("supportview@example.com");
 
         String listBody = mockMvc.perform(get("/api/v1/admin/users")
                         .header("X-Admin-Key", "test-admin-key"))
@@ -1135,7 +1082,7 @@ class ApiIntegrationTest {
 
         String userId = null;
         for (JsonNode item : objectMapper.readTree(listBody).get("items")) {
-            if (item.hasNonNull("login") && "supportview".equals(item.get("login").asText())) {
+            if (item.hasNonNull("email") && "supportview@example.com".equals(item.get("email").asText())) {
                 userId = item.get("id").asText();
                 break;
             }
@@ -1160,17 +1107,7 @@ class ApiIntegrationTest {
 
     @Test
     void adminCanLoadUserSupportDetailWithDuplicateGalleryPosts() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "login": "dupgallery",
-                                  "password": "Secret123",
-                                  "captchaId": "skip",
-                                  "captchaAnswer": "0"
-                                }
-                                """))
-                .andExpect(status().isOk());
+        createUserViaEmailOtp("dupgallery@example.com");
 
         String listBody = mockMvc.perform(get("/api/v1/admin/users")
                         .header("X-Admin-Key", "test-admin-key"))
@@ -1179,7 +1116,7 @@ class ApiIntegrationTest {
 
         String userId = null;
         for (JsonNode item : objectMapper.readTree(listBody).get("items")) {
-            if (item.hasNonNull("login") && "dupgallery".equals(item.get("login").asText())) {
+            if (item.hasNonNull("email") && "dupgallery@example.com".equals(item.get("email").asText())) {
                 userId = item.get("id").asText();
                 break;
             }
@@ -1222,5 +1159,21 @@ class ApiIntegrationTest {
                         .header("X-Admin-Key", "test-admin-key"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items").isArray());
+    }
+
+    private void createUserViaEmailOtp(String email) throws Exception {
+        String body = mockMvc.perform(post("/api/v1/auth/email-otp/start")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + email + "\"}"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String requestId = objectMapper.readTree(body).get("requestId").asText();
+        mockMvc.perform(post("/api/v1/auth/email-otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"requestId\":\"" + requestId + "\",\"code\":\"123456\"}"))
+                .andExpect(status().isOk());
     }
 }

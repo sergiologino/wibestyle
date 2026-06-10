@@ -30,8 +30,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (!securityProperties.isRateLimitEnabled()) {
             return true;
         }
-        return !"POST".equalsIgnoreCase(request.getMethod())
-                || !request.getRequestURI().endsWith("/api/v1/auth/otp/start");
+        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        String uri = request.getRequestURI();
+        return !uri.endsWith("/api/v1/auth/otp/start") && !uri.endsWith("/api/v1/auth/email-otp/start");
     }
 
     @Override

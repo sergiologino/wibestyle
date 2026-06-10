@@ -2,7 +2,7 @@
 
 Инструкция по локальной разработке и production-деплою monorepo **WibeStyle** («Я на стиле»).
 
-**Последнее обновление:** 2026-05-26
+**Последнее обновление:** 2026-06-01
 
 ---
 
@@ -89,7 +89,7 @@ SPRING_DATASOURCE_PASSWORD=wibestyle
 
 ### 3. Redis (опционально)
 
-Без Redis API работает: refresh tokens хранятся в PostgreSQL (`auth_refresh_tokens`), OTP — in-memory.
+Без Redis API работает: refresh tokens в PostgreSQL (`auth_refresh_tokens`), OTP-челленджи — in-memory.
 Сессия web-app восстанавливается из `localStorage` (`wibestyle.app.session`) после перезапуска фронта.
 
 ```powershell
@@ -114,8 +114,25 @@ IDEA Run Configuration или env:
 | `WIBESTYLE_STORAGE_BACKEND` | `local` | `local` или будущий `s3` |
 | `WIBESTYLE_ADMIN_API_KEY` | `dev-admin-key` | `X-Admin-Key` |
 | `WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD` | `dev-admin-password` | admin@wibestyle.local |
-| `WIBESTYLE_OAUTH_*` | см. ниже | OAuth (опционально) |
+| `WIBESTYLE_MAIL_*`, `SMTP_*` | см. ниже | Email OTP (SMTP) |
+| `WIBESTYLE_SMS_RU_API_ID` | пусто | SMS.ru; без ключа — dev-код `0000` в лог |
+| `WIBESTYLE_GEOIP_DEFAULT_COUNTRY` | пусто | Страна по умолчанию для GeoIP (OAuth) |
+| `WIBESTYLE_OAUTH_*` | см. ниже | OAuth Яндекс / Google (опционально) |
 | `WIBESTYLE_AI_*` | — | AI integration (опционально) |
+
+Шаблоны env: `services/api/.env.example`, `apps/web-app/.env.example`, `apps/mobile-app/.env.example`.
+
+#### Авторизация (актуальная схема)
+
+| Способ | Endpoints | Dev без провайдеров |
+|--------|-----------|-------------------|
+| Телефон + SMS | `POST /auth/otp/start`, `/verify` | Код `0000` (лог API) |
+| Email + код | `POST /auth/email-otp/start`, `/verify` | Код в лог API (`WIBESTYLE_MAIL_DEV_LOG_ONLY=true`) |
+| Яндекс / Google | `GET /auth/oauth/{provider}/start` | Нужны client id/secret в env |
+| Логин / пароль | — | **Удалён** (`/auth/register`, `/auth/login` не существуют) |
+
+**Google OAuth** скрыт в UI если: (1) в админке `/settings` включено «Блокировать Google», или (2) запрос с IP России (`CF-IPCountry=RU` / `X-Country-Code=RU`).  
+**Mobile OAuth:** `returnUrl=wibestyle://auth/oauth/callback` → экран `auth/oauth/callback`.
 
 #### Frontend — `.env.local`
 
@@ -183,7 +200,8 @@ curl http://localhost:8080/api/v1/health
 
 | Что | Значение |
 |-----|----------|
-| OTP | `0000` |
+| SMS OTP (телефон) | `0000` без `WIBESTYLE_SMS_RU_API_ID` |
+| Email OTP | код в логе API при `WIBESTYLE_MAIL_DEV_LOG_ONLY=true` |
 | Admin key | `dev-admin-key` |
 | Admin login | `admin@wibestyle.local` / `dev-admin-password` |
 
@@ -233,7 +251,10 @@ cd services\api
 - [ ] DBeaver/pgAdmin для ops — через VPN/bastion, не публично
 - [ ] `WIBESTYLE_JWT_SECRET`, admin secrets — сменить
 - [ ] TLS на всех доменах
-- [ ] OAuth redirect URIs
+- [ ] OAuth redirect URIs (web + `wibestyle://auth/oauth/callback` для mobile)
+- [ ] SMTP для email OTP (`WIBESTYLE_MAIL_DEV_LOG_ONLY=false`)
+- [ ] SMS.ru `WIBESTYLE_SMS_RU_API_ID` для телефона
+- [ ] CDN передаёт `CF-IPCountry` (или `X-Country-Code`) для блокировки Google в RU
 
 | `WIBESTYLE_BILLING_PROVIDER` | `mock` | `mock` или `yookassa` |
 | `WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED` | `true` | `false` в prod (мгновенный subscribe без оплаты) |
@@ -279,9 +300,20 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 | `WIBESTYLE_JWT_SECRET` | dev placeholder | JWT |
 | `WIBESTYLE_ADMIN_API_KEY` | `dev-admin-key` | Admin |
 | `WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD` | `dev-admin-password` | Seed admin |
+| `WIBESTYLE_MAIL_DEV_LOG_ONLY` | `true` | Email OTP: только лог, без SMTP |
+| `WIBESTYLE_MAIL_FROM` | `noreply@vibestyle.art` | From в письме с кодом |
+| `SMTP_HOST` / `SMTP_PORT` | `localhost` / `1025` | SMTP (Mailpit/MailHog локально) |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | — | SMTP auth |
+| `SMTP_AUTH` / `SMTP_STARTTLS` | `false` | SMTP TLS |
+| `WIBESTYLE_SMS_RU_API_ID` | пусто | SMS.ru API ID; пусто = stub `0000` |
+| `WIBESTYLE_GEOIP_DEFAULT_COUNTRY` | пусто | Страна если IP локальный |
 | `WIBESTYLE_OAUTH_WEB_CALLBACK` | `http://localhost:3001/auth/oauth/callback` | OAuth → web |
-| `WIBESTYLE_OAUTH_API_PUBLIC_BASE` | `http://localhost:8080` | OAuth callback base |
-| `WIBESTYLE_OAUTH_YANDEX_*` / `GOOGLE_*` | disabled | OAuth providers |
+| `WIBESTYLE_OAUTH_MOBILE_CALLBACK` | `wibestyle://auth/oauth/callback` | OAuth → mobile deep link |
+| `WIBESTYLE_OAUTH_API_PUBLIC_BASE` | `http://localhost:8080` | Публичный base API для redirect_uri |
+| `WIBESTYLE_OAUTH_YANDEX_ENABLED` | `false` | Включить Яндекс ID |
+| `WIBESTYLE_OAUTH_YANDEX_CLIENT_ID` / `SECRET` | — | Яндекс OAuth |
+| `WIBESTYLE_OAUTH_GOOGLE_ENABLED` | `false` | Включить Google (если не RU / не blocked) |
+| `WIBESTYLE_OAUTH_GOOGLE_CLIENT_ID` / `SECRET` | — | Google OAuth |
 | `WIBESTYLE_AI_ENABLED` | `false` | Включить noteapp-ai-integration |
 | `WIBESTYLE_AI_API_KEY` | — | API key клиента noteapp (`aikey_...`) |
 | `WIBESTYLE_AI_TRYON_NETWORK` | `wibestyle-vton` | Сеть virtual try-on в noteapp |
@@ -325,11 +357,13 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 
 ### Frontend
 
-| Env | Apps |
-|-----|------|
-| `NEXT_PUBLIC_API_URL` | web, admin, landing |
-| `NEXT_PUBLIC_APP_URL` | web, admin |
-| `NEXT_PUBLIC_SITE_URL` | landing |
+| Env | Apps | Описание |
+|-----|------|----------|
+| `NEXT_PUBLIC_API_URL` | web, admin, landing | URL API |
+| `NEXT_PUBLIC_APP_URL` | web, admin | URL web-app (OAuth, ссылки) |
+| `NEXT_PUBLIC_LANDING_URL` | web | URL лендинга |
+| `NEXT_PUBLIC_SITE_URL` | landing | URL лендинга |
+| `EXPO_PUBLIC_API_URL` | mobile | URL API с телефона/эмулятора (`10.0.2.2:8080` = localhost на Android Emulator) |
 
 ---
 
@@ -337,7 +371,7 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 
 | Проблема | Решение |
 |----------|---------|
-| `403 Forbidden` на `POST /auth/login` | Перезапустите API после обновления CORS (`allowCredentials=false`, явные `allowedHeaders`). Web: `http://localhost:3001` |
+| `404` на `/auth/login` или `/auth/register` | Ожидаемо: вход только OTP / email / OAuth. Обновите клиенты (web/mobile) |
 | Авторизация пропала раньше года | Проверьте, что не менялся `WIBESTYLE_JWT_SECRET`, таблица `auth_refresh_tokens` не очищалась, пользователь не нажимал logout на другом клиенте, а web/mobile storage не очищен браузером/ОС. |
 | Mobile выкинуло на `/auth` после ошибки сети | Ожидаемое поведение после 2026-06-02: transient refresh/me ошибки не очищают `AsyncStorage`; если сброс повторяется, проверьте `EXPO_PUBLIC_API_URL` и ответ `/auth/refresh` на `REFRESH_TOKEN_INVALID`. |
 | Новые медиа появились не в `data/storage` | Проверьте `WIBESTYLE_STORAGE_ROOT` и наличие `data/storage/.gitkeep`. Новые записи должны быть relative object keys; абсолютные refs поддерживаются только как legacy read. |
@@ -346,7 +380,10 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 | Admin «Поддержка» → `DATABASE_ERROR` | Часто: несколько постов галереи на одну примерку. Обновите API до последней версии; перезапустите `bootRun` |
 | Admin «Поддержка» → «Не загрузилось» у превью | Раньше admin брал `after_image_url` из БД (это API-путь, не файл). Обновите API: читается `{userId}/try-on/{sessionId}/after.jpg` из storage |
 | `role "wibestyle" does not exist` | Выполните `scripts/create-local-database.sql` |
-| OTP не приходит | Dev-код: `0000` |
+| SMS OTP не приходит | Без `WIBESTYLE_SMS_RU_API_ID` — dev-код `0000` в лог API. С SMS.ru — проверьте api_id и баланс |
+| Email OTP не приходит | `WIBESTYLE_MAIL_DEV_LOG_ONLY=true` → смотрите лог API. Для SMTP: `DEV_LOG_ONLY=false`, Mailpit на `:1025` или реальный SMTP |
+| Google OAuth не виден | RU IP, или админка → **Настройки** → «Блокировать Google», или `GOOGLE_ENABLED=false` / нет client id |
+| Mobile OAuth не возвращает в app | Redirect URI в Google/Yandex: `https://api…/api/v1/auth/oauth/{provider}/callback`; `returnUrl` = `wibestyle://auth/oauth/callback` |
 | Примерка показывает SVG-человечков | AI не настроен или `WIBESTYLE_AI_FALLBACK_TO_DEMO=true`; проверьте noteapp на :8091 |
 | Примерка «не то платье» / белое бельё | Сеть `wibestyle-vton` без xAI ключа → Pollinations только по тексту; нужен Grok Imagine (см. ниже) |
 | Пеньюар/сорочка → белое бельё или ошибка модерации | В логах: `content moderation` → обновите **noteapp** (retail-safe prompt + retry). Код `VTON_CONTENT_MODERATION` — не Pollinations fallback. Перезапуск noteapp + API |

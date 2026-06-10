@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class OAuthProperties {
 
     private String webAppCallbackUrl = "http://localhost:3001/auth/oauth/callback";
+    private String mobileAppCallbackUrl = "wibestyle://auth/oauth/callback";
     private String apiPublicBaseUrl = "http://localhost:8080";
     private Provider yandex = new Provider();
     private Provider google = new Provider();
@@ -16,6 +17,14 @@ public class OAuthProperties {
 
     public void setWebAppCallbackUrl(String webAppCallbackUrl) {
         this.webAppCallbackUrl = webAppCallbackUrl;
+    }
+
+    public String getMobileAppCallbackUrl() {
+        return mobileAppCallbackUrl;
+    }
+
+    public void setMobileAppCallbackUrl(String mobileAppCallbackUrl) {
+        this.mobileAppCallbackUrl = mobileAppCallbackUrl;
     }
 
     public String getApiPublicBaseUrl() {
