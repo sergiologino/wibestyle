@@ -11,6 +11,12 @@
 - SEO: `/ai-primerka` теперь использует те же компонентные `BeforeAfterSection` и `StyleShowcaseSection`, что и главная; `/kak-rabotaet` заменил четыре старых PNG на `AppPreviewPhones`, `BeforeAfterSection`, `HeroBeforeCard`, `HeroCollage`.
 - SEO polish: на `/ai-primerka` выровнена высота соседних компонентных баннеров через фиксированные media/panel heights, eyebrow `стили` стал белым на градиенте, иконки style-card перенесены так, чтобы не перекрывать текст; badge `Скоро в приложении` заменён на `Уже в приложении`.
 - CTA: в header `Ранний доступ` заменён на переход в веб-версию приложения (`siteConfig.appUrl` / `NEXT_PUBLIC_APP_URL`); hero App Store CTA стал `Скоро в App Store`, добавлена кнопка `Скачать в RuStore`.
+- Lead flow: поля формы раннего доступа удалены. `LeadForm` превращён в платформенный CTA: Android → RuStore (`NEXT_PUBLIC_RUSTORE_URL`), остальные платформы → web-app (`NEXT_PUBLIC_APP_URL`) с `offer=first100`; тексты FAQ/SEO обновлены под уже доступное приложение.
+- CTA polish: в `EarlyAccessBlock` мотивационный glass-panel сделан контрастнее, текст разбит на отдельные строки, техническое пояснение про платформы удалено, ширина мотивационного блока и основного CTA выровнена.
+- Legal/footer: discount label в CTA заменён с pill на обычный заметный текст с ₽; footer получил реквизиты ООО «АЛЬТАКОД», ИНН, email и placeholder под Telegram-чат.
+- CTA visual: справа в `EarlyAccessBlock` добавлен desktop-only visual с моделью (`EarlyAccessVisual` + `early-access-visual-data.ts`), чтобы заменить пустоту на широких экранах.
+- Landing gallery: блок «больше примеров» вынес в `ExamplesGallerySection`; media перенесены в replaceable-папку `public/assets/female-cards/`, данные — в `female-cards-data.ts`; resolver выбирает mp4 по basename, иначе image fallback.
+- Gallery polish: подписи карточек «больше примеров» переведены в overlay-плашки, иконки Sparkles заменены на Heart.
 - Добавлены data-файлы для будущей замены production-фото без переписывания JSX: `hero-collage-data.ts`, `app-preview-data.ts`, `final-cta-art-data.ts`.
 - Добавлены временные replaceable-ассеты в `apps/landing/public/assets/before-after-demo/`.
 - Поведение after-side: poster 2 секунды → плавное появление muted autoplay video; IntersectionObserver стартует/останавливает видео по видимости, reduced motion оставляет poster.

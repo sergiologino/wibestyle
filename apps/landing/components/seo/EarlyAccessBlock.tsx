@@ -1,56 +1,28 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import LeadForm, { type LeadInterest } from "@/components/LeadForm";
-import { createLandingApi } from "@/lib/api";
+import EarlyAccessVisual from "@/components/home/EarlyAccessVisual";
 import { pricing } from "@/lib/site";
-import { formatRub } from "@/lib/utils";
 
 type Props = {
   interest?: LeadInterest;
 };
 
 export default function EarlyAccessBlock({ interest = "clothing" }: Props) {
-  const [remaining, setRemaining] = useState<number | null>(null);
-
-  useEffect(() => {
-    void createLandingApi()
-      .getLeadStats()
-      .then((d) => setRemaining(d.remainingSpots))
-      .catch(() => setRemaining(null));
-  }, []);
-
   return (
     <section className="early-access-hero" aria-labelledby="early-access-title">
       <div className="early-access-hero-inner">
         <div className="early-access-copy">
-          <span className="early-access-pill">✦ Только {pricing.firstUsersLimit} мест со скидкой 50%</span>
+          <p className="early-access-saving">₽ Экономия для первых {pricing.firstUsersLimit}: скидка 50% на год</p>
           <h2 id="early-access-title">
-            Стань одной из <span>первых</span> в новой эре стиля
+            Открой приложение и <span>примерь</span> образ
           </h2>
-          <p className="early-access-lead">
-            Попади в число самых передовых — тех, кто примеряет, вдохновляется и покупает увереннее ещё до
-            запуска. Новая мода начинается с тех, кто решается первым.
-          </p>
-          <div className="early-access-price glass-panel">
-            <p className="price-label">Годовая подписка для пионеров</p>
-            <p className="price-values">
-              <span className="old-price">{formatRub(pricing.annualRub)}</span>
-              <strong>{formatRub(pricing.discountedAnnualRub)}</strong>
-              <span className="per-year">/ год</span>
-            </p>
-            {remaining !== null && remaining > 0 ? (
-              <p className="spots-left">Осталось мест в первой сотне: {remaining}</p>
-            ) : null}
+          <div className="early-access-motivation glass-panel">
+            <p className="motivation-kicker">Хватит гадать у зеркала в пункте выдачи.</p>
+            <p className="motivation-text">Сначала посмотри вещь на себе в AI.</p>
+            <p className="motivation-text">Покупай только то, что уже выглядит твоим.</p>
           </div>
           <LeadForm interest={interest} variant="full" />
         </div>
-        <div className="early-access-spark" aria-hidden>
-          <span>новая</span>
-          <span>эра</span>
-          <span>стиля</span>
-          <span>♡</span>
-        </div>
+        <EarlyAccessVisual />
       </div>
     </section>
   );

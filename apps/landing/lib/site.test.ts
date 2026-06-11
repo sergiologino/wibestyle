@@ -5,6 +5,10 @@ describe("siteConfig", () => {
   it("contains web app entry URL", () => {
     expect(siteConfig.appUrl).toMatch(/\/welcome$/);
   });
+
+  it("contains RuStore app URL", () => {
+    expect(siteConfig.rustoreUrl).toContain("ru.wibestyle.app");
+  });
 });
 
 describe("pricing", () => {

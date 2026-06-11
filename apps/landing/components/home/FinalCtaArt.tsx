@@ -19,7 +19,7 @@ export default function FinalCtaArt() {
         <Image className="qr" src={finalCtaArt.qrImage} alt={finalCtaArt.qrAlt} width={150} height={150} />
         <span>
           <QrCode size={18} />
-          Скоро запуск
+          Открой приложение
         </span>
       </div>
       <span className="cta-wow-sticker">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import HashLink from "@/components/HashLink";
+import { siteConfig } from "@/lib/site";
 
 export default function Footer() {
   return (
@@ -19,13 +20,20 @@ export default function Footer() {
         </div>
         <div>
           <b>Приложение</b>
-          <HashLink href="/#lead">Ранний доступ</HashLink>
+          <Link href={siteConfig.appUrl}>Веб-версия</Link>
           <Link href="/ai-primerka">AI-примерка</Link>
         </div>
         <div>
           <b>Поддержка</b>
           <Link href="/privacy">Политика конфиденциальности</Link>
           <Link href="/terms">Пользовательское соглашение</Link>
+        </div>
+        <div>
+          <b>Реквизиты</b>
+          <p className="footer-legal">ООО «АЛЬТАКОД»</p>
+          <p className="footer-legal">ИНН 4000002848</p>
+          <a href="mailto:admin@altacod.com">admin@altacod.com</a>
+          <p className="footer-legal footer-legal-muted">Telegram-чат: скоро</p>
         </div>
       </div>
     </footer>

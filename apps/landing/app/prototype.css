@@ -987,10 +987,12 @@ summary { cursor: pointer; font-weight: 950; font-size: 19px; }
 details p { margin: 14px 0 0; color: var(--muted); font-weight: 700; line-height: 1.4; }
 
 .footer { padding: 44px 0 58px; background: white; border-top: 1px solid #ffe3f4; color: #6a6170; }
-.footer-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 28px; }
+.footer-grid { display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 28px; }
 .footer b { display: block; color: var(--pink); margin-bottom: 12px; }
 .footer a:not(.brand) { display: block; margin: 8px 0; font-weight: 700; color: #6a6170; }
 .footer-brand { font-size: 26px; }
+.footer-legal { margin: 8px 0; color: #6a6170; font-weight: 700; line-height: 1.3; }
+.footer-legal-muted { color: #9a8f99; }
 
 @media (max-width: 1180px) {
   .hero-layout { grid-template-columns: 280px 1fr; }
@@ -1099,7 +1101,7 @@ details p { margin: 14px 0 0; color: var(--muted); font-weight: 700; line-height
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .category-card, .future-card, .review-card, .store-button, .download-cta, .lead-form button, .hero-look-card { transition: transform .22s ease, box-shadow .22s ease; }
+  .category-card, .future-card, .review-card, .store-button, .download-cta, .lead-form button, .app-redirect-cta__button, .hero-look-card { transition: transform .22s ease, box-shadow .22s ease; }
   .category-card:hover, .future-card:hover, .review-card:hover { transform: translateY(-6px); }
-  .store-button:hover, .download-cta:hover, .lead-form button:hover { transform: translateY(-2px); }
+  .store-button:hover, .download-cta:hover, .lead-form button:hover, .app-redirect-cta__button:hover { transform: translateY(-2px); }
 }

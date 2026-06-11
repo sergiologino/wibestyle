@@ -14,7 +14,7 @@ export default function PricingBanner({ remainingSpots }: PricingBannerProps) {
         <strong>{formatRub(pricing.discountedAnnualRub)}</strong> / год
       </p>
       <p className="spots">
-        Первым 100 участникам раннего доступа — скидка {pricing.discountPercent}% на годовую подписку.
+        Первым 100 пользователям — скидка {pricing.discountPercent}% на годовую подписку.
         {typeof remainingSpots === "number" ? ` Осталось мест: ${remainingSpots}.` : ""}
       </p>
     </div>

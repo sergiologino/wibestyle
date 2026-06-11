@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { appPreviewScreens } from "./app-preview-data";
+import { earlyAccessVisual } from "./early-access-visual-data";
 import { finalCtaArt } from "./final-cta-art-data";
 import { heroCollageLooks, heroProductCard } from "./hero-collage-data";
 
@@ -27,5 +28,11 @@ describe("component landing banners", () => {
     expect(finalCtaArt.qrImage).toMatch(/^\/assets\/.+\.(png|jpg|jpeg|webp)$/);
     expect(finalCtaArt.qrAlt).toMatch(/\S/);
     expect(finalCtaArt.bags.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps early access visual replaceable and accessible", () => {
+    expect(earlyAccessVisual.image).toMatch(/^\/assets\/.+\.(png|jpg|jpeg|webp)$/);
+    expect(earlyAccessVisual.alt).toMatch(/\S/);
+    expect(earlyAccessVisual.label).toMatch(/\S/);
   });
 });

@@ -2,23 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { imageSlots } from "@/content/image-slots";
 import { homeFaq } from "@/content/home-faq";
+import { siteConfig } from "@/lib/site";
 import LeadForm from "@/components/LeadForm";
 import PricingBanner from "@/components/PricingBanner";
 import PublishedReviewsSection from "@/components/PublishedReviewsSection";
 import AppPreviewPhones from "@/components/home/AppPreviewPhones";
 import BeforeAfterSection from "@/components/home/BeforeAfterSection";
+import ExamplesGallerySection from "@/components/home/ExamplesGallerySection";
 import FinalCtaArt from "@/components/home/FinalCtaArt";
 import HeroBeforeCard from "@/components/home/HeroBeforeCard";
 import HeroCollage from "@/components/home/HeroCollage";
 import StyleShowcaseSection from "@/components/home/StyleShowcaseSection";
 import ProductFeaturesBlock from "@/components/seo/ProductFeaturesBlock";
-
-const exampleCards = [
-  imageSlots.femaleCard1,
-  imageSlots.femaleCard2,
-  imageSlots.femaleCard3,
-  imageSlots.femaleCard4,
-];
 
 const categories = [
   { className: "card-dress", title: "Платья", sub: "полный рост", href: "/primerka-platya" },
@@ -69,7 +64,7 @@ export default function HomePage() {
               <Link className="store-button store-google" href="#lead" data-analytics="hero_googleplay">
                 ▶ <span>Скачать в<br /><b>Google Play</b></span>
               </Link>
-              <Link className="store-button store-rustore" href="#lead" data-analytics="hero_rustore">
+              <Link className="store-button store-rustore" href={siteConfig.rustoreUrl} data-analytics="hero_rustore">
                 Ru <span>Скачать в<br /><b>RuStore</b></span>
               </Link>
             </div>
@@ -100,11 +95,7 @@ export default function HomePage() {
             <p className="eyebrow">больше примеров</p>
             <h2>Образы, которые хочется повторить</h2>
           </div>
-          <div className="examples-mosaic">
-            {exampleCards.map((slot) => (
-              <Image key={slot.src} src={slot.src} alt={slot.alt} width={600} height={800} />
-            ))}
-          </div>
+          <ExamplesGallerySection />
         </div>
       </section>
 
