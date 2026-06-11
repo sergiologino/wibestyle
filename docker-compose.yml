@@ -1,9 +1,47 @@
-# Redis опционален для dev (refresh tokens in-memory без Redis).
-# PostgreSQL — локально установленный сервер, не Docker.
-# См. scripts/create-local-database.sql и docs/ai/RUNBOOK.md
+# Local infrastructure for WibeStyle.
+#
+# This compose file intentionally starts only stateful dependencies:
+# PostgreSQL and Redis. The API, landing, web-app, admin, and mobile app are
+# still run from source with npm/Gradle scripts in local development.
+#
+# Server deployment note: this is not a full production compose yet. There are
+# no Dockerfiles for services/api or Next.js apps in the repository at the
+# moment, so production rollout should use platform buildpacks/Coolify/Nixpacks
+# or add Dockerfiles first.
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wibestyle-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-wibestyle}
+      POSTGRES_USER: ${POSTGRES_USER:-wibestyle}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wibestyle}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   redis:
     image: redis:7-alpine
+    container_name: wibestyle-redis
+    restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,5 +1,14 @@
 # Current State
 
+## Env / local run / deploy docs (2026-06-12)
+- Обновлены `.env.example` для backend (`services/api/.env.example`), web-app (`apps/web-app/.env.example`) и mobile-app (`apps/mobile-app/.env.example`) с описанием переменных.
+- `docker-compose.yml` теперь поднимает локальную инфраструктуру PostgreSQL 16 + Redis 7 с named volumes и healthchecks.
+- `services/api/src/main/resources/application.yml` теперь читает `SERVER_PORT`, `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT` из env.
+- Добавлен свежий runbook `docs/LOCAL_RUN_AND_DEPLOY.md`: порядок запуска на Windows 11, env-файлы, mobile URL для emulator/device, проверки и серверный checklist.
+- README заменён на краткую актуальную инструкцию и больше не говорит, что PostgreSQL обязательно должен быть вне Docker.
+- Проверено: `docker compose config`, `npm.cmd test -w @wibestyle/web-app`, `npm.cmd test -w @wibestyle/mobile-app`, `npm.cmd run lint -w @wibestyle/mobile-app`, `services/api/gradlew.bat test --console=plain`.
+- Важно: текущий compose готов для локальной инфраструктуры, но не является full production compose для API/Next apps, потому что Dockerfile-ов для сервисов пока нет.
+
 ## Онбординг web/mobile (2026-06-11)
 - Добавлен новый mobile-first onboarding для web-app и Android Expo: 7 экранов вместо старого welcome-экрана.
 - Первые 3 экрана объясняют основной flow: фото пользователя → ссылка на товар → AI-примерка результата.

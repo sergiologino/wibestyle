@@ -1,63 +1,72 @@
-# WibeStyle monorepo
+# WibeStyle Monorepo
 
-Платформа AI-примерочной «Я на стиле».
+Платформа виртуальной AI-примерочной «Я на стиле».
 
-## Домены
+## Apps
 
-- Лендинг: `https://wibestyle.ru` → `apps/landing` (port 3000)
-- Web app: `https://app.wibestyle.ru` → `apps/web-app` (port 3001)
-- Admin: `apps/admin` (port 3002)
-- API: `https://api.wibestyle.ru` → `services/api` (port 8080)
+- `apps/landing` — лендинг, dev port `3000`.
+- `apps/web-app` — web-приложение, dev port `3001`.
+- `apps/admin` — админка, dev port `3002`.
+- `apps/mobile-app` — Expo Android-приложение.
+- `services/api` — Spring Boot backend, dev port `8080`.
+- `packages/*` — shared types, UI, API client.
 
-## Быстрый старт
-
-```powershell
-npm install
-
-# 1. PostgreSQL локально (не Docker): scripts/create-local-database.sql
-# 2. DBeaver: localhost:5432/wibestyle, user wibestyle
-
-npm run dev:api       # http://localhost:8080
-npm run dev:web       # http://localhost:3001
-npm run dev:admin     # http://localhost:3002
-npm run dev:landing   # http://localhost:3000 (опционально)
-
-# Redis опционально:
-# docker compose up -d
-```
-
-## Тесты
+## Quick Start
 
 ```powershell
-npm test
-npm run test:api      # Gradle: services/api/gradlew.bat test
+cd E:\1_MyProjects\Look\wibestyle
+npm.cmd install
+
+# local infrastructure: PostgreSQL + Redis
+docker compose up -d
+
+# API
+npm.cmd run dev:api
+
+# web app
+npm.cmd run dev:web
+
+# optional
+npm.cmd run dev:landing
+npm.cmd run dev:admin
+npm.cmd run start:mobile
 ```
 
-## Backend (Gradle)
+Default local URLs:
+
+- Landing: `http://localhost:3000`
+- Web app: `http://localhost:3001`
+- Admin: `http://localhost:3002`
+- API: `http://localhost:8080`
+- PostgreSQL: `localhost:5432`, db/user/password `wibestyle`
+- Redis: `localhost:6379`
+
+## Env
+
+Copy examples before local work:
 
 ```powershell
-cd services\api
-.\gradlew.bat bootRun
-.\gradlew.bat test
-.\gradlew.bat bootJar
+Copy-Item services\api\.env.example services\api\.env
+Copy-Item apps\web-app\.env.example apps\web-app\.env.local
+Copy-Item apps\mobile-app\.env.example apps\mobile-app\.env
 ```
 
-## Документация
+Full explanation:
 
-- [RUNBOOK.md](./docs/ai/RUNBOOK.md) — PostgreSQL, DBeaver, Gradle, production
-- [IMPLEMENTATION_STATUS.md](./docs/ai/IMPLEMENTATION_STATUS.md) — статус фич
+- [docs/LOCAL_RUN_AND_DEPLOY.md](./docs/LOCAL_RUN_AND_DEPLOY.md)
+- [docs/ai/RUNBOOK.md](./docs/ai/RUNBOOK.md)
 
-## Структура
+## Checks
 
-```text
-apps/landing      — SEO-лендинг
-apps/web-app      — веб-приложение примерочной
-apps/admin        — админка
-apps/mobile-app   — React Native skeleton
-packages/         — shared-types, ui, api-client
-services/api      — Spring Boot API (Gradle)
-scripts/          — create-local-database.sql
-docs/ai/          — проектная память
+```powershell
+npm.cmd test
+npm.cmd run test:api
+npm.cmd run build -w @wibestyle/web-app
+npm.cmd run lint -w @wibestyle/mobile-app
 ```
 
-Техническое задание: `E:\1_MyProjects\Look\ТЗ\`
+## Production Note
+
+`docker-compose.yml` currently starts only local infrastructure: PostgreSQL and Redis.
+It is valid for local dependencies, but it is not a full production compose for API/Next apps yet.
+For server rollout, use buildpacks/Coolify/Nixpacks or add Dockerfiles for `services/api`, `apps/web-app`, `apps/landing`, and `apps/admin`.

@@ -1,5 +1,13 @@
 # AI Changelog
 
+## 2026-06-12 (Env examples, local run, docker-compose readiness)
+- Переписаны чистым UTF-8 `.env.example` для `services/api`, `apps/web-app`, `apps/mobile-app` с описанием локальных и production значений.
+- `docker-compose.yml` обновлён с Redis-only до локальной инфраструктуры PostgreSQL 16 + Redis 7, named volumes, healthchecks и настраиваемых портов `POSTGRES_PORT` / `REDIS_PORT`.
+- Backend `application.yml` теперь реально использует env `SERVER_PORT`, `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT`.
+- Добавлен `docs/LOCAL_RUN_AND_DEPLOY.md`: порядок локального запуска на Windows 11, env setup, backend/web/mobile запуск, проверки, server rollout checklist, что нужно добавить для full Docker production.
+- README заменён на короткую актуальную инструкцию без старого утверждения, что PostgreSQL локально не Docker.
+- Проверки прошли: `docker compose config`, `npm.cmd test -w @wibestyle/web-app`, `npm.cmd test -w @wibestyle/mobile-app`, `npm.cmd run lint -w @wibestyle/mobile-app`, `services/api/gradlew.bat test --console=plain`.
+
 ## 2026-06-11 (Web/mobile onboarding)
 - Web-app `/welcome`: старый welcome + 3 карточки заменён на 7-экранный mobile-first onboarding с фото, точками навигации, понятным flow “фото → ссылка → AI-примерка”, преимуществами, будущим AI-стилистом и финальным CTA `Подключить trial`.
 - Web-app onboarding content вынесен в `apps/web-app/lib/onboarding-copy.ts`; добавлен `FIRST100` promo handling для deep links с `?promo=` и landing offer `?offer=first100`.
