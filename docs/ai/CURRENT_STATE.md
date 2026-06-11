@@ -1,5 +1,17 @@
 # Current State
 
+## Онбординг web/mobile (2026-06-11)
+- Добавлен новый mobile-first onboarding для web-app и Android Expo: 7 экранов вместо старого welcome-экрана.
+- Первые 3 экрана объясняют основной flow: фото пользователя → ссылка на товар → AI-примерка результата.
+- Следующие экраны раскрывают преимущества: меньше хаоса перед покупкой, приватность, будущий AI-стилист по запросу.
+- Финальный экран ведёт к trial/paywall и показывает промокод `FIRST100` для первых 100 пользователей.
+- В тексты добавлен аккуратный дисклеймер: AI-примерка может ошибаться в посадке, слоях одежды, деталях ткани и обработке белья; качество дорабатывается.
+- Web assets для A/B замены: `apps/web-app/public/assets/onboarding/`.
+- Mobile assets для A/B замены: `apps/mobile-app/assets/onboarding/`.
+- Mobile OAuth-кнопки скопированы в ожидаемую структуру `apps/mobile-app/src/components/auth/`, чтобы `@/*` alias и TypeScript видели компонент.
+- Проверки: `npm.cmd test -w @wibestyle/web-app`, `npm.cmd run build -w @wibestyle/web-app`, `npm.cmd test -w @wibestyle/mobile-app`, `npm.cmd run lint -w @wibestyle/mobile-app` проходят.
+- `npm.cmd install` обновил зависимости и `package-lock.json`; npm audit показывает существующие 20 vulnerabilities, отдельного исправления зависимостей не выполнялось.
+
 ## Фактическое состояние
 - **Monorepo** WibeStyle: лендинг, web-app, admin, **mobile Android (Expo)**, backend API, shared packages.
 - **Web app**: полный UX-flow + search/gallery + billing paywall + promo deep links.

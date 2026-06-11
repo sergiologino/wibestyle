@@ -1,5 +1,17 @@
 # AI Changelog
 
+## 2026-06-11 (Web/mobile onboarding)
+- Web-app `/welcome`: старый welcome + 3 карточки заменён на 7-экранный mobile-first onboarding с фото, точками навигации, понятным flow “фото → ссылка → AI-примерка”, преимуществами, будущим AI-стилистом и финальным CTA `Подключить trial`.
+- Web-app onboarding content вынесен в `apps/web-app/lib/onboarding-copy.ts`; добавлен `FIRST100` promo handling для deep links с `?promo=` и landing offer `?offer=first100`.
+- Web-app paywall обновлён: читаемые русские тексты, кнопка `Подключить trial`, аккуратный дисклеймер по ошибкам AI-примерки, solid fashion-палитра без новых градиентов.
+- Mobile Expo `/welcome`: добавлен нативный 7-экранный onboarding в mobile-first стиле с локальными фото, CTA к `/paywall`, входом/пропуском и дисклеймерами.
+- Mobile Expo `/paywall`: обновлены тексты, CTA `Подключить trial`, рубли и предупреждение о возможных ошибках генерации.
+- Replaceable assets: web `apps/web-app/public/assets/onboarding/`, mobile `apps/mobile-app/assets/onboarding/`; временно используются демо-фото из landing.
+- Mobile OAuthButtons скопирован в `apps/mobile-app/src/components/auth/`, чтобы alias `@/*` совпадал с tsconfig.
+- Tests: добавлены/обновлены проверки onboarding-copy для web и mobile.
+- Проверки прошли: `npm.cmd test -w @wibestyle/web-app`, `npm.cmd run build -w @wibestyle/web-app`, `npm.cmd test -w @wibestyle/mobile-app`, `npm.cmd run lint -w @wibestyle/mobile-app`.
+- `npm.cmd install` добавил отсутствующие пакеты для mobile dependency graph и обновил `package-lock.json`; npm audit сообщает 20 существующих vulnerabilities, они не исправлялись в рамках этой фичи.
+
 ## 2026-06-10 (Landing before/after banner component)
 - Landing: заменён главный raster-баннер `before-after.png` на компонентный `BeforeAfterSection` в `apps/landing/components/home/`.
 - Добавлены `BeforeAfterCard`-карточки с DOM-лейблами «до»/«после», before image, after poster и after video.
