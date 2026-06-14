@@ -21,6 +21,7 @@ import ru.wibestyle.api.repository.TryOnSessionRepository;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,6 +37,7 @@ public class SeasonHitVideoJobWorker {
     private final TryOnImageService tryOnImageService;
     private final AiIntegrationProperties aiProperties;
     private final AiIntegrationLogService aiIntegrationLogService;
+    private final AiProviderPriorityService aiProviderPriorityService;
 
     public SeasonHitVideoJobWorker(
             TryOnJobRepository tryOnJobRepository,
@@ -44,7 +46,8 @@ public class SeasonHitVideoJobWorker {
             SeasonHitVideoPromptBuilder promptBuilder,
             TryOnImageService tryOnImageService,
             AiIntegrationProperties aiProperties,
-            AiIntegrationLogService aiIntegrationLogService
+            AiIntegrationLogService aiIntegrationLogService,
+            AiProviderPriorityService aiProviderPriorityService
     ) {
         this.tryOnJobRepository = tryOnJobRepository;
         this.tryOnSessionRepository = tryOnSessionRepository;
@@ -53,6 +56,7 @@ public class SeasonHitVideoJobWorker {
         this.tryOnImageService = tryOnImageService;
         this.aiProperties = aiProperties;
         this.aiIntegrationLogService = aiIntegrationLogService;
+        this.aiProviderPriorityService = aiProviderPriorityService;
     }
 
     @Async("aiTaskExecutor")
@@ -128,7 +132,7 @@ public class SeasonHitVideoJobWorker {
     }
 
     private NoteappAiClient.VideoProcessResult callAi(TryOnSessionEntity session) throws IOException {
-        if (!aiProperties.isSeasonVideoConfigured()) {
+        if (!aiProperties.isIntegrationConfigured()) {
             aiIntegrationLogService.logSkipped(session, "season video network not configured");
             return NoteappAiClient.VideoProcessResult.failed("AI_NOT_CONFIGURED", "Season video AI not configured");
         }
@@ -140,7 +144,37 @@ public class SeasonHitVideoJobWorker {
         metadata.put("operation", AiOperations.VIRTUAL_TRY_ON_VIDEO);
         metadata.put("sessionId", session.getId().toString());
 
-        return noteappAiClient.generateSeasonHitVideo(session, prompt, sourceImageBase64, metadata);
+        List<AiProviderPriorityService.ProviderRoute> routes =
+                aiProviderPriorityService.routeFor(AiOperations.VIRTUAL_TRY_ON_VIDEO);
+        NoteappAiClient.VideoProcessResult lastResult =
+                NoteappAiClient.VideoProcessResult.failed("AI_NOT_CONFIGURED", "AI provider route is empty");
+        String fallbackReason = null;
+        for (int i = 0; i < routes.size(); i++) {
+            AiProviderPriorityService.ProviderRoute route = routes.get(i);
+            lastResult = noteappAiClient.generateSeasonHitVideo(
+                    route.networkName(),
+                    i + 1,
+                    fallbackReason,
+                    session,
+                    prompt,
+                    sourceImageBase64,
+                    metadata
+            );
+            if (lastResult.success()) {
+                return lastResult;
+            }
+            if (i + 1 >= routes.size() || !aiProviderPriorityService.shouldFallback(lastResult.errorCode())) {
+                return lastResult;
+            }
+            fallbackReason = AiProviderPriorityService.fallbackReason(lastResult.errorCode(), lastResult.errorMessage());
+            log.info(
+                    "AI video provider {} failed for session {}, fallback to next provider: {}",
+                    route.networkName(),
+                    session.getId(),
+                    fallbackReason
+            );
+        }
+        return lastResult;
     }
 
     private void markVideoFailed(TryOnSessionEntity session, TryOnJobEntity job, String errorCode, String errorMessage) {

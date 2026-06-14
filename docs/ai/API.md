@@ -65,6 +65,18 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 | DELETE | `/admin/gallery/posts/{id}` | безвозвратное удаление |
 | GET | `/admin/audit` | |
 
+## Admin (AI providers and logs)
+
+All endpoints require `X-Admin-Key`.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/ai-providers` | Returns provider priority lists for `VIRTUAL_TRY_ON_PHOTO` and `VIRTUAL_TRY_ON_VIDEO`. |
+| PUT | `/admin/ai-providers/{operation}` | Replaces priority/display/enabled settings for one operation. Body: `{ items: [{ networkName, displayName, priorityOrder, enabled }] }`. |
+| GET | `/admin/ai-logs?page=&size=` | Returns AI integration request/response logs. Items include `operation`, `attemptNumber`, `fallbackReason`, `modelName`, `provider`, `noteappRequestId`. |
+
+Provider priorities only select the `networkName` sent to `noteapp-ai-integration`; all integrations still go through `/api/ai/process`.
+
 ## Billing
 
 | Method | Path |

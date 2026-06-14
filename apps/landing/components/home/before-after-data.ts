@@ -17,12 +17,12 @@ export const beforeAfterItems: BeforeAfterItem[] = [
   {
     id: "dress",
     beforeImage: "/assets/before-after-demo/look-1-before.png",
-    beforeAlt: "Фото до нейропримерки платья в базовой одежде",
+    beforeAlt: "Фото до нейропримерки юбки в базовой одежде",
     afterPosterImage: "/assets/before-after-demo/look-1-after-poster.png",
     afterVideo: "/assets/before-after-demo/look-1-after.mp4",
     afterAlt: "Видео после нейропримерки платья на фигуре",
-    title: "Платье по ссылке",
-    subtitle: "Силуэт, длина и цвет до покупки",
+    title: "Юбка по ссылке",
+    subtitle: "Форма, длина и цвет до покупки",
   },
   {
     id: "office",

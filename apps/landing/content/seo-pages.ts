@@ -116,12 +116,12 @@ export const seoPages: SeoPageContent[] = [
       "Напишите «подбери стильный лук на лето» — нейростилист соберёт цельный образ: одежду, бижутерию, обувь, причёску и макияж. Каждая вещь — со ссылкой на покупку.",
     visuals: {
       type: "mosaic",
-      labels: ["Платье", "Бижутерия и сумка", "Обувь", "Макияж и укладка"],
+      labels: ["Полный лук", "Аксессуары", "Обувь", "Макияж и укладка"],
       images: [
-        imageSlots.femaleCard1,
-        imageSlots.femaleCard2,
-        imageSlots.femaleCard3,
-        imageSlots.femaleCard4,
+        imageSlots.lookRequestFullLook,
+        imageSlots.lookRequestAccessories,
+        imageSlots.lookRequestShoes,
+        imageSlots.lookRequestMakeup,
       ],
     },
     sections: [

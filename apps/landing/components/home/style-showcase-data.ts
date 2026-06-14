@@ -8,12 +8,11 @@ export type StyleShowcaseItem = {
   href: string;
 };
 
-// Temporary demo assets. Replace image paths with production photos when they are ready.
 export const styleShowcaseItems: StyleShowcaseItem[] = [
   {
     id: "casual",
     title: "Casual",
-    subtitle: "Джинсы, топ, лёгкая обувь",
+    subtitle: "Джинсы, топ, легкая обувь",
     image: "/assets/female-card-4.png",
     alt: "Casual образ после нейропримерки одежды",
     badge: "на каждый день",
@@ -48,11 +47,11 @@ export const styleShowcaseItems: StyleShowcaseItem[] = [
   },
   {
     id: "men",
-    title: "Men's style",
-    subtitle: "Пиджак, часы, обувь",
-    image: "/assets/hero-collage.png",
-    alt: "Мужской стиль с пиджаком и аксессуарами",
-    badge: "для него",
+    title: "Love evening ",
+    subtitle: "Платье, вечер, любовь",
+    image: "/assets/style-showcase/men.png",
+    alt: "Стиль для вечера с любимым",
+    badge: "для вечера",
     href: "/dlya-muzhchin",
   },
 ];

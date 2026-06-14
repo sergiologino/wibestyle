@@ -69,7 +69,14 @@ function BeforeAfterCard({ item }: { item: BeforeAfterItem }) {
       <div className="before-after-card__media" aria-label={`${item.labelBefore ?? "до"} и ${item.labelAfter ?? "после"}`}>
         <div className="before-after-card__side">
           <span className="before-after-card__label">{item.labelBefore ?? "до"}</span>
-          <Image src={item.beforeImage} alt={item.beforeAlt} width={520} height={720} sizes="(max-width: 720px) 78vw, 300px" />
+          <Image
+            src={item.beforeImage}
+            alt={item.beforeAlt}
+            width={520}
+            height={720}
+            sizes="(max-width: 720px) 78vw, 300px"
+            unoptimized
+          />
         </div>
 
         <span className="before-after-card__arrow" aria-hidden>
@@ -85,6 +92,7 @@ function BeforeAfterCard({ item }: { item: BeforeAfterItem }) {
             height={720}
             sizes="(max-width: 720px) 78vw, 300px"
             className={`before-after-card__poster${showVideo ? " before-after-card__poster--hidden" : ""}`}
+            unoptimized
           />
           <video
             ref={videoRef}

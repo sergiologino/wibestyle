@@ -34,6 +34,17 @@ export type ApiClientOptions = {
   onUnauthorized?: () => Promise<boolean>;
 };
 
+export type AiProviderOperation = "VIRTUAL_TRY_ON_PHOTO" | "VIRTUAL_TRY_ON_VIDEO";
+
+export type AiProviderPriorityRecord = {
+  networkName: string;
+  displayName: string;
+  priorityOrder: number;
+  enabled: boolean;
+};
+
+export type AdminAiProviderSnapshot = Record<AiProviderOperation, AiProviderPriorityRecord[]>;
+
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -929,6 +940,9 @@ export class WibeStyleApiClient {
         modelName?: string | null;
         modelLabel?: string | null;
         provider?: string | null;
+        operation?: string | null;
+        attemptNumber?: number | null;
+        fallbackReason?: string | null;
         status?: string | null;
         noteappRequestId?: string | null;
         createdAt: string;
@@ -938,5 +952,26 @@ export class WibeStyleApiClient {
       total: number;
       totalPages: number;
     }>(`/api/v1/admin/ai-logs?page=${page}&size=${size}`, { headers: { "X-Admin-Key": adminKey } });
+  }
+
+  getAdminAiProviders(adminKey: string) {
+    return this.request<AdminAiProviderSnapshot>("/api/v1/admin/ai-providers", {
+      headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  updateAdminAiProviders(
+    adminKey: string,
+    operation: AiProviderOperation,
+    items: AiProviderPriorityRecord[],
+  ) {
+    return this.request<{ operation: AiProviderOperation; items: AiProviderPriorityRecord[] }>(
+      `/api/v1/admin/ai-providers/${operation}`,
+      {
+        method: "PUT",
+        headers: { "X-Admin-Key": adminKey },
+        body: JSON.stringify({ items }),
+      },
+    );
   }
 }

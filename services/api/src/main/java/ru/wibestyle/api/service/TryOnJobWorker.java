@@ -47,6 +47,8 @@ import java.time.Instant;
 
 import java.util.HashMap;
 
+import java.util.List;
+
 import java.util.Map;
 
 import java.util.UUID;
@@ -91,6 +93,8 @@ public class TryOnJobWorker {
 
     private final ObjectMapper objectMapper;
 
+    private final AiProviderPriorityService aiProviderPriorityService;
+
 
 
     public TryOnJobWorker(
@@ -119,7 +123,9 @@ public class TryOnJobWorker {
 
             UserProfileRepository userProfileRepository,
 
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+
+            AiProviderPriorityService aiProviderPriorityService
 
     ) {
 
@@ -148,6 +154,8 @@ public class TryOnJobWorker {
         this.userProfileRepository = userProfileRepository;
 
         this.objectMapper = objectMapper;
+
+        this.aiProviderPriorityService = aiProviderPriorityService;
 
     }
 
@@ -275,7 +283,7 @@ public class TryOnJobWorker {
 
     private NoteappAiClient.ProcessResult callAi(TryOnSessionEntity session) {
 
-        if (!aiProperties.isNoteappConfigured()) {
+        if (!aiProperties.isIntegrationConfigured()) {
             aiIntegrationLogService.logSkipped(session, "WIBESTYLE_AI_ENABLED/API_KEY/TRYON_NETWORK не настроены");
             return NoteappAiClient.ProcessResult.failed("AI_NOT_CONFIGURED", "AI service not configured");
 
@@ -321,16 +329,41 @@ public class TryOnJobWorker {
         AvatarSnapshotEntity avatarSnapshot = tryOnImageService.findSnapshot(session).orElse(null);
 
         // figureLock / fitHint / product data уже внутри prompt (база из админки + JSON-блок).
-        return noteappAiClient.processVirtualTryOn(
-                session,
-                prompt,
-                personImageBase64,
-                garmentImageBase64,
-                metadata,
-                avatarSnapshot,
-                null,
-                null
-        );
+        List<AiProviderPriorityService.ProviderRoute> routes =
+                aiProviderPriorityService.routeFor(AiOperations.VIRTUAL_TRY_ON_PHOTO);
+        NoteappAiClient.ProcessResult lastResult =
+                NoteappAiClient.ProcessResult.failed("AI_NOT_CONFIGURED", "AI provider route is empty");
+        String fallbackReason = null;
+        for (int i = 0; i < routes.size(); i++) {
+            AiProviderPriorityService.ProviderRoute route = routes.get(i);
+            lastResult = noteappAiClient.processVirtualTryOn(
+                    route.networkName(),
+                    i + 1,
+                    fallbackReason,
+                    session,
+                    prompt,
+                    personImageBase64,
+                    garmentImageBase64,
+                    metadata,
+                    avatarSnapshot,
+                    null,
+                    null
+            );
+            if (lastResult.success()) {
+                return lastResult;
+            }
+            if (i + 1 >= routes.size() || !aiProviderPriorityService.shouldFallback(lastResult.errorCode())) {
+                return lastResult;
+            }
+            fallbackReason = AiProviderPriorityService.fallbackReason(lastResult.errorCode(), lastResult.errorMessage());
+            log.info(
+                    "AI provider {} failed for session {}, fallback to next provider: {}",
+                    route.networkName(),
+                    session.getId(),
+                    fallbackReason
+            );
+        }
+        return lastResult;
 
     }
 

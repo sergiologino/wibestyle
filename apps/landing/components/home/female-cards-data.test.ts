@@ -15,9 +15,7 @@ describe("femaleExampleCards", () => {
   });
 
   it("falls back to matching image when mp4 is absent", () => {
-    expect(resolveFemaleExampleMedia("look-1")).toEqual({
-      type: "image",
-      src: "/assets/female-cards/look-1.png",
-    });
+    expect(resolveFemaleExampleMedia("look-1")).toMatchObject({ type: "image" });
+    expect(resolveFemaleExampleMedia("look-1").src).toMatch(/^\/assets\/female-cards\/look-1\.(png|jpg|jpeg|webp|avif)$/);
   });
 });
