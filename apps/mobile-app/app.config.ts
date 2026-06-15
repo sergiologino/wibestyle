@@ -44,6 +44,7 @@ const config: ExpoConfig = {
   },
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:8080",
+    landingUrl: process.env.EXPO_PUBLIC_LANDING_URL ?? "https://vibestyle.art",
     eas: {
       projectId: "wibestyle-mobile-local",
     },

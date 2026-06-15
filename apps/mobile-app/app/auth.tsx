@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
@@ -8,7 +8,9 @@ import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { getApiBaseUrl } from "@/lib/config";
+import { legalLinks } from "@/lib/legal-links";
 import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
+import { formatRussianPhone, isRussianPhoneComplete } from "@/lib/phone-mask";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
 type AuthTab = "phone" | "email";
@@ -17,7 +19,7 @@ export default function AuthScreen() {
   const router = useRouter();
   const { api, setAuth } = useSession();
   const [tab, setTab] = useState<AuthTab>("phone");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+7 ");
   const [email, setEmail] = useState("");
   const [requestId, setRequestId] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -26,6 +28,10 @@ export default function AuthScreen() {
 
   async function startPhoneOtp() {
     setError(null);
+    if (!isRussianPhoneComplete(phone)) {
+      setError("Введите номер в формате +7 (ККК) ННН-НН-НН");
+      return;
+    }
     setLoading(true);
     try {
       const result = await api.startOtp(phone);
@@ -122,8 +128,9 @@ export default function AuthScreen() {
                     label="Телефон"
                     placeholder="+7 900 000-00-00"
                     keyboardType="phone-pad"
+                    maxLength={18}
                     value={phone}
-                    onChangeText={setPhone}
+                    onChangeText={(value) => setPhone(formatRussianPhone(value))}
                   />
                 ) : (
                   <TextField
@@ -157,6 +164,18 @@ export default function AuthScreen() {
           </View>
 
           <OAuthButtons />
+
+          <Text style={styles.legalText}>
+            Продолжая, вы принимаете{" "}
+            <Text style={styles.legalLink} onPress={() => void Linking.openURL(legalLinks.terms)}>
+              пользовательское соглашение
+            </Text>{" "}
+            и{" "}
+            <Text style={styles.legalLink} onPress={() => void Linking.openURL(legalLinks.privacy)}>
+              политику конфиденциальности
+            </Text>
+            .
+          </Text>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </ScrollView>
@@ -205,5 +224,16 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontFamily: "Manrope_400Regular",
     fontSize: 14,
+  },
+  legalText: {
+    color: colors.eyebrow,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "center",
+  },
+  legalLink: {
+    color: colors.pink,
+    fontFamily: "Manrope_500Medium",
   },
 });
