@@ -35,7 +35,7 @@ export function ShareCard({
   showProductLink = false,
   productTitle,
   eliteFrame = false,
-  appBaseUrl = "https://app.wibestyle.ru",
+  appBaseUrl = "https://app.vibestyle.art",
   landingUrl = "https://vibestyle.art",
   brandDomain = "vibestyle.art",
 }: ShareCardProps) {

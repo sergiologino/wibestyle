@@ -1,14 +1,14 @@
-# Architecture
+﻿# Architecture
 
 ## Monorepo WibeStyle
 
 ```text
-wibestyle.ru       app.wibestyle.ru       Android/iOS (skeleton)
+vibestyle.art       app.vibestyle.art       Android/iOS (skeleton)
 apps/landing       apps/web-app           apps/mobile-app
    │                    │                      │
    └──────────────┬─────┴──────────────┬───────┘
                   │                    │
-            api.wibestyle.ru           │
+            api.vibestyle.art           │
             services/api               │
                   │
        PostgreSQL (локальный / managed) + Redis (опционально)
@@ -60,3 +60,4 @@ States: `DRAFT` → `PHOTO_UPLOADED` → `VALIDATING` → (`VALIDATION_FAILED`|`
 
 ## Docs
 `docs/ai/` — единственный source of truth проектной памяти.
+

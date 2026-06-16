@@ -1,6 +1,6 @@
-# API Reference (MVP)
+﻿# API Reference (MVP)
 
-Base URL: `https://api.wibestyle.ru/api/v1` (dev: `http://localhost:8080/api/v1`)
+Base URL: `https://api.vibestyle.art/api/v1` (dev: `http://localhost:8080/api/v1`)
 
 Auth header: `Authorization: Bearer <JWT access token>`
 
@@ -157,3 +157,4 @@ Provider priorities only select the `networkName` sent to `noteapp-ai-integratio
 `users`, `user_profiles`, `avatars`, `avatar_snapshots`, `try_on_sessions`, `try_on_jobs`, `favorites`, `gallery_posts`, `gallery_likes`, `gallery_comments`, `promo_codes`, `promo_code_redemptions`, `landing_leads`, `landing_interests`, `media_assets`, `reviews`, `billing_checkouts`
 
 See Flyway migrations `V1`–`V9` in `services/api/src/main/resources/db/migration/`.
+

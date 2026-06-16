@@ -1,4 +1,4 @@
-# Гайд: промокоды WibeStyle
+﻿# Гайд: промокоды WibeStyle
 
 Документ для администратора (создание кодов) и для разработчиков (интеграция в web/admin).
 
@@ -63,8 +63,8 @@ POST /api/v1/admin/promo-codes
 
 | Тип | URL |
 |-----|-----|
-| Welcome (рекомендуется) | `https://app.wibestyle.ru/welcome?promo=VK2026` |
-| Прямо на вход | `https://app.wibestyle.ru/auth?promo=VK2026` |
+| Welcome (рекомендуется) | `https://app.vibestyle.art/welcome?promo=VK2026` |
+| Прямо на вход | `https://app.vibestyle.art/auth?promo=VK2026` |
 
 Локально (dev):
 
@@ -78,7 +78,7 @@ http://localhost:3001/auth?promo=VK2026
 ```
 Примерь одежду с Wildberries и Ozon на себе — до покупки.
 5 бесплатных AI-примерок + скидка 20% по промокоду VK2026:
-https://app.wibestyle.ru/welcome?promo=VK2026
+https://app.vibestyle.art/welcome?promo=VK2026
 ```
 
 Настройте `NEXT_PUBLIC_APP_URL` в admin, чтобы ссылки генерировались с правильным доменом.
@@ -133,7 +133,7 @@ POST /api/v1/billing/promo/validate
 
 ```bash
 WIBESTYLE_ADMIN_API_KEY=<strong-secret>   # admin promo CRUD
-NEXT_PUBLIC_APP_URL=https://app.wibestyle.ru  # генерация ссылок в admin
+NEXT_PUBLIC_APP_URL=https://app.vibestyle.art  # генерация ссылок в admin
 ```
 
 ## Связанные файлы
@@ -141,3 +141,4 @@ NEXT_PUBLIC_APP_URL=https://app.wibestyle.ru  # генерация ссылок 
 - Backend: `PromoService`, `AdminPromoController`, `V6__billing_promo.sql`
 - Admin UI: `apps/admin/app/promo/page.tsx`
 - Web: `OtpForm.tsx`, `lib/promo-storage.ts`, `packages/shared-types/src/promo-code.ts`
+
