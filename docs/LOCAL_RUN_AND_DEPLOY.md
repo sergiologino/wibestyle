@@ -1,6 +1,21 @@
-# Local Run And Deploy
+﻿# Local Run And Deploy
 
 Актуальная инструкция для локального запуска WibeStyle и подготовки к серверной раскатке.
+
+## Статус полноты
+
+Документ достаточен для локального запуска и для начала деплоя в Coolify через buildpacks/Nixpacks без Dockerfile. Для production-ready раскатки остаются отдельные инфраструктурные задачи: Dockerfile/compose для full-stack варианта, S3-совместимое хранилище вместо локального volume при масштабировании, backup policy для PostgreSQL и финальные production-секреты.
+
+Для текущего Coolify-деплоя минимально нужны:
+
+- PostgreSQL resource;
+- API service;
+- web-app service;
+- landing service;
+- admin service;
+- persistent volume для API media storage;
+- домены и TLS на Coolify proxy;
+- env-переменные из раздела "Coolify deploy".
 
 ## Что есть в проекте
 
@@ -18,6 +33,8 @@
 - Backend: `services/api/.env.example`
 - Web app: `apps/web-app/.env.example`
 - Mobile app: `apps/mobile-app/.env.example`
+- Landing: env задаётся в Coolify/хостинге, отдельный `.env.example` пока не нужен.
+- Admin: env задаётся в Coolify/хостинге, отдельный `.env.example` пока не нужен.
 
 Для локального запуска скопируйте:
 
@@ -212,10 +229,10 @@ npm.cmd run build:api
 
 Минимальная схема:
 
-- `https://wibestyle.ru` → landing
-- `https://app.wibestyle.ru` → web-app
-- `https://api.wibestyle.ru` → backend
-- `https://admin.wibestyle.ru` → admin, желательно VPN/IP allowlist
+- `https://vibestyle.art` → landing
+- `https://app.vibestyle.art` → web-app
+- `https://api.vibestyle.art` → backend
+- `https://admin.vibestyle.art` → admin, желательно VPN/IP allowlist
 
 Нужен reverse proxy с TLS: Nginx, Caddy, Traefik или встроенный proxy Coolify.
 
@@ -260,7 +277,7 @@ WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=false
 
 ```env
 WIBESTYLE_BILLING_PROVIDER=yookassa
-WIBESTYLE_BILLING_RETURN_URL=https://app.wibestyle.ru/paywall/return
+WIBESTYLE_BILLING_RETURN_URL=https://app.vibestyle.art/paywall/return
 WIBESTYLE_YOOKASSA_SHOP_ID=...
 WIBESTYLE_YOOKASSA_SECRET_KEY=...
 ```
@@ -268,8 +285,21 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=...
 Webhook YooKassa:
 
 ```text
-https://api.wibestyle.ru/api/v1/billing/webhooks/yookassa
+https://api.vibestyle.art/api/v1/billing/webhooks/yookassa
 ```
+
+Для тестового магазина YooKassa используйте те же переменные, но вставьте test shop id и test secret key из кабинета YooKassa. API base для test/live одинаковый:
+
+```env
+WIBESTYLE_BILLING_PROVIDER=yookassa
+WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=false
+WIBESTYLE_BILLING_RETURN_URL=https://app.vibestyle.art/paywall/return
+WIBESTYLE_YOOKASSA_SHOP_ID=<test_shop_id>
+WIBESTYLE_YOOKASSA_SECRET_KEY=<test_secret_key>
+WIBESTYLE_YOOKASSA_API_BASE=https://api.yookassa.ru
+```
+
+Не включайте одновременно `WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=true` и тестовую YooKassa на публичном стенде: dev-subscribe позволяет активировать подписку без оплаты.
 
 Если включаете AI:
 
@@ -285,9 +315,9 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 ### 5. Web app production env
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.wibestyle.ru
-NEXT_PUBLIC_APP_URL=https://app.wibestyle.ru
-NEXT_PUBLIC_LANDING_URL=https://wibestyle.ru
+NEXT_PUBLIC_API_URL=https://api.vibestyle.art
+NEXT_PUBLIC_APP_URL=https://app.vibestyle.art
+NEXT_PUBLIC_LANDING_URL=https://vibestyle.art
 ```
 
 Важно: `NEXT_PUBLIC_*` попадает в browser bundle, туда нельзя класть секреты.
@@ -297,7 +327,8 @@ NEXT_PUBLIC_LANDING_URL=https://wibestyle.ru
 Для production build:
 
 ```env
-EXPO_PUBLIC_API_URL=https://api.wibestyle.ru
+EXPO_PUBLIC_API_URL=https://api.vibestyle.art
+EXPO_PUBLIC_LANDING_URL=https://vibestyle.art
 ```
 
 Также проверьте:
@@ -307,24 +338,233 @@ EXPO_PUBLIC_API_URL=https://api.wibestyle.ru
 - release signing;
 - RuStore metadata, privacy policy, support email.
 
-### 7. OAuth
+## Coolify deploy
+
+Ниже схема для деплоя из monorepo без Dockerfile. В Coolify создайте один Project, затем ресурсы в таком порядке: PostgreSQL, API, web-app, landing, admin. Redis можно добавить сразу, но сейчас refresh-token store использует JDBC, поэтому Redis не является обязательным для первого запуска.
+
+### 1. PostgreSQL resource
+
+Создайте PostgreSQL 16 в Coolify.
+
+Сохраните значения:
+
+```text
+internal host postgres://vibestyle:vibestyle-db-pass@ebxoeiu0kaupy2jk4vfixo7x:5432/vibestyle
+database vibestyle
+username vibestyle
+password vibestyle-db-pass
+port 5432
+```
+
+
+Redis 7
+name vibestyle-redis
+username vibestyle
+password  vibestyle-redis-pass
+Redis internal URL redis://default:uiS7dUafmTCsg7EUkKCokEkoD5dDy2Ntm3lqVhtUiRYyev2xz3QNbwbASRUVBG9q@vq95ahyivhbqqswr4idiclnx:6379/0
+port 6379
+
+
+Backend должен использовать internal connection string Coolify, а не публичный host:
+
+```env
+SERVER_PORT=8080
+
+SPRING_DATASOURCE_URL=jdbc:postgresql://ebxoeiu0kaupy2jk4vfixo7x:5432/vibestyle
+SPRING_DATASOURCE_USERNAME=vibestyle
+SPRING_DATASOURCE_PASSWORD=vibestyle-db-pass
+
+SPRING_DATA_REDIS_HOST=vq95ahyivhbqqswr4idiclnx
+SPRING_DATA_REDIS_PORT=6379
+SPRING_DATA_REDIS_PASSWORD=vibestyle-redis-pass
+```
+
+### 2. API service
+
+Coolify application:
+
+```text
+Source: Git repository
+Base directory: /wibestyle/services/api
+Build pack: Nixpacks
+Build command: chmod +x gradlew && ./gradlew bootJar -x test
+Start command: java -jar build/libs/wibestyle-api.jar
+Port: 8080
+Healthcheck path: /actuator/health
+Domain: https://api.vibestyle.art
+```
+
+Mount persistent volume:
+
+```text
+Container path: /data/wibestyle-media
+```
+
+Minimum API env for Coolify:
+
+```env
+SERVER_PORT=8080
+SPRING_DATASOURCE_URL=jdbc:postgresql://<coolify-postgres-internal-host>:5432/<database>
+SPRING_DATASOURCE_USERNAME=<database_user>
+SPRING_DATASOURCE_PASSWORD=<database_password>
+WIBESTYLE_JWT_SECRET=<strong-random-32+bytes>
+WIBESTYLE_ADMIN_API_KEY=<strong-random-admin-key>
+WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD=<strong-admin-password>
+WIBESTYLE_STORAGE_BACKEND=local
+WIBESTYLE_STORAGE_ROOT=/data/wibestyle-media
+WIBESTYLE_BILLING_PROVIDER=yookassa
+WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=false
+WIBESTYLE_BILLING_RETURN_URL=https://app.vibestyle.art/paywall/return
+WIBESTYLE_YOOKASSA_SHOP_ID=<test_shop_id>
+WIBESTYLE_YOOKASSA_SECRET_KEY=<test_secret_key>
+WIBESTYLE_YOOKASSA_API_BASE=https://api.yookassa.ru
+WIBESTYLE_OAUTH_API_PUBLIC_BASE=https://api.vibestyle.art
+WIBESTYLE_OAUTH_WEB_CALLBACK=https://app.vibestyle.art/auth/oauth/callback
+WIBESTYLE_OAUTH_MOBILE_CALLBACK=wibestyle://auth/oauth/callback
+```
+
+Optional API env:
+
+```env
+WIBESTYLE_SMS_RU_API_ID=
+WIBESTYLE_MAIL_ENABLED=false
+WIBESTYLE_MAIL_DEV_LOG_ONLY=true
+WIBESTYLE_AI_ENABLED=false
+WIBESTYLE_AI_BASE_URL=https://<noteapp-host>
+WIBESTYLE_AI_API_KEY=
+WIBESTYLE_AI_FALLBACK_TO_DEMO=false
+```
+
+### 3. Web app service
+
+Coolify application:
+
+```text
+Source: same Git repository
+Base directory: /wibestyle
+Build pack: Nixpacks
+Install command: npm ci
+Build command: npm run build -w @wibestyle/web-app
+Start command: npm run start -w @wibestyle/web-app
+Port: 3001
+Domain: https://app.vibestyle.art
+```
+
+Env:
+
+```env
+NEXT_PUBLIC_API_URL=https://api.vibestyle.art
+NEXT_PUBLIC_APP_URL=https://app.vibestyle.art
+NEXT_PUBLIC_LANDING_URL=https://vibestyle.art
+```
+
+### 4. Landing service
+
+Coolify application:
+
+```text
+Source: same Git repository
+Base directory: /wibestyle
+Build pack: Nixpacks
+Install command: npm ci
+Build command: npm run build -w @wibestyle/landing
+Start command: npm run start -w @wibestyle/landing
+Port: 3000
+Domain: https://vibestyle.art
+```
+
+Env:
+
+```env
+NEXT_PUBLIC_SITE_URL=https://vibestyle.art
+NEXT_PUBLIC_APP_URL=https://app.vibestyle.art/welcome
+NEXT_PUBLIC_RUSTORE_URL=https://www.rustore.ru/catalog/app/ru.wibestyle.app
+```
+
+### 5. Admin service
+
+Coolify application:
+
+```text
+Source: same Git repository
+Base directory: /wibestyle
+Build pack: Nixpacks
+Install command: npm ci
+Build command: npm run build -w @wibestyle/admin
+Start command: npm run start -w @wibestyle/admin
+Port: 3002
+Domain: https://admin.vibestyle.art
+```
+
+Env:
+
+```env
+NEXT_PUBLIC_API_URL=https://api.vibestyle.art
+```
+
+После запуска вход в админку использует пароль из `WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD`, а API-запросы должны передавать `X-Admin-Key` со значением `WIBESTYLE_ADMIN_API_KEY`.
+
+### 6. YooKassa test shop
+
+В кабинете YooKassa для тестового магазина укажите HTTP notification URL:
+
+```text
+https://api.vibestyle.art/api/v1/billing/webhooks/yookassa
+```
+
+События:
+
+```text
+payment.succeeded
+payment.canceled
+```
+
+Проверка после деплоя:
+
+1. Откройте `https://app.vibestyle.art/paywall`.
+2. Выберите тариф.
+3. Нажмите оплату и убедитесь, что checkout уводит на YooKassa.
+4. После тестовой оплаты возврат должен прийти на `https://app.vibestyle.art/paywall/return`.
+5. В API логах не должно быть `YOOKASSA_NOT_CONFIGURED`, `YOOKASSA_AMOUNT_MISMATCH`, `YOOKASSA_REQUEST_FAILED`.
+
+### 7. Smoke checks после деплоя
+
+```powershell
+Invoke-WebRequest https://api.vibestyle.art/actuator/health -UseBasicParsing
+Invoke-WebRequest https://api.vibestyle.art/api/v1/health -UseBasicParsing
+Invoke-WebRequest https://vibestyle.art/privacy -UseBasicParsing
+Invoke-WebRequest https://vibestyle.art/terms -UseBasicParsing
+Invoke-WebRequest https://app.vibestyle.art/welcome -UseBasicParsing
+Invoke-WebRequest https://admin.vibestyle.art -UseBasicParsing
+```
+
+Функционально проверить вручную:
+
+- регистрация по телефону или email;
+- загрузка avatar;
+- открытие paywall;
+- создание YooKassa checkout;
+- webhook после тестовой оплаты;
+- доступность `/privacy` и `/terms` из landing, web-app и mobile.
+
+### 8. OAuth callbacks
 
 В Yandex/Google OAuth кабинетах callback должен вести на backend:
 
 ```text
-https://api.wibestyle.ru/api/v1/auth/oauth/yandex/callback
-https://api.wibestyle.ru/api/v1/auth/oauth/google/callback
+https://api.vibestyle.art/api/v1/auth/oauth/yandex/callback
+https://api.vibestyle.art/api/v1/auth/oauth/google/callback
 ```
 
 Backend env:
 
 ```env
-WIBESTYLE_OAUTH_API_PUBLIC_BASE=https://api.wibestyle.ru
-WIBESTYLE_OAUTH_WEB_CALLBACK=https://app.wibestyle.ru/auth/oauth/callback
+WIBESTYLE_OAUTH_API_PUBLIC_BASE=https://api.vibestyle.art
+WIBESTYLE_OAUTH_WEB_CALLBACK=https://app.vibestyle.art/auth/oauth/callback
 WIBESTYLE_OAUTH_MOBILE_CALLBACK=wibestyle://auth/oauth/callback
 ```
 
-### 8. Что добавить для полноценного Docker production
+### 9. Что добавить для полноценного Docker production
 
 Если хотите раскатывать всё через Docker Compose, нужно добавить:
 
@@ -340,3 +580,4 @@ WIBESTYLE_OAUTH_MOBILE_CALLBACK=wibestyle://auth/oauth/callback
 - secrets/env injection через сервер, не через закоммиченные `.env`.
 
 До этого текущий compose правильно считать только локальным infra-compose.
+
