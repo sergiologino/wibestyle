@@ -29,7 +29,7 @@ export default function AppTopBar() {
       <header className="sticky top-0 z-50 border-b border-[#ffd1ed]/80 bg-white/94 shadow-[0_10px_34px_rgba(58,12,82,0.04)] backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 md:px-8">
           <Link href={logoHref} aria-label="Я на стиле">
-            <BrandLogo />
+            <BrandLogo markClassName="translate-y-1" />
           </Link>
           <nav className="hidden items-center rounded-full border border-[#ffd1ed]/80 bg-white/80 p-1 text-sm font-normal text-[#6d6273] shadow-[0_8px_24px_rgba(58,12,82,0.04)] md:flex">
             {nav.map((item) => (

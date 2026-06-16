@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, Heart, Sparkles } from "lucide-react";
 import { Button } from "@wibestyle/ui";
@@ -9,6 +8,7 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { getNextOnboardingRoute } from "@/lib/onboarding-flow";
 import { FIRST_100_PROMO_CODE, onboardingSlides } from "@/lib/onboarding-copy";
 import { capturePromoFromSearchParams, savePendingPromo } from "@/lib/promo-storage";
+import { OnboardingMedia } from "@/components/onboarding/OnboardingMedia";
 
 const toneStyles = {
   coral: "bg-[#fff1ed] border-[#ffb8a5]",
@@ -82,13 +82,11 @@ export default function WelcomeClient() {
           className={`relative mx-auto grid w-full max-w-[430px] overflow-hidden rounded-[34px] border p-3 shadow-[0_22px_70px_rgba(20,16,26,0.12)] md:max-w-5xl md:grid-cols-[0.92fr_1.08fr] md:p-4 ${toneStyles[activeSlide.tone]}`}
         >
           <div className="relative min-h-[58dvh] overflow-hidden rounded-[28px] bg-white md:min-h-[650px]">
-            <Image
-              src={activeSlide.image}
+            <OnboardingMedia
+              mediaBase={activeSlide.mediaBase}
+              image={activeSlide.image}
               alt={activeSlide.alt}
-              fill
               priority={activeIndex === 0}
-              sizes="(max-width: 768px) 92vw, 420px"
-              className="object-cover"
             />
             <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-[#14101a] shadow-sm">
               Я на стиле

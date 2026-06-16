@@ -18,13 +18,13 @@ import { FIRST_100_PROMO_CODE, mobileOnboardingSlides } from "@/lib/onboarding-c
 import { colors, hairline, radius, shadows, spacing } from "@/theme/tokens";
 
 const assets = {
-  upload: require("../assets/onboarding/upload-photo.png"),
-  flow: require("../assets/onboarding/flow-photo.png"),
-  result: require("../assets/onboarding/result-photo.png"),
-  style: require("../assets/onboarding/style-photo.png"),
-  privacy: require("../assets/onboarding/privacy-photo.png"),
-  future: require("../assets/onboarding/future-photo.png"),
-  paywall: require("../assets/onboarding/paywall-photo.png"),
+  upload: require("../assets/onboarding/slides/upload-photo.png"),
+  flow: require("../assets/onboarding/slides/flow-photo.png"),
+  result: require("../assets/onboarding/slides/result-photo.png"),
+  style: require("../assets/onboarding/slides/style-photo.png"),
+  privacy: require("../assets/onboarding/slides/privacy-photo.png"),
+  future: require("../assets/onboarding/slides/future-photo.png"),
+  paywall: require("../assets/onboarding/slides/paywall-photo.png"),
 } as const;
 
 const toneStyles = {
