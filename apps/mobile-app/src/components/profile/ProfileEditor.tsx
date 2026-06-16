@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -20,6 +21,7 @@ import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
+import { legalLinks } from "@/lib/legal-links";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
 type ProfileEditorProps = {
@@ -328,6 +330,15 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
         ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <View style={styles.legalLinks}>
+          <Text style={styles.legalLink} onPress={() => void Linking.openURL(legalLinks.privacy)}>
+            Политика конфиденциальности
+          </Text>
+          <Text style={styles.legalLink} onPress={() => void Linking.openURL(legalLinks.terms)}>
+            Пользовательское соглашение
+          </Text>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -476,5 +487,15 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontFamily: "Manrope_400Regular",
     fontSize: 14,
+  },
+  legalLinks: {
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+  },
+  legalLink: {
+    color: colors.pink,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 12,
   },
 });

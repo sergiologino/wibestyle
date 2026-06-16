@@ -39,7 +39,7 @@ export const heroCollageLooks: HeroCollageLook[] = [
 
 export const heroProductCard = {
   marketplace: "Wildberries",
-  title: "Платье Love Republic",
+  title: "Костюм Love Republic",
   price: "7 999 ₽",
   image: "/assets/female-card-1.png",
   alt: "Карточка товара для AI-примерки",

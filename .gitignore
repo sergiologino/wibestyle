@@ -33,6 +33,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!services/api/.env.example
+!apps/web-app/.env.example
+!apps/mobile-app/.env.example
 
 # vercel
 .vercel

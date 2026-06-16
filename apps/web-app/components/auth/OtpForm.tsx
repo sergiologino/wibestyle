@@ -8,12 +8,13 @@ import { promoErrorMessage, validatePromoCodeInput } from "@wibestyle/shared-typ
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { capturePromoFromSearchParams, clearPendingPromo, readPendingPromo } from "@/lib/promo-storage";
 import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
+import { formatRussianPhone, isRussianPhoneComplete } from "@/lib/phone-mask";
 
 export default function OtpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { api, setAuth } = useAppSession();
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+7 ");
   const [promoCode, setPromoCode] = useState("");
   const [requestId, setRequestId] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -33,6 +34,10 @@ export default function OtpForm() {
   async function startOtp(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    if (!isRussianPhoneComplete(phone)) {
+      setError("Введите номер в формате +7 (ККК) ННН-НН-НН");
+      return;
+    }
     setLoading(true);
     try {
       const result = await api.startOtp(phone);
@@ -113,8 +118,10 @@ export default function OtpForm() {
             className="rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal outline-none focus:border-[#ff1fa2]"
             placeholder="+7 900 000-00-00"
             type="tel"
+            inputMode="tel"
+            maxLength={18}
             value={phone}
-            onChange={(event) => setPhone(event.target.value)}
+            onChange={(event) => setPhone(formatRussianPhone(event.target.value))}
             required
           />
           <input

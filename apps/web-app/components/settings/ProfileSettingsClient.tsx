@@ -11,6 +11,7 @@ import AvatarManager from "@/components/avatar/AvatarManager";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
 import AnthropometryFields from "@/components/profile/AnthropometryFields";
 import { isPaidSubscription } from "@/lib/billing-plan";
+import { legalLinks } from "@/lib/legal-links";
 import {
   FieldInput,
   FieldLabel,
@@ -268,6 +269,15 @@ export default function ProfileSettingsClient() {
       <Link href="/home" className="text-sm font-medium text-[#ff1fa2]">
         ← На главную
       </Link>
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-normal text-[#9a8f99]">
+        <a className="text-[#ff1fa2]" href={legalLinks.privacy} target="_blank" rel="noreferrer">
+          Политика конфиденциальности
+        </a>
+        <a className="text-[#ff1fa2]" href={legalLinks.terms} target="_blank" rel="noreferrer">
+          Пользовательское соглашение
+        </a>
+      </div>
     </div>
   );
 }

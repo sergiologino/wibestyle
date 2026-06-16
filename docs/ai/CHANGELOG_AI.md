@@ -1,5 +1,49 @@
 # AI Changelog
 
+## 2026-06-15 (AI provider fallback through noteapp-ai-integration)
+- Backend keeps one integration path: every photo/video request still goes to `noteapp-ai-integration` `/api/ai/process`; fallback is controlled by changing `networkName`.
+- Added Flyway `V20__ai_provider_priorities.sql` with `ai_provider_priorities` and extra AI log fields: `operation`, `attempt_number`, `fallback_reason`.
+- Added provider route service with default chains:
+  - photo: `wibestyle-vton`, `fashn-try-on-photo`, `kling-try-on-photo`;
+  - video: `wibestyle-season-video`, `fashn-try-on-video`, `kling-try-on-video`.
+- `TryOnJobWorker` and `SeasonHitVideoJobWorker` now retry the next enabled provider for provider failures, moderation failures, quota/token exhaustion, timeouts and empty responses.
+- `NoteappAiClient` logs every attempt with operation, attempt number, fallback reason and actual network used in response.
+- Admin API added: `GET /api/v1/admin/ai-providers`, `PUT /api/v1/admin/ai-providers/{operation}`.
+- Admin UI added: `/ai-providers`; `/ai-logs` now displays operation, attempt number and fallback reason.
+- Tests added for provider routing and admin provider API; admin section navigation test updated.
+- Checks passed: `services/api/gradlew.bat test --console=plain`, `npm.cmd test -w @wibestyle/admin`, `npm.cmd run build -w @wibestyle/admin`.
+
+## 2026-06-13 (Landing hero asset replacement)
+- `HeroCollage` switched hero right collage images and product image to `next/image unoptimized`, so replacement of `apps/landing/public/assets/female-card-1..4.png` bypasses `/_next/image` cache and uses direct public files.
+- Landing `next/image` optimizer is disabled globally in `apps/landing/next.config.ts`; replaceable assets under `public/assets` now render as direct `/assets/...` URLs instead of cached `/_next/image` URLs.
+- `BeforeAfterSection` images are explicitly unoptimized; replacing `before-after-demo/look-*-before.png` and `look-*-after-poster.png` updates the rendered photos directly.
+- Style showcase now has a dedicated direct men's card slot: `apps/landing/public/assets/style-showcase/men.png`; the "стили" eyebrow is plain yellow text without a badge background.
+- `/podbor-obraza` now has dedicated request-stylist visuals in `apps/landing/public/assets/look-request/`: `full-look.png`, `accessories.png`, `shoes.png`, `makeup.png`.
+- Examples gallery now prefers `look-*.png` over stale `look-*.webp` in `apps/landing/public/assets/female-cards/` and renders images unoptimized to avoid `/_next/image` cache when replacing files.
+- Hero right collage spacing adjusted: outfit cards now overlap less, the duplicate outer "Летний вайб" label was removed, and the Wildberries product card was lowered so it does not cover outfit captions.
+- Landing gallery media test updated to allow current image fallback priority when `.webp` exists for `/assets/female-cards/look-1`.
+- Проверки прошли: `npm.cmd test -w @wibestyle/landing`, `npm.cmd run build -w @wibestyle/landing`.
+
+## 2026-06-12 (Env examples, local run, docker-compose readiness)
+- Переписаны чистым UTF-8 `.env.example` для `services/api`, `apps/web-app`, `apps/mobile-app` с описанием локальных и production значений.
+- `docker-compose.yml` обновлён с Redis-only до локальной инфраструктуры PostgreSQL 16 + Redis 7, named volumes, healthchecks и настраиваемых портов `POSTGRES_PORT` / `REDIS_PORT`.
+- Backend `application.yml` теперь реально использует env `SERVER_PORT`, `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT`.
+- Добавлен `docs/LOCAL_RUN_AND_DEPLOY.md`: порядок локального запуска на Windows 11, env setup, backend/web/mobile запуск, проверки, server rollout checklist, что нужно добавить для full Docker production.
+- README заменён на короткую актуальную инструкцию без старого утверждения, что PostgreSQL локально не Docker.
+- Проверки прошли: `docker compose config`, `npm.cmd test -w @wibestyle/web-app`, `npm.cmd test -w @wibestyle/mobile-app`, `npm.cmd run lint -w @wibestyle/mobile-app`, `services/api/gradlew.bat test --console=plain`.
+
+## 2026-06-11 (Web/mobile onboarding)
+- Web-app `/welcome`: старый welcome + 3 карточки заменён на 7-экранный mobile-first onboarding с фото, точками навигации, понятным flow “фото → ссылка → AI-примерка”, преимуществами, будущим AI-стилистом и финальным CTA `Подключить trial`.
+- Web-app onboarding content вынесен в `apps/web-app/lib/onboarding-copy.ts`; добавлен `FIRST100` promo handling для deep links с `?promo=` и landing offer `?offer=first100`.
+- Web-app paywall обновлён: читаемые русские тексты, кнопка `Подключить trial`, аккуратный дисклеймер по ошибкам AI-примерки, solid fashion-палитра без новых градиентов.
+- Mobile Expo `/welcome`: добавлен нативный 7-экранный onboarding в mobile-first стиле с локальными фото, CTA к `/paywall`, входом/пропуском и дисклеймерами.
+- Mobile Expo `/paywall`: обновлены тексты, CTA `Подключить trial`, рубли и предупреждение о возможных ошибках генерации.
+- Replaceable assets: web `apps/web-app/public/assets/onboarding/`, mobile `apps/mobile-app/assets/onboarding/`; временно используются демо-фото из landing.
+- Mobile OAuthButtons скопирован в `apps/mobile-app/src/components/auth/`, чтобы alias `@/*` совпадал с tsconfig.
+- Tests: добавлены/обновлены проверки onboarding-copy для web и mobile.
+- Проверки прошли: `npm.cmd test -w @wibestyle/web-app`, `npm.cmd run build -w @wibestyle/web-app`, `npm.cmd test -w @wibestyle/mobile-app`, `npm.cmd run lint -w @wibestyle/mobile-app`.
+- `npm.cmd install` добавил отсутствующие пакеты для mobile dependency graph и обновил `package-lock.json`; npm audit сообщает 20 существующих vulnerabilities, они не исправлялись в рамках этой фичи.
+
 ## 2026-06-10 (Landing before/after banner component)
 - Landing: заменён главный raster-баннер `before-after.png` на компонентный `BeforeAfterSection` в `apps/landing/components/home/`.
 - Добавлены `BeforeAfterCard`-карточки с DOM-лейблами «до»/«после», before image, after poster и after video.

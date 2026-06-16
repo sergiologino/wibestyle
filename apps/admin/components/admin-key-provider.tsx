@@ -42,9 +42,9 @@ export function AdminKeyProvider({ children }: { children: ReactNode }) {
       return;
     }
     setError(null);
-    const ok = await verifyAdminKey(trimmed);
-    if (!ok) {
-      setError("Ключ не принят API. Локально по умолчанию: dev-admin-key (см. WIBESTYLE_ADMIN_API_KEY)");
+    const verification = await verifyAdminKey(trimmed);
+    if (!verification.ok) {
+      setError(verification.message);
       return;
     }
     saveAdminKey(trimmed);
@@ -60,13 +60,13 @@ export function AdminKeyProvider({ children }: { children: ReactNode }) {
       {showKeyPanel ? (
         <div className="border-b border-[#ffd1ed] bg-[#fff8fc] px-4 py-4">
           <form className="mx-auto flex max-w-5xl flex-wrap items-end gap-3" onSubmit={onSave}>
-            <AdminField label="X-Admin-Key" hint="Один раз для всех разделов (dev: dev-admin-key)" className="min-w-[280px] flex-1">
+            <AdminField label="X-Admin-Key" hint="Значение WIBESTYLE_ADMIN_API_KEY на backend" className="min-w-[280px] flex-1">
               <input
                 id="admin-key-global"
                 className="rounded-xl border border-[#ffd1ed] px-4 py-2 font-bold"
                 value={draftKey}
                 onChange={(event) => setDraftKey(event.target.value)}
-                placeholder="dev-admin-key"
+                placeholder="Введите admin API key"
               />
             </AdminField>
             <Button type="submit">Сохранить ключ</Button>

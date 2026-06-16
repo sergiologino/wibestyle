@@ -1,5 +1,48 @@
 # Current State
 
+## AI provider fallback and admin priorities (2026-06-15)
+- Фото-примерка и season-hit video по-прежнему идут через единый сервис `noteapp-ai-integration`; backend меняет только `networkName` в `/api/ai/process`.
+- Добавлена таблица `ai_provider_priorities`: для `VIRTUAL_TRY_ON_PHOTO` и `VIRTUAL_TRY_ON_VIDEO` хранится порядок нейросетей, человекочитаемое имя и флаг `enabled`.
+- Default route:
+  - photo: `wibestyle-vton` → `fashn-try-on-photo` → `kling-try-on-photo`;
+  - video: `wibestyle-season-video` → `fashn-try-on-video` → `kling-try-on-video`.
+- Worker делает fallback на следующую нейросеть при ошибке генерации, timeout, пустом ответе, модерации контента или исчерпании токенов/квоты. Prompt и изображения готовятся один раз на job.
+- AI logs получили поля `operation`, `attemptNumber`, `fallbackReason`, чтобы в админке было видно, какая нейросеть обработала запрос и почему был переход на запасную.
+- Admin UI: новая страница `/ai-providers` управляет приоритетами фото и видео. Страница `/ai-logs` показывает операцию, попытку и причину fallback.
+- Проверки: `services/api/gradlew.bat test --console=plain`, `npm.cmd test -w @wibestyle/admin`, `npm.cmd run build -w @wibestyle/admin` проходят.
+
+## Env / local run / deploy docs (2026-06-12)
+- Обновлены `.env.example` для backend (`services/api/.env.example`), web-app (`apps/web-app/.env.example`) и mobile-app (`apps/mobile-app/.env.example`) с описанием переменных.
+- `docker-compose.yml` теперь поднимает локальную инфраструктуру PostgreSQL 16 + Redis 7 с named volumes и healthchecks.
+- `services/api/src/main/resources/application.yml` теперь читает `SERVER_PORT`, `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT` из env.
+- Добавлен свежий runbook `docs/LOCAL_RUN_AND_DEPLOY.md`: порядок запуска на Windows 11, env-файлы, mobile URL для emulator/device, проверки и серверный checklist.
+- README заменён на краткую актуальную инструкцию и больше не говорит, что PostgreSQL обязательно должен быть вне Docker.
+- Проверено: `docker compose config`, `npm.cmd test -w @wibestyle/web-app`, `npm.cmd test -w @wibestyle/mobile-app`, `npm.cmd run lint -w @wibestyle/mobile-app`, `services/api/gradlew.bat test --console=plain`.
+- Важно: текущий compose готов для локальной инфраструктуры, но не является full production compose для API/Next apps, потому что Dockerfile-ов для сервисов пока нет.
+
+## Landing asset replacement note (2026-06-13)
+- Landing disables `next/image` optimization globally, so replaceable files under `apps/landing/public/assets/` are served directly as `/assets/...` instead of cached `/_next/image` output.
+- Hero right collage (`HeroCollage`) now renders `female-card-1..4.png` and product image with `next/image unoptimized`, so asset replacement uses direct `/assets/female-card-*.png` files instead of cached `/_next/image` output.
+- Hero right collage cards are spaced with lighter overlap, the duplicate outer "Летний вайб" label is removed, and the Wildberries product card sits lower so outfit labels remain readable.
+- Before/after banner images are direct assets: replace `apps/landing/public/assets/before-after-demo/look-*-before.png` and `look-*-after-poster.png`; replace or remove matching `look-*-after.mp4` if the animated "after" state must change too.
+- Examples gallery (`female-cards`) now prefers `look-*.png` before `webp` and renders replacement images unoptimized; replace files in `apps/landing/public/assets/female-cards/`.
+- Style showcase "для него" card uses the direct file `apps/landing/public/assets/style-showcase/men.png`. The "стили" eyebrow is plain yellow text without a badge background.
+- `/podbor-obraza` uses dedicated visuals from `apps/landing/public/assets/look-request/`: `full-look.png`, `accessories.png`, `shoes.png`, `makeup.png`, so the page no longer enlarges shared landing cards.
+- `female-cards-data.test.ts` accepts image fallback by basename with `png/jpg/jpeg/webp/avif`, matching the production replacement rule for `/public/assets/female-cards/`.
+- Проверки: `npm.cmd test -w @wibestyle/landing`, `npm.cmd run build -w @wibestyle/landing` проходят.
+
+## Онбординг web/mobile (2026-06-11)
+- Добавлен новый mobile-first onboarding для web-app и Android Expo: 7 экранов вместо старого welcome-экрана.
+- Первые 3 экрана объясняют основной flow: фото пользователя → ссылка на товар → AI-примерка результата.
+- Следующие экраны раскрывают преимущества: меньше хаоса перед покупкой, приватность, будущий AI-стилист по запросу.
+- Финальный экран ведёт к trial/paywall и показывает промокод `FIRST100` для первых 100 пользователей.
+- В тексты добавлен аккуратный дисклеймер: AI-примерка может ошибаться в посадке, слоях одежды, деталях ткани и обработке белья; качество дорабатывается.
+- Web assets для A/B замены: `apps/web-app/public/assets/onboarding/`.
+- Mobile assets для A/B замены: `apps/mobile-app/assets/onboarding/`.
+- Mobile OAuth-кнопки скопированы в ожидаемую структуру `apps/mobile-app/src/components/auth/`, чтобы `@/*` alias и TypeScript видели компонент.
+- Проверки: `npm.cmd test -w @wibestyle/web-app`, `npm.cmd run build -w @wibestyle/web-app`, `npm.cmd test -w @wibestyle/mobile-app`, `npm.cmd run lint -w @wibestyle/mobile-app` проходят.
+- `npm.cmd install` обновил зависимости и `package-lock.json`; npm audit показывает существующие 20 vulnerabilities, отдельного исправления зависимостей не выполнялось.
+
 ## Фактическое состояние
 - **Monorepo** WibeStyle: лендинг, web-app, admin, **mobile Android (Expo)**, backend API, shared packages.
 - **Web app**: полный UX-flow + search/gallery + billing paywall + promo deep links.

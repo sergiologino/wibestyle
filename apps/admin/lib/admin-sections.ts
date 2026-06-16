@@ -59,7 +59,8 @@ export const adminSections = [
     id: "providers",
     title: "AI providers",
     description: "Приоритеты noteapp-ai-integration, fallback и health.",
-    status: "Planned",
+    status: "Ready",
+    href: "/ai-providers",
   },
 ] as const;
 

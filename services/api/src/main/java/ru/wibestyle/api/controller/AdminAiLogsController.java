@@ -93,6 +93,9 @@ public class AdminAiLogsController {
         item.put("modelName", log.getModelName());
         item.put("modelLabel", AiIntegrationLogService.humanModelLabel(log.getModelName(), log.getProvider()));
         item.put("provider", log.getProvider());
+        item.put("operation", log.getOperation());
+        item.put("attemptNumber", log.getAttemptNumber());
+        item.put("fallbackReason", log.getFallbackReason());
         item.put("status", log.getStatus());
         item.put("noteappRequestId", log.getNoteappRequestId());
         item.put("createdAt", log.getCreatedAt().toString());

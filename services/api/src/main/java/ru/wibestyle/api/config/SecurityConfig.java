@@ -37,7 +37,11 @@ public class SecurityConfig {
                 "https://127.0.0.1:*",
                 "https://wibestyle.ru",
                 "https://*.wibestyle.ru",
-                "https://app.wibestyle.ru"
+                "https://app.wibestyle.ru",
+                "https://vibestyle.art",
+                "https://*.vibestyle.art",
+                "https://app.vibestyle.art",
+                "https://admin.vibestyle.art"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of(

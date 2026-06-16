@@ -11,4 +11,10 @@ describe("adminSections", () => {
     expect(gallery?.href).toBe("/gallery");
     expect(gallery?.status).toBe("Ready");
   });
+
+  it("links AI providers module", () => {
+    const providers = adminSections.find((section) => section.id === "providers");
+    expect(providers?.href).toBe("/ai-providers");
+    expect(providers?.status).toBe("Ready");
+  });
 });

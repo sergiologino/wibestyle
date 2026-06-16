@@ -26,6 +26,7 @@ export default function ExamplesGallerySection() {
               alt={card.alt}
               width={600}
               height={800}
+              unoptimized
               sizes="(max-width: 860px) 100vw, 25vw"
             />
           )}

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { buildPromoDeepLink, containsCyrillicHomoglyphs, validatePromoCodeInput } from "./promo-code";
 
 describe("validatePromoCodeInput", () => {
@@ -14,8 +14,9 @@ describe("validatePromoCodeInput", () => {
   });
 
   it("builds deep links with promo query param", () => {
-    expect(buildPromoDeepLink("https://app.wibestyle.ru", "VK20", "/welcome")).toBe(
-      "https://app.wibestyle.ru/welcome?promo=VK20",
+    expect(buildPromoDeepLink("https://app.vibestyle.art", "VK20", "/welcome")).toBe(
+      "https://app.vibestyle.art/welcome?promo=VK20",
     );
   });
 });
+

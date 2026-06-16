@@ -1,7 +1,0 @@
-ALTER TABLE try_on_sessions ADD COLUMN IF NOT EXISTS video_status VARCHAR(32) NOT NULL DEFAULT 'none';
-ALTER TABLE try_on_sessions ADD COLUMN IF NOT EXISTS after_video_url VARCHAR(512);
-ALTER TABLE try_on_sessions ADD COLUMN IF NOT EXISTS video_error_code VARCHAR(64);
-ALTER TABLE try_on_sessions ADD COLUMN IF NOT EXISTS video_error_message VARCHAR(512);
-
-ALTER TABLE gallery_posts ADD COLUMN IF NOT EXISTS video_url VARCHAR(512);
-ALTER TABLE gallery_posts ADD COLUMN IF NOT EXISTS media_type VARCHAR(16) NOT NULL DEFAULT 'image';

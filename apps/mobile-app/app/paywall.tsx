@@ -37,7 +37,7 @@ export default function PaywallScreen() {
       await refreshProfile();
       router.replace("/(main)/home");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Оформление недоступно");
+      setError(err instanceof ApiError ? err.message : "Оформление сейчас недоступно");
     } finally {
       setLoading(false);
     }
@@ -46,13 +46,15 @@ export default function PaywallScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Pressable style={styles.close} onPress={() => router.back()}>
+        <Pressable style={styles.close} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Закрыть">
           <Feather name="x" size={22} color={colors.black} />
         </Pressable>
 
-        <Eyebrow>Тарифы</Eyebrow>
-        <DisplayTitle>Wibe & Elite</DisplayTitle>
-        <BodyText>Больше примерок, приоритет AI и Elite-фишки — видео «Хит сезона».</BodyText>
+        <Eyebrow>Пейволл</Eyebrow>
+        <DisplayTitle>Подключи trial</DisplayTitle>
+        <BodyText>
+          Больше AI-примерок, история образов и доступ к тарифам Wibe и Elite. Для первых 100 пользователей действует промокод с лендинга.
+        </BodyText>
 
         <View style={styles.toggle}>
           {(["monthly", "annual"] as BillingPeriod[]).map((period) => (
@@ -93,8 +95,10 @@ export default function PaywallScreen() {
         ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button label="Оформить (dev)" loading={loading} onPress={subscribeDev} />
-        <BodyText>В production — оплата через YooKassa в браузере или in-app позже.</BodyText>
+        <Button label="Подключить trial" loading={loading} onPress={subscribeDev} />
+        <BodyText>
+          AI может ошибаться в посадке, слоях одежды и обработке белья. Мы улучшаем качество и исправляем такие случаи.
+        </BodyText>
       </ScrollView>
     </Screen>
   );
@@ -157,7 +161,7 @@ const styles = StyleSheet.create({
   planPrice: {
     fontFamily: "Manrope_300Light",
     fontSize: 28,
-    color: colors.violet,
+    color: colors.pink,
   },
   planMeta: {
     fontFamily: "Manrope_400Regular",
