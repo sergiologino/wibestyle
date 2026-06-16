@@ -16,7 +16,9 @@ describe("onboardingSlides", () => {
   });
 
   it("keeps replaceable media in the onboarding public folder", () => {
-    expect(onboardingSlides.every((slide) => slide.image.startsWith("/assets/onboarding/"))).toBe(true);
+    expect(onboardingSlides.every((slide) => slide.image.startsWith("/assets/onboarding/slides/"))).toBe(true);
+    expect(onboardingSlides.every((slide) => slide.mediaBase.startsWith("/assets/onboarding/slides/"))).toBe(true);
+    expect(onboardingSlides.every((slide) => slide.image === `${slide.mediaBase}.png`)).toBe(true);
   });
 
   it("documents the first-100 promo code", () => {

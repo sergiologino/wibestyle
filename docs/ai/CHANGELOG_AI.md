@@ -1,5 +1,12 @@
 # AI Changelog
 
+## 2026-06-16 (Onboarding replaceable media and ad logo)
+- Web onboarding media moved to dedicated replaceable files under `apps/web-app/public/assets/onboarding/slides/`.
+- Web `/welcome` now prefers `*.mp4` by slide basename and falls back to the matching `*.png`, so A/B media can be replaced without editing React code.
+- Mobile onboarding media moved to `apps/mobile-app/assets/onboarding/slides/`; current Expo build uses images only, because no video runtime package is installed.
+- Web app top brand mark was lowered slightly so the round logo is no longer clipped at the viewport edge.
+- Added round PNG logo for ads/publications: `apps/web-app/public/assets/brand/app-logo-round.png`, `apps/landing/public/assets/brand/app-logo-round.png`, `apps/mobile-app/assets/app-logo-round.png`.
+
 ## 2026-06-15 (AI provider fallback through noteapp-ai-integration)
 - Backend keeps one integration path: every photo/video request still goes to `noteapp-ai-integration` `/api/ai/process`; fallback is controlled by changing `networkName`.
 - Added Flyway `V20__ai_provider_priorities.sql` with `ai_provider_priorities` and extra AI log fields: `operation`, `attempt_number`, `fallback_reason`.

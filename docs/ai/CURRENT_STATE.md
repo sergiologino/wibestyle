@@ -1,5 +1,12 @@
 # Current State
 
+## Onboarding replaceable media and brand logo (2026-06-16)
+- Web onboarding uses dedicated replaceable media in `apps/web-app/public/assets/onboarding/slides/`.
+- For each web onboarding slide, place `<basename>.mp4` to show video first; if the mp4 is absent or fails, the app falls back to `<basename>.png`.
+- Current basenames: `upload-photo`, `flow-photo`, `result-photo`, `style-photo`, `privacy-photo`, `future-photo`, `paywall-photo`.
+- Mobile onboarding uses separate replaceable images in `apps/mobile-app/assets/onboarding/slides/` with the same basenames. Mobile mp4 support is not enabled yet because the Expo app has no video package in the dependency graph.
+- Round PNG logo for ads/publications is available at `apps/web-app/public/assets/brand/app-logo-round.png`, `apps/landing/public/assets/brand/app-logo-round.png`, and `apps/mobile-app/assets/app-logo-round.png`.
+
 ## AI provider fallback and admin priorities (2026-06-15)
 - Фото-примерка и season-hit video по-прежнему идут через единый сервис `noteapp-ai-integration`; backend меняет только `networkName` в `/api/ai/process`.
 - Добавлена таблица `ai_provider_priorities`: для `VIRTUAL_TRY_ON_PHOTO` и `VIRTUAL_TRY_ON_VIDEO` хранится порядок нейросетей, человекочитаемое имя и флаг `enabled`.
