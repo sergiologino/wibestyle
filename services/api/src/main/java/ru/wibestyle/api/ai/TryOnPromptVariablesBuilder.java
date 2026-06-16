@@ -66,6 +66,22 @@ public final class TryOnPromptVariablesBuilder {
         if (session.getGarmentCategory() != null && !session.getGarmentCategory().isBlank()) {
             product.put("category", session.getGarmentCategory().trim());
         }
+        product.put("promptProfile", GarmentClassification.normalizePromptProfile(
+                session.getGarmentPromptProfile(),
+                session.getGarmentCategory()
+        ));
+        product.put("coverageLevel", GarmentClassification.normalizeCoverageLevel(
+                session.getGarmentCoverageLevel(),
+                session.getGarmentCategory()
+        ));
+        product.put("moderationRisk", GarmentClassification.normalizeModerationRisk(
+                session.getGarmentModerationRisk(),
+                session.getGarmentCategory()
+        ));
+        product.put("productPhotoHasHumanModel", session.isGarmentHasHumanModel());
+        if (session.isGarmentHasHumanModel()) {
+            product.put("sellerModelPolicy", "Ignore the seller model person completely; use image2 only for garment details.");
+        }
         if (session.getSelectedSize() != null && !session.getSelectedSize().isBlank()) {
             product.put("marketplaceLabelSize", session.getSelectedSize().trim());
         }

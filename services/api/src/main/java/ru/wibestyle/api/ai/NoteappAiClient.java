@@ -155,6 +155,19 @@ public class NoteappAiClient {
         if (session.getGarmentCategory() != null && !session.getGarmentCategory().isBlank()) {
             payload.put("garmentCategory", session.getGarmentCategory().trim());
         }
+        payload.put("garmentPromptProfile", GarmentClassification.normalizePromptProfile(
+                session.getGarmentPromptProfile(),
+                session.getGarmentCategory()
+        ));
+        payload.put("garmentCoverageLevel", GarmentClassification.normalizeCoverageLevel(
+                session.getGarmentCoverageLevel(),
+                session.getGarmentCategory()
+        ));
+        payload.put("garmentModerationRisk", GarmentClassification.normalizeModerationRisk(
+                session.getGarmentModerationRisk(),
+                session.getGarmentCategory()
+        ));
+        payload.put("garmentHasHumanModel", session.isGarmentHasHumanModel());
         payload.put("selectedSize", session.getSelectedSize());
         if (personImageBase64 != null) {
             payload.put("personImageBase64", personImageBase64);
