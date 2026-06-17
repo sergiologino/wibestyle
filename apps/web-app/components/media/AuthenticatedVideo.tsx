@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
+import { isProtectedApiMediaUrl } from "@/lib/api-media";
 
 type AuthenticatedVideoProps = {
   src: string;
@@ -12,7 +13,11 @@ type AuthenticatedVideoProps = {
 };
 
 function isDirectVideoSrc(src: string) {
-  return src.startsWith("http://") || src.startsWith("https://") || src.startsWith("blob:");
+  return (
+    src.startsWith("/assets/") ||
+    src.startsWith("blob:") ||
+    ((src.startsWith("http://") || src.startsWith("https://")) && !isProtectedApiMediaUrl(src))
+  );
 }
 
 export default function AuthenticatedVideo({
