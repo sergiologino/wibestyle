@@ -79,9 +79,11 @@ public final class TryOnPromptVariablesBuilder {
                 session.getGarmentCategory()
         ));
         product.put("productPhotoHasHumanModel", session.isGarmentHasHumanModel());
-        if (session.isGarmentHasHumanModel()) {
-            product.put("sellerModelPolicy", "Ignore the seller model person completely; use image2 only for garment details.");
-        }
+        product.put(
+                "sellerModelPolicy",
+                "If image2 contains a seller model, mannequin or any person, ignore that person completely. "
+                        + "Use image2 only for garment color, fabric, cut, silhouette, print and clothing details."
+        );
         if (session.getSelectedSize() != null && !session.getSelectedSize().isBlank()) {
             product.put("marketplaceLabelSize", session.getSelectedSize().trim());
         }

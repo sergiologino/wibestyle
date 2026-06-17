@@ -1,161 +1,80 @@
 package ru.wibestyle.api.ai;
 
-
-
 import ru.wibestyle.api.domain.AvatarSnapshotEntity;
-
 import ru.wibestyle.api.marketplace.ProductSizeChart;
-
 import ru.wibestyle.api.marketplace.SizeChartEntry;
 
-
-
 /**
-
- * Блок сохранения фигуры для промпта примерки (русский, уходит в JSON переменных).
-
+ * Figure preservation block for the virtual try-on prompt.
  */
-
 public final class FigureLockPromptBuilder {
 
-
-
     private FigureLockPromptBuilder() {
-
     }
-
-
 
     public static String build(AvatarSnapshotEntity snapshot, String selectedGarmentSize, ProductSizeChart sellerChart) {
-
         if (snapshot == null) {
-
             return "";
-
         }
-
         StringBuilder builder = new StringBuilder();
-
-        builder.append("ФИГУРА (приоритет над биркой размера): image1 — эталон объёма тела. ");
-
-        builder.append("Совпади с силуэтом на фото И с замерами пользователя: ");
-
+        builder.append("FIGURE LOCK, HIGH PRIORITY: image1 is the only body and proportions reference. ");
+        builder.append("Match the generated person to the visible silhouette in image1 and to the customer's measurements: ");
         appendMetrics(builder, snapshot);
-
-        builder.append("ЗАПРЕЩЕНО: уменьшать грудь, бёдра, утончать фигуру на 1–2 размера, ");
-
-        builder.append("пропорции манекена каталога. ");
-
+        builder.append("FORBIDDEN: shrinking the bust, hips or waist, slimming the person by 1-2 sizes, ");
+        builder.append("or replacing image1 proportions with catalog model proportions. ");
         if (snapshot.getBustCm() != null && snapshot.getBustCm() >= 94) {
-
-            builder.append("Полная грудь (")
-
+            builder.append("Full bust (")
                     .append(snapshot.getBustCm())
-
-                    .append(" см) — сохрани тот же объём и форму груди, что на image1. ");
-
+                    .append(" cm): preserve the same bust volume and shape as in image1. ");
         }
-
         if (selectedGarmentSize != null && !selectedGarmentSize.isBlank()) {
-
-            builder.append("Бирка маркетплейса ").append(selectedGarmentSize)
-
-                    .append(" не должна сужать тело — может быть тесная ткань, фигура остаётся прежней. ");
-
+            builder.append("The marketplace label size ").append(selectedGarmentSize)
+                    .append(" must not narrow the body; show tight fabric if needed, while the body remains unchanged. ");
         }
-
         appendSellerChartHint(builder, selectedGarmentSize, sellerChart);
-
-        builder.append("Повтор: грудь и бёдра как на image1 и в замерах.");
-
+        builder.append("Repeat: bust, waist, hips, shoulders and limb proportions must match image1 and the measurements.");
         return builder.toString().replaceAll("\\s+", " ").trim();
-
     }
-
-
 
     private static void appendMetrics(StringBuilder builder, AvatarSnapshotEntity snapshot) {
-
         if (snapshot.getHeightCm() != null) {
-
-            builder.append("рост ").append(snapshot.getHeightCm()).append(" см, ");
-
+            builder.append("height ").append(snapshot.getHeightCm()).append(" cm, ");
         }
-
         if (snapshot.getBustCm() != null) {
-
-            builder.append("грудь ").append(snapshot.getBustCm()).append(" см, ");
-
+            builder.append("bust ").append(snapshot.getBustCm()).append(" cm, ");
         }
-
         if (snapshot.getWaistCm() != null) {
-
-            builder.append("талия ").append(snapshot.getWaistCm()).append(" см, ");
-
+            builder.append("waist ").append(snapshot.getWaistCm()).append(" cm, ");
         }
-
         if (snapshot.getHipsCm() != null) {
-
-            builder.append("бёдра ").append(snapshot.getHipsCm()).append(" см, ");
-
+            builder.append("hips ").append(snapshot.getHipsCm()).append(" cm, ");
         }
-
         if (snapshot.getClothingSize() != null && !snapshot.getClothingSize().isBlank()) {
-
-            builder.append("обычный размер одежды ").append(snapshot.getClothingSize().trim()).append(", ");
-
+            builder.append("usual clothing size ").append(snapshot.getClothingSize().trim()).append(", ");
         }
-
     }
-
-
 
     private static void appendSellerChartHint(StringBuilder builder, String selectedSize, ProductSizeChart chart) {
-
         if (chart == null || !chart.found() || selectedSize == null) {
-
             return;
-
         }
-
         for (SizeChartEntry entry : chart.entries()) {
-
             if (!sizeLabelMatches(selectedSize, entry.label())) {
-
                 continue;
-
             }
-
             if (entry.bustMaxCm() != null) {
-
-                builder.append("В сетке продавца ").append(entry.label())
-
-                        .append(" грудь до ").append(entry.bustMaxCm()).append(" см — ")
-
-                        .append("на более полной фигуре вещь может сидеть в обтяжку, тело не уменьшать. ");
-
+                builder.append("In the seller size chart, ").append(entry.label())
+                        .append(" fits bust up to ").append(entry.bustMaxCm()).append(" cm; ")
+                        .append("on a fuller figure the garment may look tight, but the body must not be reduced. ");
             }
-
             return;
-
         }
-
     }
-
-
 
     private static boolean sizeLabelMatches(String selected, String chartLabel) {
-
         if (selected == null || chartLabel == null) {
-
             return false;
-
         }
-
         return selected.trim().equalsIgnoreCase(chartLabel.trim());
-
     }
-
 }
-
-

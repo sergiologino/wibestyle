@@ -27,24 +27,17 @@ public class VirtualTryOnPromptBuilder {
 
 
     static final String DEFAULT_VTON_BASE_RU = """
-
-            Виртуальная примерка одежды для интернет-магазина (как на Wildberries/Ozon).
-
-            На фото image1 — покупатель: единственный источник лица, волос, тона кожи и фигуры.
-
-            На фото image2 — товар с карточки маркетплейса (часто с моделью в одежде).
-
-            С image2 возьми только одежду; лицо и тело модели на image2 не использовать.
-
-            Одень человека с image1 в вещь с image2. Лицо, причёска и пропорции тела — строго с image1.
-
-            Фотореализм, нейтральный студийный фон, вертикаль 3:4, PG-каталог, не эротика.
-
+            Virtual fitting of clothes for an online store.
+            image1 is the customer and is the only source for face, hair, skin tone, pose, body shape and proportions.
+            image2 is the product photo and is only a reference for the garment.
+            Transfer the garment from image2 onto the customer from image1.
+            Never use any face, head, hair, body, pose, limbs or identity from image2.
+            Photorealistic catalog image, neutral studio background, vertical 3:4, PG-safe styling.
             """.trim().replaceAll("\\s+", " ");
 
 
 
-    private static final String VARIABLES_HEADER = "\n\n--- ДАННЫЕ ПРИМЕРКИ (JSON, добавляет система) ---\n";
+    private static final String VARIABLES_HEADER = "\n\n--- TRY-ON VARIABLES (JSON, added by the system) ---\n";
 
 
 
@@ -162,8 +155,8 @@ public class VirtualTryOnPromptBuilder {
         );
         String category = GarmentClassification.normalizeCategory(session.getGarmentCategory());
         String modelLock = session.isGarmentHasHumanModel()
-                ? "The product image contains a seller model/mannequin. Treat that person as a non-human garment stand: do not copy their face, head, hair, skin tone, age, pose, body proportions, hands or legs."
-                : "If the product image contains any seller model/mannequin, ignore the person completely and extract only the garment.";
+                ? "The product image contains or may contain a seller model/mannequin. Treat that person as a non-human garment stand: do not copy their face, head, hair, skin tone, age, pose, body proportions, hands or legs."
+                : "Assume the product image may contain a seller model/mannequin. If any person is visible in image2, ignore that person completely and extract only the garment.";
         String base = """
                 PROMPT PROFILE: %s. Garment category: %s. %s
                 Identity priority: image1 is the only source for face, head, hair, skin tone, body proportions, height impression and pose.

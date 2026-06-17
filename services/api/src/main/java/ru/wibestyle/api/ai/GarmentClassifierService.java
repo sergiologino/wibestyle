@@ -23,7 +23,7 @@ public class GarmentClassifierService {
     private static final String SYSTEM_PROMPT = """
             You classify a single clothing item in a photo for a virtual try-on app.
             Reply with ONE JSON object only, no markdown:
-            {"category":"<slug>","title":"<short Russian name>","promptProfile":"<slug>","coverageLevel":"<slug>","moderationRisk":"<slug>","hasHumanModel":true}
+            {"category":"<slug>","title":"<short product name>","promptProfile":"<slug>","coverageLevel":"<slug>","moderationRisk":"<slug>","hasHumanModel":true}
             category must be one of: dress, top, pants, jacket, shoes, accessory, underwear, sleepwear, swimwear, other
             - dress: dresses, sundresses, gowns
             - top: t-shirts, blouses, shirts, sweaters, hoodies, tops
@@ -39,7 +39,7 @@ public class GarmentClassifierService {
             coverageLevel must be one of: normal, revealing, intimate
             moderationRisk must be one of: low, medium, high
             hasHumanModel is true when a person/model/mannequin body is visible in the product photo.
-            title: concise Russian product name (2-5 words), e.g. "Платье миди", "Куртка oversize".
+            title: concise product name (2-5 words), e.g. "Midi dress", "Oversize jacket".
             """;
 
     private final NoteappAiClient noteappAiClient;
@@ -69,8 +69,8 @@ public class GarmentClassifierService {
 
     public GarmentClassification classifyBytes(byte[] bytes, String mimeType, GarmentClassification fallback) {
         GarmentClassification resolvedFallback = fallback == null
-                ? new GarmentClassification("other", null, "fallback")
-                : fallback;
+                ? conservativeFallback(new GarmentClassification("other", null, "fallback"))
+                : conservativeFallback(fallback);
         if (bytes == null || bytes.length == 0 || !aiProperties.isChatNetworkConfigured()) {
             return resolvedFallback;
         }
@@ -86,6 +86,7 @@ public class GarmentClassifierService {
             );
             GarmentClassification parsed = parseResponse(response);
             if (parsed != null) {
+                boolean hasHumanModel = parsed.hasHumanModel() || "other".equals(parsed.category());
                 return new GarmentClassification(
                         parsed.category(),
                         parsed.title(),
@@ -93,7 +94,7 @@ public class GarmentClassifierService {
                         parsed.promptProfile(),
                         parsed.coverageLevel(),
                         parsed.moderationRisk(),
-                        parsed.hasHumanModel()
+                        hasHumanModel
                 );
             }
         } catch (Exception ex) {
@@ -147,35 +148,50 @@ public class GarmentClassifierService {
     public GarmentClassification fallbackFromText(String text, String defaultTitle) {
         String lower = text == null ? "" : text.toLowerCase(Locale.ROOT).replace('ё', 'е');
         String category = "other";
-        String title = defaultTitle == null || defaultTitle.isBlank() ? "Одежда" : defaultTitle.trim();
+        String title = defaultTitle == null || defaultTitle.isBlank() ? "Garment" : defaultTitle.trim();
 
         if (containsAny(lower, "underwear", "lingerie", "bra", "panties", "бель", "бюстгальтер", "трусы")) {
             category = "underwear";
-            title = "Нижнее белье";
+            title = "Underwear";
         } else if (containsAny(lower, "sleep", "pajama", "night", "пижам", "ночн", "халат")) {
             category = "sleepwear";
-            title = "Домашняя одежда";
+            title = "Sleepwear";
         } else if (containsAny(lower, "swim", "bikini", "купаль", "пляж")) {
             category = "swimwear";
-            title = "Купальник";
+            title = "Swimwear";
         } else if (containsAny(lower, "dress", "plat", "плать", "сарафан")) {
             category = "dress";
-            title = "Платье";
+            title = "Dress";
         } else if (containsAny(lower, "shoe", "obuv", "boot", "обув", "ботин", "кроссов", "туфл")) {
             category = "shoes";
-            title = "Обувь";
+            title = "Shoes";
         } else if (containsAny(lower, "jacket", "pidzh", "coat", "куртк", "пидж", "пальто", "кардиган")) {
             category = "jacket";
-            title = "Верхняя одежда";
+            title = "Outerwear";
         } else if (containsAny(lower, "pant", "jean", "bruk", "брюк", "джинс", "юбк", "шорт")) {
             category = "pants";
-            title = "Низ";
+            title = "Bottom garment";
         } else if (containsAny(lower, "shirt", "top", "blouse", "рубаш", "блуз", "футбол", "свитер", "худи")) {
             category = "top";
-            title = "Верх";
+            title = "Top garment";
         }
 
-        return new GarmentClassification(category, title, "fallback");
+        return conservativeFallback(new GarmentClassification(category, title, "fallback"));
+    }
+
+    private static GarmentClassification conservativeFallback(GarmentClassification classification) {
+        if (classification == null || classification.hasHumanModel()) {
+            return classification;
+        }
+        return new GarmentClassification(
+                classification.category(),
+                classification.title(),
+                classification.source(),
+                classification.promptProfile(),
+                classification.coverageLevel(),
+                classification.moderationRisk(),
+                true
+        );
     }
 
     private static boolean containsAny(String value, String... needles) {

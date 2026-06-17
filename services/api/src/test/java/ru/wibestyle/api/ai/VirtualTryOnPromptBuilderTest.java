@@ -67,13 +67,14 @@ class VirtualTryOnPromptBuilderTest {
 
         assertThat(prompt).startsWith("FACE AND IDENTITY LOCK");
         assertThat(prompt).contains("Base prompt from admin.");
-        assertThat(prompt).contains("ДАННЫЕ ПРИМЕРКИ (JSON");
+        assertThat(prompt).contains("TRY-ON VARIABLES (JSON");
         assertThat(prompt).contains("\"faceLock\"");
         assertThat(prompt).contains("PROMPT PROFILE: dress");
         assertThat(prompt).contains("Never duplicate the seller model");
         assertThat(prompt).contains("\"marketplaceLabelSize\" : \"M\"");
         assertThat(prompt).contains("\"promptProfile\" : \"dress\"");
         assertThat(prompt).contains("\"productPhotoHasHumanModel\" : true");
+        assertThat(prompt).contains("\"sellerModelPolicy\"");
         assertThat(prompt).contains("Size S is too tight");
         assertThat(prompt).contains("Summer dress");
     }
