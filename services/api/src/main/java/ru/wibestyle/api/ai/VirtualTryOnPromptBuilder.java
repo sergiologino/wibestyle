@@ -28,6 +28,7 @@ public class VirtualTryOnPromptBuilder {
 
     static final String DEFAULT_VTON_BASE_RU = """
             Virtual fitting of clothes for an online store.
+            Input mapping: image1 = customer avatar/person photo (payload fields image1Base64/personImageBase64); image2 = product garment photo (payload fields image2Base64/garmentImageBase64).
             image1 is the customer and is the only source for face, hair, skin tone, pose, body shape and proportions.
             image2 is the product photo and is only a reference for the garment.
             Transfer the garment from image2 onto the customer from image1.
@@ -159,6 +160,7 @@ public class VirtualTryOnPromptBuilder {
                 : "Assume the product image may contain a seller model/mannequin. If any person is visible in image2, ignore that person completely and extract only the garment.";
         String base = """
                 PROMPT PROFILE: %s. Garment category: %s. %s
+                Input mapping: image1 is the customer avatar/person photo; image2 is the product garment photo.
                 Identity priority: image1 is the only source for face, head, hair, skin tone, body proportions, height impression and pose.
                 Product priority: image2 is only a garment/material/color/detail reference. Never duplicate the seller model from image2.
                 If image1 and image2 conflict, preserve image1 identity and body and adapt only the clothing.
