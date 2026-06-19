@@ -153,6 +153,30 @@ Debug-сборка **не содержит JS внутри APK** — ей нуж
 
 После `npx expo prebuild` папка `apps/mobile-app/android/` — открывайте её в Android Studio.
 
+### Release bundle: `Unable to resolve module ./node_modules/expo-router/entry.js`
+
+На Windows React Native Gradle передаёт entry-файл относительно корня мобильного
+приложения. В monorepo Metro должен использовать тот же server root. Это закреплено в
+`apps/mobile-app/metro.config.js` через `config.server.unstable_serverRoot = projectRoot`.
+
+После обновления репозитория пересобирать native-проект не требуется:
+
+```powershell
+cd E:\1_MyProjects\Look\wibestyle\apps\mobile-app
+npm run verify:bundle
+$env:NODE_ENV = "production"
+cd android
+.\gradlew.bat clean assembleRelease
+```
+
+### Windows CMake/Ninja: `CMAKE_OBJECT_PATH_MAX` / `ninja: error: mkdir`
+
+Неиспользуемый `react-native-reanimated` удалён из mobile workspace: его native C++
+сборка превышала ограничение длины пути при текущем расположении репозитория.
+Expo Router использует Reanimated только как необязательную зависимость. Возвращать
+пакет следует только вместе с функцией, которой он действительно требуется; для
+этого также понадобится короткий путь к репозиторию (например, `E:\src\wibestyle`).
+
 **Закройте Android Studio** перед `prebuild --clean`, иначе Windows блокирует папку `android/` (EBUSY).
 
 ### Metro 500: `EXPO_ROUTER_APP_ROOT` / `require.context`
