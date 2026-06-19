@@ -44,6 +44,8 @@ const config: ExpoConfig = {
   },
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:8080",
+    telegramChannelUrl: process.env.EXPO_PUBLIC_TELEGRAM_CHANNEL_URL ?? "",
+    telegramChannelName: process.env.EXPO_PUBLIC_TELEGRAM_CHANNEL_NAME ?? "Telegram",
     eas: {
       projectId: "wibestyle-mobile-local",
     },

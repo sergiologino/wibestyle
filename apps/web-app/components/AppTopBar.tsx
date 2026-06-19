@@ -7,6 +7,7 @@ import { BrandLogo, Button } from "@wibestyle/ui";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { isAuthenticatedSession } from "@/lib/session-auth";
 import { isPaidSubscription } from "@/lib/billing-plan";
+import TelegramChannelButton from "@/components/community/TelegramChannelButton";
 
 const nav = [
   { href: "/home", label: "Главная", icon: Home },
@@ -47,6 +48,9 @@ export default function AppTopBar() {
             ))}
           </nav>
           <div className="flex items-center gap-1.5">
+            {sessionReady && isAuthenticated ? (
+              <TelegramChannelButton compact className="hidden lg:inline-flex" />
+            ) : null}
             {sessionReady && isAuthenticated && profile && !isPaidSubscription(profile) ? (
               <Link href="/paywall">
                 <Button size="sm" variant="secondary">Подписка</Button>

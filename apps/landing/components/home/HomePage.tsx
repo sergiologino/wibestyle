@@ -58,6 +58,9 @@ export default function HomePage() {
               <li>Лицо можно скрыть перед обработкой</li>
             </ul>
             <div className="cta-row">
+              <Link className="hero-web-cta" href={siteConfig.appUrl} data-analytics="hero_web_app">
+                Перейти в приложение
+              </Link>
               <Link className="store-button store-apple" href="#lead" data-analytics="hero_appstore">
                  <span>Скоро в<br /><b>App Store</b></span>
               </Link>

@@ -6,6 +6,7 @@ import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
+import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { Pressable, Text } from "react-native";
 
@@ -60,6 +61,7 @@ export default function HomeScreen() {
           <View style={styles.actions}>
             <Button label="Примерить по ссылке" onPress={() => router.push("/try-on/link")} />
             <Button label="Примерить по фото" variant="secondary" onPress={() => router.push("/try-on/photo")} />
+            <TelegramChannelButton />
           </View>
         </Card>
 

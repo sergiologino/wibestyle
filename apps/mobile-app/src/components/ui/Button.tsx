@@ -18,6 +18,7 @@ type ButtonProps = PressableProps & {
   size?: "sm" | "md" | "lg";
   loading?: boolean;
   label: string;
+  icon?: ReactNode;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -27,6 +28,7 @@ export function Button({
   loading = false,
   disabled,
   label,
+  icon,
   style,
   onPress,
   ...props
@@ -54,6 +56,7 @@ export function Button({
       {...props}
     >
       {loading ? <ActivityIndicator color={variant === "primary" ? colors.white : colors.pink} size="small" /> : null}
+      {!loading ? icon : null}
       <Text style={[styles.label, labelVariantStyles[variant], sizeLabelStyles[size]]}>{label}</Text>
     </Pressable>
   );

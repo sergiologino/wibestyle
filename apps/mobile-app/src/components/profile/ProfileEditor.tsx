@@ -20,6 +20,7 @@ import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
+import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
 type ProfileEditorProps = {
@@ -180,7 +181,10 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
               />
             ) : null}
           </View>
-          <Button label="Выйти из профиля" variant="secondary" onPress={handleLogout} style={styles.logoutBtn} />
+          <View style={styles.profileActions}>
+            <TelegramChannelButton />
+            <Button label="Выйти из профиля" variant="secondary" onPress={handleLogout} />
+          </View>
         </Card>
 
         <Card>
@@ -361,8 +365,9 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: radius.md,
   },
-  logoutBtn: {
+  profileActions: {
     marginTop: spacing.md,
+    gap: spacing.sm,
   },
   subscriptionMeta: {
     gap: spacing.xs,

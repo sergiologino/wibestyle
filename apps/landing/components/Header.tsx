@@ -55,7 +55,7 @@ export default function Header() {
         href={siteConfig.appUrl}
         data-analytics="header_web_app"
       >
-        Открыть веб-версию
+        Перейти в приложение
       </Link>
     </header>
   );
