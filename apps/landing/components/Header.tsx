@@ -54,8 +54,10 @@ export default function Header() {
         className="download-cta"
         href={siteConfig.appUrl}
         data-analytics="header_web_app"
+        aria-label="Перейти в приложение"
       >
-        Перейти в приложение
+        <span className="download-cta__desktop">Перейти в приложение</span>
+        <span className="download-cta__mobile" aria-hidden="true">Открыть</span>
       </Link>
     </header>
   );
