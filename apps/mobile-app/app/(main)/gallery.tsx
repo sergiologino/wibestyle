@@ -50,7 +50,12 @@ export default function GalleryScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.pink} />}
         ListEmptyComponent={<BodyText style={styles.empty}>Пока нет публичных постов.</BodyText>}
         renderItem={({ item }) => (
-          <Pressable style={styles.card}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Открыть образ ${item.title}`}
+            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            onPress={() => router.push(`/gallery/${item.slug}` as never)}
+          >
             <Image
               source={{ uri: resolveApiPath(apiBaseUrl, item.publicImageUrl ?? item.imageUrl) }}
               style={styles.image}
@@ -94,6 +99,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: hairline,
     borderColor: colors.borderLight,
+  },
+  cardPressed: {
+    opacity: 0.88,
   },
   image: {
     width: "100%",
