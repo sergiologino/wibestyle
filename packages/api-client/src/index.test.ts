@@ -37,4 +37,28 @@ describe("WibeStyleApiClient", () => {
 
     vi.unstubAllGlobals();
   });
+
+  it("sends only the URL when marketplace share text is pasted", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ product: {} }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new WibeStyleApiClient({ baseUrl: "http://localhost:8080" });
+    await client.parseLink(
+      "Летний костюм https://www.wildberries.ru/catalog/755269515/detail.aspx?targetUrl=SN",
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:8080/api/v1/marketplaces/parse-link",
+      expect.objectContaining({
+        body: JSON.stringify({
+          url: "https://www.wildberries.ru/catalog/755269515/detail.aspx?targetUrl=SN",
+        }),
+      }),
+    );
+
+    vi.unstubAllGlobals();
+  });
 });

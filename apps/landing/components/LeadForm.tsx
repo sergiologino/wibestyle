@@ -4,6 +4,7 @@ import { MouseEvent, useEffect, useMemo, useState } from "react";
 import { createLandingApi } from "@/lib/api";
 import { pricing, siteConfig } from "@/lib/site";
 import { formatRub } from "@/lib/utils";
+import { YANDEX_METRIKA_ID } from "@/lib/metrika";
 
 export type LeadInterest = "clothing" | "makeup" | "hairstyle" | "full-look";
 
@@ -49,8 +50,8 @@ export default function LeadForm({ interest = "clothing", variant = "full", clas
     event.preventDefault();
 
     const target = resolveAppLaunchUrl();
-    if (typeof window !== "undefined" && window.ym && process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID) {
-      window.ym(Number(process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID), "reachGoal", `app_open_${interest}`);
+    if (typeof window !== "undefined" && window.ym) {
+      window.ym(YANDEX_METRIKA_ID, "reachGoal", `app_open_${interest}`);
     }
     window.location.href = target;
   }

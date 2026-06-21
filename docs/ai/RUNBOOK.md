@@ -158,13 +158,14 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3001
-NEXT_PUBLIC_YANDEX_METRIKA_ID=
+NEXT_PUBLIC_YANDEX_METRIKA_ID=109999858
 ```
 
 **Mobile** (`apps/mobile-app/.env`):
 
 ```env
 EXPO_PUBLIC_API_URL=http://10.0.2.2:8080
+EXPO_PUBLIC_APP_URL=https://app.vibestyle.art
 EXPO_PUBLIC_TELEGRAM_CHANNEL_URL=
 EXPO_PUBLIC_TELEGRAM_CHANNEL_NAME=Telegram
 ```
@@ -378,6 +379,8 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 | `NEXT_PUBLIC_LANDING_URL` | web | URL лендинга |
 | `NEXT_PUBLIC_SITE_URL` | landing | URL лендинга |
 | `EXPO_PUBLIC_API_URL` | mobile | URL API с телефона/эмулятора (`10.0.2.2:8080` = localhost на Android Emulator) |
+| `EXPO_PUBLIC_APP_URL` | mobile | Публичный URL web-app для OpenGraph-ссылок на примерки |
+| `NEXT_PUBLIC_YANDEX_METRIKA_ID` | landing, web | ID счётчика Яндекс Метрики (`109999858`) |
 
 ---
 

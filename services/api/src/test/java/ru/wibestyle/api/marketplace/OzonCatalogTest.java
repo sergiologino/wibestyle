@@ -30,6 +30,20 @@ class OzonCatalogTest {
     }
 
     @Test
+    void adapterCanonicalizesTrackedProductUrl() {
+        OzonAdapter adapter = new OzonAdapter(null);
+        assertEquals(
+                "https://www.ozon.ru/product/plate-3731731230/",
+                adapter.normalizeUrl(
+                        "https://www.ozon.ru/product/plate-3731731230/?at=x6tPVyDvrhPgyEwxCJz6Gx8HEzDw3nt"
+                )
+        );
+        assertEquals("plate-3731731230", adapter.extractProductId(adapter.normalizeUrl(
+                "https://www.ozon.ru/product/plate-3731731230/?at=tracking"
+        )));
+    }
+
+    @Test
     void normalizeImageUrlAddsHttpsScheme() {
         assertEquals(
                 "https://ir.ozone.ru/s3/multimedia-1/test.webp",

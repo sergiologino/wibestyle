@@ -17,6 +17,7 @@ import ru.wibestyle.api.domain.TryOnSourceType;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.marketplace.MarketplaceAdapter;
 import ru.wibestyle.api.marketplace.MarketplaceAdapterRegistry;
+import ru.wibestyle.api.marketplace.MarketplaceUrlNormalizer;
 import ru.wibestyle.api.marketplace.ProductDetails;
 import ru.wibestyle.api.marketplace.ProductSizeChartJson;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
@@ -78,14 +79,15 @@ public class TryOnService {
     @Transactional
     public Map<String, Object> createLinkSession(UUID userId, String url, String selectedSize) {
         AvatarSnapshotEntity snapshot = requireTryOnProfileReady(userId);
+        String extractedUrl = MarketplaceUrlNormalizer.extract(url);
         MarketplaceAdapter adapter;
         try {
-            adapter = marketplaceAdapterRegistry.resolve(url);
+            adapter = marketplaceAdapterRegistry.resolve(extractedUrl);
         } catch (IllegalArgumentException ex) {
             throw ex;
         }
 
-        String normalizedUrl = adapter.normalizeUrl(url);
+        String normalizedUrl = adapter.normalizeUrl(extractedUrl);
         String productId = adapter.extractProductId(normalizedUrl);
         ProductDetails product = MarketplaceService.fetchProductDetails(adapter, productId, normalizedUrl);
 

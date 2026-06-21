@@ -9,3 +9,16 @@ export function formatProductMeta(input: {
     input.selectedSize?.trim() || null,
   ].filter(Boolean).join(" · ");
 }
+
+export function buildPublicPostUrl(input: {
+  appBaseUrl: string;
+  publicUrl?: string | null;
+  slug: string;
+}): string {
+  const publicPath = input.publicUrl || `/p/${input.slug}`;
+  if (publicPath.startsWith("http://") || publicPath.startsWith("https://")) {
+    return publicPath;
+  }
+  const base = input.appBaseUrl.replace(/\/$/, "");
+  return `${base}${publicPath.startsWith("/") ? publicPath : `/${publicPath}`}`;
+}

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button, Card, StepIndicator } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { ProductPreview, SizeAdvice } from "@wibestyle/shared-types";
-import { isFeatureEnabled } from "@wibestyle/shared-types";
+import { extractMarketplaceUrl, isFeatureEnabled } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import ProductPreviewImage from "@/components/try-on/ProductPreviewImage";
 import { canStartGeneration } from "@/lib/onboarding-flow";
@@ -92,7 +92,9 @@ export default function LinkTryOnClient() {
     }, PARSE_FETCHING_MS);
 
     try {
-      const parsed = await api.parseLink(url);
+      const normalizedUrl = extractMarketplaceUrl(url);
+      setUrl(normalizedUrl);
+      const parsed = await api.parseLink(normalizedUrl);
       setProduct(parsed.product);
       const initialSize = parsed.product.suggestedSize
         ?? (parsed.product.sizes.includes("M") ? "M" : parsed.product.sizes[0] ?? "M");
@@ -148,7 +150,7 @@ export default function LinkTryOnClient() {
     setLoading(true);
     setError(null);
     try {
-      const created = await api.createLinkTryOnSession(url, size);
+      const created = await api.createLinkTryOnSession(product.productUrl, size);
       const generated = await api.generateTryOn(created.session.id);
       await refreshProfile();
       if (generated.session.status === "failed") {
@@ -207,7 +209,7 @@ export default function LinkTryOnClient() {
               className="rounded-2xl border border-[#ffd1ed] px-4 py-3 font-normal outline-none focus:border-[#ff1fa2]"
               placeholder="https://www.wildberries.ru/..."
               value={url}
-              onChange={(event) => setUrl(event.target.value)}
+              onChange={(event) => setUrl(extractMarketplaceUrl(event.target.value))}
               required
             />
             <Button disabled={loading} loading={loading} size="md" type="submit">

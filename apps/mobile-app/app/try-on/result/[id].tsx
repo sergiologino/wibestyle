@@ -10,8 +10,8 @@ import { BodyText, Button, DisplayTitle } from "@/components/ui/Button";
 import { BeforeAfterSlider } from "@/components/try-on/BeforeAfterSlider";
 import { AppVideoPlayer } from "@/components/media/VideoPlayer";
 import { formatTryOnError, resolveApiPath } from "@/lib/mobile-api";
-import { getApiBaseUrl } from "@/lib/config";
-import { formatProductMeta } from "@/lib/result-display";
+import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
+import { buildPublicPostUrl, formatProductMeta } from "@/lib/result-display";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
 const POLL_MS = 2000;
@@ -43,6 +43,8 @@ export default function TryOnResultScreen() {
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(accessToken);
   const [saving, setSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
   const [videoStatus, setVideoStatus] = useState<SeasonHitVideoStatus>("none");
   const [afterVideoUrl, setAfterVideoUrl] = useState<string | null>(null);
   const [videoGenerating, setVideoGenerating] = useState(false);
@@ -186,10 +188,32 @@ export default function TryOnResultScreen() {
   }
 
   async function shareResult() {
-    if (!result) return;
-    await Share.share({
-      message: `Мой образ в VibeStyle — примерь и ты! ${result.product?.productUrl ?? ""}`,
-    });
+    if (!result || !sessionId || sharing) return;
+    setSharing(true);
+    setShareError(null);
+    try {
+      const { post } = await api.createGalleryPost({
+        tryOnSessionId: sessionId,
+        visibility: "unlisted",
+        productLinkVisible: true,
+        productVisibility: "SHOW_PRODUCT_LINK",
+        mediaType: "image",
+      });
+      const postUrl = buildPublicPostUrl({
+        appBaseUrl: getAppBaseUrl(),
+        publicUrl: post.publicUrl,
+        slug: post.slug,
+      });
+      await Share.share({
+        title: "Моя примерка в VibeStyle",
+        message: `Посмотри, как выглядит мой образ в VibeStyle: ${postUrl}`,
+        url: postUrl,
+      });
+    } catch (err) {
+      setShareError(err instanceof ApiError ? err.message : "Не удалось подготовить ссылку на примерку");
+    } finally {
+      setSharing(false);
+    }
   }
 
   async function makeVideo() {
@@ -282,6 +306,7 @@ export default function TryOnResultScreen() {
         ) : null}
 
         {videoError ? <Text style={styles.videoError}>{videoError}</Text> : null}
+        {shareError ? <Text style={styles.videoError}>{shareError}</Text> : null}
 
         {result.styleCompliment ? (
           <View style={styles.complimentCard}>
@@ -305,7 +330,7 @@ export default function TryOnResultScreen() {
             <Button label="Видео в галерею" loading={saving} onPress={() => saveToGallery("video")} />
           ) : null}
           <Button label="Фото в галерею" variant="secondary" loading={saving} onPress={() => saveToGallery("image")} />
-          <Button label="Поделиться" variant="secondary" onPress={shareResult} />
+          <Button label="Поделиться" variant="secondary" loading={sharing} onPress={shareResult} />
           <Button label="Ещё примерка" onPress={() => router.push("/(main)/try-on")} />
         </View>
       </ScrollView>
