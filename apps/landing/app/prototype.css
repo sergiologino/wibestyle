@@ -818,6 +818,8 @@ h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255
 .eyebrow { color: var(--pink); text-transform: uppercase; letter-spacing: .12em; font-size: 13px; margin-bottom: 10px; }
 .section-heading h2 { font-size: clamp(36px, 4vw, 62px); line-height: .96; letter-spacing: -0.07em; margin-bottom: 12px; }
 .section-heading p { color: var(--muted); font-size: 20px; font-weight: 700; }
+.section-heading .model-casting-note { max-width: 720px; margin: 18px auto 0; font-size: 16px; line-height: 1.55; }
+.model-casting-note strong { color: var(--ink); }
 .category-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
 .category-card {
   position: relative;
