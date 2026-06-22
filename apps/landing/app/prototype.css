@@ -823,6 +823,7 @@ h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255
 .eyebrow { color: var(--pink); text-transform: uppercase; letter-spacing: .12em; font-size: 13px; margin-bottom: 10px; }
 .section-heading h2 { font-size: clamp(36px, 4vw, 62px); line-height: .96; letter-spacing: -0.07em; margin-bottom: 12px; }
 .section-heading p { color: var(--muted); font-size: 20px; font-weight: 700; }
+.section-heading .category-coming-soon { margin: 18px 0 0; color: var(--pink); font-size: 22px; font-weight: 950; }
 .model-casting-note { max-width: 720px; margin: -16px auto 24px; color: var(--muted); font-size: 16px; font-weight: 700; line-height: 1.55; text-align: center; }
 .model-casting-note strong { color: var(--ink); }
 .category-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
@@ -840,6 +841,7 @@ h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255
   isolation: isolate;
 }
 .category-card::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(18,0,28,.56)); z-index: -1; }
+.category-card--with-image { background-position: center; background-size: cover; }
 .category-card span { font-size: 27px; font-weight: 950; letter-spacing: -0.06em; }
 .category-card b { font-size: 14px; opacity: .9; margin-top: 4px; }
 .card-dress { background: linear-gradient(135deg, #ff1fa2, #ff824d); }
