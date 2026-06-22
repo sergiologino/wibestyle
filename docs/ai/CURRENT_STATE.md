@@ -26,6 +26,9 @@
 - Блок главной «больше примеров» больше не использует старые `female-card-*` напрямую: добавлен `ExamplesGallerySection`, данные в `female-cards-data.ts`, replaceable media лежат в `apps/landing/public/assets/female-cards/`. Сопоставление по basename: `look-1.mp4` приоритетнее, иначе берётся `look-1.webp/jpg/jpeg/png/avif`.
 - Подписи в `ExamplesGallerySection` оформлены как fashion-плашки поверх фото; звёздочки заменены на сердечки.
 - Пояснение «Только реальные модели…» принадлежит `ExamplesGallerySection` и рендерится непосредственно перед фотогалереей, после заголовка блока.
+- Подписи office/casual синхронизированы с фактической одеждой на фото: пиджак с юбкой и блузкой; красная блузка с кофтой и брюками.
+- В `AppPreviewPhones` правый экран со стикером «Это любовь!» показывает фото целиком через `object-fit: contain`, без обрезания головы модели.
+- Mobile header сохраняет отдельную CTA «В приложение» рядом с кнопкой меню.
 - Демо-ассеты для быстрой замены лежат в `apps/landing/public/assets/before-after-demo/`.
 - Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
 

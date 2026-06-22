@@ -13,7 +13,7 @@ export const styleShowcaseItems: StyleShowcaseItem[] = [
   {
     id: "casual",
     title: "Casual",
-    subtitle: "Брюки, кофта, лёгкая обувь",
+    subtitle: "Красная блузка, кофта и брюки",
     image: "/assets/female-card-4.png",
     alt: "Casual образ после нейропримерки одежды",
     badge: "на каждый день",
@@ -22,7 +22,7 @@ export const styleShowcaseItems: StyleShowcaseItem[] = [
   {
     id: "office",
     title: "Office",
-    subtitle: "Пиджак, юбка, блузка",
+    subtitle: "Пиджак, юбка и блузка",
     image: "/assets/female-card-2.png",
     alt: "Офисный стиль после нейропримерки",
     badge: "деловой look",

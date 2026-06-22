@@ -21,7 +21,9 @@ describe("component landing banners", () => {
       expect(screen.image).toMatch(/^\/assets\/.+\.(png|jpg|jpeg|webp)$/);
       expect(screen.alt).toMatch(/\S/);
       expect(screen.title).toMatch(/\S/);
+      expect(["cover", "contain"]).toContain(screen.fit);
     }
+    expect(appPreviewScreens[1].fit).toBe("contain");
   });
 
   it("keeps final CTA art configurable", () => {

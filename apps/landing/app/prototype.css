@@ -764,6 +764,11 @@ h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255
   border-radius: 22px;
   filter: none;
 }
+.phone-3d__screen > .phone-3d__preview--contain {
+  object-fit: contain;
+  object-position: center;
+  background: #f7f1f6;
+}
 .phone-3d__thumbs {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1054,7 +1059,7 @@ details p { margin: 14px 0 0; color: var(--muted); font-weight: 700; line-height
     grid-column: 2;
     grid-row: 1;
     justify-self: end;
-    width: 78px;
+    width: 104px;
     min-height: 40px;
     padding: 0 10px;
     font-size: 13px;

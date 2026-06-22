@@ -20,4 +20,15 @@ describe("femaleExampleCards", () => {
       src: "/assets/female-cards/look-1.png",
     });
   });
+
+  it("keeps captions aligned with the office and everyday photos", () => {
+    const office = femaleExampleCards.find((card) => card.id === "office");
+    const everyday = femaleExampleCards.find((card) => card.id === "city");
+
+    expect(office?.subtitle).toBe("Пиджак, юбка и блузка в офисном образе");
+    expect(everyday).toMatchObject({
+      title: "На каждый день",
+      subtitle: "Красная блузка, кофта и брюки",
+    });
+  });
 });

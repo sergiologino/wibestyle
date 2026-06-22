@@ -57,7 +57,7 @@ export default function Header() {
         aria-label="Перейти в приложение"
       >
         <span className="download-cta__desktop">Перейти в приложение</span>
-        <span className="download-cta__mobile" aria-hidden="true">Открыть</span>
+        <span className="download-cta__mobile" aria-hidden="true">В приложение</span>
       </Link>
     </header>
   );

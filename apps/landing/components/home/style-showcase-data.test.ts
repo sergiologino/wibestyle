@@ -15,4 +15,9 @@ describe("styleShowcaseItems", () => {
       expect(item.href).toMatch(/^\//);
     }
   });
+
+  it("describes the clothes shown in the casual and office photos", () => {
+    expect(styleShowcaseItems.find((item) => item.id === "casual")?.subtitle).toBe("Красная блузка, кофта и брюки");
+    expect(styleShowcaseItems.find((item) => item.id === "office")?.subtitle).toBe("Пиджак, юбка и блузка");
+  });
 });

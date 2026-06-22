@@ -3,6 +3,10 @@
 ## 2026-06-22 (Landing gallery real-model note)
 - Исправлен блок «Образы, которые хочется повторить»: пояснение «Только реальные модели…» перенесено внутрь `ExamplesGallerySection` и гарантированно рендерится перед карточками галереи.
 - Добавлен автотест порядка вывода пояснения и галереи.
+- Исправлены подписи office/casual в `StyleShowcaseSection` и `ExamplesGallerySection` под фактическую одежду моделей.
+- Правое фото в `AppPreviewPhones` переведено в `contain`, чтобы модель помещалась в экран смартфона целиком.
+- В мобильном header закреплена заметная CTA «В приложение» рядом с меню.
+- Добавлены регрессионные тесты подписей, режима отображения phone preview и mobile header CTA.
 
 ## 2026-06-10 (Landing before/after banner component)
 - Landing: заменён главный raster-баннер `before-after.png` на компонентный `BeforeAfterSection` в `apps/landing/components/home/`.
