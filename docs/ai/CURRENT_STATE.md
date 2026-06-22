@@ -25,6 +25,7 @@
 - Правая часть CTA-баннера заполнена desktop-only визуалом `EarlyAccessVisual`; изображение берётся из `early-access-visual-data.ts` и легко заменяется на production-фото. На экранах до 1180px визуал скрыт.
 - Блок главной «больше примеров» больше не использует старые `female-card-*` напрямую: добавлен `ExamplesGallerySection`, данные в `female-cards-data.ts`, replaceable media лежат в `apps/landing/public/assets/female-cards/`. Сопоставление по basename: `look-1.mp4` приоритетнее, иначе берётся `look-1.webp/jpg/jpeg/png/avif`.
 - Подписи в `ExamplesGallerySection` оформлены как fashion-плашки поверх фото; звёздочки заменены на сердечки.
+- Пояснение «Только реальные модели…» принадлежит `ExamplesGallerySection` и рендерится непосредственно перед фотогалереей, после заголовка блока.
 - Демо-ассеты для быстрой замены лежат в `apps/landing/public/assets/before-after-demo/`.
 - Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
 

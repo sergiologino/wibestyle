@@ -97,9 +97,6 @@ export default function HomePage() {
           <div className="section-heading center">
             <p className="eyebrow">больше примеров</p>
             <h2>Образы, которые хочется повторить</h2>
-            <p className="model-casting-note">
-              <strong>Только реальные модели.</strong> Для разработки и отладки приложения мы приглашали реальных людей, а не сгенерированных персонажей.
-            </p>
           </div>
           <ExamplesGallerySection />
         </div>

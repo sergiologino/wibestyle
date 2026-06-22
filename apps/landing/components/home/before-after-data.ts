@@ -32,6 +32,6 @@ export const beforeAfterItems: BeforeAfterItem[] = [
     afterVideo: "/assets/before-after-demo/look-2-after.mp4",
     afterAlt: "Видео после нейропримерки офисного образа",
     title: "Офисный look",
-    subtitle: "Пиджак, брюки и общий баланс",
+    subtitle: "Современный джинсовый образ",
   },
 ];

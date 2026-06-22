@@ -1,5 +1,9 @@
 # AI Changelog
 
+## 2026-06-22 (Landing gallery real-model note)
+- Исправлен блок «Образы, которые хочется повторить»: пояснение «Только реальные модели…» перенесено внутрь `ExamplesGallerySection` и гарантированно рендерится перед карточками галереи.
+- Добавлен автотест порядка вывода пояснения и галереи.
+
 ## 2026-06-10 (Landing before/after banner component)
 - Landing: заменён главный raster-баннер `before-after.png` на компонентный `BeforeAfterSection` в `apps/landing/components/home/`.
 - Добавлены `BeforeAfterCard`-карточки с DOM-лейблами «до»/«после», before image, after poster и after video.
