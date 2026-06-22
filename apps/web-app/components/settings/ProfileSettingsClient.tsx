@@ -10,6 +10,7 @@ import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppS
 import AvatarManager from "@/components/avatar/AvatarManager";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
 import AnthropometryFields from "@/components/profile/AnthropometryFields";
+import TelegramChannelButton from "@/components/community/TelegramChannelButton";
 import { isPaidSubscription } from "@/lib/billing-plan";
 import { legalLinks } from "@/lib/legal-links";
 import {
@@ -146,9 +147,12 @@ export default function ProfileSettingsClient() {
             </p>
           ) : null}
         </div>
-        <Button className="mt-6" size="md" type="button" variant="secondary" onClick={onLogout}>
-          Выйти из профиля
-        </Button>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <TelegramChannelButton />
+          <Button size="md" type="button" variant="secondary" onClick={onLogout}>
+            Выйти из профиля
+          </Button>
+        </div>
       </section>
 
       <Card>

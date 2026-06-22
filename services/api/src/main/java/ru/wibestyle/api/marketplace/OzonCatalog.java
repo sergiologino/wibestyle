@@ -56,7 +56,19 @@ public class OzonCatalog {
         String pageUrl = originalUrl == null || originalUrl.isBlank()
                 ? defaultProductPageUrl(slug)
                 : originalUrl;
-        return fetchHtmlPage(pageUrl, slug);
+        Optional<OzonProductCard> fromHtml = fetchHtmlPage(pageUrl, slug);
+        if (fromHtml.isPresent()) {
+            return fromHtml;
+        }
+
+        String numericSku = extractNumericSku(slug);
+        if (numericSku != null) {
+            String contextUrl = "https://www.ozon.ru/context/detail/id/" + numericSku + "/";
+            if (!contextUrl.equals(pageUrl)) {
+                return fetchHtmlPage(contextUrl, slug);
+            }
+        }
+        return Optional.empty();
     }
 
     public byte[] downloadImage(String imageUrl) {
@@ -204,10 +216,12 @@ public class OzonCatalog {
     }
 
     private Optional<OzonProductCard> fetchComposerPage(String slug, String originalUrl) {
-        List<String> productPaths = new ArrayList<>();
+        Set<String> productPaths = new LinkedHashSet<>();
         productPaths.add("/product/" + slug + "/");
-        if (slug.chars().allMatch(Character::isDigit)) {
-            productPaths.add("/context/detail/id/" + slug + "/");
+        String numericSku = extractNumericSku(slug);
+        if (numericSku != null) {
+            productPaths.add("/product/" + numericSku + "/");
+            productPaths.add("/context/detail/id/" + numericSku + "/");
         }
 
         List<String> endpoints = new ArrayList<>();

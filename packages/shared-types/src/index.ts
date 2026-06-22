@@ -1,3 +1,5 @@
+export { extractMarketplaceUrl } from "./marketplace-url";
+
 export type FeatureFlag =
   | "videoTryOn"
   | "multiItemTryOn"

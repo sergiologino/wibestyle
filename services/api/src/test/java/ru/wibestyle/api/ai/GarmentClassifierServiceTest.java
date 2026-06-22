@@ -17,20 +17,39 @@ class GarmentClassifierServiceTest {
     @Test
     void parseResponseReadsJsonObject() {
         GarmentClassification result = service.parseResponse("""
-                {"category":"dress","title":"Платье миди"}
+                {"category":"dress","title":"Midi dress","promptProfile":"dress","coverageLevel":"normal","moderationRisk":"low","hasHumanModel":true}
                 """);
         assertEquals("dress", result.category());
-        assertEquals("Платье миди", result.title());
+        assertEquals("Midi dress", result.title());
+        assertEquals(true, result.hasHumanModel());
     }
 
     @Test
     void parseResponseExtractsJsonFromMarkdown() {
         GarmentClassification result = service.parseResponse("""
                 ```json
-                {"category":"jacket","title":"Куртка oversize"}
+                {"category":"jacket","title":"Oversize jacket"}
                 ```
                 """);
         assertEquals("jacket", result.category());
-        assertEquals("Куртка oversize", result.title());
+        assertEquals("Oversize jacket", result.title());
+    }
+
+    @Test
+    void fallbackAssumesProductPhotoMayContainHumanModel() {
+        GarmentClassification result = service.fallbackFromText(null, null);
+
+        assertEquals("other", result.category());
+        assertEquals(true, result.hasHumanModel());
+    }
+
+    @Test
+    void unavailableVisionClassifierKeepsConservativeHumanModelFallback() {
+        GarmentClassification fallback = service.fallbackFromText(null, null);
+
+        GarmentClassification result = service.classifyBytes(new byte[]{1, 2, 3}, "image/jpeg", fallback);
+
+        assertEquals("other", result.category());
+        assertEquals(true, result.hasHumanModel());
     }
 }

@@ -1,5 +1,15 @@
 # AI Changelog
 
+## 2026-06-22 (Landing gallery real-model note)
+- Исправлен блок «Образы, которые хочется повторить»: пояснение «Только реальные модели…» перенесено внутрь `ExamplesGallerySection` и гарантированно рендерится перед карточками галереи.
+- Добавлен автотест порядка вывода пояснения и галереи.
+- Исправлены подписи office/casual в `StyleShowcaseSection` и `ExamplesGallerySection` под фактическую одежду моделей.
+- Правое фото в `AppPreviewPhones` переведено в `contain`, чтобы модель помещалась в экран смартфона целиком.
+- В мобильном header закреплена заметная CTA «В приложение» рядом с меню.
+- Добавлены регрессионные тесты подписей, режима отображения phone preview и mobile header CTA.
+- Восстановлен полный набор выбранных production-фотографий лендинга из `origin/master`; устранена подмена старыми demo-ассетами из ветки `improve-promt`.
+- Галерея снова предпочитает выбранные PNG, а карточка отдельного вечернего образа использует `style-showcase/men.png`; подписи приведены в соответствие одежде на фото.
+- Секция категорий получила подпись «Уже скоро!» и replaceable-фото через новую папку `public/assets/category-cards/` с именами `dress`, `shoes`, `office`, `evening`, `men`; добавлены fallback-градиенты и автотест resolver-контракта.
 ## 2026-06-16 (Onboarding replaceable media and ad logo)
 - Web onboarding media moved to dedicated replaceable files under `apps/web-app/public/assets/onboarding/slides/`.
 - Web `/welcome` now prefers `*.mp4` by slide basename and falls back to the matching `*.png`, so A/B media can be replaced without editing React code.

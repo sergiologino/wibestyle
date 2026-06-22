@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
+import { isProtectedApiMediaUrl } from "@/lib/api-media";
 
 type AuthenticatedShareImageProps = {
   src: string;
@@ -9,7 +10,12 @@ type AuthenticatedShareImageProps = {
 };
 
 function isDirectImageSrc(src: string) {
-  return src.startsWith("/assets/") || src.startsWith("http://") || src.startsWith("https://") || src.startsWith("blob:");
+  return (
+    src.startsWith("/assets/") ||
+    src.startsWith("blob:") ||
+    src.startsWith("data:") ||
+    ((src.startsWith("http://") || src.startsWith("https://")) && !isProtectedApiMediaUrl(src))
+  );
 }
 
 export default function AuthenticatedShareImage({ src, alt, className }: AuthenticatedShareImageProps) {

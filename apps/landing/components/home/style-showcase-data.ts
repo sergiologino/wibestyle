@@ -12,7 +12,7 @@ export const styleShowcaseItems: StyleShowcaseItem[] = [
   {
     id: "casual",
     title: "Casual",
-    subtitle: "Джинсы, топ, легкая обувь",
+    subtitle: "Красная блузка, кофта и брюки",
     image: "/assets/female-card-4.png",
     alt: "Casual образ после нейропримерки одежды",
     badge: "на каждый день",
@@ -21,7 +21,7 @@ export const styleShowcaseItems: StyleShowcaseItem[] = [
   {
     id: "office",
     title: "Office",
-    subtitle: "Пиджак, брюки, сумка",
+    subtitle: "Пиджак, юбка и блузка",
     image: "/assets/female-card-2.png",
     alt: "Офисный стиль после нейропримерки",
     badge: "деловой look",
@@ -47,11 +47,11 @@ export const styleShowcaseItems: StyleShowcaseItem[] = [
   },
   {
     id: "men",
-    title: "Love evening ",
-    subtitle: "Платье, вечер, любовь",
+    title: "Вечер",
+    subtitle: "Бордовое платье, каблуки и сумка",
     image: "/assets/style-showcase/men.png",
-    alt: "Стиль для вечера с любимым",
+    alt: "Вечерний образ в бордовом платье с сумкой",
     badge: "для вечера",
-    href: "/dlya-muzhchin",
+    href: "/primerka-platya",
   },
 ];

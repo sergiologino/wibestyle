@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "Я на стиле",
-  domain: process.env.NEXT_PUBLIC_SITE_URL ?? "https://vibestyle.art",
-  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001/welcome",
+  domain: process.env.NEXT_PUBLIC_SITE_URL ?? "https://yanastile.app",
+  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://app.vibestyle.art",
   rustoreUrl: process.env.NEXT_PUBLIC_RUSTORE_URL ?? "https://www.rustore.ru/catalog/app/ru.wibestyle.app",
   description:
     "Виртуальный персональный стилист и нейропримерочная с маркетплейсов: загрузи фото, вставь ссылку на товар и посмотри, как вещь преобразит твой образ до покупки.",

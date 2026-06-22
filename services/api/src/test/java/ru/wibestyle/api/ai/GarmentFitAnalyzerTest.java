@@ -25,7 +25,7 @@ class GarmentFitAnalyzerTest {
 
         assertThat(assessment.status()).isEqualTo("too_small");
         assertThat(assessment.recommendedSize()).isIn("L", "XL");
-        assertThat(assessment.fitPromptHint()).contains("не утоньшай тело");
+        assertThat(assessment.fitPromptHint()).contains("do not slim the body");
     }
 
     @Test

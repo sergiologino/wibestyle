@@ -9,14 +9,14 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Image } from "expo-image";
 import { Feather } from "@expo/vector-icons";
-import type { ProductPreview, SizeAdvice } from "@wibestyle/shared-types";
+import { extractMarketplaceUrl, type ProductPreview, type SizeAdvice } from "@wibestyle/shared-types";
 import { ApiError } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
+import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { canStartGeneration } from "@/lib/onboarding-flow";
 import { formatMarketplaceLinkError } from "@/lib/mobile-api";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
@@ -25,7 +25,7 @@ const STEPS = ["Ссылка", "Размер", "Генерация"];
 
 export default function TryOnLinkScreen() {
   const router = useRouter();
-  const { api, profile, ensureSession, refreshProfile } = useSession();
+  const { api, profile, accessToken, ensureSession, refreshProfile } = useSession();
   const [step, setStep] = useState(0);
   const [url, setUrl] = useState("");
   const [product, setProduct] = useState<ProductPreview | null>(null);
@@ -43,7 +43,9 @@ export default function TryOnLinkScreen() {
         router.replace("/auth");
         return;
       }
-      const payload = await api.parseLink(url.trim());
+      const normalizedUrl = extractMarketplaceUrl(url);
+      setUrl(normalizedUrl);
+      const payload = await api.parseLink(normalizedUrl);
       setProduct(payload.product);
       setSize(payload.product.suggestedSize ?? payload.product.sizes[0] ?? "M");
       setStep(1);
@@ -118,7 +120,7 @@ export default function TryOnLinkScreen() {
               <TextField
                 placeholder="https://www.wildberries.ru/..."
                 value={url}
-                onChangeText={setUrl}
+                onChangeText={(value) => setUrl(extractMarketplaceUrl(value))}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
@@ -128,7 +130,12 @@ export default function TryOnLinkScreen() {
 
           {step === 1 && product ? (
             <>
-              <Image source={{ uri: product.imageUrl }} style={styles.productImage} contentFit="cover" />
+              <AuthenticatedImage
+                path={product.imageUrl}
+                accessToken={accessToken}
+                style={styles.productImage}
+                contentFit="cover"
+              />
               <Text style={styles.productTitle}>{product.title}</Text>
               <Text style={styles.productMeta}>
                 {product.brand} · {product.priceRub.toLocaleString("ru-RU")} ₽

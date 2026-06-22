@@ -12,8 +12,9 @@ class FaceLockPromptBuilderTest {
 
         assertThat(faceLock).contains("image1");
         assertThat(faceLock).contains("image2");
-        assertThat(faceLock).contains("игнорируй");
-        assertThat(faceLock).contains("ЗАПРЕЩЕНО");
-        assertThat(faceLock).contains("лицо");
+        assertThat(faceLock).contains("completely ignore");
+        assertThat(faceLock).contains("FORBIDDEN");
+        assertThat(faceLock).contains("face");
+        assertThat(faceLock).contains("body proportions");
     }
 }

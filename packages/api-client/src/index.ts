@@ -26,6 +26,7 @@ import type {
   UserEntitlements,
   UserProfile,
 } from "@wibestyle/shared-types";
+import { extractMarketplaceUrl } from "@wibestyle/shared-types";
 
 export type ApiClientOptions = {
   baseUrl: string;
@@ -267,14 +268,14 @@ export class WibeStyleApiClient {
   parseLink(url: string) {
     return this.request<{ product: ProductPreview }>("/api/v1/marketplaces/parse-link", {
       method: "POST",
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url: extractMarketplaceUrl(url) }),
     });
   }
 
   createLinkTryOnSession(url: string, selectedSize?: string) {
     return this.request<{ session: TryOnSessionRecord; product: ProductPreview }>("/api/v1/try-on/sessions/link", {
       method: "POST",
-      body: JSON.stringify({ url, selectedSize }),
+      body: JSON.stringify({ url: extractMarketplaceUrl(url), selectedSize }),
     });
   }
 

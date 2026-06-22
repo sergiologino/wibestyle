@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
+import { isProtectedApiMediaUrl } from "@/lib/api-media";
 import {
   isPublicProductImageUrl,
   resolveProductImageUrl,
@@ -15,10 +16,13 @@ type Props = {
 
 function isDirectImageUrl(imageUrl: string) {
   return (
-    imageUrl.startsWith("/assets/") ||
-    imageUrl.startsWith("http://") ||
-    imageUrl.startsWith("https://") ||
-    imageUrl.startsWith("blob:")
+    !isProtectedApiMediaUrl(imageUrl) &&
+    (
+      imageUrl.startsWith("/assets/") ||
+      imageUrl.startsWith("http://") ||
+      imageUrl.startsWith("https://") ||
+      imageUrl.startsWith("blob:")
+    )
   );
 }
 

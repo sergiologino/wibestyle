@@ -41,10 +41,10 @@ export function TryOnBeforeAfter({ beforeSrc, afterSrc, onExpandClick, className
           value={position}
           onChange={(event) => setPosition(Number(event.target.value))}
         />
-        <span className="absolute bottom-4 left-4 rounded-full bg-white/92 px-3 py-1 text-xs font-medium text-[#ff1fa2]">
+        <span className="absolute bottom-2 left-2 rounded-full bg-white/92 px-2 py-0.5 text-[10px] font-medium leading-4 text-[#ff1fa2] shadow-sm sm:bottom-4 sm:left-4 sm:px-3 sm:py-1 sm:text-xs sm:leading-normal">
           До
         </span>
-        <span className="absolute bottom-4 right-4 rounded-full bg-[#ff1fa2] px-3 py-1 text-xs font-medium text-white">
+        <span className="absolute bottom-2 right-2 rounded-full bg-[#ff1fa2] px-2 py-0.5 text-[10px] font-medium leading-4 text-white shadow-sm sm:bottom-4 sm:right-4 sm:px-3 sm:py-1 sm:text-xs sm:leading-normal">
           После
         </span>
       </div>
@@ -79,7 +79,7 @@ export function TryOnResultVideo({ src, eliteFrame = false, className }: TryOnRe
         )}
       >
         <AuthenticatedVideo autoPlay className="h-full w-full object-cover" loop muted src={src} />
-        <span className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1 text-xs font-medium text-[#782cff]">
+        <span className="absolute left-2 top-2 rounded-full bg-white/92 px-2 py-0.5 text-[10px] font-medium leading-4 text-[#782cff] shadow-sm sm:left-4 sm:top-4 sm:px-3 sm:py-1 sm:text-xs sm:leading-normal">
           Видео
         </span>
         {eliteFrame ? (

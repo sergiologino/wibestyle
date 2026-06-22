@@ -73,8 +73,14 @@
 - В CTA-блоке перехода в приложение верхний дублирующий price-card заменён на контрастный мотивационный glass-panel про примерку в AI до пункта выдачи; технический текст про платформы убран, мотивационный блок и блок с кнопкой выровнены по ширине.
 - Discount label в CTA больше не pill/tag: это заметный текст без градиента с символом ₽. Footer дополнен реквизитами ООО «АЛЬТАКОД», ИНН 4000002848, email `admin@altacod.com`, Telegram-чат отмечен как `скоро`.
 - Правая часть CTA-баннера заполнена desktop-only визуалом `EarlyAccessVisual`; изображение берётся из `early-access-visual-data.ts` и легко заменяется на production-фото. На экранах до 1180px визуал скрыт.
-- Блок главной «больше примеров» больше не использует старые `female-card-*` напрямую: добавлен `ExamplesGallerySection`, данные в `female-cards-data.ts`, replaceable media лежат в `apps/landing/public/assets/female-cards/`. Сопоставление по basename: `look-1.mp4` приоритетнее, иначе берётся `look-1.webp/jpg/jpeg/png/avif`.
+- Блок главной «больше примеров» больше не использует старые `female-card-*` напрямую: добавлен `ExamplesGallerySection`, данные в `female-cards-data.ts`, replaceable media лежат в `apps/landing/public/assets/female-cards/`. Сопоставление по basename: `look-1.mp4` приоритетнее, иначе сначала берётся выбранный `look-1.png`, затем jpg/jpeg/webp/avif.
 - Подписи в `ExamplesGallerySection` оформлены как fashion-плашки поверх фото; звёздочки заменены на сердечки.
+- Пояснение «Только реальные модели…» принадлежит `ExamplesGallerySection` и рендерится непосредственно перед фотогалереей, после заголовка блока.
+- Подписи office/casual синхронизированы с фактической одеждой на фото: пиджак с юбкой и блузкой; красная блузка с кофтой и брюками.
+- В `AppPreviewPhones` правый экран со стикером «Это любовь!» показывает фото целиком через `object-fit: contain`, без обрезания головы модели.
+- Mobile header сохраняет отдельную CTA «В приложение» рядом с кнопкой меню.
+- Набор production-фотографий лендинга восстановлен из `origin/master` после расхождения веток; старые demo-файлы с совпадающими именами больше не используются вместо выбранных фото.
+- Секция «Примеряй по категориям» помечена «Уже скоро!». Пять category-card используют зарезервированные basename `dress`, `shoes`, `office`, `evening`, `men` из `public/assets/category-cards/`; при отсутствии файла остаётся текущий цветной fallback.
 - Демо-ассеты для быстрой замены лежат в `apps/landing/public/assets/before-after-demo/`.
 - Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
 

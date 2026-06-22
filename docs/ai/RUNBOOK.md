@@ -141,6 +141,8 @@ IDEA Run Configuration или env:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_APP_URL=http://localhost:3001
+NEXT_PUBLIC_TELEGRAM_CHANNEL_URL=
+NEXT_PUBLIC_TELEGRAM_CHANNEL_NAME=Telegram
 ```
 
 **Admin** (`apps/admin/.env.local`):
@@ -155,7 +157,17 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_YANDEX_METRIKA_ID=
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+NEXT_PUBLIC_YANDEX_METRIKA_ID=109999858
+```
+
+**Mobile** (`apps/mobile-app/.env`):
+
+```env
+EXPO_PUBLIC_API_URL=http://10.0.2.2:8080
+EXPO_PUBLIC_APP_URL=https://app.vibestyle.art
+EXPO_PUBLIC_TELEGRAM_CHANNEL_URL=
+EXPO_PUBLIC_TELEGRAM_CHANNEL_NAME=Telegram
 ```
 
 ### 5. Запуск сервисов
@@ -320,6 +332,9 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 | `WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK` | `gpt-4o-mini` | Chat-сеть noteapp для size advice и post-try-on `styleCompliment` |
 | `WIBESTYLE_AI_BASE_URL` | `http://localhost:8091` | URL noteapp-ai-integration |
 | `WIBESTYLE_AI_FALLBACK_TO_DEMO` | `false` | Fallback на demo SVG при ошибке AI |
+| `WIBESTYLE_TELEGRAM_CHANNEL_URL` | — | Reserved: public Telegram channel URL |
+| `WIBESTYLE_TELEGRAM_CHANNEL_NAME` | `Telegram` | Reserved: Telegram channel display name |
+| `WIBESTYLE_TELEGRAM_CHANNEL_ID` / `WIBESTYLE_TELEGRAM_TOPIC_ID` | — | Reserved: noteapp Telegram outbound target |
 
 ### AI try-on (noteapp-ai-integration)
 
@@ -364,6 +379,8 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 | `NEXT_PUBLIC_LANDING_URL` | web | URL лендинга |
 | `NEXT_PUBLIC_SITE_URL` | landing | URL лендинга |
 | `EXPO_PUBLIC_API_URL` | mobile | URL API с телефона/эмулятора (`10.0.2.2:8080` = localhost на Android Emulator) |
+| `EXPO_PUBLIC_APP_URL` | mobile | Публичный URL web-app для OpenGraph-ссылок на примерки |
+| `NEXT_PUBLIC_YANDEX_METRIKA_ID` | landing, web | ID счётчика Яндекс Метрики (`109999858`) |
 
 ---
 

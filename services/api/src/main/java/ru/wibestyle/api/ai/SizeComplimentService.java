@@ -60,12 +60,16 @@ public class SizeComplimentService {
                 """;
         String user = """
                 session=%s
+                variationSeed=%s
+                styleAngle=%s
                 выбранный размер на карточке: %s
                 рекомендуемый размер: %s
                 статус посадки: %s
                 рост %s см, грудь %s см, талия %s см, бёдра %s см, привычный размер одежды: %s
                 """.formatted(
                 sessionId,
+                variationSeed(sessionId, "size"),
+                styleAngle(sessionId, "size"),
                 assessment.selectedSize(),
                 assessment.recommendedSize(),
                 assessment.status(),
@@ -91,7 +95,7 @@ public class SizeComplimentService {
         String selected = assessment.selectedSize();
         String recommended = assessment.recommendedSize();
         String clothing = snapshot.getClothingSize() == null ? "" : snapshot.getClothingSize().trim();
-        int variant = Math.floorMod(sessionId.hashCode(), 6);
+        int variant = Math.floorMod((sessionId + ":size").hashCode(), 10);
         return switch (variant) {
             case 0 -> "Ваша фигура слишком роскошна для размера %s — давайте попробуем %s, размер императрицы ✦"
                     .formatted(selected, recommended);
@@ -103,6 +107,14 @@ public class SizeComplimentService {
                     .formatted(selected, recommended);
             case 4 -> "Грудь и бёдра говорят «нам нужен %s», а не %s — доверимся им?"
                     .formatted(recommended, selected);
+            case 5 -> "В %s вещь спорит с пропорциями, а %s даст силуэту больше воздуха"
+                    .formatted(selected, recommended);
+            case 6 -> "Ваши параметры просят посадку свободнее: %s будет выглядеть спокойнее и дороже, чем %s"
+                    .formatted(recommended, selected);
+            case 7 -> "Для такой линии плеч и талии %s звучит убедительнее — %s можно оставить для другой модели"
+                    .formatted(recommended, selected);
+            case 8 -> "%s немного сдерживает форму, а %s сохранит идею вещи без лишнего натяжения"
+                    .formatted(selected, recommended);
             default -> "Вещь %s на ваших объёмах сидит как перчатка на статуе — %s будет честнее и красивее"
                     .formatted(selected, recommended);
         };
@@ -144,6 +156,8 @@ public class SizeComplimentService {
         );
         String user = """
                 session=%s
+                variationSeed=%s
+                styleAngle=%s
                 товар=%s
                 бренд=%s
                 выбранный размер=%s
@@ -154,6 +168,8 @@ public class SizeComplimentService {
                 рост %s см, грудь %s см, талия %s см, бёдра %s см, привычный размер: %s
                 """.formatted(
                 session.getId(),
+                variationSeed(session.getId(), "result"),
+                styleAngle(session.getId(), "result"),
                 safe(session.getProductTitle(), "образ"),
                 safe(session.getProductBrand(), "не указан"),
                 safe(assessment.selectedSize(), "не указан"),
@@ -177,13 +193,20 @@ public class SizeComplimentService {
 
     private static String templateResultCompliment(TryOnSessionEntity session, boolean freePlan, boolean shareHint) {
         String title = safe(session.getProductTitle(), "образ");
-        int variant = Math.floorMod(session.getId().hashCode(), 5);
+        int variant = Math.floorMod((session.getId() + ":result").hashCode(), 12);
         String base = switch (variant) {
             case 0 -> "Этот %s смотрится собранно и очень в вашем ритме".formatted(title);
             case 1 -> "Образ получился лёгким, цельным и с тем самым эффектом «хочу повторить»";
             case 2 -> "%s добавляет силуэту аккуратный fashion-акцент".formatted(title);
             case 3 -> "Очень удачный look: чистые линии, заметный акцент и без лишнего шума";
-            default -> "Смотрится свежо и уверенно — такой образ легко представить в реальной жизни";
+            case 4 -> "Смотрится свежо и уверенно — такой образ легко представить в реальной жизни";
+            case 5 -> "%s хорошо собирает образ и не спорит с вашей естественной пластикой".formatted(title);
+            case 6 -> "Получился спокойный, носибельный образ с понятным акцентом на вещь";
+            case 7 -> "Посадка выглядит естественно: вещь работает на силуэт, а не перетягивает внимание";
+            case 8 -> "Этот вариант выглядит как готовая покупка, а не просто примерка на экране";
+            case 9 -> "%s дает образу нужную структуру и оставляет ощущение легкости".formatted(title);
+            case 10 -> "Хороший баланс: вещь заметная, но образ остается вашим";
+            default -> "Такой look легко представить в корзине: спокойно, чисто и по делу";
         };
         if (shareHint) {
             return trimForStorage(base + ". Можно отправить подруге и быстро сверить впечатление.");
@@ -204,6 +227,24 @@ public class SizeComplimentService {
 
     private static String safe(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private static String variationSeed(UUID sessionId, String scope) {
+        return scope + "-" + Math.floorMod((sessionId + ":" + scope).hashCode(), 10_000);
+    }
+
+    private static String styleAngle(UUID sessionId, String scope) {
+        String[] angles = {
+                "silhouette",
+                "texture",
+                "daily wear",
+                "premium catalog",
+                "confidence",
+                "clean lines",
+                "fit balance",
+                "shopping decision"
+        };
+        return angles[Math.floorMod((sessionId + ":" + scope + ":angle").hashCode(), angles.length)];
     }
 
     private static String nullSafe(Integer value) {

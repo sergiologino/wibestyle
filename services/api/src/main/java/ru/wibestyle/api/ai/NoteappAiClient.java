@@ -16,6 +16,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -150,44 +151,15 @@ public class NoteappAiClient {
             String figureLockPrompt,
             String fitPromptHint
     ) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("prompt", prompt);
-        payload.put("settings", Map.of("aspectRatio", "3:4", "width", 768, "height", 1024));
-        payload.put("garmentTitle", GarmentTitleSanitizer.forPrompt(session.getProductTitle()));
-        payload.put("garmentBrand", session.getProductBrand());
-        if (session.getGarmentCategory() != null && !session.getGarmentCategory().isBlank()) {
-            payload.put("garmentCategory", session.getGarmentCategory().trim());
-        }
-        payload.put("selectedSize", session.getSelectedSize());
-        if (personImageBase64 != null) {
-            payload.put("personImageBase64", personImageBase64);
-        }
-        if (garmentImageBase64 != null) {
-            payload.put("garmentImageBase64", garmentImageBase64);
-        }
-        if (avatarSnapshot != null) {
-            if (avatarSnapshot.getHeightCm() != null) {
-                payload.put("heightCm", avatarSnapshot.getHeightCm());
-            }
-            if (avatarSnapshot.getBustCm() != null) {
-                payload.put("bustCm", avatarSnapshot.getBustCm());
-            }
-            if (avatarSnapshot.getWaistCm() != null) {
-                payload.put("waistCm", avatarSnapshot.getWaistCm());
-            }
-            if (avatarSnapshot.getHipsCm() != null) {
-                payload.put("hipsCm", avatarSnapshot.getHipsCm());
-            }
-            if (avatarSnapshot.getClothingSize() != null && !avatarSnapshot.getClothingSize().isBlank()) {
-                payload.put("clothingSize", avatarSnapshot.getClothingSize().trim());
-            }
-        }
-        if (figureLockPrompt != null && !figureLockPrompt.isBlank()) {
-            payload.put("figureLockPrompt", figureLockPrompt);
-        }
-        if (fitPromptHint != null && !fitPromptHint.isBlank()) {
-            payload.put("fitPromptHint", fitPromptHint);
-        }
+        Map<String, Object> payload = buildVirtualTryOnPayload(
+                session,
+                prompt,
+                personImageBase64,
+                garmentImageBase64,
+                avatarSnapshot,
+                figureLockPrompt,
+                fitPromptHint
+        );
 
         Map<String, Object> body = new HashMap<>();
         body.put("userId", session.getUserId().toString());
@@ -280,6 +252,97 @@ public class NoteappAiClient {
             logService.logInboundResponse(session, false, null, networkName, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
             return ProcessResult.failure(errorCode, ex.getMessage());
         }
+    }
+
+    static Map<String, Object> buildVirtualTryOnPayload(
+            TryOnSessionEntity session,
+            String prompt,
+            String personImageBase64,
+            String garmentImageBase64,
+            AvatarSnapshotEntity avatarSnapshot,
+            String figureLockPrompt,
+            String fitPromptHint
+    ) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("prompt", prompt);
+        payload.put(
+                "inputImageOrder",
+                "image1/customer/avatar/personImageBase64 is the identity and body source; "
+                        + "image2/product/garmentImageBase64 is only the garment reference."
+        );
+        payload.put("settings", Map.of("aspectRatio", "3:4", "width", 768, "height", 1024));
+        payload.put("garmentTitle", GarmentTitleSanitizer.forPrompt(session.getProductTitle()));
+        payload.put("garmentBrand", session.getProductBrand());
+        if (session.getGarmentCategory() != null && !session.getGarmentCategory().isBlank()) {
+            payload.put("garmentCategory", session.getGarmentCategory().trim());
+        }
+        payload.put("garmentPromptProfile", GarmentClassification.normalizePromptProfile(
+                session.getGarmentPromptProfile(),
+                session.getGarmentCategory()
+        ));
+        payload.put("garmentCoverageLevel", GarmentClassification.normalizeCoverageLevel(
+                session.getGarmentCoverageLevel(),
+                session.getGarmentCategory()
+        ));
+        payload.put("garmentModerationRisk", GarmentClassification.normalizeModerationRisk(
+                session.getGarmentModerationRisk(),
+                session.getGarmentCategory()
+        ));
+        payload.put("garmentHasHumanModel", session.isGarmentHasHumanModel());
+        payload.put("selectedSize", session.getSelectedSize());
+        if (personImageBase64 != null) {
+            payload.put("personImageBase64", personImageBase64);
+            payload.put("image1Base64", personImageBase64);
+            payload.put("image1Role", "customer_avatar_identity_body_face_hair_source");
+        }
+        if (garmentImageBase64 != null) {
+            payload.put("garmentImageBase64", garmentImageBase64);
+            payload.put("image2Base64", garmentImageBase64);
+            payload.put("image2Role", "product_garment_reference_only_ignore_any_person");
+        }
+        if (personImageBase64 != null && garmentImageBase64 != null) {
+            payload.put(
+                    "images",
+                    List.of(
+                            Map.of(
+                                    "label", "image1",
+                                    "field", "personImageBase64",
+                                    "role", "customer avatar; preserve face, hair, skin tone, body proportions and pose",
+                                    "base64", personImageBase64
+                            ),
+                            Map.of(
+                                    "label", "image2",
+                                    "field", "garmentImageBase64",
+                                    "role", "product garment reference only; ignore any face, body, hair, pose or identity",
+                                    "base64", garmentImageBase64
+                            )
+                    )
+            );
+        }
+        if (avatarSnapshot != null) {
+            if (avatarSnapshot.getHeightCm() != null) {
+                payload.put("heightCm", avatarSnapshot.getHeightCm());
+            }
+            if (avatarSnapshot.getBustCm() != null) {
+                payload.put("bustCm", avatarSnapshot.getBustCm());
+            }
+            if (avatarSnapshot.getWaistCm() != null) {
+                payload.put("waistCm", avatarSnapshot.getWaistCm());
+            }
+            if (avatarSnapshot.getHipsCm() != null) {
+                payload.put("hipsCm", avatarSnapshot.getHipsCm());
+            }
+            if (avatarSnapshot.getClothingSize() != null && !avatarSnapshot.getClothingSize().isBlank()) {
+                payload.put("clothingSize", avatarSnapshot.getClothingSize().trim());
+            }
+        }
+        if (figureLockPrompt != null && !figureLockPrompt.isBlank()) {
+            payload.put("figureLockPrompt", figureLockPrompt);
+        }
+        if (fitPromptHint != null && !fitPromptHint.isBlank()) {
+            payload.put("fitPromptHint", fitPromptHint);
+        }
+        return payload;
     }
 
     private ImageResult extractImageResult(JsonNode responseBody) {

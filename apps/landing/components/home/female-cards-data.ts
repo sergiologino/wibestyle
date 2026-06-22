@@ -44,7 +44,7 @@ export function resolveFemaleExampleMedia(fileBase: string): FemaleExampleMedia 
 }
 
 // Replace files in /public/assets/female-cards/.
-// Matching rule: look-1.mp4 wins; otherwise look-1.png/jpg/jpeg/webp/avif is used.
+// Matching rule: look-1.mp4 wins; otherwise the selected look-1.png is preferred.
 const femaleExampleCardSources: FemaleExampleCardSource[] = [
   {
     id: "dress",
@@ -58,7 +58,7 @@ const femaleExampleCardSources: FemaleExampleCardSource[] = [
     fileBase: "look-2",
     alt: "Пример AI-примерки офисного образа",
     title: "Офис",
-    subtitle: "Пиджак, брюки и аксессуары в одном look",
+    subtitle: "Пиджак, юбка и блузка в офисном образе",
   },
   {
     id: "evening",
@@ -71,8 +71,8 @@ const femaleExampleCardSources: FemaleExampleCardSource[] = [
     id: "city",
     fileBase: "look-4",
     alt: "Пример AI-примерки городского образа",
-    title: "Город",
-    subtitle: "Пальто, обувь и пропорции в полный рост",
+    title: "На каждый день",
+    subtitle: "Красная блузка, кофта и брюки",
   },
 ];
 
