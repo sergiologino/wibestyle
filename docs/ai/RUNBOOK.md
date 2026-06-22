@@ -1,4 +1,4 @@
-# Runbook — запуск WibeStyle
+﻿# Runbook — запуск WibeStyle
 
 Инструкция по локальной разработке и production-деплою monorepo **WibeStyle** («Я на стиле»).
 
@@ -10,10 +10,10 @@
 
 | Сервис | Пакет / путь | Порт (dev) | URL (prod) |
 |--------|--------------|------------|------------|
-| Landing | `apps/landing` | 3000 | `https://wibestyle.ru` |
-| Web app | `apps/web-app` | 3001 | `https://app.wibestyle.ru` |
+| Landing | `apps/landing` | 3000 | `https://vibestyle.art` |
+| Web app | `apps/web-app` | 3001 | `https://app.vibestyle.art` |
 | Admin | `apps/admin` | 3002 | внутренний / VPN |
-| API | `services/api` | 8080 | `https://api.wibestyle.ru` |
+| API | `services/api` | 8080 | `https://api.vibestyle.art` |
 | **PostgreSQL** | **локальный сервер** | 5432 | **отдельный managed DB** |
 | Redis | опционально (`docker-compose`) | 6379 | managed Redis |
 
@@ -224,10 +224,10 @@ curl http://localhost:8080/api/v1/health
 ### Общая схема
 
 ```text
-[wibestyle.ru]       → landing
-[app.wibestyle.ru]   → web-app
+[vibestyle.art]       → landing
+[app.vibestyle.art]   → web-app
 [admin.*]            → admin (VPN / IP allowlist)
-[api.wibestyle.ru]   → Spring Boot JAR
+[api.vibestyle.art]   → Spring Boot JAR
 [PostgreSQL]         → ОТДЕЛЬНЫЙ сервер (managed DB, не на том же хосте что API)
 [Redis]              → managed Redis (опционально до внедрения)
 [S3]                 → медиа (планируется)
@@ -254,7 +254,7 @@ cd services\api
 | `SPRING_DATA_REDIS_HOST` | Redis (когда включим) |
 | `WIBESTYLE_JWT_SECRET` | Сильный секрет ≥32 байт |
 | `WIBESTYLE_ADMIN_API_KEY` | Admin key |
-| `WIBESTYLE_OAUTH_API_PUBLIC_BASE` | `https://api.wibestyle.ru` |
+| `WIBESTYLE_OAUTH_API_PUBLIC_BASE` | `https://api.vibestyle.art` |
 | … | см. полный справочник ниже |
 
 ### Production checklist
@@ -278,15 +278,15 @@ cd services\api
 ### YooKassa — подключение
 
 1. В [личном кабинете YooKassa](https://yookassa.ru/) создайте магазин, получите **shopId** и **secret key**.
-2. **Webhook URL** (HTTP notifications): `https://api.wibestyle.ru/api/v1/billing/webhooks/yookassa`  
+2. **Webhook URL** (HTTP notifications): `https://api.vibestyle.art/api/v1/billing/webhooks/yookassa`  
    События: `payment.succeeded`, `payment.canceled`.
-3. **Return URL** в env API: `https://app.wibestyle.ru/paywall/return` (`WIBESTYLE_BILLING_RETURN_URL`).
+3. **Return URL** в env API: `https://app.vibestyle.art/paywall/return` (`WIBESTYLE_BILLING_RETURN_URL`).
 4. Env на API-сервере:
 
 ```env
 WIBESTYLE_BILLING_PROVIDER=yookassa
 WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=false
-WIBESTYLE_BILLING_RETURN_URL=https://app.wibestyle.ru/paywall/return
+WIBESTYLE_BILLING_RETURN_URL=https://app.vibestyle.art/paywall/return
 WIBESTYLE_YOOKASSA_SHOP_ID=123456
 WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 ```
@@ -424,3 +424,4 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 - [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md)
 - [CURRENT_STATE.md](./CURRENT_STATE.md)
 - [API.md](./API.md)
+

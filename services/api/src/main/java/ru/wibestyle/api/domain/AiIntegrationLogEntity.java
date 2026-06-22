@@ -42,6 +42,15 @@ public class AiIntegrationLogEntity {
     @Column(name = "noteapp_request_id", length = 64)
     private String noteappRequestId;
 
+    @Column(length = 64)
+    private String operation;
+
+    @Column(name = "attempt_number")
+    private Integer attemptNumber;
+
+    @Column(name = "fallback_reason", length = 255)
+    private String fallbackReason;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -123,6 +132,30 @@ public class AiIntegrationLogEntity {
 
     public void setNoteappRequestId(String noteappRequestId) {
         this.noteappRequestId = noteappRequestId;
+    }
+
+    public String getOperation() {
+        return operation;
+    }
+
+    public void setOperation(String operation) {
+        this.operation = operation;
+    }
+
+    public Integer getAttemptNumber() {
+        return attemptNumber;
+    }
+
+    public void setAttemptNumber(Integer attemptNumber) {
+        this.attemptNumber = attemptNumber;
+    }
+
+    public String getFallbackReason() {
+        return fallbackReason;
+    }
+
+    public void setFallbackReason(String fallbackReason) {
+        this.fallbackReason = fallbackReason;
     }
 
     public Instant getCreatedAt() {

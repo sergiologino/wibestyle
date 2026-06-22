@@ -1,6 +1,6 @@
-# API Reference (MVP)
+﻿# API Reference (MVP)
 
-Base URL: `https://api.wibestyle.ru/api/v1` (dev: `http://localhost:8080/api/v1`)
+Base URL: `https://api.vibestyle.art/api/v1` (dev: `http://localhost:8080/api/v1`)
 
 Auth header: `Authorization: Bearer <JWT access token>`
 
@@ -64,6 +64,18 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 | POST | `/admin/gallery/posts/{id}/hide` | скрыть из public feed |
 | DELETE | `/admin/gallery/posts/{id}` | безвозвратное удаление |
 | GET | `/admin/audit` | |
+
+## Admin (AI providers and logs)
+
+All endpoints require `X-Admin-Key`.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/ai-providers` | Returns provider priority lists for `VIRTUAL_TRY_ON_PHOTO` and `VIRTUAL_TRY_ON_VIDEO`. |
+| PUT | `/admin/ai-providers/{operation}` | Replaces priority/display/enabled settings for one operation. Body: `{ items: [{ networkName, displayName, priorityOrder, enabled }] }`. |
+| GET | `/admin/ai-logs?page=&size=` | Returns AI integration request/response logs. Items include `operation`, `attemptNumber`, `fallbackReason`, `modelName`, `provider`, `noteappRequestId`. |
+
+Provider priorities only select the `networkName` sent to `noteapp-ai-integration`; all integrations still go through `/api/ai/process`.
 
 ## Billing
 
@@ -145,3 +157,4 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 `users`, `user_profiles`, `avatars`, `avatar_snapshots`, `try_on_sessions`, `try_on_jobs`, `favorites`, `gallery_posts`, `gallery_likes`, `gallery_comments`, `promo_codes`, `promo_code_redemptions`, `landing_leads`, `landing_interests`, `media_assets`, `reviews`, `billing_checkouts`
 
 See Flyway migrations `V1`–`V9` in `services/api/src/main/resources/db/migration/`.
+

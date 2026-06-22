@@ -8,7 +8,6 @@ export type StyleShowcaseItem = {
   href: string;
 };
 
-// Temporary demo assets. Replace image paths with production photos when they are ready.
 export const styleShowcaseItems: StyleShowcaseItem[] = [
   {
     id: "casual",

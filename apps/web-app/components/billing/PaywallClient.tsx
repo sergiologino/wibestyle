@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Check, ShieldCheck, Sparkles } from "lucide-react";
 import { Button, Card } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { BillingPeriod, BillingPlanOffer, SubscriptionPlan } from "@wibestyle/shared-types";
@@ -13,19 +14,20 @@ function formatRub(value: number) {
   return `${value.toLocaleString("ru-RU")} ₽`;
 }
 
-const WIBE_PERKS = [
-  "20 AI-примерок в период",
-  "Wildberries и Ozon по ссылке",
-  "Галерея, избранное, size advice",
-  "Share-карточка для подруг",
-];
-
-const ELITE_PERKS = [
-  "100 генераций в период",
-  "Видео «Хит сезона»",
-  "Приоритетная очередь",
-  "Golden frame и ранний доступ",
-];
+const PLAN_PERKS = {
+  wibe: [
+    "AI-примерки одежды по ссылкам с маркетплейсов",
+    "История образов и сохранение удачных looks",
+    "Share-карточки для подруг и стилиста",
+    "Приватная обработка фото в рамках профиля",
+  ],
+  elite: [
+    "Больше генераций в периоде",
+    "Видео «Хит сезона» для лучших образов",
+    "Приоритетная очередь обработки",
+    "Ранний доступ к новым fashion-функциям",
+  ],
+} satisfies Record<"wibe" | "elite", string[]>;
 
 export default function PaywallClient() {
   const router = useRouter();
@@ -81,13 +83,16 @@ export default function PaywallClient() {
 
   const wibeOffer = offers.find((item) => item.plan === "wibe" && item.period === period);
   const eliteOffer = offers.find((item) => item.plan === "elite" && item.period === period);
-
   const showUpgradeHint = isElitePerk
     && subscriptionActive
     && subscriberPlan === "wibe"
     && subscriberPeriod === "annual"
     && period === "annual"
     && eliteOffer?.upgradeFromWibe;
+
+  const displayPrice = currentOffer?.upgradeFromWibe && currentOffer.upgradePriceRub != null
+    ? currentOffer.upgradePriceRub
+    : currentOffer?.priceRub;
 
   async function onCheckout() {
     if (selectedPlan === "trial") return;
@@ -102,43 +107,45 @@ export default function PaywallClient() {
       }
       router.push(`/paywall/payment?checkoutId=${encodeURIComponent(result.checkoutId)}`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось создать checkout");
+      setError(err instanceof ApiError ? err.message : "Не удалось открыть оплату");
       setSubmitting(false);
     }
   }
 
-  const displayPrice = currentOffer?.upgradeFromWibe && currentOffer.upgradePriceRub != null
-    ? currentOffer.upgradePriceRub
-    : currentOffer?.priceRub;
-
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
-      <section className="overflow-hidden rounded-[32px] border border-[#ffd1ed] bg-gradient-to-br from-[#fff0f9] via-white to-[#faf7ff] p-8 shadow-[0_20px_60px_rgba(255,31,162,0.08)]">
-        <p className="text-eyebrow">
-          {isElitePerk ? "Elite perk" : reason === "trial_exhausted" ? "Trial закончился" : "WibeStyle Premium"}
-        </p>
-        <h1 className="text-display mt-3 text-4xl md:text-5xl">
-          {isElitePerk ? "Перейди на Elite" : "Примеряй без ограничений"}
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
+      <section className="overflow-hidden rounded-[32px] border border-[#ffb8a5] bg-[#fff1ed] p-7 shadow-[0_20px_60px_rgba(255,91,61,0.10)] md:p-9">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-[#8b3c2c]">
+            <Sparkles size={14} aria-hidden />
+            {isElitePerk ? "Elite" : reason === "trial_exhausted" ? "Trial закончился" : "WibeStyle Premium"}
+          </span>
+          {promoDiscountPercent > 0 ? (
+            <span className="rounded-full bg-[#ff5b3d] px-3 py-1 text-xs font-medium text-white">
+              промокод: −{promoDiscountPercent}%
+            </span>
+          ) : null}
+        </div>
+        <h1 className="text-display mt-4 text-4xl md:text-5xl">
+          {isElitePerk ? "Открой Elite-функции" : "Примеряй больше, покупай увереннее"}
         </h1>
         <p className="text-body mt-4 max-w-2xl text-lg">
-          {isElitePerk
-            ? "Кинематографичное видео с твоим look — только для Elite."
-            : "Одежда с маркетплейса на тебе до покупки. Годовой Wibe — лучший старт: −20% и больше примерок."}
-          {promoDiscountPercent > 0 ? ` Промокод: −${promoDiscountPercent}%.` : ""}
+          Подключи тариф, чтобы делать больше AI-примерок, сохранять образы и возвращаться к товарам с маркетплейсов без хаоса в корзине.
         </p>
-        <div className="mt-6 flex flex-wrap gap-3 text-sm text-[#6d6273]">
-          <span className="rounded-full border border-[#ffd1ed] bg-white px-3 py-1">Безопасная оплата YooKassa</span>
-          <span className="rounded-full border border-[#ffd1ed] bg-white px-3 py-1">Отмена в любой момент</span>
-          {paymentProvider === "mock" ? (
-            <span className="rounded-full border border-[#ffd1ed] bg-white px-3 py-1">Dev: mock checkout</span>
-          ) : null}
+        <div className="mt-5 flex flex-wrap gap-3 text-sm text-[#5f5662]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#ffb8a5] bg-white px-3 py-1">
+            <ShieldCheck size={15} aria-hidden />
+            безопасная оплата
+          </span>
+          <span className="rounded-full border border-[#ffb8a5] bg-white px-3 py-1">отмена в любой момент</span>
+          {paymentProvider === "mock" ? <span className="rounded-full border border-[#ffb8a5] bg-white px-3 py-1">dev checkout</span> : null}
         </div>
       </section>
 
       <Card>
         {showUpgradeHint && eliteOffer?.upgradePriceRub != null ? (
-          <p className="mb-6 rounded-2xl border border-[#e8d9ff] bg-[#faf7ff] px-4 py-3 text-sm text-[#302637]">
-            Активный годовой Wibe — доплата за Elite: <strong>{formatRub(eliteOffer.upgradePriceRub)}</strong>
+          <p className="mb-6 rounded-2xl border border-[#a9d8ff] bg-[#eef7ff] px-4 py-3 text-sm text-[#302637]">
+            У тебя активен годовой Wibe. Доплата за Elite: <strong>{formatRub(eliteOffer.upgradePriceRub)}</strong>
           </p>
         ) : null}
 
@@ -168,26 +175,26 @@ export default function PaywallClient() {
               recommended={period === "annual"}
               price={wibeOffer ? formatRub(wibeOffer.priceRub) : "…"}
               monthly={wibeOffer?.monthlyEquivalentRub ? `~${formatRub(wibeOffer.monthlyEquivalentRub)}/мес` : undefined}
-              perks={WIBE_PERKS}
+              perks={PLAN_PERKS.wibe}
               onSelect={() => setSelectedPlan("wibe")}
             />
             <PlanCard
               title="Elite"
               selected={selectedPlan === "elite"}
-              accent="#782cff"
+              accent="#42a5ff"
               price={eliteOffer ? formatRub(eliteOffer.priceRub) : "…"}
               monthly={eliteOffer?.monthlyEquivalentRub ? `~${formatRub(eliteOffer.monthlyEquivalentRub)}/мес` : undefined}
-              perks={ELITE_PERKS}
+              perks={PLAN_PERKS.elite}
               onSelect={() => setSelectedPlan("elite")}
             />
           </div>
         ) : (
-          <div className="mt-6 rounded-[28px] border-2 border-[#782cff] bg-[#faf7ff] p-6">
+          <div className="mt-6 rounded-[28px] border-2 border-[#42a5ff] bg-[#eef7ff] p-6">
             <h2 className="text-display-md text-3xl">Elite</h2>
             <p className="mt-2 text-3xl">{eliteOffer ? formatRub(displayPrice ?? eliteOffer.priceRub) : "…"}</p>
             <ul className="text-body mt-4 space-y-2">
-              {ELITE_PERKS.map((perk) => (
-                <li key={perk}>✓ {perk}</li>
+              {PLAN_PERKS.elite.map((perk) => (
+                <li key={perk} className="flex gap-2"><Check size={16} className="mt-1 text-[#42a5ff]" aria-hidden />{perk}</li>
               ))}
             </ul>
           </div>
@@ -202,17 +209,19 @@ export default function PaywallClient() {
 
         <Button className="mt-6 w-full md:w-auto" disabled={loading || submitting || !currentOffer} onClick={() => void onCheckout()} size="lg">
           {submitting
-            ? "Переходим к оплате…"
-            : paymentProvider === "yookassa"
-              ? `Оплатить через YooKassa`
-              : isElitePerk
-                ? "Оформить Elite"
-                : `Оформить ${selectedPlan === "elite" ? "Elite" : "Wibe"}`}
+            ? "Открываем оплату…"
+            : isElitePerk
+              ? "Подключить Elite"
+              : "Подключить trial"}
         </Button>
 
-        {error ? <p className="mt-3 text-[#ff1fa2]">{error}</p> : null}
+        {error ? <p className="mt-3 text-[#e5484d]">{error}</p> : null}
 
-        <Link href="/home" className="text-link mt-6 inline-block text-sm">← Пока пропустить</Link>
+        <p className="mt-5 max-w-2xl text-xs leading-5 text-[#6d6273]">
+          AI-примерка может ошибаться в посадке, деталях ткани, слоях одежды и обработке белья. Мы улучшаем качество генераций и не списываем лимит за технический сбой.
+        </p>
+
+        <Link href="/home" className="text-link mt-6 inline-block text-sm">Пока пропустить</Link>
       </Card>
     </div>
   );
@@ -246,7 +255,7 @@ function PlanCard(props: {
       {props.monthly ? <p className="mt-1 text-sm text-[#6d6273]">{props.monthly}</p> : null}
       <ul className="text-body mt-4 space-y-2 text-left">
         {props.perks.map((perk) => (
-          <li key={perk}>✓ {perk}</li>
+          <li key={perk} className="flex gap-2"><Check size={16} className="mt-1 shrink-0" style={{ color: props.accent }} aria-hidden />{perk}</li>
         ))}
       </ul>
     </button>

@@ -1161,6 +1161,47 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.items").isArray());
     }
 
+    @Test
+    void adminAiProvidersEndpoint_allowsPriorityUpdate() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/ai-providers")
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.VIRTUAL_TRY_ON_PHOTO").isArray())
+                .andExpect(jsonPath("$.VIRTUAL_TRY_ON_VIDEO").isArray());
+
+        mockMvc.perform(put("/api/v1/admin/ai-providers/VIRTUAL_TRY_ON_PHOTO")
+                        .header("X-Admin-Key", "test-admin-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "items": [
+                                    {
+                                      "networkName": "wibestyle-vton",
+                                      "displayName": "WibeStyle Virtual Try-On",
+                                      "priorityOrder": 20,
+                                      "enabled": true
+                                    },
+                                    {
+                                      "networkName": "fashn-try-on-photo",
+                                      "displayName": "FASHN Try-On Photo",
+                                      "priorityOrder": 10,
+                                      "enabled": true
+                                    },
+                                    {
+                                      "networkName": "kling-try-on-photo",
+                                      "displayName": "Kling Try-On Photo",
+                                      "priorityOrder": 30,
+                                      "enabled": false
+                                    }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.operation").value("VIRTUAL_TRY_ON_PHOTO"))
+                .andExpect(jsonPath("$.items[0].networkName").value("fashn-try-on-photo"))
+                .andExpect(jsonPath("$.items[0].priorityOrder").value(10));
+    }
+
     private void createUserViaEmailOtp(String email) throws Exception {
         String body = mockMvc.perform(post("/api/v1/auth/email-otp/start")
                         .contentType(MediaType.APPLICATION_JSON)

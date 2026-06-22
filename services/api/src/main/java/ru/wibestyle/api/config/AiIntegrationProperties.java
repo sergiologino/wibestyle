@@ -102,6 +102,10 @@ public class AiIntegrationProperties {
         return enabled && apiKey != null && !apiKey.isBlank() && virtualTryOnNetwork != null && !virtualTryOnNetwork.isBlank();
     }
 
+    public boolean isIntegrationConfigured() {
+        return enabled && apiKey != null && !apiKey.isBlank();
+    }
+
     public boolean isSeasonVideoConfigured() {
         return enabled && apiKey != null && !apiKey.isBlank() && seasonVideoNetwork != null && !seasonVideoNetwork.isBlank();
     }

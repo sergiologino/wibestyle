@@ -17,6 +17,9 @@ type AiLogItem = {
   body: string;
   modelLabel?: string | null;
   provider?: string | null;
+  operation?: string | null;
+  attemptNumber?: number | null;
+  fallbackReason?: string | null;
   status?: string | null;
   noteappRequestId?: string | null;
   createdAt: string;
@@ -124,7 +127,12 @@ export default function AdminAiLogsPage() {
                   {phaseLabels[item.phase] ?? item.phase}
                   {item.status ? ` · ${item.status}` : ""}
                   {item.modelLabel ? ` · ${item.modelLabel}` : ""}
+                  {item.operation ? ` · ${item.operation}` : ""}
+                  {item.attemptNumber ? ` · попытка ${item.attemptNumber}` : ""}
                 </p>
+                {item.fallbackReason ? (
+                  <p className="mt-1 text-[11px] font-bold text-[#ff1fa2]">fallback: {item.fallbackReason}</p>
+                ) : null}
                 {item.noteappRequestId ? (
                   <p className="mt-1 text-[11px] font-bold text-[#6d6273]">noteapp requestId: {item.noteappRequestId}</p>
                 ) : null}

@@ -104,3 +104,15 @@
 - [RUNBOOK.md](./RUNBOOK.md)
 - [CURRENT_STATE.md](./CURRENT_STATE.md)
 - [API.md](./API.md)
+
+---
+
+## Update 2026-06-15
+
+| Area | Status |
+|------|--------|
+| AI provider fallback | ✅ Photo/video provider chains go through the existing noteapp-ai-integration service by changing `networkName`. |
+| Provider priority storage | ✅ `ai_provider_priorities` stores operation, network, display name, priority and enabled flag. |
+| Admin `/ai-providers` | ✅ Admin can set primary/fallback/last provider order for photo and video. |
+| Admin `/ai-logs` | ✅ Logs show operation, attempt number, fallback reason and actual network/model/provider. |
+| Checks | ✅ `services/api/gradlew.bat test --console=plain`, `npm.cmd test -w @wibestyle/admin`, `npm.cmd run build -w @wibestyle/admin`. |

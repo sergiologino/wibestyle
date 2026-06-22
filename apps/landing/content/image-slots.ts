@@ -98,4 +98,28 @@ export const imageSlots = {
     width: 600,
     height: 800,
   },
+  lookRequestFullLook: {
+    src: "/assets/look-request/full-look.png",
+    alt: "Полный лук с одеждой, обувью, аксессуарами и макияжем",
+    width: 600,
+    height: 800,
+  },
+  lookRequestAccessories: {
+    src: "/assets/look-request/accessories.png",
+    alt: "Аксессуары для полного образа: сумка, украшения и детали",
+    width: 600,
+    height: 800,
+  },
+  lookRequestShoes: {
+    src: "/assets/look-request/shoes.png",
+    alt: "Обувь как часть подобранного образа",
+    width: 600,
+    height: 800,
+  },
+  lookRequestMakeup: {
+    src: "/assets/look-request/makeup.png",
+    alt: "Макияж и укладка как часть полного образа",
+    width: 600,
+    height: 800,
+  },
 } satisfies Record<string, ImageSlot>;

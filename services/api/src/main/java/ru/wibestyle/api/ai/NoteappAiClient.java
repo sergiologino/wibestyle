@@ -139,6 +139,9 @@ public class NoteappAiClient {
     }
 
     public ProcessResult processVirtualTryOn(
+            String networkName,
+            int attemptNumber,
+            String fallbackReason,
             TryOnSessionEntity session,
             String prompt,
             String personImageBase64,
@@ -160,7 +163,7 @@ public class NoteappAiClient {
 
         Map<String, Object> body = new HashMap<>();
         body.put("userId", session.getUserId().toString());
-        body.put("networkName", properties.getVirtualTryOnNetwork());
+        body.put("networkName", networkName);
         body.put("requestType", "image_generation");
         body.put("payload", payload);
         body.put("metadata", metadata == null ? Map.of() : metadata);
@@ -168,7 +171,7 @@ public class NoteappAiClient {
         log.info(
                 "Noteapp try-on call baseUrl={} network={} userId={} personImageChars={} garmentImageChars={} garmentTitle={} promptLen={} promptPreview={}",
                 properties.getBaseUrl(),
-                properties.getVirtualTryOnNetwork(),
+                networkName,
                 session.getUserId(),
                 personImageBase64 != null ? personImageBase64.length() : 0,
                 garmentImageBase64 != null ? garmentImageBase64.length() : 0,
@@ -176,7 +179,14 @@ public class NoteappAiClient {
                 prompt != null ? prompt.length() : 0,
                 promptPreview(prompt)
         );
-        logService.logOutboundRequest(session, body);
+        logService.logOutboundRequest(
+                session,
+                body,
+                metadata == null ? null : metadata.get("operation"),
+                networkName,
+                attemptNumber,
+                fallbackReason
+        );
 
         try {
             JsonNode response = restClient.post()
@@ -189,7 +199,7 @@ public class NoteappAiClient {
 
             if (response == null) {
                 log.warn("Noteapp try-on empty response");
-                logService.logInboundResponse(session, false, null, null, null, 0, "Empty AI response", Map.of());
+                logService.logInboundResponse(session, false, null, networkName, null, 0, "Empty AI response", Map.of(), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
                 return ProcessResult.failure("EMPTY_RESPONSE", "Empty AI response");
             }
 
@@ -209,16 +219,17 @@ public class NoteappAiClient {
             );
             if (!"success".equalsIgnoreCase(status)) {
                 String error = response.path("errorMessage").asText("AI request failed");
-                logService.logInboundResponse(session, false, requestId, networkUsed, provider, executionTimeMs, error, responseSummary);
-                return ProcessResult.failure("AI_GENERATION_FAILED", error);
+                String errorCode = resolveTryOnErrorCode(error);
+                logService.logInboundResponse(session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, error, responseSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
+                return ProcessResult.failure(errorCode, userFacingTryOnError(errorCode, error));
             }
 
             ImageResult imageResult = extractImageResult(response.path("response"));
             if (imageResult == null) {
                 log.warn("Noteapp try-on success but no image in response");
                 logService.logInboundResponse(
-                        session, false, requestId, networkUsed, provider, executionTimeMs,
-                        "No image in AI response", responseSummary
+                        session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs,
+                        "No image in AI response", responseSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason
                 );
                 return ProcessResult.failure("AI_GENERATION_FAILED", "No image in AI response");
             }
@@ -230,12 +241,16 @@ public class NoteappAiClient {
                 successSummary.put("sourceImageUrl", sourceUrl);
             }
             successSummary.put("imageBytes", imageBytes != null ? imageBytes.length : 0);
-            logService.logInboundResponse(session, true, requestId, networkUsed, provider, executionTimeMs, null, successSummary);
-            return ProcessResult.success(requestId, networkUsed, executionTimeMs, sourceUrl, imageBytes);
+            logService.logInboundResponse(session, true, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, null, successSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
+            return ProcessResult.success(requestId, networkUsed != null ? networkUsed : networkName, executionTimeMs, sourceUrl, imageBytes);
         } catch (RestClientException ex) {
             log.warn("Noteapp AI call failed baseUrl={}: {}", properties.getBaseUrl(), ex.getMessage());
-            logService.logInboundResponse(session, false, null, null, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()));
-            return ProcessResult.failure("AI_PROVIDER_TIMEOUT", ex.getMessage());
+            String errorCode = resolveTryOnErrorCode(ex.getMessage());
+            if ("AI_GENERATION_FAILED".equals(errorCode)) {
+                errorCode = "AI_PROVIDER_TIMEOUT";
+            }
+            logService.logInboundResponse(session, false, null, networkName, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
+            return ProcessResult.failure(errorCode, ex.getMessage());
         }
     }
 
@@ -436,6 +451,9 @@ public class NoteappAiClient {
     }
 
     public VideoProcessResult generateSeasonHitVideo(
+            String networkName,
+            int attemptNumber,
+            String fallbackReason,
             TryOnSessionEntity session,
             String prompt,
             String sourceImageBase64,
@@ -448,7 +466,7 @@ public class NoteappAiClient {
 
         Map<String, Object> body = new HashMap<>();
         body.put("userId", session.getUserId().toString());
-        body.put("networkName", properties.getSeasonVideoNetwork());
+        body.put("networkName", networkName);
         body.put("requestType", "video_generation");
         body.put("payload", payload);
         body.put("metadata", metadata == null ? Map.of() : metadata);
@@ -456,12 +474,19 @@ public class NoteappAiClient {
         log.info(
                 "Noteapp season video call baseUrl={} network={} sessionId={} imageChars={} promptLen={}",
                 properties.getBaseUrl(),
-                properties.getSeasonVideoNetwork(),
+                networkName,
                 session.getId(),
                 sourceImageBase64 != null ? sourceImageBase64.length() : 0,
                 prompt != null ? prompt.length() : 0
         );
-        logService.logOutboundRequest(session, body);
+        logService.logOutboundRequest(
+                session,
+                body,
+                metadata == null ? null : metadata.get("operation"),
+                networkName,
+                attemptNumber,
+                fallbackReason
+        );
 
         try {
             JsonNode response = restClient.post()
@@ -473,7 +498,7 @@ public class NoteappAiClient {
                     .body(JsonNode.class);
 
             if (response == null) {
-                logService.logInboundResponse(session, false, null, null, null, 0, "Empty AI response", Map.of());
+                logService.logInboundResponse(session, false, null, networkName, null, 0, "Empty AI response", Map.of(), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
                 return VideoProcessResult.failed("EMPTY_RESPONSE", "Empty AI response");
             }
 
@@ -485,15 +510,16 @@ public class NoteappAiClient {
 
             if (!"success".equalsIgnoreCase(status)) {
                 String error = response.path("errorMessage").asText("AI video request failed");
-                logService.logInboundResponse(session, false, requestId, networkUsed, provider, executionTimeMs, error, Map.of());
-                return VideoProcessResult.failed("AI_GENERATION_FAILED", error);
+                String errorCode = resolveTryOnErrorCode(error);
+                logService.logInboundResponse(session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, error, Map.of(), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
+                return VideoProcessResult.failed(errorCode, userFacingTryOnError(errorCode, error));
             }
 
             VideoResult videoResult = extractVideoResult(response.path("response"));
             if (videoResult == null) {
                 logService.logInboundResponse(
-                        session, false, requestId, networkUsed, provider, executionTimeMs,
-                        "No video in AI response", Map.of()
+                        session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs,
+                        "No video in AI response", Map.of(), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason
                 );
                 return VideoProcessResult.failed("AI_GENERATION_FAILED", "No video in AI response");
             }
@@ -501,12 +527,16 @@ public class NoteappAiClient {
             byte[] videoBytes = videoResult.bytes();
             Map<String, Object> successSummary = new LinkedHashMap<>();
             successSummary.put("videoBytes", videoBytes != null ? videoBytes.length : 0);
-            logService.logInboundResponse(session, true, requestId, networkUsed, provider, executionTimeMs, null, successSummary);
-            return VideoProcessResult.success(requestId, networkUsed, executionTimeMs, videoBytes);
+            logService.logInboundResponse(session, true, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, null, successSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
+            return VideoProcessResult.success(requestId, networkUsed != null ? networkUsed : networkName, executionTimeMs, videoBytes);
         } catch (RestClientException ex) {
             log.warn("Noteapp season video call failed: {}", ex.getMessage());
-            logService.logInboundResponse(session, false, null, null, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()));
-            return VideoProcessResult.failed("AI_PROVIDER_TIMEOUT", ex.getMessage());
+            String errorCode = resolveTryOnErrorCode(ex.getMessage());
+            if ("AI_GENERATION_FAILED".equals(errorCode)) {
+                errorCode = "AI_PROVIDER_TIMEOUT";
+            }
+            logService.logInboundResponse(session, false, null, networkName, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
+            return VideoProcessResult.failed(errorCode, ex.getMessage());
         }
     }
 
@@ -588,6 +618,15 @@ public class NoteappAiClient {
                 || lower.contains("content moderation")
                 || lower.contains("rejected by content moderation")) {
             return "VTON_CONTENT_MODERATION";
+        }
+        if (lower.contains("token")
+                || lower.contains("tokens")
+                || lower.contains("quota")
+                || lower.contains("credits")
+                || lower.contains("insufficient balance")
+                || lower.contains("rate limit")
+                || lower.contains("429")) {
+            return "AI_PROVIDER_TOKENS_EXHAUSTED";
         }
         return "AI_GENERATION_FAILED";
     }
