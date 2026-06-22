@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 const ASSET_DIR = "/assets/female-cards";
 const PUBLIC_ASSET_DIR = join(process.cwd(), "public", "assets", "female-cards");
-const IMAGE_EXTENSIONS = ["webp", "jpg", "jpeg", "png", "avif"] as const;
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "avif"] as const;
 
 export type FemaleExampleMedia =
   | { type: "video"; src: string; poster?: string }
@@ -44,7 +44,7 @@ export function resolveFemaleExampleMedia(fileBase: string): FemaleExampleMedia 
 }
 
 // Replace files in /public/assets/female-cards/.
-// Matching rule: look-1.mp4 wins; otherwise look-1.webp/jpg/jpeg/png/avif is used.
+// Matching rule: look-1.mp4 wins; otherwise the selected look-1.png is preferred.
 const femaleExampleCardSources: FemaleExampleCardSource[] = [
   {
     id: "dress",

@@ -7,6 +7,8 @@
 - Правое фото в `AppPreviewPhones` переведено в `contain`, чтобы модель помещалась в экран смартфона целиком.
 - В мобильном header закреплена заметная CTA «В приложение» рядом с меню.
 - Добавлены регрессионные тесты подписей, режима отображения phone preview и mobile header CTA.
+- Восстановлен полный набор выбранных production-фотографий лендинга из `origin/master`; устранена подмена старыми demo-ассетами из ветки `improve-promt`.
+- Галерея снова предпочитает выбранные PNG, а карточка отдельного вечернего образа использует `style-showcase/men.png`; подписи приведены в соответствие одежде на фото.
 
 ## 2026-06-10 (Landing before/after banner component)
 - Landing: заменён главный raster-баннер `before-after.png` на компонентный `BeforeAfterSection` в `apps/landing/components/home/`.

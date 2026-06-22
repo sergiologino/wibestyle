@@ -48,11 +48,11 @@ export const styleShowcaseItems: StyleShowcaseItem[] = [
   },
   {
     id: "men",
-    title: "Men's style",
-    subtitle: "Пиджак, часы, обувь",
-    image: "/assets/hero-collage.png",
-    alt: "Мужской стиль с пиджаком и аксессуарами",
-    badge: "для него",
-    href: "/dlya-muzhchin",
+    title: "Вечер",
+    subtitle: "Бордовое платье, каблуки и сумка",
+    image: "/assets/style-showcase/men.png",
+    alt: "Вечерний образ в бордовом платье с сумкой",
+    badge: "для вечера",
+    href: "/primerka-platya",
   },
 ];
