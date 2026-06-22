@@ -68,7 +68,7 @@ class VirtualTryOnPromptBuilderTest {
         assertThat(prompt).startsWith("FACE AND IDENTITY LOCK");
         assertThat(prompt).contains("Base prompt from admin.");
         assertThat(prompt).contains("TRY-ON VARIABLES (JSON");
-        assertThat(prompt).contains("\"faceLock\"");
+        assertThat(prompt).doesNotContain("\"faceLock\"");
         assertThat(prompt).contains("PROMPT PROFILE: dress");
         assertThat(prompt).contains("Never duplicate the seller model");
         assertThat(prompt).contains("\"marketplaceLabelSize\" : \"M\"");
@@ -77,6 +77,12 @@ class VirtualTryOnPromptBuilderTest {
         assertThat(prompt).contains("\"sellerModelPolicy\"");
         assertThat(prompt).contains("Size S is too tight");
         assertThat(prompt).contains("Summer dress");
+        assertThat(countOccurrences(prompt, "FACE AND IDENTITY LOCK, HIGHEST PRIORITY")).isEqualTo(1);
+        assertThat(countOccurrences(prompt, "PROMPT PROFILE:")).isEqualTo(1);
+    }
+
+    private static int countOccurrences(String text, String marker) {
+        return (text.length() - text.replace(marker, "").length()) / marker.length();
     }
 
     private static TryOnSessionEntity session(UUID snapshotId) {

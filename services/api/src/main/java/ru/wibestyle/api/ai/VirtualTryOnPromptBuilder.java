@@ -117,8 +117,6 @@ public class VirtualTryOnPromptBuilder {
 
                 snapshot,
 
-                faceLock,
-
                 figureLock,
 
                 fitHint,
@@ -129,7 +127,7 @@ public class VirtualTryOnPromptBuilder {
 
         String core = base.trim() + VARIABLES_HEADER + variablesJson;
 
-        return (faceLock + "\n\n" + promptProfile + "\n\n" + core + "\n\n" + promptProfile + "\n\n" + faceLock).trim();
+        return (faceLock + "\n\n" + promptProfile + "\n\n" + core).trim();
 
     }
 

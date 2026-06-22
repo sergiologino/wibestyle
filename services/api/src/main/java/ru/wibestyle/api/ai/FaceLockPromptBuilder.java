@@ -1,8 +1,7 @@
 package ru.wibestyle.api.ai;
 
 /**
- * Identity lock for virtual try-on prompts. This block is duplicated at the
- * beginning and end of the final prompt and is also included in JSON variables.
+ * Identity lock placed once at the beginning of virtual try-on prompts.
  */
 public final class FaceLockPromptBuilder {
 

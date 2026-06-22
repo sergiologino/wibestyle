@@ -21,7 +21,6 @@ public final class TryOnPromptVariablesBuilder {
             ObjectMapper objectMapper,
             TryOnSessionEntity session,
             AvatarSnapshotEntity snapshot,
-            String faceLock,
             String figureLock,
             String fitHint,
             ProductSizeChart chart
@@ -29,9 +28,6 @@ public final class TryOnPromptVariablesBuilder {
         Map<String, Object> root = new LinkedHashMap<>();
         root.put("product", productBlock(session));
         root.put("customer", customerBlock(snapshot));
-        if (faceLock != null && !faceLock.isBlank()) {
-            root.put("faceLock", faceLock);
-        }
         if (figureLock != null && !figureLock.isBlank()) {
             root.put("figureLock", figureLock);
         }
