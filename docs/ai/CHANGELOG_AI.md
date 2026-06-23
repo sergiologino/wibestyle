@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-06-23 (Landing hero copy and favorites images)
+- Уточнён hero-текст: своё фото + ссылка с маркетплейса или фото прикида.
+- Web favorites переведены с сырого `<img src={item.imageUrl}>` на `ProductPreviewImage`: URL нормализуется через API/rewrite, CDN-запросы используют `no-referrer`, ошибки получают retry/fallback.
+- Добавлен регрессионный contract test отображения изображений избранного.
+
 ## 2026-06-16 (Onboarding replaceable media and ad logo)
 - Web onboarding media moved to dedicated replaceable files under `apps/web-app/public/assets/onboarding/slides/`.
 - Web `/welcome` now prefers `*.mp4` by slide basename and falls back to the matching `*.png`, so A/B media can be replaced without editing React code.

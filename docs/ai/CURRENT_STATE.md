@@ -79,6 +79,7 @@
 - Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
 
 ## Недавние фиксы (2026-06-03)
+- **Landing/favorites copy and media (2026-06-23)**: hero уточняет загрузку своего фото и ссылки маркетплейса либо фото прикида; web `/favorites` нормализует сохранённые product image URL через общий retryable preview, поэтому marketplace proxy/API paths больше не дают пустые карточки.
 - **Mobile branding/gallery**: Expo assets и нативные Android launcher/splash resources используют полноразмерную V-mark без edge ring; launcher resources остаются `.webp`, чтобы не ловить Gradle duplicate resources; mobile gallery строит абсолютный API URL для `publicImageUrl`.
 - **Profile UX (2026-06-03)**: mobile profile inputs компактнее; дополнительные avatar в web/mobile не дублируют основной; mobile size tags показывают edge-треугольники, если список можно свайпать.
 - **Mobile home UX**: главный экран показывает `Осталось примерок`, счётчик в `Твои примерки (N)`, CTA на avatar при его отсутствии и gender-aware subtitle.

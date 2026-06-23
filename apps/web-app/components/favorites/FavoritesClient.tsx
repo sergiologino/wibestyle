@@ -6,6 +6,7 @@ import { Button, Card, Pill } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { FavoriteRecord } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
+import ProductPreviewImage from "@/components/try-on/ProductPreviewImage";
 
 export default function FavoritesClient() {
   const { api } = useAppSession();
@@ -69,7 +70,11 @@ export default function FavoritesClient() {
               <Card key={item.id}>
                 <div className="grid gap-4 md:grid-cols-[120px_1fr_auto]">
                   {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.title ?? "Товар"} className="h-[120px] rounded-[18px] object-cover" />
+                    <ProductPreviewImage
+                      imageUrl={item.imageUrl}
+                      alt={item.title ?? "Товар"}
+                      className="h-[120px] w-full rounded-[18px] object-cover md:w-[120px]"
+                    />
                   ) : (
                     <div className="flex h-[120px] items-center justify-center rounded-[18px] bg-[#fff4fb] text-3xl">👗</div>
                   )}
