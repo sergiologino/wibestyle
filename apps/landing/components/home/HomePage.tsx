@@ -1,10 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
-import { imageSlots } from "@/content/image-slots";
 import { homeFaq } from "@/content/home-faq";
 import { siteConfig } from "@/lib/site";
 import LeadForm from "@/components/LeadForm";
-import PricingBanner from "@/components/PricingBanner";
 import PublishedReviewsSection from "@/components/PublishedReviewsSection";
 import AppPreviewPhones from "@/components/home/AppPreviewPhones";
 import BeforeAfterSection from "@/components/home/BeforeAfterSection";
@@ -54,13 +51,13 @@ export default function HomePage() {
               <Link className="hero-web-cta" href={siteConfig.appUrl} data-analytics="hero_web_app">
                 Перейти в приложение
               </Link>
-              <Link className="store-button store-apple" href="#lead" data-analytics="hero_appstore">
+              <a className="store-button store-apple" href="#lead" data-analytics="hero_appstore">
                  <span>Скоро в<br /><b>App Store</b></span>
-              </Link>
-              <Link className="store-button store-google" href="#lead" data-analytics="hero_googleplay">
+              </a>
+              <a className="store-button store-google" href="#lead" data-analytics="hero_googleplay">
                 ▶ <span>Скачать в<br /><b>Google Play</b></span>
-              </Link>
-              <Link className="store-button store-rustore" href={siteConfig.rustoreUrl} data-analytics="hero_rustore">
+              </a>
+              <Link className="store-button store-rustore" href={siteConfig.rustoreUrl ?? siteConfig.appUrl} data-analytics="hero_rustore">
                 Ru <span>Скачать в<br /><b>RuStore</b></span>
               </Link>
             </div>
@@ -172,7 +169,6 @@ export default function HomePage() {
           <div>
             <h2 id="lead-title">Твой стиль начинается здесь</h2>
             <p>Примеряй. Вдохновляйся. Покупай увереннее.</p>
-            <PricingBanner />
             <LeadForm interest="clothing" variant="full" />
           </div>
           <FinalCtaArt />

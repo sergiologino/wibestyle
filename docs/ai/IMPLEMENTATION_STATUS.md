@@ -36,6 +36,8 @@
 | Web/mobile UI polish | ✅ responsive nav, mobile tabs/home/try-on |
 | Try-on result compliments | ✅ noteapp `gpt-4o-mini` + prompt table `tryon.result_compliment_ru` |
 | Wildberries video-first media | ✅ HTML photo candidates skip `video-js`/mp4 and are tried first |
+| Phone auth provider | ✅ SMS Aero API v2; email OTP UI временно скрыт |
+| Telegram CTA | ✅ landing + web + mobile, URL/name через public env |
 
 ---
 
@@ -64,6 +66,7 @@
 | `POST /admin/users/{id}/impersonate` | ✅ |
 | `DELETE /admin/users/{id}` — полное удаление | ✅ |
 | Admin UI `/users` | ✅ |
+| Admin UI/API `/ai-providers`: Grok/FASHN/Kling priority + fallback | ✅ |
 | Audit на subscription/impersonate/delete | ✅ |
 
 ---

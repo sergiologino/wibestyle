@@ -71,8 +71,7 @@ public class LandingController {
         LandingLeadEntity lead = leadService.register(request);
 
         Map<String, Object> response = leadService.toLeadMap(lead);
-
-        response.put("remainingSpots", leadService.remainingDiscountSpots());
+        response.putAll(leadService.publicStats());
 
         return response;
 

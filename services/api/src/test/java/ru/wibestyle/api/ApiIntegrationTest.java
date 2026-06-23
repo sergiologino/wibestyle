@@ -268,7 +268,9 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.spotNumber").value(1))
                 .andExpect(jsonPath("$.hasDiscount").value(true))
                 .andExpect(jsonPath("$.priceWithDiscount").value(3495))
-                .andExpect(jsonPath("$.remainingSpots").value(99));
+                .andExpect(jsonPath("$.remainingSpots").value(71))
+                .andExpect(jsonPath("$.promoActive").value(true))
+                .andExpect(jsonPath("$.discountPercent").value(50));
     }
 
     @Test

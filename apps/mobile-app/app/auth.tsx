@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
@@ -11,16 +11,12 @@ import { getApiBaseUrl } from "@/lib/config";
 import { legalLinks } from "@/lib/legal-links";
 import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
 import { formatRussianPhone, isRussianPhoneComplete } from "@/lib/phone-mask";
-import { colors, hairline, radius, spacing } from "@/theme/tokens";
-
-type AuthTab = "phone" | "email";
+import { colors, spacing } from "@/theme/tokens";
 
 export default function AuthScreen() {
   const router = useRouter();
   const { api, setAuth } = useSession();
-  const [tab, setTab] = useState<AuthTab>("phone");
   const [phone, setPhone] = useState("+7 ");
-  const [email, setEmail] = useState("");
   const [requestId, setRequestId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,27 +39,12 @@ export default function AuthScreen() {
     }
   }
 
-  async function startEmailOtp() {
-    setError(null);
-    setLoading(true);
-    try {
-      const result = await api.startEmailOtp(email);
-      setRequestId(result.requestId);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось отправить код на email");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function verifyOtp() {
     if (!requestId) return;
     setError(null);
     setLoading(true);
     try {
-      const auth = tab === "phone"
-        ? await api.verifyOtp(requestId, code)
-        : await api.verifyEmailOtp(requestId, code);
+      const auth = await api.verifyOtp(requestId, code);
       const meClient = new WibeStyleApiClient({
         baseUrl: getApiBaseUrl(),
         getAccessToken: () => auth.accessToken,
@@ -83,7 +64,7 @@ export default function AuthScreen() {
         }) as never,
       );
     } catch {
-      setError(tab === "phone" ? "Неверный код. Для dev используй 0000." : "Неверный код из письма.");
+      setError("Неверный код. Для dev используй 0000.");
     } finally {
       setLoading(false);
     }
@@ -101,58 +82,30 @@ export default function AuthScreen() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Eyebrow>Вход</Eyebrow>
           <DisplayTitle>Добро пожаловать</DisplayTitle>
-          <BodyText>Войди по телефону, email или через Яндекс / Google.</BodyText>
-
-          <View style={styles.tabs}>
-            {(["phone", "email"] as AuthTab[]).map((value) => (
-              <Pressable
-                key={value}
-                style={[styles.tab, tab === value && styles.tabActive]}
-                onPress={() => {
-                  setTab(value);
-                  resetChallenge();
-                }}
-              >
-                <Text style={[styles.tabText, tab === value && styles.tabTextActive]}>
-                  {value === "phone" ? "Телефон" : "Email"}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <BodyText>Войди по телефону или через Яндекс / Google.</BodyText>
 
           <View style={styles.form}>
             {!requestId ? (
               <>
-                {tab === "phone" ? (
-                  <TextField
-                    label="Телефон"
-                    placeholder="+7 900 000-00-00"
-                    keyboardType="phone-pad"
-                    maxLength={18}
-                    value={phone}
-                    onChangeText={(value) => setPhone(formatRussianPhone(value))}
-                  />
-                ) : (
-                  <TextField
-                    label="Email"
-                    placeholder="email@example.com"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={email}
-                    onChangeText={setEmail}
-                  />
-                )}
+                <TextField
+                  label="Телефон"
+                  placeholder="+7 900 000-00-00"
+                  keyboardType="phone-pad"
+                  maxLength={18}
+                  value={phone}
+                  onChangeText={(value) => setPhone(formatRussianPhone(value))}
+                />
                 <Button
                   label="Получить код"
                   loading={loading}
-                  onPress={tab === "phone" ? startPhoneOtp : startEmailOtp}
+                  onPress={startPhoneOtp}
                 />
               </>
             ) : (
               <>
                 <TextField
-                  label={tab === "phone" ? "Код из SMS" : "Код из письма"}
-                  placeholder={tab === "phone" ? "0000" : "123456"}
+                  label="Код из SMS"
+                  placeholder="0000"
                   keyboardType="number-pad"
                   value={code}
                   onChangeText={setCode}
@@ -190,31 +143,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
     paddingBottom: spacing.xxxl,
-  },
-  tabs: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: radius.md,
-    borderWidth: hairline,
-    borderColor: colors.borderLight,
-    alignItems: "center",
-  },
-  tabActive: {
-    borderColor: colors.pink,
-    backgroundColor: colors.pinkBg,
-  },
-  tabText: {
-    fontFamily: "Manrope_500Medium",
-    fontSize: 14,
-    color: colors.muted,
-  },
-  tabTextActive: {
-    color: colors.pink,
   },
   form: {
     gap: spacing.md,

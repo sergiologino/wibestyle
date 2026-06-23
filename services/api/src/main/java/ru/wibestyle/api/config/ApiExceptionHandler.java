@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.wibestyle.api.service.SmsDeliveryException;
 
 import java.util.Map;
 
@@ -53,6 +54,14 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(status).body(Map.of("error", humanMessage(code), "code", code));
     }
 
+    @ExceptionHandler(SmsDeliveryException.class)
+    public ResponseEntity<Map<String, String>> handleSmsDelivery(SmsDeliveryException ex) {
+        String code = ex.getMessage() == null ? "SMS_SEND_FAILED" : ex.getMessage();
+        log.error("SMS delivery error: {}", code, ex);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(Map.of("error", humanMessage(code), "code", code));
+    }
+
     private static String humanMessage(String code) {
         return switch (code) {
             case "ANTHROPOMETRY_REQUIRED" -> "Укажите рост, грудь, талию и бёдра";
@@ -88,6 +97,8 @@ public class ApiExceptionHandler {
             case "PROMO_ALREADY_APPLIED" -> "У вас уже есть активная скидка";
             case "OTP_RESEND_COOLDOWN" -> "Подождите минуту перед повторной отправкой кода";
             case "OTP_MAX_ATTEMPTS" -> "Превышено число попыток ввода кода";
+            case "SMS_NOT_CONFIGURED" -> "Сервис SMS временно не настроен";
+            case "SMS_SEND_FAILED" -> "Не удалось отправить SMS-код. Попробуйте ещё раз";
             case "ADMIN_UNAUTHORIZED" -> "Неверный admin key или admin token";
             case "ADMIN_FORBIDDEN" -> "Недостаточно прав администратора";
             case "ADMIN_LOGIN_FAILED" -> "Неверный email или пароль администратора";

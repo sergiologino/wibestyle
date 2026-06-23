@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.wibestyle.api.domain.LandingLeadEntity;
 import ru.wibestyle.api.dto.CreateLeadRequest;
 import ru.wibestyle.api.repository.LandingLeadRepository;
+import ru.wibestyle.api.repository.PromoCodeRepository;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -18,28 +19,29 @@ import java.util.UUID;
 public class LeadService {
 
     private static final Set<String> ALLOWED_STATUSES = Set.of("new", "contacted", "converted", "rejected");
+    private static final String FIRST_HUNDRED_PROMO_CODE = "FIRST100";
 
     private final LandingLeadRepository landingLeadRepository;
+    private final PromoCodeRepository promoCodeRepository;
     private final int annualRub;
     private final int discountedAnnualRub;
-    private final int firstUsersLimit;
 
     public LeadService(
             LandingLeadRepository landingLeadRepository,
+            PromoCodeRepository promoCodeRepository,
             @Value("${wibestyle.billing.annual-rub:6990}") int annualRub,
-            @Value("${wibestyle.billing.discounted-annual-rub:3495}") int discountedAnnualRub,
-            @Value("${wibestyle.billing.first-users-limit:100}") int firstUsersLimit
+            @Value("${wibestyle.billing.discounted-annual-rub:3495}") int discountedAnnualRub
     ) {
         this.landingLeadRepository = landingLeadRepository;
+        this.promoCodeRepository = promoCodeRepository;
         this.annualRub = annualRub;
         this.discountedAnnualRub = discountedAnnualRub;
-        this.firstUsersLimit = firstUsersLimit;
     }
 
     public LandingLeadEntity register(CreateLeadRequest request) {
         long count = landingLeadRepository.count();
         int spotNumber = (int) count + 1;
-        boolean hasDiscount = spotNumber <= firstUsersLimit;
+        boolean hasDiscount = firstHundredOffer().active();
 
         LandingLeadEntity entity = new LandingLeadEntity(
                 UUID.randomUUID(),
@@ -64,12 +66,16 @@ public class LeadService {
     }
 
     public int remainingDiscountSpots() {
-        long count = landingLeadRepository.count();
-        return Math.max(0, firstUsersLimit - (int) count);
+        return firstHundredOffer().remainingSpots();
     }
 
     public Map<String, Object> publicStats() {
-        return Map.of("remainingSpots", remainingDiscountSpots());
+        PromoOffer offer = firstHundredOffer();
+        return Map.of(
+                "remainingSpots", offer.remainingSpots(),
+                "promoActive", offer.active(),
+                "discountPercent", offer.discountPercent()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -153,5 +159,18 @@ public class LeadService {
             return "\"" + escaped + "\"";
         }
         return escaped;
+    }
+
+    private PromoOffer firstHundredOffer() {
+        return promoCodeRepository.findByCode(FIRST_HUNDRED_PROMO_CODE)
+                .map(promo -> {
+                    int remaining = Math.max(0, promo.getMaxUses() - promo.getUsesCount());
+                    boolean active = remaining > 0 && promo.isActive(Instant.now());
+                    return new PromoOffer(active, active ? remaining : 0, active ? promo.getDiscountPercent() : 0);
+                })
+                .orElseGet(() -> new PromoOffer(false, 0, 0));
+    }
+
+    private record PromoOffer(boolean active, int remainingSpots, int discountPercent) {
     }
 }

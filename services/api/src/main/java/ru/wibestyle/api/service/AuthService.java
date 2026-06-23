@@ -73,7 +73,13 @@ public class AuthService {
         String requestId = UUID.randomUUID().toString();
         phoneChallenges.put(requestId, new PhoneOtpChallenge(normalized, code, now.plusSeconds(authProperties.getOtpTtlSeconds()), 0));
         lastStartByPhone.put(normalized, now);
-        smsSender.sendOtpCode(normalized, code);
+        try {
+            smsSender.sendOtpCode(normalized, code);
+        } catch (RuntimeException ex) {
+            phoneChallenges.remove(requestId);
+            lastStartByPhone.remove(normalized, now);
+            throw ex;
+        }
         return new OtpStartResult(requestId, authProperties.getOtpTtlSeconds());
     }
 

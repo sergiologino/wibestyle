@@ -114,8 +114,8 @@ IDEA Run Configuration или env:
 | `WIBESTYLE_STORAGE_BACKEND` | `local` | `local` или будущий `s3` |
 | `WIBESTYLE_ADMIN_API_KEY` | `dev-admin-key` | `X-Admin-Key` |
 | `WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD` | `dev-admin-password` | admin@wibestyle.local |
-| `WIBESTYLE_MAIL_*`, `SMTP_*` | см. ниже | Email OTP (SMTP) |
-| `WIBESTYLE_SMS_RU_API_ID` | пусто | SMS.ru; без ключа — dev-код `0000` в лог |
+| `WIBESTYLE_MAIL_*`, `SMTP_*` | см. ниже | Email OTP backend сохранён, UI временно скрыт |
+| `WIBESTYLE_SMS_AERO_EMAIL`, `WIBESTYLE_SMS_AERO_API_KEY` | пусто | SMS Aero API v2; без credentials — dev-код `0000` в лог |
 | `WIBESTYLE_GEOIP_DEFAULT_COUNTRY` | пусто | Страна по умолчанию для GeoIP (OAuth) |
 | `WIBESTYLE_OAUTH_*` | см. ниже | OAuth Яндекс / Google (опционально) |
 | `WIBESTYLE_AI_*` | — | AI integration (опционально) |
@@ -127,7 +127,7 @@ IDEA Run Configuration или env:
 | Способ | Endpoints | Dev без провайдеров |
 |--------|-----------|-------------------|
 | Телефон + SMS | `POST /auth/otp/start`, `/verify` | Код `0000` (лог API) |
-| Email + код | `POST /auth/email-otp/start`, `/verify` | Код в лог API (`WIBESTYLE_MAIL_DEV_LOG_ONLY=true`) |
+| Email + код | Backend сохранён, web/mobile UI временно скрыт | Код в лог API (`WIBESTYLE_MAIL_DEV_LOG_ONLY=true`) |
 | Яндекс / Google | `GET /auth/oauth/{provider}/start` | Нужны client id/secret в env |
 | Логин / пароль | — | **Удалён** (`/auth/register`, `/auth/login` не существуют) |
 
@@ -141,8 +141,8 @@ IDEA Run Configuration или env:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_APP_URL=http://localhost:3001
-NEXT_PUBLIC_TELEGRAM_CHANNEL_URL=
-NEXT_PUBLIC_TELEGRAM_CHANNEL_NAME=Telegram
+NEXT_PUBLIC_TELEGRAM_CHANNEL_URL=https://t.me/vibestyle_channel
+NEXT_PUBLIC_TELEGRAM_CHANNEL_NAME=Я на стиле. Поддержка
 ```
 
 **Admin** (`apps/admin/.env.local`):
@@ -159,6 +159,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3001
 NEXT_PUBLIC_YANDEX_METRIKA_ID=109999858
+NEXT_PUBLIC_TELEGRAM_CHANNEL_URL=https://t.me/vibestyle_channel
+NEXT_PUBLIC_TELEGRAM_CHANNEL_NAME=Я на стиле. Поддержка
 ```
 
 **Mobile** (`apps/mobile-app/.env`):
@@ -166,8 +168,8 @@ NEXT_PUBLIC_YANDEX_METRIKA_ID=109999858
 ```env
 EXPO_PUBLIC_API_URL=http://10.0.2.2:8080
 EXPO_PUBLIC_APP_URL=https://app.vibestyle.art
-EXPO_PUBLIC_TELEGRAM_CHANNEL_URL=
-EXPO_PUBLIC_TELEGRAM_CHANNEL_NAME=Telegram
+EXPO_PUBLIC_TELEGRAM_CHANNEL_URL=https://t.me/vibestyle_channel
+EXPO_PUBLIC_TELEGRAM_CHANNEL_NAME=Я на стиле. Поддержка
 ```
 
 ### 5. Запуск сервисов
@@ -212,8 +214,8 @@ curl http://localhost:8080/api/v1/health
 
 | Что | Значение |
 |-----|----------|
-| SMS OTP (телефон) | `0000` без `WIBESTYLE_SMS_RU_API_ID` |
-| Email OTP | код в логе API при `WIBESTYLE_MAIL_DEV_LOG_ONLY=true` |
+| SMS OTP (телефон) | `0000` без SMS Aero credentials |
+| Email OTP | Backend сохранён, но UI временно скрыт |
 | Admin key | `dev-admin-key` |
 | Admin login | `admin@wibestyle.local` / `dev-admin-password` |
 
@@ -264,8 +266,8 @@ cd services\api
 - [ ] `WIBESTYLE_JWT_SECRET`, admin secrets — сменить
 - [ ] TLS на всех доменах
 - [ ] OAuth redirect URIs (web + `wibestyle://auth/oauth/callback` для mobile)
-- [ ] SMTP для email OTP (`WIBESTYLE_MAIL_DEV_LOG_ONLY=false`)
-- [ ] SMS.ru `WIBESTYLE_SMS_RU_API_ID` для телефона
+- [ ] SMS Aero: `WIBESTYLE_SMS_AERO_EMAIL`, `WIBESTYLE_SMS_AERO_API_KEY`, одобренная подпись отправителя
+- [ ] Telegram URL/name для landing, web и mobile public env
 - [ ] CDN передаёт `CF-IPCountry` (или `X-Country-Code`) для блокировки Google в RU
 
 | `WIBESTYLE_BILLING_PROVIDER` | `mock` | `mock` или `yookassa` |
@@ -312,12 +314,16 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 | `WIBESTYLE_JWT_SECRET` | dev placeholder | JWT |
 | `WIBESTYLE_ADMIN_API_KEY` | `dev-admin-key` | Admin |
 | `WIBESTYLE_ADMIN_BOOTSTRAP_PASSWORD` | `dev-admin-password` | Seed admin |
-| `WIBESTYLE_MAIL_DEV_LOG_ONLY` | `true` | Email OTP: только лог, без SMTP |
+| `WIBESTYLE_MAIL_DEV_LOG_ONLY` | `true` | Email OTP backend сохранён; пользовательский UI временно скрыт |
 | `WIBESTYLE_MAIL_FROM` | `noreply@vibestyle.art` | From в письме с кодом |
 | `SMTP_HOST` / `SMTP_PORT` | `localhost` / `1025` | SMTP (Mailpit/MailHog локально) |
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | — | SMTP auth |
 | `SMTP_AUTH` / `SMTP_STARTTLS` | `false` | SMTP TLS |
-| `WIBESTYLE_SMS_RU_API_ID` | пусто | SMS.ru API ID; пусто = stub `0000` |
+| `WIBESTYLE_SMS_AERO_EMAIL` | пусто | Email аккаунта SMS Aero для HTTP Basic Auth |
+| `WIBESTYLE_SMS_AERO_API_KEY` | пусто | API key SMS Aero; вместе с email включает реальную отправку |
+| `WIBESTYLE_SMS_AERO_SIGN` | `SMS Aero` | Одобренная SMS Aero подпись отправителя |
+| `WIBESTYLE_SMS_AERO_CHANNEL` | `DIRECT` | Канал отправки SMS Aero |
+| `WIBESTYLE_SMS_AERO_BASE_URL` | `https://gate.smsaero.ru/v2` | API v2 base URL ([документация](https://smsaero.ru/integration/documentation/api/)) |
 | `WIBESTYLE_GEOIP_DEFAULT_COUNTRY` | пусто | Страна если IP локальный |
 | `WIBESTYLE_OAUTH_WEB_CALLBACK` | `http://localhost:3001/auth/oauth/callback` | OAuth → web |
 | `WIBESTYLE_OAUTH_MOBILE_CALLBACK` | `wibestyle://auth/oauth/callback` | OAuth → mobile deep link |
@@ -340,7 +346,7 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 
 1. Запустите noteapp: `cd noteapp-ai-integration && docker compose up -d` (или `gradlew bootRun`, порт **8091**)
 2. Создайте admin + client API key (см. `noteapp-ai-integration/docs/ai/EXTERNAL_SERVICES_INTEGRATION.md`)
-3. Выдайте клиенту доступ к сети `wibestyle-vton` (Flyway V019/V020)
+3. Выдайте клиенту доступ к сетям, включённым в WibeStyle admin → **Приоритеты нейросетей**: `wibestyle-vton`, `fashn-try-on-photo`, `kling-try-on-photo` и, если используется видео, соответствующим `*-video`. Имена должны точно совпадать с сетями noteapp.
 4. **xAI ключ для Grok Imagine** (один из вариантов):
    - **Рекомендуется:** noteapp Admin → **Networks** → `wibestyle-vton` → **API Key** = ключ с [console.x.ai](https://console.x.ai) → **Сохранить** (поле не пустое).
    - **Или:** env на noteapp `XAI_API_KEY=xai-...` (после обновления кода noteapp).
@@ -362,6 +368,8 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 
 7. Перезапустите noteapp и wibestyle API.
 
+Порядок и доступность маршрутов меняются в WibeStyle admin → **Приоритеты нейросетей** (`/ai-providers`). Миграция V22 восстанавливает отсутствующие строки, но не перезаписывает ранее сохранённые приоритеты и enabled-флаги. Отключение всех сетей операции действительно отключает эту операцию; legacy env network автоматически не включается.
+
 Примерка отправляет в noteapp **фото аватара + фото вещи с карточки** (base64).  
 С xAI ключом: **Grok Imagine image edit** (одевает человека с image1 вещью с image2).  
 Без xAI: Pollinations text-to-image (ненадёжно для примерки).
@@ -378,6 +386,7 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 | `NEXT_PUBLIC_APP_URL` | web, admin | URL web-app (OAuth, ссылки) |
 | `NEXT_PUBLIC_LANDING_URL` | web | URL лендинга |
 | `NEXT_PUBLIC_SITE_URL` | landing | URL лендинга |
+| `NEXT_PUBLIC_RUSTORE_URL` | landing | URL опубликованного Android-приложения; оставить пустым до публикации, тогда Android CTA откроет web-app |
 | `EXPO_PUBLIC_API_URL` | mobile | URL API с телефона/эмулятора (`10.0.2.2:8080` = localhost на Android Emulator) |
 | `EXPO_PUBLIC_APP_URL` | mobile | Публичный URL web-app для OpenGraph-ссылок на примерки |
 | `NEXT_PUBLIC_YANDEX_METRIKA_ID` | landing, web | ID счётчика Яндекс Метрики (`109999858`) |
@@ -397,8 +406,8 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 | Admin «Поддержка» → `DATABASE_ERROR` | Часто: несколько постов галереи на одну примерку. Обновите API до последней версии; перезапустите `bootRun` |
 | Admin «Поддержка» → «Не загрузилось» у превью | Раньше admin брал `after_image_url` из БД (это API-путь, не файл). Обновите API: читается `{userId}/try-on/{sessionId}/after.jpg` из storage |
 | `role "wibestyle" does not exist` | Выполните `scripts/create-local-database.sql` |
-| SMS OTP не приходит | Без `WIBESTYLE_SMS_RU_API_ID` — dev-код `0000` в лог API. С SMS.ru — проверьте api_id и баланс |
-| Email OTP не приходит | `WIBESTYLE_MAIL_DEV_LOG_ONLY=true` → смотрите лог API. Для SMTP: `DEV_LOG_ONLY=false`, Mailpit на `:1025` или реальный SMTP |
+| SMS OTP не приходит | Без SMS Aero email/api key используется dev-код `0000` в логе API. С credentials проверьте ключ, баланс, одобрение `SIGN` и `CHANNEL`. |
+| Email OTP не виден | Ожидаемо: email-регистрация временно скрыта в web/mobile UI; backend endpoints сохранены. |
 | Google OAuth не виден | RU IP, или админка → **Настройки** → «Блокировать Google», или `GOOGLE_ENABLED=false` / нет client id |
 | Mobile OAuth не возвращает в app | Redirect URI в Google/Yandex: `https://api…/api/v1/auth/oauth/{provider}/callback`; `returnUrl` = `wibestyle://auth/oauth/callback` |
 | Примерка показывает SVG-человечков | AI не настроен или `WIBESTYLE_AI_FALLBACK_TO_DEMO=true`; проверьте noteapp на :8091 |
@@ -412,6 +421,8 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 | Диагностика noteapp | Консоль: `[AI-TRAFFIC]` (request/response, base64 заменён на длину). UI: noteapp Admin → **Логи запросов**. API: `GET /api/admin/logs` (Bearer admin). В логе VTON смотрите `provider`: `virtual_try_on_grok` vs `virtual_try_on_pollinations` |
 | Логи примерки в WibeStyle | Админка → **Логи AI / примерка** (`/ai-logs`). API: `GET /api/v1/admin/ai-logs`. Пишутся в БД при каждом вызове noteapp. Миграция **V12** + **перезапуск API** после обновления кода |
 | `404` на `/api/v1/admin/ai-logs` | API запущен со старым билдом. Остановите процесс на :8080, выполните `cd services/api && .\gradlew.bat bootRun` |
+| Admin «Приоритеты нейросетей» → «Не удалось загрузить…» | Обновите и перезапустите API: endpoint `GET /api/v1/admin/ai-providers` и repair-миграция V22 должны быть применены. При 401/403 проверьте `X-Admin-Key`; при 500 — Flyway и таблицу `ai_provider_priorities`. |
+| FASHN/Kling видны, но fallback не срабатывает | В noteapp должны существовать сети с точными именами из admin и client API key WibeStyle должен иметь к ним доступ. Смотрите WibeStyle `/ai-logs`: поля `operation`, `attemptNumber`, `fallbackReason`; затем noteapp request logs. |
 | `JWT secret must be at least 32 bytes` при старте API | В Run Config задан короткий **WIBESTYLE_JWT_SECRET** (не путать с `WIBESTYLE_ADMIN_API_KEY`). Удалите переменную или задайте `dev-jwt-secret-change-me-in-production-min-32-chars` (≥32 символа) |
 | Gradle not found | Используйте `.\gradlew.bat` в `services/api` |
 | Port 5432 занят | Другой Postgres или Docker — смените порт в env |
