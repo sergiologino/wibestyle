@@ -69,7 +69,7 @@
 - SEO-страницы тоже используют новые компонентные баннеры: `/ai-primerka` рендерит `BeforeAfterSection` + `StyleShowcaseSection` вместо старых split PNG, `/kak-rabotaet` рендерит `AppPreviewPhones`, `BeforeAfterSection`, `HeroBeforeCard` и `HeroCollage` вместо четырёх raster-моков.
 - Для SEO split на `/ai-primerka` добавлены отдельные CSS-настройки фиксированной высоты, чтобы `BeforeAfterSection` и `StyleShowcaseSection` были одной высоты; eyebrow внутри розового градиента белый, иконки style-карточек не перекрывают подписи, badge страницы заменён на «Уже в приложении».
 - Header CTA лендинга ведёт в веб-версию приложения через `siteConfig.appUrl` (`NEXT_PUBLIC_APP_URL`, fallback `http://localhost:3001/welcome`). Hero storefront CTA: `Скоро в App Store`, `Скачать в Google Play`, `Скачать в RuStore`.
-- Форма раннего доступа убрана: `LeadForm` теперь рендерит CTA без полей. По клику Android отправляется в RuStore (`NEXT_PUBLIC_RUSTORE_URL`, fallback `https://www.rustore.ru/catalog/app/ru.wibestyle.app`), desktop/iOS/macOS — в web-app с query `offer=first100`; скидка для первых 100 показывается и учитывается как оффер приложения.
+- Форма раннего доступа убрана: `LeadForm` рендерит CTA без полей. Android отправляется в RuStore только при непустом `NEXT_PUBLIC_RUSTORE_URL`; до публикации приложения используется web-app. Параметр `offer=first100`, скидочная цена и остаток показываются только пока активен реальный промокод `FIRST100`.
 - В CTA-блоке перехода в приложение верхний дублирующий price-card заменён на контрастный мотивационный glass-panel про примерку в AI до пункта выдачи; технический текст про платформы убран, мотивационный блок и блок с кнопкой выровнены по ширине.
 - Discount label в CTA больше не pill/tag: это заметный текст без градиента с символом ₽. Footer дополнен реквизитами ООО «АЛЬТАКОД», ИНН 4000002848, email `admin@altacod.com` и активируемой через env кнопкой Telegram-канала.
 - Правая часть CTA-баннера заполнена desktop-only визуалом `EarlyAccessVisual`; изображение берётся из `early-access-visual-data.ts` и легко заменяется на production-фото. На экранах до 1180px визуал скрыт.
@@ -149,7 +149,7 @@
 - Flyway `V8__landing_leads_admin.sql`: lead status + metadata.
 - Admin `/leads`: фильтр, CSV export, смена status.
 - Admin `/reviews`: редактирование display name.
-- `GET /landing/leads` публично → только `{ remainingSpots }`.
+- `GET /landing/leads` публично → `{ remainingSpots, promoActive, discountPercent }`; остаток связан с использованием `FIRST100`, а не со старыми landing leads.
 
 ## UX-маршруты web-app
 - `/welcome` → `/auth` → `/onboarding/avatar` → `/home`

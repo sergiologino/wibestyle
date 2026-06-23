@@ -1,6 +1,6 @@
 "use client";
 
-import { MouseEvent, useEffect, useMemo, useState } from "react";
+import { MouseEvent, useEffect, useState } from "react";
 import { createLandingApi } from "@/lib/api";
 import { pricing, siteConfig } from "@/lib/site";
 import { formatRub } from "@/lib/utils";
@@ -14,12 +14,12 @@ type LeadFormProps = {
   className?: string;
 };
 
-function isAndroidDevice() {
-  if (typeof navigator === "undefined") return false;
-  return /Android/i.test(navigator.userAgent);
+function isAndroidDevice(userAgent: string) {
+  return /Android/i.test(userAgent);
 }
 
-function withFirstHundredOffer(url: string) {
+function withFirstHundredOffer(url: string, promoActive: boolean) {
+  if (!promoActive) return url;
   try {
     const target = new URL(url);
     target.searchParams.set("offer", "first100");
@@ -31,25 +31,33 @@ function withFirstHundredOffer(url: string) {
   }
 }
 
-export function resolveAppLaunchUrl() {
-  return isAndroidDevice() ? siteConfig.rustoreUrl : withFirstHundredOffer(siteConfig.appUrl);
+export function resolveAppLaunchUrl(
+  userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent,
+  promoActive = false,
+) {
+  if (isAndroidDevice(userAgent) && siteConfig.rustoreUrl) {
+    return siteConfig.rustoreUrl;
+  }
+  return withFirstHundredOffer(siteConfig.appUrl, promoActive);
 }
 
 export default function LeadForm({ interest = "clothing", variant = "full", className }: LeadFormProps) {
-  const [remaining, setRemaining] = useState<number | null>(null);
-  const webFallbackUrl = useMemo(() => withFirstHundredOffer(siteConfig.appUrl), []);
+  const [offer, setOffer] = useState<{ remainingSpots: number; promoActive: boolean } | null>(null);
 
   useEffect(() => {
     void createLandingApi()
       .getLeadStats()
-      .then((data) => setRemaining(data.remainingSpots))
-      .catch(() => setRemaining(null));
+      .then((data) => setOffer({ remainingSpots: data.remainingSpots, promoActive: data.promoActive }))
+      .catch(() => setOffer(null));
   }, []);
+
+  const promoActive = offer?.promoActive === true && offer.remainingSpots > 0;
+  const webFallbackUrl = withFirstHundredOffer(siteConfig.appUrl, promoActive);
 
   function onClick(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
 
-    const target = resolveAppLaunchUrl();
+    const target = resolveAppLaunchUrl(undefined, promoActive);
     if (typeof window !== "undefined" && window.ym) {
       window.ym(YANDEX_METRIKA_ID, "reachGoal", `app_open_${interest}`);
     }
@@ -61,17 +69,17 @@ export default function LeadForm({ interest = "clothing", variant = "full", clas
   return (
     <div className={`${rootClass} ${className ?? ""}`.trim()} aria-label="Переход к приложению">
       <div>
-        <p className="app-redirect-cta__label">Скидка для первых {pricing.firstUsersLimit}</p>
+        <p className="app-redirect-cta__label">
+          {promoActive ? `Скидка для первых ${pricing.firstUsersLimit}` : "Годовая подписка"}
+        </p>
         <p className="app-redirect-cta__price">
-          <span>{formatRub(pricing.annualRub)}</span>
-          <strong>{formatRub(pricing.discountedAnnualRub)}</strong>
+          {promoActive ? <span>{formatRub(pricing.annualRub)}</span> : null}
+          <strong>{formatRub(promoActive ? pricing.discountedAnnualRub : pricing.annualRub)}</strong>
           <small>/ год</small>
         </p>
-        {remaining !== null && remaining > 0 ? (
-          <p className="app-redirect-cta__spots">Осталось мест в первой сотне: {remaining}</p>
-        ) : (
-          <p className="app-redirect-cta__spots">Оффер применится в приложении, если место в первой сотне ещё доступно.</p>
-        )}
+        {promoActive ? (
+          <p className="app-redirect-cta__spots">Осталось мест в первой сотне: {offer.remainingSpots}</p>
+        ) : null}
       </div>
 
       <a href={webFallbackUrl} className="app-redirect-cta__button" data-analytics={`app_open_${interest}`} onClick={onClick}>

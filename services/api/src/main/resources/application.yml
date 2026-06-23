@@ -93,7 +93,6 @@ wibestyle:
     annual-discount-percent: 20
     annual-rub: 6990
     discounted-annual-rub: 3495
-    first-users-limit: 100
   storage:
     backend: ${WIBESTYLE_STORAGE_BACKEND:local}
     # Persistent volume root (local/Coolify). Override: WIBESTYLE_STORAGE_ROOT=/data/wibestyle-media

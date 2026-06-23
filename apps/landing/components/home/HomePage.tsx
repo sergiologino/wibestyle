@@ -2,7 +2,6 @@ import Link from "next/link";
 import { homeFaq } from "@/content/home-faq";
 import { siteConfig } from "@/lib/site";
 import LeadForm from "@/components/LeadForm";
-import PricingBanner from "@/components/PricingBanner";
 import PublishedReviewsSection from "@/components/PublishedReviewsSection";
 import AppPreviewPhones from "@/components/home/AppPreviewPhones";
 import BeforeAfterSection from "@/components/home/BeforeAfterSection";
@@ -58,7 +57,7 @@ export default function HomePage() {
               <a className="store-button store-google" href="#lead" data-analytics="hero_googleplay">
                 ▶ <span>Скачать в<br /><b>Google Play</b></span>
               </a>
-              <Link className="store-button store-rustore" href={siteConfig.rustoreUrl} data-analytics="hero_rustore">
+              <Link className="store-button store-rustore" href={siteConfig.rustoreUrl ?? siteConfig.appUrl} data-analytics="hero_rustore">
                 Ru <span>Скачать в<br /><b>RuStore</b></span>
               </Link>
             </div>
@@ -170,7 +169,6 @@ export default function HomePage() {
           <div>
             <h2 id="lead-title">Твой стиль начинается здесь</h2>
             <p>Примеряй. Вдохновляйся. Покупай увереннее.</p>
-            <PricingBanner />
             <LeadForm interest="clothing" variant="full" />
           </div>
           <FinalCtaArt />

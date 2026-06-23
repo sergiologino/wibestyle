@@ -262,7 +262,7 @@ export class WibeStyleApiClient {
   }
 
   getLeadStats() {
-    return this.request<{ remainingSpots: number }>("/api/v1/landing/leads");
+    return this.request<{ remainingSpots: number; promoActive: boolean; discountPercent: number }>("/api/v1/landing/leads");
   }
 
   parseLink(url: string) {

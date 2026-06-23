@@ -386,6 +386,7 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 | `NEXT_PUBLIC_APP_URL` | web, admin | URL web-app (OAuth, ссылки) |
 | `NEXT_PUBLIC_LANDING_URL` | web | URL лендинга |
 | `NEXT_PUBLIC_SITE_URL` | landing | URL лендинга |
+| `NEXT_PUBLIC_RUSTORE_URL` | landing | URL опубликованного Android-приложения; оставить пустым до публикации, тогда Android CTA откроет web-app |
 | `EXPO_PUBLIC_API_URL` | mobile | URL API с телефона/эмулятора (`10.0.2.2:8080` = localhost на Android Emulator) |
 | `EXPO_PUBLIC_APP_URL` | mobile | Публичный URL web-app для OpenGraph-ссылок на примерки |
 | `NEXT_PUBLIC_YANDEX_METRIKA_ID` | landing, web | ID счётчика Яндекс Метрики (`109999858`) |

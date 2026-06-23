@@ -6,8 +6,8 @@ describe("siteConfig", () => {
     expect(siteConfig.appUrl).toBe("https://app.vibestyle.art");
   });
 
-  it("contains RuStore app URL", () => {
-    expect(siteConfig.rustoreUrl).toContain("ru.wibestyle.app");
+  it("keeps RuStore disabled until URL is configured", () => {
+    expect(siteConfig.rustoreUrl).toBeNull();
   });
 });
 

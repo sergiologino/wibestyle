@@ -1,5 +1,11 @@
 # AI Changelog
 
+## 2026-06-23 (Landing paywall promo and mobile routing)
+- Тэг «Сначала личный стилист» вынесен над рамкой paywall-фото и больше не перекрывает голову модели.
+- V23 создаёт/нормализует `FIRST100` со стартовым публичным остатком 71; landing stats теперь читают реальный `usesCount/maxUses` промокода. При исчерпании скрываются скидочная цена, FIRST100 query и строка остатка.
+- Redeem `FIRST100` блокирует строку промокода на время транзакции, чтобы параллельные регистрации не превысили лимит.
+- Android CTA ведёт в RuStore только при заданном `NEXT_PUBLIC_RUSTORE_URL`; пустое значение отправляет в web-app.
+
 ## 2026-06-23 (IDE inspection cleanup after provider restoration)
 - Удалены неиспользуемые imports в landing HomePage; локальные hash CTA используют обычные anchors.
 - Исправлена CSS-переменная `--ink` → существующая `--black`; mask hero-фото упрощена до валидной однослойной записи без изменения нижнего fade.
