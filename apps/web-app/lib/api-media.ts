@@ -8,6 +8,35 @@ export function resolveApiPath(path?: string | null) {
   return `${apiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+export function apiMediaPathname(src?: string | null) {
+  if (!src) return "";
+  if (src.startsWith("blob:") || src.startsWith("data:")) return "";
+  if (src.startsWith("http://") || src.startsWith("https://")) {
+    try {
+      return new URL(src).pathname;
+    } catch {
+      return "";
+    }
+  }
+  return src.startsWith("/") ? src : `/${src}`;
+}
+
+export function isProtectedApiMediaUrl(src?: string | null) {
+  const pathname = apiMediaPathname(src);
+  if (!pathname) return false;
+  if (pathname.startsWith("/api/v1/avatars/") && pathname.includes("/photo")) {
+    return true;
+  }
+  if (!pathname.startsWith("/api/v1/try-on/sessions/")) {
+    return false;
+  }
+  return (
+    pathname.endsWith("/garment-photo") ||
+    pathname.endsWith("/after-photo") ||
+    pathname.endsWith("/after-video")
+  );
+}
+
 export function appBaseUrl() {
   return (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001").replace(/\/$/, "");
 }

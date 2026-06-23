@@ -1,5 +1,7 @@
 package ru.wibestyle.api.marketplace;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -7,8 +9,10 @@ import org.springframework.stereotype.Component;
 public class OzonAdapter implements MarketplaceAdapter {
 
     private static final java.util.regex.Pattern PRODUCT_ID = java.util.regex.Pattern.compile("/product/([^/?#]+)");
+    private static final int MAX_CACHED_IMAGE_KEYS = 128;
 
     private final OzonCatalog catalog;
+    private final Map<String, byte[]> imageCache = new ConcurrentHashMap<>();
 
     public OzonAdapter(OzonCatalog catalog) {
         this.catalog = catalog;
@@ -26,7 +30,11 @@ public class OzonAdapter implements MarketplaceAdapter {
 
     @Override
     public String normalizeUrl(String url) {
-        return url.trim();
+        String slug = OzonCatalog.extractSlug(url);
+        if (slug == null || slug.isBlank()) {
+            return url.trim();
+        }
+        return "https://www.ozon.ru/product/" + slug + "/";
     }
 
     @Override
@@ -71,8 +79,13 @@ public class OzonAdapter implements MarketplaceAdapter {
     }
 
     public byte[] loadProductImage(String productId, String originalUrl) {
+        byte[] cached = imageCache.get(productId);
+        if (cached != null && cached.length > 0) {
+            return cached;
+        }
         byte[] image = catalog.downloadProductImage(productId, originalUrl);
         if (image != null && image.length > 0) {
+            cacheImage(productId, image);
             return image;
         }
         throw new IllegalArgumentException("PRODUCT_IMAGE_NOT_FOUND");
@@ -80,7 +93,22 @@ public class OzonAdapter implements MarketplaceAdapter {
 
     private boolean hasDownloadableImage(OzonCatalog.OzonProductCard card) {
         byte[] image = catalog.downloadImage(card.imageUrl());
-        return image != null && image.length > 0;
+        if (image == null || image.length == 0) {
+            return false;
+        }
+        cacheImage(card.slug(), image);
+        cacheImage(card.productId(), image);
+        return true;
+    }
+
+    private void cacheImage(String key, byte[] image) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        if (imageCache.size() >= MAX_CACHED_IMAGE_KEYS && !imageCache.containsKey(key)) {
+            imageCache.keySet().stream().findFirst().ifPresent(imageCache::remove);
+        }
+        imageCache.put(key, image);
     }
 
     static String proxyImagePath(String productId) {

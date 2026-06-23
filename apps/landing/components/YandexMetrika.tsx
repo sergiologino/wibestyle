@@ -1,10 +1,7 @@
 import Script from "next/script";
-
-const counterId = process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID;
+import { YANDEX_METRIKA_ID } from "@/lib/metrika";
 
 export default function YandexMetrika() {
-  if (!counterId) return null;
-
   return (
     <>
       <Script id="yandex-metrika" strategy="afterInteractive">
@@ -14,19 +11,24 @@ export default function YandexMetrika() {
             m[i].l=1*new Date();
             for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
             k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-          })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-          ym(${counterId}, "init", {
-            clickmap:true,
-            trackLinks:true,
-            accurateTrackBounce:true,
-            webvisor:true
+          })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=${YANDEX_METRIKA_ID}", "ym");
+          ym(${YANDEX_METRIKA_ID}, "init", {
+            ssr: true,
+            webvisor: true,
+            clickmap: true,
+            ecommerce: "dataLayer",
+            referrer: document.referrer,
+            url: location.href,
+            accurateTrackBounce: true,
+            trackLinks: true
           });
         `}
       </Script>
       <noscript>
         <div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- required tracking pixel fallback without JS */}
           <img
-            src={`https://mc.yandex.ru/watch/${counterId}`}
+            src={`https://mc.yandex.ru/watch/${YANDEX_METRIKA_ID}`}
             style={{ position: "absolute", left: "-9999px" }}
             alt=""
           />

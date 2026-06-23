@@ -284,7 +284,7 @@ public class TryOnJobWorker {
     private NoteappAiClient.ProcessResult callAi(TryOnSessionEntity session) {
 
         if (!aiProperties.isIntegrationConfigured()) {
-            aiIntegrationLogService.logSkipped(session, "WIBESTYLE_AI_ENABLED/API_KEY/TRYON_NETWORK не настроены");
+            aiIntegrationLogService.logSkipped(session, "WIBESTYLE_AI_ENABLED/API_KEY не настроены");
             return NoteappAiClient.ProcessResult.failed("AI_NOT_CONFIGURED", "AI service not configured");
 
         }
@@ -321,6 +321,10 @@ public class TryOnJobWorker {
         metadata.put("sessionId", session.getId().toString());
 
         metadata.put("garmentCategory", nullSafe(session.getGarmentCategory()));
+        metadata.put("garmentPromptProfile", nullSafe(session.getGarmentPromptProfile()));
+        metadata.put("garmentCoverageLevel", nullSafe(session.getGarmentCoverageLevel()));
+        metadata.put("garmentModerationRisk", nullSafe(session.getGarmentModerationRisk()));
+        metadata.put("garmentHasHumanModel", Boolean.toString(session.isGarmentHasHumanModel()));
 
         metadata.put("productImageUrl", nullSafe(session.getProductImageUrl()));
 

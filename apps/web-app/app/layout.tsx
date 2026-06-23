@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import AppShell from "@/components/AppShell";
 import { AppSessionProvider } from "@/components/providers/AppSessionProvider";
+import YandexMetrika from "@/components/YandexMetrika";
 import { appBaseUrl, brandDomain } from "@/lib/api-media";
 import "./globals.css";
 
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ru" className={`${inter.variable} ${manrope.variable}`}>
       <body className="min-h-screen font-[family-name:var(--font-inter)] antialiased">
+        <YandexMetrika />
         <AppSessionProvider>
           <AppShell>{children}</AppShell>
         </AppSessionProvider>

@@ -13,7 +13,14 @@ export default function AppPreviewPhones() {
             <b>Я на стиле</b>
             <Heart size={15} />
           </div>
-          <Image src={appPreviewScreens[0].image} alt={appPreviewScreens[0].alt} width={360} height={520} sizes="260px" />
+          <Image
+            className={`phone-3d__preview phone-3d__preview--${appPreviewScreens[0].fit}`}
+            src={appPreviewScreens[0].image}
+            alt={appPreviewScreens[0].alt}
+            width={360}
+            height={520}
+            sizes="260px"
+          />
           <div className="phone-3d__thumbs">
             {appPreviewScreens.map((screen) => (
               <Image key={screen.id} src={screen.image} alt={screen.alt} width={80} height={110} />
@@ -31,7 +38,14 @@ export default function AppPreviewPhones() {
             <Link2 size={16} />
             <span>wildberries.ru/catalog/...</span>
           </div>
-          <Image src={appPreviewScreens[1].image} alt={appPreviewScreens[1].alt} width={360} height={520} sizes="240px" />
+          <Image
+            className={`phone-3d__preview phone-3d__preview--${appPreviewScreens[1].fit}`}
+            src={appPreviewScreens[1].image}
+            alt={appPreviewScreens[1].alt}
+            width={360}
+            height={520}
+            sizes="240px"
+          />
           <button type="button">Примерить</button>
         </div>
       </div>

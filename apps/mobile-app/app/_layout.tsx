@@ -40,6 +40,7 @@ export default function RootLayout() {
           <Stack.Screen name="try-on/link" options={{ presentation: "card" }} />
           <Stack.Screen name="try-on/photo" options={{ presentation: "card" }} />
           <Stack.Screen name="try-on/result/[id]" options={{ presentation: "card" }} />
+          <Stack.Screen name="gallery/[slug]" options={{ presentation: "card" }} />
           <Stack.Screen name="favorites" options={{ presentation: "modal" }} />
           <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
           <Stack.Screen name="settings" options={{ presentation: "card" }} />

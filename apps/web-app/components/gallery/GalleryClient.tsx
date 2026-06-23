@@ -6,7 +6,7 @@ import { Card } from "@wibestyle/ui";
 import type { GalleryPost } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import ReportPostButton from "@/components/gallery/ReportPostButton";
-import { resolveGalleryImageUrl } from "@/lib/api-media";
+import { resolveGalleryImageUrl, resolveGalleryVideoUrl } from "@/lib/api-media";
 
 type ViewMode = "grid" | "list";
 
@@ -37,6 +37,35 @@ export default function GalleryClient() {
     setPosts((prev) => prev.map((item) => (item.id === post.id ? updated.post : item)));
   }
 
+  function renderPostMedia(post: GalleryPost, className: string) {
+    const imageSrc = resolveGalleryImageUrl(post);
+    const videoSrc = resolveGalleryVideoUrl(post);
+    const isVideo = post.mediaType === "video" && Boolean(videoSrc);
+    if (isVideo) {
+      return (
+        <div className="relative h-full w-full">
+          <video
+            src={videoSrc}
+            poster={imageSrc || undefined}
+            className={className}
+            muted
+            loop
+            playsInline
+            autoPlay
+            preload="metadata"
+          />
+          <span className="absolute right-3 top-3 rounded-full bg-black/55 px-2 py-1 text-xs font-semibold text-white">
+            video
+          </span>
+        </div>
+      );
+    }
+    if (imageSrc) {
+      return <img src={imageSrc} alt={post.title} className={className} />;
+    }
+    return <div className="flex h-full items-center justify-center text-sm font-normal text-[#6d6273]">Нет фото</div>;
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -64,7 +93,7 @@ export default function GalleryClient() {
 
       {loading ? (
         <Card>
-          <p className="text-body">Загружаем посты…</p>
+          <p className="text-body">Загружаем посты...</p>
         </Card>
       ) : null}
 
@@ -72,7 +101,6 @@ export default function GalleryClient() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((post) => {
             const href = post.publicUrl ?? `/p/${post.slug}`;
-            const imageSrc = resolveGalleryImageUrl(post);
             return (
               <Link
                 key={post.id}
@@ -80,15 +108,7 @@ export default function GalleryClient() {
                 className="group overflow-hidden rounded-[24px] border border-[#ffd1ed] bg-white shadow-[0_8px_28px_rgba(58,12,82,0.05)] transition hover:border-[#ff1fa2]/40"
               >
                 <div className="aspect-[4/5] overflow-hidden bg-[#fff4fb]">
-                  {imageSrc ? (
-                    <img
-                      src={imageSrc}
-                      alt={post.title}
-                      className="h-full w-full object-cover transition group-hover:scale-[1.01]"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm font-normal text-[#6d6273]">Нет фото</div>
-                  )}
+                  {renderPostMedia(post, "h-full w-full object-cover transition group-hover:scale-[1.01]")}
                 </div>
                 <div className="space-y-1 px-4 py-3">
                   <p className="line-clamp-2 font-normal text-[#302637]">{post.title}</p>
@@ -102,16 +122,13 @@ export default function GalleryClient() {
         <div className="grid gap-4">
           {posts.map((post) => {
             const href = post.publicUrl ?? `/p/${post.slug}`;
-            const imageSrc = resolveGalleryImageUrl(post);
             return (
               <Card key={post.id}>
                 <div className="grid gap-4 md:grid-cols-[180px_1fr]">
                   <Link href={href} className="block overflow-hidden rounded-[22px] bg-[#fff4fb]">
-                    {imageSrc ? (
-                      <img src={imageSrc} alt={post.title} className="aspect-[4/5] w-full object-cover" />
-                    ) : (
-                      <div className="flex aspect-[4/5] items-center justify-center text-sm font-normal text-[#6d6273]">Нет фото</div>
-                    )}
+                    <div className="aspect-[4/5] overflow-hidden">
+                      {renderPostMedia(post, "h-full w-full object-cover")}
+                    </div>
                   </Link>
                   <div>
                     <Link href={href} className="text-display-md text-2xl hover:text-[#ff1fa2]">

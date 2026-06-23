@@ -3,11 +3,11 @@ import { pricing, siteConfig } from "./site";
 
 describe("siteConfig", () => {
   it("contains web app entry URL", () => {
-    expect(siteConfig.appUrl).toMatch(/\/welcome$/);
+    expect(siteConfig.appUrl).toBe("https://app.vibestyle.art");
   });
 
-  it("contains RuStore app URL", () => {
-    expect(siteConfig.rustoreUrl).toContain("ru.wibestyle.app");
+  it("keeps RuStore disabled until URL is configured", () => {
+    expect(siteConfig.rustoreUrl).toBeNull();
   });
 });
 

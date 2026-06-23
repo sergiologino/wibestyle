@@ -14,7 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Compares avatar figure (measurements + habitual EU/letter size) with marketplace garment label size.
+ * Compares avatar figure measurements with marketplace garment label size.
  */
 @Component
 public class GarmentFitAnalyzer {
@@ -72,7 +72,6 @@ public class GarmentFitAnalyzer {
             return GarmentFitAssessment.tooSmall(selected, chartRecommended, 2, hint);
         }
         if (chartRecommended != null && !chartRecommended.equalsIgnoreCase(selected)) {
-            int avatarIndex = resolveAvatarSizeIndex(snapshot);
             int selectedIndex = resolveGarmentSizeIndex(selected);
             int recommendedIndex = resolveGarmentSizeIndex(chartRecommended);
             int gap = selectedIndex >= 0 && recommendedIndex >= 0 ? recommendedIndex - selectedIndex : 1;
@@ -96,52 +95,52 @@ public class GarmentFitAnalyzer {
     ) {
         StringBuilder builder = new StringBuilder();
         appendFigureBlock(builder, snapshot);
-        builder.append(" Бирка размера на карточке маркетплейса: ").append(selectedSize).append('.');
+        builder.append(" Marketplace label size on the product card: ").append(selectedSize).append('.');
         if (recommendedSize != null && !recommendedSize.equalsIgnoreCase(selectedSize)) {
-            builder.append(" Для этой фигуры размер ").append(selectedSize)
-                    .append(" реалистично мал; лучше подойдёт ").append(recommendedSize)
-                    .append(" по груди и бёдрам.");
+            builder.append(" For this body, size ").append(selectedSize)
+                    .append(" is realistically small; size ").append(recommendedSize)
+                    .append(" would fit the bust and hips better.");
         }
         if (sellerChart != null && sellerChart.found()) {
-            builder.append(" Учитывай размерную сетку продавца на карточке (см), не обобщённый манекен.");
+            builder.append(" Use the seller size chart from the product card in centimeters, not generic mannequin sizing.");
         }
         if (clearlyTooSmall) {
             builder.append(
-                    " ВАЖНО ПО ПОСАДКЕ: сохрани полный объём груди и бёдер с image1 — не утоньшай тело."
-                            + " Покажи вещь визуально тесной/маломерной на фигуре (натяжение ткани),"
-                            + " а не уменьшенный силуэт."
-                            + " Не превращай фигуру EU 50–52 в EU 44–46."
-                            + " Грудь и бёдра в кадре = image1 и замеры выше."
+                    " IMPORTANT FIT INSTRUCTION: preserve the full bust and hip volume from image1; do not slim the body."
+                            + " Show the garment as visibly tight or undersized on the unchanged body using fabric tension,"
+                            + " not by reducing the silhouette."
+                            + " Do not turn an EU 50-52 body into an EU 44-46 body."
+                            + " Bust and hips in the frame must match image1 and the measurements above."
             );
         } else if (gap == 1) {
             builder.append(
-                    " Сохрани естественный объём груди и бёдер; вещь может сидеть плотно, но не сжимать силуэт."
+                    " Preserve the natural bust and hip volume; the garment may fit closely, but it must not compress or shrink the silhouette."
             );
         } else {
             builder.append(
-                    " Сохрани пропорции груди, талии и бёдер с image1; не утоньшай и не обобщай фигуру."
+                    " Preserve bust, waist and hip proportions from image1; do not slim, average or generalize the body."
             );
         }
         return builder.toString().replaceAll("\\s+", " ").trim();
     }
 
     private static void appendFigureBlock(StringBuilder builder, AvatarSnapshotEntity snapshot) {
-        builder.append(" Обычный размер одежды покупателя:");
+        builder.append(" Customer usual clothing size:");
         if (snapshot.getClothingSize() != null && !snapshot.getClothingSize().isBlank()) {
             builder.append(' ').append(snapshot.getClothingSize().trim());
         }
         builder.append('.');
         if (snapshot.getHeightCm() != null) {
-            builder.append(" Рост ").append(snapshot.getHeightCm()).append(" см.");
+            builder.append(" Height ").append(snapshot.getHeightCm()).append(" cm.");
         }
         if (snapshot.getBustCm() != null) {
-            builder.append(" Грудь ").append(snapshot.getBustCm()).append(" см.");
+            builder.append(" Bust ").append(snapshot.getBustCm()).append(" cm.");
         }
         if (snapshot.getWaistCm() != null) {
-            builder.append(" Талия ").append(snapshot.getWaistCm()).append(" см.");
+            builder.append(" Waist ").append(snapshot.getWaistCm()).append(" cm.");
         }
         if (snapshot.getHipsCm() != null) {
-            builder.append(" Бёдра ").append(snapshot.getHipsCm()).append(" см.");
+            builder.append(" Hips ").append(snapshot.getHipsCm()).append(" cm.");
         }
     }
 
@@ -169,9 +168,7 @@ public class GarmentFitAnalyzer {
     }
 
     private static int indexFromBust(Integer bustCm) {
-        if (bustCm == null) {
-            return -1;
-        }
+        if (bustCm == null) return -1;
         if (bustCm >= 108) return 7;
         if (bustCm >= 102) return 6;
         if (bustCm >= 96) return 5;
@@ -183,9 +180,7 @@ public class GarmentFitAnalyzer {
     }
 
     private static int indexFromHips(Integer hipsCm) {
-        if (hipsCm == null) {
-            return -1;
-        }
+        if (hipsCm == null) return -1;
         if (hipsCm >= 112) return 7;
         if (hipsCm >= 106) return 6;
         if (hipsCm >= 100) return 5;

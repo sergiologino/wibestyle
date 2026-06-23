@@ -1,27 +1,17 @@
-import Image from "next/image";
 import Link from "next/link";
-import { imageSlots } from "@/content/image-slots";
 import { homeFaq } from "@/content/home-faq";
 import { siteConfig } from "@/lib/site";
 import LeadForm from "@/components/LeadForm";
-import PricingBanner from "@/components/PricingBanner";
 import PublishedReviewsSection from "@/components/PublishedReviewsSection";
 import AppPreviewPhones from "@/components/home/AppPreviewPhones";
 import BeforeAfterSection from "@/components/home/BeforeAfterSection";
+import { categoryCards } from "@/components/home/category-cards-data";
 import ExamplesGallerySection from "@/components/home/ExamplesGallerySection";
 import FinalCtaArt from "@/components/home/FinalCtaArt";
 import HeroBeforeCard from "@/components/home/HeroBeforeCard";
 import HeroCollage from "@/components/home/HeroCollage";
 import StyleShowcaseSection from "@/components/home/StyleShowcaseSection";
 import ProductFeaturesBlock from "@/components/seo/ProductFeaturesBlock";
-
-const categories = [
-  { className: "card-dress", title: "Платья", sub: "полный рост", href: "/primerka-platya" },
-  { className: "card-shoes", title: "Обувь", sub: "крупный план + образ", href: "/primerka-obuvi" },
-  { className: "card-office", title: "Офис", sub: "пиджак, брюки, сумка", href: "/primerka-pidzhaka" },
-  { className: "card-party", title: "Вечер", sub: "платье, макияж, свет", href: "/dlya-devushek" },
-  { className: "card-men", title: "Для него", sub: "часы, галстук, обувь", href: "/dlya-muzhchin" },
-];
 
 const futureCards = [
   { title: "AI-макияж", text: "Нюдовый, вечерний, деловой, яркий или свадебный макияж на портретном фото.", href: "/makiyazh", analytics: "future_makeup_click" },
@@ -58,13 +48,16 @@ export default function HomePage() {
               <li>Лицо можно скрыть перед обработкой</li>
             </ul>
             <div className="cta-row">
-              <Link className="store-button store-apple" href="#lead" data-analytics="hero_appstore">
+              <Link className="hero-web-cta" href={siteConfig.appUrl} data-analytics="hero_web_app">
+                Перейти в приложение
+              </Link>
+              <a className="store-button store-apple" href="#lead" data-analytics="hero_appstore">
                  <span>Скоро в<br /><b>App Store</b></span>
-              </Link>
-              <Link className="store-button store-google" href="#lead" data-analytics="hero_googleplay">
+              </a>
+              <a className="store-button store-google" href="#lead" data-analytics="hero_googleplay">
                 ▶ <span>Скачать в<br /><b>Google Play</b></span>
-              </Link>
-              <Link className="store-button store-rustore" href={siteConfig.rustoreUrl} data-analytics="hero_rustore">
+              </a>
+              <Link className="store-button store-rustore" href={siteConfig.rustoreUrl ?? siteConfig.appUrl} data-analytics="hero_rustore">
                 Ru <span>Скачать в<br /><b>RuStore</b></span>
               </Link>
             </div>
@@ -123,10 +116,16 @@ export default function HomePage() {
           <div className="section-heading">
             <p className="eyebrow">примеряй по категориям</p>
             <h2 id="categories-title">Платья, обувь, пиджаки, аксессуары — всё в одном сценарии</h2>
+            <p className="category-coming-soon">Уже скоро!</p>
           </div>
           <div className="category-grid">
-            {categories.map((c) => (
-              <Link key={c.href} href={c.href} className={`category-card ${c.className}`}>
+            {categoryCards.map((c) => (
+              <Link
+                key={c.id}
+                href={c.href}
+                className={`category-card ${c.className}${c.image ? " category-card--with-image" : ""}`}
+                style={c.image ? { backgroundImage: `url("${c.image}")` } : undefined}
+              >
                 <span>{c.title}</span>
                 <b>{c.sub}</b>
               </Link>
@@ -170,7 +169,6 @@ export default function HomePage() {
           <div>
             <h2 id="lead-title">Твой стиль начинается здесь</h2>
             <p>Примеряй. Вдохновляйся. Покупай увереннее.</p>
-            <PricingBanner />
             <LeadForm interest="clothing" variant="full" />
           </div>
           <FinalCtaArt />

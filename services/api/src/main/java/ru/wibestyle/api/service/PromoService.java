@@ -47,7 +47,7 @@ public class PromoService {
 
         PromoCodeValidator.validateFormat(rawCode);
         String code = PromoCodeValidator.normalize(rawCode);
-        PromoCodeEntity promo = promoCodeRepository.findByCode(code)
+        PromoCodeEntity promo = promoCodeRepository.findByCodeForUpdate(code)
                 .orElseThrow(() -> new IllegalArgumentException("PROMO_NOT_FOUND"));
 
         Instant now = Instant.now();

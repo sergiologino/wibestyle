@@ -12,6 +12,9 @@ const safeWebidlConversionsEntry = path.resolve(
 
 const config = getDefaultConfig(projectRoot);
 
+// React Native Gradle passes the entry file relative to the app root on Windows.
+// Keep Metro's server root there as well; workspace packages remain available below.
+config.server.unstable_serverRoot = projectRoot;
 config.watchFolders = [monorepoRoot];
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),

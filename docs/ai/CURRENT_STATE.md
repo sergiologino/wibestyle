@@ -54,7 +54,7 @@
 - **Monorepo** WibeStyle: лендинг, web-app, admin, **mobile Android (Expo)**, backend API, shared packages.
 - **Web app**: полный UX-flow + search/gallery + billing paywall + promo deep links.
 - **API**: auth (OTP + promo redeem), billing, admin promo CRUD, entitlements, quota reserve/consume/refund.
-- **Admin** (`:3002`): `/promo`, `/reviews`, `/leads`, `/gallery`.
+- **Admin** (`:3002`): `/promo`, `/reviews`, `/leads`, `/gallery`, `/ai-providers`.
 - Автотесты и сборки: **npm test**, **API tests**, **web build**, **mobile TypeScript**, **API bootJar** — проходят.
 
 ## Лендинг: production-баннеры (старт 2026-06-10)
@@ -69,12 +69,18 @@
 - SEO-страницы тоже используют новые компонентные баннеры: `/ai-primerka` рендерит `BeforeAfterSection` + `StyleShowcaseSection` вместо старых split PNG, `/kak-rabotaet` рендерит `AppPreviewPhones`, `BeforeAfterSection`, `HeroBeforeCard` и `HeroCollage` вместо четырёх raster-моков.
 - Для SEO split на `/ai-primerka` добавлены отдельные CSS-настройки фиксированной высоты, чтобы `BeforeAfterSection` и `StyleShowcaseSection` были одной высоты; eyebrow внутри розового градиента белый, иконки style-карточек не перекрывают подписи, badge страницы заменён на «Уже в приложении».
 - Header CTA лендинга ведёт в веб-версию приложения через `siteConfig.appUrl` (`NEXT_PUBLIC_APP_URL`, fallback `http://localhost:3001/welcome`). Hero storefront CTA: `Скоро в App Store`, `Скачать в Google Play`, `Скачать в RuStore`.
-- Форма раннего доступа убрана: `LeadForm` теперь рендерит CTA без полей. По клику Android отправляется в RuStore (`NEXT_PUBLIC_RUSTORE_URL`, fallback `https://www.rustore.ru/catalog/app/ru.wibestyle.app`), desktop/iOS/macOS — в web-app с query `offer=first100`; скидка для первых 100 показывается и учитывается как оффер приложения.
+- Форма раннего доступа убрана: `LeadForm` рендерит CTA без полей. Android отправляется в RuStore только при непустом `NEXT_PUBLIC_RUSTORE_URL`; до публикации приложения используется web-app. Параметр `offer=first100`, скидочная цена и остаток показываются только пока активен реальный промокод `FIRST100`.
 - В CTA-блоке перехода в приложение верхний дублирующий price-card заменён на контрастный мотивационный glass-panel про примерку в AI до пункта выдачи; технический текст про платформы убран, мотивационный блок и блок с кнопкой выровнены по ширине.
-- Discount label в CTA больше не pill/tag: это заметный текст без градиента с символом ₽. Footer дополнен реквизитами ООО «АЛЬТАКОД», ИНН 4000002848, email `admin@altacod.com`, Telegram-чат отмечен как `скоро`.
+- Discount label в CTA больше не pill/tag: это заметный текст без градиента с символом ₽. Footer дополнен реквизитами ООО «АЛЬТАКОД», ИНН 4000002848, email `admin@altacod.com` и активируемой через env кнопкой Telegram-канала.
 - Правая часть CTA-баннера заполнена desktop-only визуалом `EarlyAccessVisual`; изображение берётся из `early-access-visual-data.ts` и легко заменяется на production-фото. На экранах до 1180px визуал скрыт.
-- Блок главной «больше примеров» больше не использует старые `female-card-*` напрямую: добавлен `ExamplesGallerySection`, данные в `female-cards-data.ts`, replaceable media лежат в `apps/landing/public/assets/female-cards/`. Сопоставление по basename: `look-1.mp4` приоритетнее, иначе берётся `look-1.webp/jpg/jpeg/png/avif`.
+- Блок главной «больше примеров» больше не использует старые `female-card-*` напрямую: добавлен `ExamplesGallerySection`, данные в `female-cards-data.ts`, replaceable media лежат в `apps/landing/public/assets/female-cards/`. Сопоставление по basename: `look-1.mp4` приоритетнее, иначе сначала берётся выбранный `look-1.png`, затем jpg/jpeg/webp/avif.
 - Подписи в `ExamplesGallerySection` оформлены как fashion-плашки поверх фото; звёздочки заменены на сердечки.
+- Пояснение «Только реальные модели…» принадлежит `ExamplesGallerySection` и рендерится непосредственно перед фотогалереей, после заголовка блока.
+- Подписи office/casual синхронизированы с фактической одеждой на фото: пиджак с юбкой и блузкой; красная блузка с кофтой и брюками.
+- В `AppPreviewPhones` правый экран со стикером «Это любовь!» показывает фото целиком через `object-fit: contain`, без обрезания головы модели.
+- Mobile header сохраняет отдельную CTA «В приложение» рядом с кнопкой меню.
+- Набор production-фотографий лендинга восстановлен из `origin/master` после расхождения веток; старые demo-файлы с совпадающими именами больше не используются вместо выбранных фото.
+- Секция «Примеряй по категориям» помечена «Уже скоро!». Пять category-card используют зарезервированные basename `dress`, `shoes`, `office`, `evening`, `men` из `public/assets/category-cards/`; при отсутствии файла остаётся текущий цветной fallback.
 - Демо-ассеты для быстрой замены лежат в `apps/landing/public/assets/before-after-demo/`.
 - Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
 
@@ -82,6 +88,10 @@
 - **Landing examples caption (2026-06-23)**: первая карточка блока «Образы, которые хочется повторить» с летним светлым образом подписана «Отдых»; production-фото `look-1` не менялось.
 - **Yandex OAuth branding (2026-06-23)**: web/mobile кнопка входа использует фирменный красный `#FC3F1D`, локальный знак «Я» слева и подпись «Яндекс»; белая кнопка на белом фоне удалена.
 - **Landing/favorites copy and media (2026-06-23)**: hero уточняет загрузку своего фото и ссылки маркетплейса либо фото прикида; web `/favorites` нормализует сохранённые product image URL через общий retryable preview, поэтому marketplace proxy/API paths больше не дают пустые карточки.
+- **IDE/code-quality cleanup (2026-06-23)**: устранены неиспользуемые landing imports, несуществующая CSS-переменная, несовместимая с инспекцией IDEA многослойная mask-запись и некавыченные env-примеры со значениями, содержащими пробелы.
+- **AI provider priorities (2026-06-23)**: восстановлены API и экран `/ai-providers`; миграция V22 безопасно добавляет отсутствующие маршруты Grok Imagine, FASHN Try-On и Kling Virtual Try-On. Фото- и видеоворкеры выполняют включённые маршруты по приоритету и переходят к следующему провайдеру при timeout, moderation, quota/token и generation errors. AI-логи сохраняют операцию, номер попытки и причину fallback.
+- **Auth/SMS (2026-06-22)**: email OTP временно скрыт в web/mobile UI; телефонный OTP регистрирует новый номер или авторизует существующий. SMS.ru удалён, production sender использует SMS Aero API v2 с Basic Auth и env-конфигурацией; dev без credentials сохраняет код `0000`.
+- **Telegram (2026-06-22)**: landing footer, web top bar/settings и mobile home/profile используют public URL/name канала из env; кнопки открывают внешний Telegram-канал.
 - **Mobile branding/gallery**: Expo assets и нативные Android launcher/splash resources используют полноразмерную V-mark без edge ring; launcher resources остаются `.webp`, чтобы не ловить Gradle duplicate resources; mobile gallery строит абсолютный API URL для `publicImageUrl`.
 - **Profile UX (2026-06-03)**: mobile profile inputs компактнее; дополнительные avatar в web/mobile не дублируют основной; mobile size tags показывают edge-треугольники, если список можно свайпать.
 - **Mobile home UX**: главный экран показывает `Осталось примерок`, счётчик в `Твои примерки (N)`, CTA на avatar при его отсутствии и gender-aware subtitle.
@@ -142,7 +152,7 @@
 - Flyway `V8__landing_leads_admin.sql`: lead status + metadata.
 - Admin `/leads`: фильтр, CSV export, смена status.
 - Admin `/reviews`: редактирование display name.
-- `GET /landing/leads` публично → только `{ remainingSpots }`.
+- `GET /landing/leads` публично → `{ remainingSpots, promoActive, discountPercent }`; остаток связан с использованием `FIRST100`, а не со старыми landing leads.
 
 ## UX-маршруты web-app
 - `/welcome` → `/auth` → `/onboarding/avatar` → `/home`

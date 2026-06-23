@@ -60,6 +60,7 @@ export default function PublicPostClient({ slug, initialPost, initialComments }:
   const imageSrc = resolveGalleryImageUrl(post);
   const videoSrc = resolveGalleryVideoUrl(post);
   const isVideo = post.mediaType === "video" && Boolean(videoSrc);
+  const landingUrl = landingSiteUrl();
   const author = post.authorDisplayName ?? "Участник WibeStyle";
 
   return (
@@ -76,13 +77,32 @@ export default function PublicPostClient({ slug, initialPost, initialComments }:
         brandDomain={brandDomain()}
         eliteFrame={Boolean(post.eliteFrame)}
         imageUrl={isVideo ? undefined : imageSrc}
-        landingUrl={landingSiteUrl()}
+        landingUrl={landingUrl}
         mediaType={isVideo ? "video" : "image"}
         postSlug={post.slug}
         productTitle={post.productTitle ?? post.title}
         showProductLink={post.productLinkVisible}
         videoUrl={isVideo ? videoSrc : undefined}
       />
+
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href={landingUrl}
+          className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#ff1fa2] px-5 py-3 font-medium text-white"
+        >
+          Открыть VibeStyle
+        </Link>
+        {post.productLinkVisible && post.productUrl ? (
+          <a
+            href={post.productUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-[#ffd1ed] bg-white px-5 py-3 font-medium text-[#ff1fa2]"
+          >
+            Открыть товар
+          </a>
+        ) : null}
+      </div>
 
       <div className="px-1">
         <h1 className="text-display text-3xl">{post.title}</h1>

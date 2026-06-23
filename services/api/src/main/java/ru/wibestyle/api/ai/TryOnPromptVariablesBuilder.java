@@ -21,7 +21,6 @@ public final class TryOnPromptVariablesBuilder {
             ObjectMapper objectMapper,
             TryOnSessionEntity session,
             AvatarSnapshotEntity snapshot,
-            String faceLock,
             String figureLock,
             String fitHint,
             ProductSizeChart chart
@@ -29,9 +28,6 @@ public final class TryOnPromptVariablesBuilder {
         Map<String, Object> root = new LinkedHashMap<>();
         root.put("product", productBlock(session));
         root.put("customer", customerBlock(snapshot));
-        if (faceLock != null && !faceLock.isBlank()) {
-            root.put("faceLock", faceLock);
-        }
         if (figureLock != null && !figureLock.isBlank()) {
             root.put("figureLock", figureLock);
         }
@@ -66,6 +62,24 @@ public final class TryOnPromptVariablesBuilder {
         if (session.getGarmentCategory() != null && !session.getGarmentCategory().isBlank()) {
             product.put("category", session.getGarmentCategory().trim());
         }
+        product.put("promptProfile", GarmentClassification.normalizePromptProfile(
+                session.getGarmentPromptProfile(),
+                session.getGarmentCategory()
+        ));
+        product.put("coverageLevel", GarmentClassification.normalizeCoverageLevel(
+                session.getGarmentCoverageLevel(),
+                session.getGarmentCategory()
+        ));
+        product.put("moderationRisk", GarmentClassification.normalizeModerationRisk(
+                session.getGarmentModerationRisk(),
+                session.getGarmentCategory()
+        ));
+        product.put("productPhotoHasHumanModel", session.isGarmentHasHumanModel());
+        product.put(
+                "sellerModelPolicy",
+                "If image2 contains a seller model, mannequin or any person, ignore that person completely. "
+                        + "Use image2 only for garment color, fabric, cut, silhouette, print and clothing details."
+        );
         if (session.getSelectedSize() != null && !session.getSelectedSize().isBlank()) {
             product.put("marketplaceLabelSize", session.getSelectedSize().trim());
         }

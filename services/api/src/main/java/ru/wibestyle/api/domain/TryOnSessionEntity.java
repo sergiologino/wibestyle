@@ -64,6 +64,18 @@ public class TryOnSessionEntity {
     @Column(name = "garment_category", length = 32)
     private String garmentCategory;
 
+    @Column(name = "garment_prompt_profile", length = 32)
+    private String garmentPromptProfile;
+
+    @Column(name = "garment_coverage_level", length = 32)
+    private String garmentCoverageLevel;
+
+    @Column(name = "garment_moderation_risk", length = 32)
+    private String garmentModerationRisk;
+
+    @Column(name = "garment_has_human_model", nullable = false)
+    private boolean garmentHasHumanModel;
+
     @Column(name = "garment_photo_path", length = 512)
     private String garmentPhotoPath;
 
@@ -248,6 +260,38 @@ public class TryOnSessionEntity {
 
     public void setGarmentCategory(String garmentCategory) {
         this.garmentCategory = garmentCategory;
+    }
+
+    public String getGarmentPromptProfile() {
+        return garmentPromptProfile;
+    }
+
+    public void setGarmentPromptProfile(String garmentPromptProfile) {
+        this.garmentPromptProfile = garmentPromptProfile;
+    }
+
+    public String getGarmentCoverageLevel() {
+        return garmentCoverageLevel;
+    }
+
+    public void setGarmentCoverageLevel(String garmentCoverageLevel) {
+        this.garmentCoverageLevel = garmentCoverageLevel;
+    }
+
+    public String getGarmentModerationRisk() {
+        return garmentModerationRisk;
+    }
+
+    public void setGarmentModerationRisk(String garmentModerationRisk) {
+        this.garmentModerationRisk = garmentModerationRisk;
+    }
+
+    public boolean isGarmentHasHumanModel() {
+        return garmentHasHumanModel;
+    }
+
+    public void setGarmentHasHumanModel(boolean garmentHasHumanModel) {
+        this.garmentHasHumanModel = garmentHasHumanModel;
     }
 
     public String getGarmentPhotoPath() {

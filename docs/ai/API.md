@@ -128,7 +128,7 @@ Provider priorities only select the `networkName` sent to `noteapp-ai-integratio
 
 | Method | Path |
 |--------|------|
-| GET/POST | `/landing/leads` | GET → `{ remainingSpots }`, POST → create lead |
+| GET/POST | `/landing/leads` | GET → `{ remainingSpots, promoActive, discountPercent }` по `FIRST100`; POST → legacy create lead + те же promo stats |
 | POST | `/landing/interest` |
 
 ## Admin (promo)

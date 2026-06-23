@@ -20,14 +20,14 @@ import java.util.UUID;
 public class AiProviderPriorityService {
 
     private static final List<ProviderDefinition> PHOTO_DEFAULTS = List.of(
-            new ProviderDefinition("wibestyle-vton", "WibeStyle Virtual Try-On", 10),
+            new ProviderDefinition("wibestyle-vton", "Grok Imagine", 10),
             new ProviderDefinition("fashn-try-on-photo", "FASHN Try-On Photo", 20),
-            new ProviderDefinition("kling-try-on-photo", "Kling Try-On Photo", 30)
+            new ProviderDefinition("kling-try-on-photo", "Kling Virtual Try-On", 30)
     );
     private static final List<ProviderDefinition> VIDEO_DEFAULTS = List.of(
-            new ProviderDefinition("wibestyle-season-video", "WibeStyle Season Hit Video", 10),
+            new ProviderDefinition("wibestyle-season-video", "Grok Imagine Video", 10),
             new ProviderDefinition("fashn-try-on-video", "FASHN Try-On Video", 20),
-            new ProviderDefinition("kling-try-on-video", "Kling Try-On Video", 30)
+            new ProviderDefinition("kling-try-on-video", "Kling Virtual Try-On Video", 30)
     );
 
     private final AiProviderPriorityRepository repository;
@@ -40,12 +40,21 @@ public class AiProviderPriorityService {
 
     @Transactional(readOnly = true)
     public List<ProviderRoute> routeFor(String operation) {
+        ensureKnownOperation(operation);
+        List<AiProviderPriorityEntity> configuredRows =
+                repository.findByOperationOrderByPriorityOrderAsc(operation);
         List<AiProviderPriorityEntity> enabled = repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(operation);
         if (!enabled.isEmpty()) {
             return enabled.stream()
                     .sorted(Comparator.comparingInt(AiProviderPriorityEntity::getPriorityOrder))
                     .map(ProviderRoute::from)
                     .toList();
+        }
+
+        // Once an operation has persisted rows, disabling every row is an explicit
+        // admin choice. Do not silently reactivate the legacy env network.
+        if (!configuredRows.isEmpty()) {
+            return List.of();
         }
 
         String configured = AiOperations.VIRTUAL_TRY_ON_VIDEO.equals(operation)

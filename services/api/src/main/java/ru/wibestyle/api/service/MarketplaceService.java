@@ -5,6 +5,7 @@ import ru.wibestyle.api.domain.AvatarSnapshotEntity;
 import ru.wibestyle.api.domain.TryOnErrorCodes;
 import ru.wibestyle.api.marketplace.MarketplaceAdapter;
 import ru.wibestyle.api.marketplace.MarketplaceAdapterRegistry;
+import ru.wibestyle.api.marketplace.MarketplaceUrlNormalizer;
 import ru.wibestyle.api.marketplace.ProductDetails;
 import ru.wibestyle.api.marketplace.ProductSizeChart;
 import ru.wibestyle.api.marketplace.SizeChartEntry;
@@ -46,8 +47,9 @@ public class MarketplaceService {
     }
 
     public Map<String, Object> parseLink(String url, UUID userId) {
-        MarketplaceAdapter adapter = marketplaceAdapterRegistry.resolve(url);
-        String normalizedUrl = adapter.normalizeUrl(url);
+        String extractedUrl = MarketplaceUrlNormalizer.extract(url);
+        MarketplaceAdapter adapter = marketplaceAdapterRegistry.resolve(extractedUrl);
+        String normalizedUrl = adapter.normalizeUrl(extractedUrl);
         String productId = adapter.extractProductId(normalizedUrl);
         ProductDetails product = fetchProductDetails(adapter, productId, normalizedUrl);
 

@@ -5,6 +5,6 @@ module.exports = function (api) {
   return {
     presets: ["babel-preset-expo"],
     // Monorepo: babel-preset-expo skips expo-router when it is not hoisted to the repo root.
-    plugins: [expoRouterBabelPlugin, "react-native-reanimated/plugin"],
+    plugins: [expoRouterBabelPlugin],
   };
 };

@@ -22,6 +22,11 @@ class AiProviderPriorityServiceTest {
 
     @Test
     void routeForUsesEnabledProvidersInPriorityOrder() {
+        when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of(
+                        entity("fashn-try-on-photo", "FASHN", 20, true),
+                        entity("kling-try-on-photo", "Kling", 30, true)
+                ));
         when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
                 .thenReturn(List.of(
                         entity("kling-try-on-photo", "Kling", 30, true),
@@ -38,6 +43,8 @@ class AiProviderPriorityServiceTest {
     @Test
     void routeForFallsBackToConfiguredNetworkWhenDatabaseRouteIsEmpty() {
         properties.setVirtualTryOnNetwork("custom-primary");
+        when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of());
         when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
                 .thenReturn(List.of());
 
@@ -46,6 +53,17 @@ class AiProviderPriorityServiceTest {
 
         assertThat(route).hasSize(1);
         assertThat(route.get(0).networkName()).isEqualTo("custom-primary");
+    }
+
+    @Test
+    void routeForKeepsOperationDisabledWhenAllPersistedProvidersAreDisabled() {
+        properties.setVirtualTryOnNetwork("legacy-env-network");
+        when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of(entity("wibestyle-vton", "Grok Imagine", 10, false)));
+        when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of());
+
+        assertThat(service.routeFor(AiOperations.VIRTUAL_TRY_ON_PHOTO)).isEmpty();
     }
 
     @Test

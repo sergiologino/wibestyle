@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@wibestyle/ui";
+import { useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
+import { isProtectedApiMediaUrl } from "@/lib/api-media";
 import { resolveProductImageUrl } from "@/lib/product-image";
 
 type ProductPreviewImageProps = {
@@ -14,15 +16,20 @@ export default function ProductPreviewImage({ imageUrl, alt, className }: Produc
   const [retry, setRetry] = useState(0);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const protectedMedia = isProtectedApiMediaUrl(imageUrl);
+  const protectedBlob = useAuthenticatedBlob(protectedMedia ? imageUrl : null);
 
   const src = useMemo(() => {
+    if (protectedMedia) {
+      return protectedBlob;
+    }
     const base = resolveProductImageUrl(imageUrl);
     if (!base || retry === 0) {
       return base;
     }
     const separator = base.includes("?") ? "&" : "?";
     return `${base}${separator}retry=${retry}&t=${Date.now()}`;
-  }, [imageUrl, retry]);
+  }, [imageUrl, protectedBlob, protectedMedia, retry]);
 
   useEffect(() => {
     setFailed(false);

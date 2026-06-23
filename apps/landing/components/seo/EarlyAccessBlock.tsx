@@ -1,6 +1,5 @@
 import LeadForm, { type LeadInterest } from "@/components/LeadForm";
 import EarlyAccessVisual from "@/components/home/EarlyAccessVisual";
-import { pricing } from "@/lib/site";
 
 type Props = {
   interest?: LeadInterest;
@@ -11,7 +10,6 @@ export default function EarlyAccessBlock({ interest = "clothing" }: Props) {
     <section className="early-access-hero" aria-labelledby="early-access-title">
       <div className="early-access-hero-inner">
         <div className="early-access-copy">
-          <p className="early-access-saving">₽ Экономия для первых {pricing.firstUsersLimit}: скидка 50% на год</p>
           <h2 id="early-access-title">
             Открой приложение и <span>примерь</span> образ
           </h2>

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import ru.wibestyle.api.ai.GarmentClassification;
+import ru.wibestyle.api.ai.GarmentClassifierService;
 import ru.wibestyle.api.domain.AvatarSnapshotEntity;
 import ru.wibestyle.api.domain.DomainEvents;
 import ru.wibestyle.api.domain.TryOnErrorCodes;
@@ -15,6 +17,7 @@ import ru.wibestyle.api.domain.TryOnSourceType;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.marketplace.MarketplaceAdapter;
 import ru.wibestyle.api.marketplace.MarketplaceAdapterRegistry;
+import ru.wibestyle.api.marketplace.MarketplaceUrlNormalizer;
 import ru.wibestyle.api.marketplace.ProductDetails;
 import ru.wibestyle.api.marketplace.ProductSizeChartJson;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
@@ -43,6 +46,7 @@ public class TryOnService {
     private final GarmentImageService garmentImageService;
     private final SeasonHitVideoService seasonHitVideoService;
     private final ProfileService profileService;
+    private final GarmentClassifierService garmentClassifierService;
 
     public TryOnService(
             TryOnSessionRepository tryOnSessionRepository,
@@ -55,7 +59,8 @@ public class TryOnService {
             QuotaService quotaService,
             GarmentImageService garmentImageService,
             SeasonHitVideoService seasonHitVideoService,
-            ProfileService profileService
+            ProfileService profileService,
+            GarmentClassifierService garmentClassifierService
     ) {
         this.tryOnSessionRepository = tryOnSessionRepository;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
@@ -68,19 +73,21 @@ public class TryOnService {
         this.garmentImageService = garmentImageService;
         this.seasonHitVideoService = seasonHitVideoService;
         this.profileService = profileService;
+        this.garmentClassifierService = garmentClassifierService;
     }
 
     @Transactional
     public Map<String, Object> createLinkSession(UUID userId, String url, String selectedSize) {
         AvatarSnapshotEntity snapshot = requireTryOnProfileReady(userId);
+        String extractedUrl = MarketplaceUrlNormalizer.extract(url);
         MarketplaceAdapter adapter;
         try {
-            adapter = marketplaceAdapterRegistry.resolve(url);
+            adapter = marketplaceAdapterRegistry.resolve(extractedUrl);
         } catch (IllegalArgumentException ex) {
             throw ex;
         }
 
-        String normalizedUrl = adapter.normalizeUrl(url);
+        String normalizedUrl = adapter.normalizeUrl(extractedUrl);
         String productId = adapter.extractProductId(normalizedUrl);
         ProductDetails product = MarketplaceService.fetchProductDetails(adapter, productId, normalizedUrl);
 
@@ -102,6 +109,7 @@ public class TryOnService {
         tryOnSessionRepository.save(session);
         try {
             garmentImageService.ensureLocalGarmentPhoto(userId, session);
+            classifyStoredGarment(session);
             tryOnSessionRepository.save(session);
         } catch (IOException ex) {
             throw new IllegalArgumentException(TryOnErrorCodes.PRODUCT_IMAGE_NOT_FOUND, ex);
@@ -144,15 +152,24 @@ public class TryOnService {
                 now,
                 now
         );
-        String resolvedCategory = category == null || category.isBlank() ? "other" : category;
+        GarmentClassification classification = garmentClassifierService.classifyBytes(
+                photo.getBytes(),
+                photo.getContentType(),
+                garmentClassifierService.fallbackFromText(
+                        productTitle != null && !productTitle.isBlank() ? productTitle : category,
+                        productTitle
+                )
+        );
+        String resolvedCategory = classification.category();
         session.setGarmentCategory(resolvedCategory);
+        applyGarmentClassification(session, classification, productTitle == null || productTitle.isBlank());
         session.setGarmentPhotoPath(storedPath);
         session.setProductImageUrl("/api/v1/try-on/sessions/" + sessionId + "/garment-photo");
         session.setMarketplace("other");
         session.setProductTitle(
                 productTitle != null && !productTitle.isBlank()
                         ? productTitle.trim()
-                        : categoryTitle(resolvedCategory)
+                        : classification.title()
         );
         session.setProductBrand("Фото из галереи");
         session.setProductSizes(serializeSizes(DEFAULT_PHOTO_SIZES));
@@ -291,6 +308,50 @@ public class TryOnService {
         if (product.categories() != null && !product.categories().isEmpty()) {
             session.setGarmentCategory(product.categories().get(0));
         }
+        applyGarmentClassification(
+                session,
+                garmentClassifierService.fallbackFromText(product.title(), product.title()),
+                false
+        );
+    }
+
+    private void classifyStoredGarment(TryOnSessionEntity session) throws IOException {
+        String garmentPath = session.getGarmentPhotoPath();
+        if (garmentPath == null || !blobStorage.exists(garmentPath)) {
+            return;
+        }
+        GarmentClassification fallback = garmentClassifierService.fallbackFromText(
+                session.getProductTitle() + " " + nullSafe(session.getGarmentCategory()),
+                session.getProductTitle()
+        );
+        GarmentClassification classification = garmentClassifierService.classifyBytes(
+                blobStorage.readBytes(garmentPath),
+                "image/jpeg",
+                fallback
+        );
+        applyGarmentClassification(session, classification, false);
+    }
+
+    private void applyGarmentClassification(
+            TryOnSessionEntity session,
+            GarmentClassification classification,
+            boolean allowTitleOverride
+    ) {
+        if (classification == null) {
+            return;
+        }
+        if (classification.category() != null && !"other".equals(classification.category())) {
+            session.setGarmentCategory(classification.category());
+        } else if (session.getGarmentCategory() == null || session.getGarmentCategory().isBlank()) {
+            session.setGarmentCategory("other");
+        }
+        if (allowTitleOverride && classification.title() != null && !classification.title().isBlank()) {
+            session.setProductTitle(classification.title());
+        }
+        session.setGarmentPromptProfile(classification.promptProfile());
+        session.setGarmentCoverageLevel(classification.coverageLevel());
+        session.setGarmentModerationRisk(classification.moderationRisk());
+        session.setGarmentHasHumanModel(classification.hasHumanModel());
     }
 
     private String resolveSelectedSize(String selectedSize, List<String> availableSizes) {
@@ -355,6 +416,10 @@ public class TryOnService {
         map.put("visibility", session.getVisibility());
         map.put("selectedSize", session.getSelectedSize());
         map.put("garmentCategory", session.getGarmentCategory());
+        map.put("garmentPromptProfile", session.getGarmentPromptProfile());
+        map.put("garmentCoverageLevel", session.getGarmentCoverageLevel());
+        map.put("garmentModerationRisk", session.getGarmentModerationRisk());
+        map.put("garmentHasHumanModel", session.isGarmentHasHumanModel());
         map.put("sizeWarning", session.getSizeWarning());
         map.put("errorCode", session.getErrorCode());
         map.put("errorMessage", session.getErrorMessage());
@@ -413,6 +478,10 @@ public class TryOnService {
             case GARMENT_PHOTO -> "garment_photo";
             case GALLERY_UPLOAD -> "gallery_upload";
         };
+    }
+
+    private static String nullSafe(String value) {
+        return value == null ? "" : value;
     }
 
     private static String categoryTitle(String category) {

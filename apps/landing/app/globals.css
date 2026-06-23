@@ -642,6 +642,21 @@ a.category-card {
   justify-self: end;
   width: min(360px, 30vw);
 }
+.early-access-visual__label {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 24px 18px;
+  padding: 11px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  color: var(--pink);
+  font-weight: 950;
+  box-shadow: 0 18px 38px rgba(20, 0, 28, .22);
+  transform: rotate(-2deg);
+}
 .early-access-visual__frame {
   position: relative;
   overflow: hidden;
@@ -665,7 +680,6 @@ a.category-card {
   height: 520px;
   object-fit: cover;
 }
-.early-access-visual__label,
 .early-access-visual__note {
   position: absolute;
   z-index: 2;
@@ -675,13 +689,6 @@ a.category-card {
   border-radius: 999px;
   font-weight: 950;
   box-shadow: 0 18px 38px rgba(20, 0, 28, .22);
-}
-.early-access-visual__label {
-  left: 18px;
-  top: 18px;
-  padding: 11px 14px;
-  background: rgba(255,255,255,.94);
-  color: var(--pink);
 }
 .early-access-visual__note {
   right: 18px;

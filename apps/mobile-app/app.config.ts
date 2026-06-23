@@ -28,6 +28,7 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     "expo-secure-store",
+    "expo-video",
     [
       "expo-build-properties",
       {
@@ -44,7 +45,9 @@ const config: ExpoConfig = {
   },
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:8080",
-    landingUrl: process.env.EXPO_PUBLIC_LANDING_URL ?? "https://vibestyle.art",
+    appUrl: process.env.EXPO_PUBLIC_APP_URL ?? "https://app.vibestyle.art",
+    telegramChannelUrl: process.env.EXPO_PUBLIC_TELEGRAM_CHANNEL_URL ?? "https://t.me/vibestyle_channel",
+    telegramChannelName: process.env.EXPO_PUBLIC_TELEGRAM_CHANNEL_NAME ?? "Я на стиле. Поддержка",
     eas: {
       projectId: "wibestyle-mobile-local",
     },

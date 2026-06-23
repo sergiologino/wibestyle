@@ -13,6 +13,40 @@
 - Web favorites переведены с сырого `<img src={item.imageUrl}>` на `ProductPreviewImage`: URL нормализуется через API/rewrite, CDN-запросы используют `no-referrer`, ошибки получают retry/fallback.
 - Добавлен регрессионный contract test отображения изображений избранного.
 
+## 2026-06-23 (Landing paywall promo and mobile routing)
+- Тэг «Сначала личный стилист» вынесен над рамкой paywall-фото и больше не перекрывает голову модели.
+- V23 создаёт/нормализует `FIRST100` со стартовым публичным остатком 71; landing stats теперь читают реальный `usesCount/maxUses` промокода. При исчерпании скрываются скидочная цена, FIRST100 query и строка остатка.
+- Redeem `FIRST100` блокирует строку промокода на время транзакции, чтобы параллельные регистрации не превысили лимит.
+- Android CTA ведёт в RuStore только при заданном `NEXT_PUBLIC_RUSTORE_URL`; пустое значение отправляет в web-app.
+
+## 2026-06-23 (IDE inspection cleanup after provider restoration)
+- Удалены неиспользуемые imports в landing HomePage; локальные hash CTA используют обычные anchors.
+- Исправлена CSS-переменная `--ink` → существующая `--black`; mask hero-фото упрощена до валидной однослойной записи без изменения нижнего fade.
+- Значения с пробелами в landing/web/mobile/API `.env.example` заключены в кавычки; убраны лишние escapes в regex-тесте mobile header CTA.
+- Yandex Metrika переведена с неподдерживаемого для App Router `beforeInteractive` на `afterInteractive`; обязательный noscript tracking pixel документирован для ESLint.
+
+## 2026-06-23 (AI provider priorities restored)
+- Восстановлены backend endpoint `GET/PUT /api/v1/admin/ai-providers`, admin-страница `/ai-providers` и методы общего API-клиента; ошибка «Не удалось загрузить приоритеты нейросетей» устранена.
+- Добавлена repair-миграция V22: недостающие Grok Imagine, FASHN Try-On и Kling Virtual Try-On создаются без перезаписи сохранённых порядка и enabled-флагов.
+- Фото- и видеоворкеры снова используют управляемую fallback-цепочку; в AI-логи добавлены операция, номер попытки и причина перехода к следующему провайдеру.
+- Добавлены unit/integration tests для списка, изменения приоритетов, порядка маршрутов, полного отключения операции и fallback-кодов; полные API tests и production build админки проходят.
+
+## 2026-06-22 (SMS Aero, phone-only auth UI, Telegram CTA)
+- Web/mobile auth UI временно переведён в phone-only режим: email OTP endpoints сохранены в backend, но email tab/form скрыты.
+- SMS.ru sender и env удалены; добавлен SMS Aero API v2 sender с Basic Auth, configurable sign/channel/base URL, безопасной обработкой ошибок и rollback OTP cooldown при неудачной доставке.
+- Landing footer получил Telegram-кнопку; landing/web/mobile используют документированные public env URL/name канала.
+- Добавлены backend-тесты SMS Aero request/error и rollback cooldown, а также UI contract tests для скрытого email-входа и Telegram CTA.
+
+## 2026-06-22 (Landing gallery real-model note)
+- Исправлен блок «Образы, которые хочется повторить»: пояснение «Только реальные модели…» перенесено внутрь `ExamplesGallerySection` и гарантированно рендерится перед карточками галереи.
+- Добавлен автотест порядка вывода пояснения и галереи.
+- Исправлены подписи office/casual в `StyleShowcaseSection` и `ExamplesGallerySection` под фактическую одежду моделей.
+- Правое фото в `AppPreviewPhones` переведено в `contain`, чтобы модель помещалась в экран смартфона целиком.
+- В мобильном header закреплена заметная CTA «В приложение» рядом с меню.
+- Добавлены регрессионные тесты подписей, режима отображения phone preview и mobile header CTA.
+- Восстановлен полный набор выбранных production-фотографий лендинга из `origin/master`; устранена подмена старыми demo-ассетами из ветки `improve-promt`.
+- Галерея снова предпочитает выбранные PNG, а карточка отдельного вечернего образа использует `style-showcase/men.png`; подписи приведены в соответствие одежде на фото.
+- Секция категорий получила подпись «Уже скоро!» и replaceable-фото через новую папку `public/assets/category-cards/` с именами `dress`, `shoes`, `office`, `evening`, `men`; добавлены fallback-градиенты и автотест resolver-контракта.
 ## 2026-06-16 (Onboarding replaceable media and ad logo)
 - Web onboarding media moved to dedicated replaceable files under `apps/web-app/public/assets/onboarding/slides/`.
 - Web `/welcome` now prefers `*.mp4` by slide basename and falls back to the matching `*.png`, so A/B media can be replaced without editing React code.
