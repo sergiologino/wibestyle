@@ -10,6 +10,6 @@ describe("mobile header CTA", () => {
     expect(header).toContain('className="download-cta"');
     expect(header).toContain('className="download-cta__mobile"');
     expect(header).toContain("В приложение");
-    expect(styles).toMatch(/@media \(max-width: 860px\)[\s\S]*?\.download-cta__[\w-]*desktop \{ display: none; \}[\s\S]*?\.download-cta__mobile \{ display: inline; \}/);
+    expect(styles).toMatch(/@media \(max-width: 860px\)[\s\S]*?\.download-cta__[\w-]*desktop { display: none; }[\s\S]*?\.download-cta__mobile { display: inline; }/);
   });
 });

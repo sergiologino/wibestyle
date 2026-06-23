@@ -146,14 +146,8 @@ button, input { font: inherit; }
   height: 590px;
   overflow: hidden;
   border-radius: 0 120px 72px 0;
-  -webkit-mask-image:
-    linear-gradient(90deg, transparent 0%, #000 7%, #000 92%, transparent 100%),
-    linear-gradient(180deg, #000 0%, #000 92%, transparent 100%);
-  mask-image:
-    linear-gradient(90deg, transparent 0%, #000 7%, #000 92%, transparent 100%),
-    linear-gradient(180deg, #000 0%, #000 92%, transparent 100%);
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 92%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 92%, transparent 100%);
 }
 .hero-person-card img {
   width: 100%;
@@ -834,7 +828,7 @@ h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255
 .section-heading p { color: var(--muted); font-size: 20px; font-weight: 700; }
 .section-heading .category-coming-soon { margin: 18px 0 0; color: var(--pink); font-size: 22px; font-weight: 950; }
 .model-casting-note { max-width: 720px; margin: -16px auto 24px; color: var(--muted); font-size: 16px; font-weight: 700; line-height: 1.55; text-align: center; }
-.model-casting-note strong { color: var(--ink); }
+.model-casting-note strong { color: var(--black); }
 .category-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
 .category-card {
   position: relative;

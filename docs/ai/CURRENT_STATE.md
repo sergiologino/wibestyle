@@ -85,6 +85,7 @@
 - Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
 
 ## Недавние фиксы (2026-06-03)
+- **IDE/code-quality cleanup (2026-06-23)**: устранены неиспользуемые landing imports, несуществующая CSS-переменная, несовместимая с инспекцией IDEA многослойная mask-запись и некавыченные env-примеры со значениями, содержащими пробелы.
 - **AI provider priorities (2026-06-23)**: восстановлены API и экран `/ai-providers`; миграция V22 безопасно добавляет отсутствующие маршруты Grok Imagine, FASHN Try-On и Kling Virtual Try-On. Фото- и видеоворкеры выполняют включённые маршруты по приоритету и переходят к следующему провайдеру при timeout, moderation, quota/token и generation errors. AI-логи сохраняют операцию, номер попытки и причину fallback.
 - **Auth/SMS (2026-06-22)**: email OTP временно скрыт в web/mobile UI; телефонный OTP регистрирует новый номер или авторизует существующий. SMS.ru удалён, production sender использует SMS Aero API v2 с Basic Auth и env-конфигурацией; dev без credentials сохраняет код `0000`.
 - **Telegram (2026-06-22)**: landing footer, web top bar/settings и mobile home/profile используют public URL/name канала из env; кнопки открывают внешний Telegram-канал.

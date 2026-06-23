@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { SeoPageContent } from "@/content/seo-pages";
 import type { LeadInterest } from "@/components/LeadForm";

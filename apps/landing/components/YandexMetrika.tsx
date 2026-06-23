@@ -4,7 +4,7 @@ import { YANDEX_METRIKA_ID } from "@/lib/metrika";
 export default function YandexMetrika() {
   return (
     <>
-      <Script id="yandex-metrika" strategy="beforeInteractive">
+      <Script id="yandex-metrika" strategy="afterInteractive">
         {`
           (function(m,e,t,r,i,k,a){
             m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
@@ -26,6 +26,7 @@ export default function YandexMetrika() {
       </Script>
       <noscript>
         <div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- required tracking pixel fallback without JS */}
           <img
             src={`https://mc.yandex.ru/watch/${YANDEX_METRIKA_ID}`}
             style={{ position: "absolute", left: "-9999px" }}

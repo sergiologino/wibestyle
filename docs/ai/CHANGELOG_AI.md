@@ -1,5 +1,11 @@
 # AI Changelog
 
+## 2026-06-23 (IDE inspection cleanup after provider restoration)
+- Удалены неиспользуемые imports в landing HomePage; локальные hash CTA используют обычные anchors.
+- Исправлена CSS-переменная `--ink` → существующая `--black`; mask hero-фото упрощена до валидной однослойной записи без изменения нижнего fade.
+- Значения с пробелами в landing/web/mobile/API `.env.example` заключены в кавычки; убраны лишние escapes в regex-тесте mobile header CTA.
+- Yandex Metrika переведена с неподдерживаемого для App Router `beforeInteractive` на `afterInteractive`; обязательный noscript tracking pixel документирован для ESLint.
+
 ## 2026-06-23 (AI provider priorities restored)
 - Восстановлены backend endpoint `GET/PUT /api/v1/admin/ai-providers`, admin-страница `/ai-providers` и методы общего API-клиента; ошибка «Не удалось загрузить приоритеты нейросетей» устранена.
 - Добавлена repair-миграция V22: недостающие Grok Imagine, FASHN Try-On и Kling Virtual Try-On создаются без перезаписи сохранённых порядка и enabled-флагов.
