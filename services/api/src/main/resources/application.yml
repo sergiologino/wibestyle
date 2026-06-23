@@ -39,7 +39,11 @@ wibestyle:
     from: ${WIBESTYLE_MAIL_FROM:noreply@vibestyle.art}
     dev-log-only: ${WIBESTYLE_MAIL_DEV_LOG_ONLY:true}
   sms:
-    api-id: ${WIBESTYLE_SMS_RU_API_ID:}
+    email: ${WIBESTYLE_SMS_AERO_EMAIL:}
+    api-key: ${WIBESTYLE_SMS_AERO_API_KEY:}
+    sign: ${WIBESTYLE_SMS_AERO_SIGN:SMS Aero}
+    channel: ${WIBESTYLE_SMS_AERO_CHANNEL:DIRECT}
+    base-url: ${WIBESTYLE_SMS_AERO_BASE_URL:https://gate.smsaero.ru/v2}
     dev-stub-code: "0000"
   geoip:
     default-country: ${WIBESTYLE_GEOIP_DEFAULT_COUNTRY:}

@@ -1,8 +1,11 @@
 import Link from "next/link";
 import HashLink from "@/components/HashLink";
 import { siteConfig } from "@/lib/site";
+import { telegramChannelName, telegramChannelUrl } from "@/lib/community";
 
 export default function Footer() {
+  const telegramUrl = telegramChannelUrl();
+
   return (
     <footer className="footer">
       <div className="container footer-grid">
@@ -33,7 +36,13 @@ export default function Footer() {
           <p className="footer-legal">ООО «АЛЬТАКОД»</p>
           <p className="footer-legal">ИНН 4000002848</p>
           <a href="mailto:admin@altacod.com">admin@altacod.com</a>
-          <p className="footer-legal footer-legal-muted">Telegram-чат: скоро</p>
+          {telegramUrl ? (
+            <a className="footer-telegram" href={telegramUrl} rel="noopener noreferrer" target="_blank">
+              Telegram: {telegramChannelName()} ↗
+            </a>
+          ) : (
+            <p className="footer-legal footer-legal-muted">Telegram-канал</p>
+          )}
         </div>
       </div>
     </footer>

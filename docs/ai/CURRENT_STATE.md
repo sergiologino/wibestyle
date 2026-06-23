@@ -54,7 +54,7 @@
 - **Monorepo** WibeStyle: лендинг, web-app, admin, **mobile Android (Expo)**, backend API, shared packages.
 - **Web app**: полный UX-flow + search/gallery + billing paywall + promo deep links.
 - **API**: auth (OTP + promo redeem), billing, admin promo CRUD, entitlements, quota reserve/consume/refund.
-- **Admin** (`:3002`): `/promo`, `/reviews`, `/leads`, `/gallery`.
+- **Admin** (`:3002`): `/promo`, `/reviews`, `/leads`, `/gallery`, `/ai-providers`.
 - Автотесты и сборки: **npm test**, **API tests**, **web build**, **mobile TypeScript**, **API bootJar** — проходят.
 
 ## Лендинг: production-баннеры (старт 2026-06-10)
@@ -71,7 +71,7 @@
 - Header CTA лендинга ведёт в веб-версию приложения через `siteConfig.appUrl` (`NEXT_PUBLIC_APP_URL`, fallback `http://localhost:3001/welcome`). Hero storefront CTA: `Скоро в App Store`, `Скачать в Google Play`, `Скачать в RuStore`.
 - Форма раннего доступа убрана: `LeadForm` теперь рендерит CTA без полей. По клику Android отправляется в RuStore (`NEXT_PUBLIC_RUSTORE_URL`, fallback `https://www.rustore.ru/catalog/app/ru.wibestyle.app`), desktop/iOS/macOS — в web-app с query `offer=first100`; скидка для первых 100 показывается и учитывается как оффер приложения.
 - В CTA-блоке перехода в приложение верхний дублирующий price-card заменён на контрастный мотивационный glass-panel про примерку в AI до пункта выдачи; технический текст про платформы убран, мотивационный блок и блок с кнопкой выровнены по ширине.
-- Discount label в CTA больше не pill/tag: это заметный текст без градиента с символом ₽. Footer дополнен реквизитами ООО «АЛЬТАКОД», ИНН 4000002848, email `admin@altacod.com`, Telegram-чат отмечен как `скоро`.
+- Discount label в CTA больше не pill/tag: это заметный текст без градиента с символом ₽. Footer дополнен реквизитами ООО «АЛЬТАКОД», ИНН 4000002848, email `admin@altacod.com` и активируемой через env кнопкой Telegram-канала.
 - Правая часть CTA-баннера заполнена desktop-only визуалом `EarlyAccessVisual`; изображение берётся из `early-access-visual-data.ts` и легко заменяется на production-фото. На экранах до 1180px визуал скрыт.
 - Блок главной «больше примеров» больше не использует старые `female-card-*` напрямую: добавлен `ExamplesGallerySection`, данные в `female-cards-data.ts`, replaceable media лежат в `apps/landing/public/assets/female-cards/`. Сопоставление по basename: `look-1.mp4` приоритетнее, иначе сначала берётся выбранный `look-1.png`, затем jpg/jpeg/webp/avif.
 - Подписи в `ExamplesGallerySection` оформлены как fashion-плашки поверх фото; звёздочки заменены на сердечки.
@@ -85,6 +85,9 @@
 - Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
 
 ## Недавние фиксы (2026-06-03)
+- **AI provider priorities (2026-06-23)**: восстановлены API и экран `/ai-providers`; миграция V22 безопасно добавляет отсутствующие маршруты Grok Imagine, FASHN Try-On и Kling Virtual Try-On. Фото- и видеоворкеры выполняют включённые маршруты по приоритету и переходят к следующему провайдеру при timeout, moderation, quota/token и generation errors. AI-логи сохраняют операцию, номер попытки и причину fallback.
+- **Auth/SMS (2026-06-22)**: email OTP временно скрыт в web/mobile UI; телефонный OTP регистрирует новый номер или авторизует существующий. SMS.ru удалён, production sender использует SMS Aero API v2 с Basic Auth и env-конфигурацией; dev без credentials сохраняет код `0000`.
+- **Telegram (2026-06-22)**: landing footer, web top bar/settings и mobile home/profile используют public URL/name канала из env; кнопки открывают внешний Telegram-канал.
 - **Mobile branding/gallery**: Expo assets и нативные Android launcher/splash resources используют полноразмерную V-mark без edge ring; launcher resources остаются `.webp`, чтобы не ловить Gradle duplicate resources; mobile gallery строит абсолютный API URL для `publicImageUrl`.
 - **Profile UX (2026-06-03)**: mobile profile inputs компактнее; дополнительные avatar в web/mobile не дублируют основной; mobile size tags показывают edge-треугольники, если список можно свайпать.
 - **Mobile home UX**: главный экран показывает `Осталось примерок`, счётчик в `Твои примерки (N)`, CTA на avatar при его отсутствии и gender-aware subtitle.

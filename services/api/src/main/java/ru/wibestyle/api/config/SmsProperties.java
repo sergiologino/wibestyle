@@ -5,15 +5,53 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "wibestyle.sms")
 public class SmsProperties {
 
-    private String apiId = "";
+    private String email = "";
+    private String apiKey = "";
+    private String sign = "SMS Aero";
+    private String channel = "DIRECT";
+    private String baseUrl = "https://gate.smsaero.ru/v2";
     private String devStubCode = "0000";
 
-    public String getApiId() {
-        return apiId;
+    public String getEmail() {
+        return email;
     }
 
-    public void setApiId(String apiId) {
-        this.apiId = apiId == null ? "" : apiId.trim();
+    public void setEmail(String email) {
+        this.email = email == null ? "" : email.trim();
+    }
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey == null ? "" : apiKey.trim();
+    }
+
+    public String getSign() {
+        return sign;
+    }
+
+    public void setSign(String sign) {
+        this.sign = sign == null || sign.isBlank() ? "SMS Aero" : sign.trim();
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel == null || channel.isBlank() ? "DIRECT" : channel.trim();
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl == null || baseUrl.isBlank()
+                ? "https://gate.smsaero.ru/v2"
+                : baseUrl.trim().replaceAll("/+$", "");
     }
 
     public String getDevStubCode() {
@@ -25,6 +63,6 @@ public class SmsProperties {
     }
 
     public boolean isConfigured() {
-        return apiId != null && !apiId.isBlank();
+        return email != null && !email.isBlank() && apiKey != null && !apiKey.isBlank();
     }
 }

@@ -1029,6 +1029,16 @@ details p { margin: 14px 0 0; color: var(--muted); font-weight: 700; line-height
 .footer-brand { font-size: 26px; }
 .footer-legal { margin: 8px 0; color: #6a6170; font-weight: 700; line-height: 1.3; }
 .footer-legal-muted { color: #9a8f99; }
+.footer a.footer-telegram {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: white;
+  background: linear-gradient(135deg, #229ed9, #168ac7);
+  box-shadow: 0 10px 24px rgba(34, 158, 217, .24);
+}
 
 @media (max-width: 1180px) {
   .hero-layout { grid-template-columns: 280px 1fr; }
