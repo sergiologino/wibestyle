@@ -85,6 +85,9 @@
 - Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
 
 ## Недавние фиксы (2026-06-03)
+- **Landing examples caption (2026-06-23)**: первая карточка блока «Образы, которые хочется повторить» с летним светлым образом подписана «Отдых»; production-фото `look-1` не менялось.
+- **Yandex OAuth branding (2026-06-23)**: web/mobile кнопка входа использует фирменный красный `#FC3F1D`, локальный знак «Я» слева и подпись «Яндекс»; белая кнопка на белом фоне удалена.
+- **Landing/favorites copy and media (2026-06-23)**: hero уточняет загрузку своего фото и ссылки маркетплейса либо фото прикида; web `/favorites` нормализует сохранённые product image URL через общий retryable preview, поэтому marketplace proxy/API paths больше не дают пустые карточки.
 - **IDE/code-quality cleanup (2026-06-23)**: устранены неиспользуемые landing imports, несуществующая CSS-переменная, несовместимая с инспекцией IDEA многослойная mask-запись и некавыченные env-примеры со значениями, содержащими пробелы.
 - **AI provider priorities (2026-06-23)**: восстановлены API и экран `/ai-providers`; миграция V22 безопасно добавляет отсутствующие маршруты Grok Imagine, FASHN Try-On и Kling Virtual Try-On. Фото- и видеоворкеры выполняют включённые маршруты по приоритету и переходят к следующему провайдеру при timeout, moderation, quota/token и generation errors. AI-логи сохраняют операцию, номер попытки и причину fallback.
 - **Auth/SMS (2026-06-22)**: email OTP временно скрыт в web/mobile UI; телефонный OTP регистрирует новый номер или авторизует существующий. SMS.ru удалён, production sender использует SMS Aero API v2 с Basic Auth и env-конфигурацией; dev без credentials сохраняет код `0000`.

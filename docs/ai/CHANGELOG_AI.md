@@ -1,5 +1,18 @@
 # AI Changelog
 
+## 2026-06-23 (Landing first example caption)
+- В первой карточке «Образы, которые хочется повторить» заголовок «Платье» заменён на «Отдых» без изменения изображения `look-1`.
+- Добавлен regression test подписи и сохранения media slot первой карточки.
+
+## 2026-06-23 (Yandex OAuth button branding)
+- Web и mobile кнопки Яндекс OAuth переведены на красный `#FC3F1D`, белый текст «Яндекс» и локальный знак «Я» слева.
+- Добавлены regression contract tests фирменного цвета, порядка logo/text и удаления старой подписи «Яндекс ID».
+
+## 2026-06-23 (Landing hero copy and favorites images)
+- Уточнён hero-текст: своё фото + ссылка с маркетплейса или фото прикида.
+- Web favorites переведены с сырого `<img src={item.imageUrl}>` на `ProductPreviewImage`: URL нормализуется через API/rewrite, CDN-запросы используют `no-referrer`, ошибки получают retry/fallback.
+- Добавлен регрессионный contract test отображения изображений избранного.
+
 ## 2026-06-23 (Landing paywall promo and mobile routing)
 - Тэг «Сначала личный стилист» вынесен над рамкой paywall-фото и больше не перекрывает голову модели.
 - V23 создаёт/нормализует `FIRST100` со стартовым публичным остатком 71; landing stats теперь читают реальный `usesCount/maxUses` промокода. При исчерпании скрываются скидочная цена, FIRST100 query и строка остатка.

@@ -6,6 +6,8 @@ import { ApiError } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
+const YANDEX_RED = "#FC3F1D";
+
 WebBrowser.maybeCompleteAuthSession();
 
 export function OAuthButtons() {
@@ -43,8 +45,22 @@ export function OAuthButtons() {
       <Text style={styles.label}>Или войти через</Text>
       <View style={styles.row}>
         {providers.yandex ? (
-          <Pressable style={styles.button} disabled={loading !== null} onPress={() => void start("yandex")}>
-            <Text style={styles.buttonText}>{loading === "yandex" ? "…" : "Яндекс ID"}</Text>
+          <Pressable
+            accessibilityLabel="Яндекс"
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.button,
+              styles.yandexButton,
+              pressed && loading === null ? styles.buttonPressed : null,
+              loading !== null ? styles.buttonDisabled : null,
+            ]}
+            disabled={loading !== null}
+            onPress={() => void start("yandex")}
+          >
+            <View style={styles.yandexLogo} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <Text style={styles.yandexLogoText}>Я</Text>
+            </View>
+            <Text style={styles.yandexButtonText}>{loading === "yandex" ? "…" : "Яндекс"}</Text>
           </Pressable>
         ) : null}
         {providers.google ? (
@@ -74,12 +90,44 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
     paddingVertical: 12,
     borderRadius: radius.md,
     borderWidth: hairline,
     borderColor: colors.borderLight,
     alignItems: "center",
     backgroundColor: colors.white,
+  },
+  buttonPressed: {
+    opacity: 0.9,
+  },
+  buttonDisabled: {
+    opacity: 0.55,
+  },
+  yandexButton: {
+    backgroundColor: YANDEX_RED,
+    borderColor: YANDEX_RED,
+  },
+  yandexLogo: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.white,
+  },
+  yandexLogoText: {
+    color: YANDEX_RED,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 15,
+    lineHeight: 19,
+  },
+  yandexButtonText: {
+    color: colors.white,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 14,
   },
   buttonText: {
     fontFamily: "Manrope_600SemiBold",
