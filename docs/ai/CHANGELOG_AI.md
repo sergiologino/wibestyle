@@ -1,5 +1,13 @@
 # AI Changelog
 
+## 2026-06-23 (Landing first example caption)
+- В первой карточке «Образы, которые хочется повторить» заголовок «Платье» заменён на «Отдых» без изменения изображения `look-1`.
+- Добавлен regression test подписи и сохранения media slot первой карточки.
+
+## 2026-06-23 (Yandex OAuth button branding)
+- Web и mobile кнопки Яндекс OAuth переведены на красный `#FC3F1D`, белый текст «Яндекс» и локальный знак «Я» слева.
+- Добавлены regression contract tests фирменного цвета, порядка logo/text и удаления старой подписи «Яндекс ID».
+
 ## 2026-06-23 (Landing hero copy and favorites images)
 - Уточнён hero-текст: своё фото + ссылка с маркетплейса или фото прикида.
 - Web favorites переведены с сырого `<img src={item.imageUrl}>` на `ProductPreviewImage`: URL нормализуется через API/rewrite, CDN-запросы используют `no-referrer`, ошибки получают retry/fallback.

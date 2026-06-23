@@ -79,6 +79,8 @@
 - Поведение: poster показывается первые 2 секунды, затем при видимости карточки в viewport запускается muted/playsInline/loop video; при reduced motion остаётся статичный poster.
 
 ## Недавние фиксы (2026-06-03)
+- **Landing examples caption (2026-06-23)**: первая карточка блока «Образы, которые хочется повторить» с летним светлым образом подписана «Отдых»; production-фото `look-1` не менялось.
+- **Yandex OAuth branding (2026-06-23)**: web/mobile кнопка входа использует фирменный красный `#FC3F1D`, локальный знак «Я» слева и подпись «Яндекс»; белая кнопка на белом фоне удалена.
 - **Landing/favorites copy and media (2026-06-23)**: hero уточняет загрузку своего фото и ссылки маркетплейса либо фото прикида; web `/favorites` нормализует сохранённые product image URL через общий retryable preview, поэтому marketplace proxy/API paths больше не дают пустые карточки.
 - **Mobile branding/gallery**: Expo assets и нативные Android launcher/splash resources используют полноразмерную V-mark без edge ring; launcher resources остаются `.webp`, чтобы не ловить Gradle duplicate resources; mobile gallery строит абсолютный API URL для `publicImageUrl`.
 - **Profile UX (2026-06-03)**: mobile profile inputs компактнее; дополнительные avatar в web/mobile не дублируют основной; mobile size tags показывают edge-треугольники, если список можно свайпать.

@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { femaleExampleCards, resolveFemaleExampleMedia } from "./female-cards-data";
 
 describe("femaleExampleCards", () => {
+  it("labels the first light summer look as Отдых without changing its media slot", () => {
+    expect(femaleExampleCards[0].title).toBe("Отдых");
+    expect(femaleExampleCards[0].media.src).toContain("/assets/female-cards/look-1.");
+  });
+
   it("keeps gallery media replaceable and accessible", () => {
     expect(femaleExampleCards).toHaveLength(4);
 

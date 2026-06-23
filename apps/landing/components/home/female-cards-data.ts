@@ -50,7 +50,7 @@ const femaleExampleCardSources: FemaleExampleCardSource[] = [
     id: "dress",
     fileBase: "look-1",
     alt: "Пример AI-примерки платья на девушке",
-    title: "Платье",
+    title: "Отдых",
     subtitle: "До покупки видно силуэт и настроение",
   },
   {
