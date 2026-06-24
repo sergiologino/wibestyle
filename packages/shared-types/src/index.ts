@@ -194,6 +194,27 @@ export type BillingSubscriberInfo = {
   plan: SubscriptionPlan;
   billingPeriod: BillingPeriod;
   subscriptionActive: boolean;
+  autoRenewEnabled?: boolean;
+  currentPeriodEnd?: string;
+};
+
+export type BillingSubscription = {
+  plan?: Exclude<SubscriptionPlan, "trial">;
+  period?: BillingPeriod;
+  currentPeriodEnd?: string;
+  autoRenewEnabled: boolean;
+  paymentMethodSaved: boolean;
+  status?: "active" | "canceled" | "retrying" | "payment_failed";
+};
+
+export type UserNotification = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  actionUrl?: string;
+  read: boolean;
+  createdAt: string;
 };
 
 export type PromoCodeRecord = {

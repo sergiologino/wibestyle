@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import type { BillingPlanOffer, BillingPeriod, SubscriptionPlan } from "@wibestyle/shared-types";
 import { Feather } from "@expo/vector-icons";
 import { ApiError } from "@wibestyle/api-client";
@@ -19,21 +20,38 @@ export default function PaywallScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentProvider, setPaymentProvider] = useState("mock");
+  const [savePaymentMethod, setSavePaymentMethod] = useState(false);
 
   useEffect(() => {
     void api.getBillingPlans().then((payload) => {
       setPlans(payload.items);
       setSelected(payload.defaultSelection);
+      setPaymentProvider(payload.paymentProvider ?? "mock");
     });
   }, [api]);
 
   const current = plans.find((p) => p.plan === selected.plan && p.period === selected.period);
 
-  async function subscribeDev() {
+  async function checkout() {
     setLoading(true);
     setError(null);
     try {
-      await api.subscribe(selected.plan as "wibe" | "elite", selected.period);
+      const result = await api.checkout(selected.plan as "wibe" | "elite", selected.period, {
+        savePaymentMethod,
+        client: "mobile",
+      });
+      if (result.provider === "yookassa") {
+        await WebBrowser.openAuthSessionAsync(result.paymentUrl, "wibestyle://paywall/return");
+        let status = await api.getCheckout(result.checkoutId);
+        for (let attempt = 0; status.status === "pending" && attempt < 15; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          status = await api.getCheckout(result.checkoutId);
+        }
+        if (status.status !== "completed") throw new Error("PAYMENT_NOT_CONFIRMED");
+      } else {
+        await api.simulateMockCheckout(result.checkoutId);
+      }
       await refreshProfile();
       router.replace("/(main)/home");
     } catch (err) {
@@ -94,8 +112,18 @@ export default function PaywallScreen() {
           </Text>
         ) : null}
 
+        {paymentProvider === "yookassa" ? (
+          <View style={styles.autoRenewRow}>
+            <View style={styles.autoRenewCopy}>
+              <Text style={styles.autoRenewTitle}>Сохранить способ оплаты и включить автопродление</Text>
+              <Text style={styles.autoRenewText}>Предупредим за 3 дня. Отключить можно в профиле.</Text>
+            </View>
+            <Switch value={savePaymentMethod} onValueChange={setSavePaymentMethod} trackColor={{ true: colors.pink }} />
+          </View>
+        ) : null}
+
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button label="Подключить trial" loading={loading} onPress={subscribeDev} />
+        <Button label="Перейти к оплате" loading={loading} onPress={checkout} />
         <BodyText>
           AI может ошибаться в посадке, слоях одежды и обработке белья. Мы улучшаем качество и исправляем такие случаи.
         </BodyText>
@@ -185,4 +213,17 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontFamily: "Manrope_400Regular",
   },
+  autoRenewRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    borderRadius: radius.lg,
+    backgroundColor: colors.pinkBg,
+    padding: spacing.md,
+  },
+  autoRenewCopy: { flex: 1, gap: 4 },
+  autoRenewTitle: { fontFamily: "Manrope_500Medium", color: colors.black, fontSize: 14 },
+  autoRenewText: { fontFamily: "Manrope_400Regular", color: colors.muted, fontSize: 12 },
 });

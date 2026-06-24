@@ -36,6 +36,15 @@ public class BillingCheckoutEntity {
     @Column(name = "external_payment_id", length = 128)
     private String externalPaymentId;
 
+    @Column(name = "save_payment_method", nullable = false)
+    private boolean savePaymentMethod;
+
+    @Column(name = "checkout_type", nullable = false, length = 16)
+    private String checkoutType = "initial";
+
+    @Column(name = "renewal_key", length = 160, unique = true)
+    private String renewalKey;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -102,6 +111,18 @@ public class BillingCheckoutEntity {
     public void setExternalPaymentId(String externalPaymentId) {
         this.externalPaymentId = externalPaymentId;
     }
+
+    public boolean isSavePaymentMethod() { return savePaymentMethod; }
+
+    public void setSavePaymentMethod(boolean savePaymentMethod) { this.savePaymentMethod = savePaymentMethod; }
+
+    public String getCheckoutType() { return checkoutType; }
+
+    public void setCheckoutType(String checkoutType) { this.checkoutType = checkoutType; }
+
+    public String getRenewalKey() { return renewalKey; }
+
+    public void setRenewalKey(String renewalKey) { this.renewalKey = renewalKey; }
 
     public Instant getCreatedAt() {
         return createdAt;

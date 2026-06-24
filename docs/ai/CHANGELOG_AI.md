@@ -1,5 +1,12 @@
 # AI Changelog
 
+## 2026-06-23 (YooKassa auto-renew + mobile push)
+- Added saved YooKassa payment methods with explicit opt-in, recurring subscription state, T−3 warnings, T0 regular-price renewal, calendar periods and three bounded retries.
+- Added durable in-app notifications and Expo push-device registration/delivery for Android; web/mobile expose notifications and auto-renew controls.
+- Mobile paywall now uses real checkout and polls verified payment instead of dev subscribe.
+- Added Flyway V24, API/shared client contracts and recurring billing tests.
+- Verified API test suite, web tests/build, mobile tests/lint/bundle, api-client tests and Android debug build.
+
 ## 2026-06-23 (Landing first example caption)
 - В первой карточке «Образы, которые хочется повторить» заголовок «Платье» заменён на «Отдых» без изменения изображения `look-1`.
 - Добавлен regression test подписи и сохранения media slot первой карточки.

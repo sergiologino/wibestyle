@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import type { TryOnHistoryItem } from "@wibestyle/shared-types";
+import type { TryOnHistoryItem, UserNotification } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
@@ -15,6 +15,7 @@ export default function HomeScreen() {
   const { api, profile, phone, accessToken, ensureSession } = useSession();
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState<UserNotification | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -27,6 +28,8 @@ export default function HomeScreen() {
       try {
         const payload = await api.listMyTryOnSessions();
         if (active) setHistory(payload.items);
+        const notifications = await api.getNotifications();
+        if (active) setNotification(notifications.items.find((item) => !item.read) ?? null);
       } finally {
         if (active) setLoading(false);
       }
@@ -45,6 +48,27 @@ export default function HomeScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {notification ? (
+          <Card style={styles.notificationCard}>
+            <Eyebrow>Уведомление</Eyebrow>
+            <SectionTitle>{notification.title}</SectionTitle>
+            <BodyText>{notification.body}</BodyText>
+            <View style={styles.notificationActions}>
+              {notification.actionUrl ? (
+                <Button label="Открыть" onPress={() => router.push(notification.actionUrl as never)} />
+              ) : null}
+              <Button
+                label="Понятно"
+                variant="secondary"
+                onPress={() => {
+                  const id = notification.id;
+                  setNotification(null);
+                  void api.markNotificationRead(id);
+                }}
+              />
+            </View>
+          </Card>
+        ) : null}
         <Card>
           <Eyebrow>{phone ? `Привет, ${phone}` : "Привет"}</Eyebrow>
           <DisplayTitle>Готова примерить новый look?</DisplayTitle>
@@ -115,6 +139,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     gap: spacing.sm,
   },
+  notificationCard: { borderColor: colors.violet },
+  notificationActions: { marginTop: spacing.md, gap: spacing.sm },
   avatarCta: {
     alignSelf: "flex-start",
     marginTop: spacing.md,

@@ -9,6 +9,7 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import TryOnHistoryGrid from "@/components/home/TryOnHistoryGrid";
 import SubscriptionNudgeBanner from "@/components/billing/SubscriptionNudgeBanner";
 import { isPaidSubscription, subscriptionNudgeLevel } from "@/lib/billing-plan";
+import NotificationInboxBanner from "@/components/notifications/NotificationInboxBanner";
 
 export default function HomeDashboardClient() {
   const searchParams = useSearchParams();
@@ -42,6 +43,7 @@ export default function HomeDashboardClient() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 md:px-8">
+      <NotificationInboxBanner />
       {celebration ? (
         <section className="rounded-[28px] border border-[#782cff] bg-gradient-to-r from-[#faf7ff] to-[#fff0f9] p-6">
           <p className="text-eyebrow text-[#782cff]">Подписка активна</p>

@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import { WibeStyleApiClient } from "@wibestyle/api-client";
 import type { UserProfile } from "@wibestyle/shared-types";
 import { getApiBaseUrl } from "@/lib/config";
@@ -33,6 +33,7 @@ import {
   withRefreshLock,
 } from "@/lib/session-auth";
 import { createMobileUploadHelpers } from "@/lib/mobile-api";
+import { obtainExpoPushToken } from "@/lib/push-notifications";
 
 type SessionContextValue = StoredSession & {
   api: WibeStyleApiClient;
@@ -58,6 +59,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<StoredSession>(EMPTY_SESSION);
   const [sessionReady, setSessionReady] = useState(false);
   const sessionRef = useRef(session);
+  const pushTokenRef = useRef<string | null>(null);
   sessionRef.current = session;
 
   const refreshAccessToken = useCallback(async (): Promise<boolean> => {
@@ -168,6 +170,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, [refreshAccessToken, session.refreshToken]);
 
+  useEffect(() => {
+    if (!session.accessToken || !session.profile?.userId) return;
+    let active = true;
+    void obtainExpoPushToken().then(async (token) => {
+      if (!active || !token) return;
+      pushTokenRef.current = token;
+      await api.registerPushDevice(token, Platform.OS === "ios" ? "ios" : "android");
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [api, session.accessToken, session.profile?.userId]);
+
   const setAuth = useCallback(
     (
       accessToken: string,
@@ -196,6 +209,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     const refreshToken = sessionRef.current.refreshToken;
+    const pushToken = pushTokenRef.current;
+    if (pushToken) {
+      try {
+        await api.unregisterPushDevice(pushToken, Platform.OS === "ios" ? "ios" : "android");
+      } catch {
+        /* ignore */
+      }
+      pushTokenRef.current = null;
+    }
     if (refreshToken) {
       try {
         await api.logout(refreshToken);

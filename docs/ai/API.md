@@ -84,12 +84,25 @@ Provider priorities only select the `networkName` sent to `noteapp-ai-integratio
 | GET | `/billing/plans` |
 | GET | `/billing/entitlements` |
 | POST | `/billing/promo/validate` |
-| POST | `/billing/checkout` | pending checkout; `paymentUrl` = YooKassa redirect or mock simulate |
+| POST | `/billing/checkout` | `{ plan, period, savePaymentMethod, client }`; pending checkout; `paymentUrl` = YooKassa redirect or mock simulate |
 | GET | `/billing/checkout/{checkoutId}` | status poll after return from YooKassa |
+| GET | `/billing/subscription` | recurring status, saved payment method flag and current period end |
+| PATCH | `/billing/subscription/auto-renew` | `{ enabled }`; enable requires a saved YooKassa payment method |
 | POST | `/billing/subscribe` | *(dev only if `WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=true`)* |
 | POST | `/billing/webhooks/yookassa` | YooKassa notification (verify via API) |
 | POST | `/billing/webhooks/{provider}` | webhook провайдера (`mock` + `payment.succeeded`) |
 | POST | `/billing/webhooks/mock/simulate?checkoutId=` | dev shortcut для завершения оплаты |
+
+Recurring: initial payment sends `save_payment_method=true` only after explicit user consent. Only verified YooKassa `payment_method.id` is stored. Scheduler warns at T−3 days, charges the regular current tariff at T0 and retries rejected charges up to three times. Unknown network outcomes reuse the same checkout UUID as YooKassa idempotence key.
+
+## Notifications
+
+| Method | Path |
+|--------|------|
+| GET | `/notifications` | latest 50 in-app notifications |
+| POST | `/notifications/{id}/read` | mark as read |
+| POST | `/notifications/push-devices` | register `{ token, platform }` Expo device |
+| DELETE | `/notifications/push-devices` | disable device token on logout |
 
 ## Media
 
@@ -154,7 +167,7 @@ Provider priorities only select the `networkName` sent to `noteapp-ai-integratio
 
 ## Data model (implemented tables)
 
-`users`, `user_profiles`, `avatars`, `avatar_snapshots`, `try_on_sessions`, `try_on_jobs`, `favorites`, `gallery_posts`, `gallery_likes`, `gallery_comments`, `promo_codes`, `promo_code_redemptions`, `landing_leads`, `landing_interests`, `media_assets`, `reviews`, `billing_checkouts`
+`users`, `user_profiles`, `avatars`, `avatar_snapshots`, `try_on_sessions`, `try_on_jobs`, `favorites`, `gallery_posts`, `gallery_likes`, `gallery_comments`, `promo_codes`, `promo_code_redemptions`, `landing_leads`, `landing_interests`, `media_assets`, `reviews`, `billing_checkouts`, `billing_subscriptions`, `user_notifications`, `push_devices`
 
-See Flyway migrations `V1`–`V9` in `services/api/src/main/resources/db/migration/`.
+See Flyway migrations `V1`–`V24` in `services/api/src/main/resources/db/migration/`.
 

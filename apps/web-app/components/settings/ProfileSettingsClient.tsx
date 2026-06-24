@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
-import type { UpdateProfilePayload } from "@wibestyle/shared-types";
+import type { BillingSubscription, UpdateProfilePayload } from "@wibestyle/shared-types";
 import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
 import AvatarManager from "@/components/avatar/AvatarManager";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
@@ -41,6 +41,8 @@ export default function ProfileSettingsClient() {
   const [confirmDelete, setConfirmDelete] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [billingSubscription, setBillingSubscription] = useState<BillingSubscription | null>(null);
+  const [autoRenewSaving, setAutoRenewSaving] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -55,6 +57,24 @@ export default function ProfileSettingsClient() {
     setClothingSize(profile.anthropometry?.clothingSize ?? "M");
     setShoeSizeEu(profile.anthropometry?.shoeSizeEu ? String(profile.anthropometry.shoeSizeEu) : "");
   }, [profile]);
+
+  useEffect(() => {
+    if (!accessToken || !isPaidSubscription(profile)) return;
+    void api.getBillingSubscription().then(setBillingSubscription).catch(() => undefined);
+  }, [accessToken, api, profile]);
+
+  async function toggleAutoRenew() {
+    if (!billingSubscription) return;
+    setAutoRenewSaving(true);
+    setError(null);
+    try {
+      setBillingSubscription(await api.setAutoRenew(!billingSubscription.autoRenewEnabled));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось изменить автопродление");
+    } finally {
+      setAutoRenewSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!accessToken || !profile?.activeAvatarId) {
@@ -170,6 +190,21 @@ export default function ProfileSettingsClient() {
             ) : null}
             {profile.subscriptionExpiresAt ? (
               <p>Действует до: {new Date(profile.subscriptionExpiresAt).toLocaleDateString("ru-RU")}</p>
+            ) : null}
+            {billingSubscription?.paymentMethodSaved ? (
+              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] p-3">
+                <div className="flex-1">
+                  <p className="font-medium text-[#302637]">Автопродление</p>
+                  <p className="mt-1 text-xs">
+                    {billingSubscription.autoRenewEnabled
+                      ? "Включено. Предупредим за 3 дня до следующего списания."
+                      : "Отключено. Подписка завершится в указанную дату."}
+                  </p>
+                </div>
+                <Button size="sm" variant="secondary" disabled={autoRenewSaving} onClick={() => void toggleAutoRenew()}>
+                  {billingSubscription.autoRenewEnabled ? "Отключить" : "Включить"}
+                </Button>
+              </div>
             ) : null}
           </div>
         ) : null}

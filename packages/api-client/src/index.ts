@@ -25,6 +25,8 @@ import type {
   UpdateProfilePayload,
   UserEntitlements,
   UserProfile,
+  BillingSubscription,
+  UserNotification,
 } from "@wibestyle/shared-types";
 import { extractMarketplaceUrl } from "@wibestyle/shared-types";
 
@@ -431,7 +433,7 @@ export class WibeStyleApiClient {
       defaultSelection: { plan: SubscriptionPlan; period: BillingPeriod };
       promoDiscountPercent: number;
       paymentProvider?: string;
-      subscriber?: { plan: SubscriptionPlan; billingPeriod: BillingPeriod; subscriptionActive: boolean };
+      subscriber?: { plan: SubscriptionPlan; billingPeriod: BillingPeriod; subscriptionActive: boolean; autoRenewEnabled?: boolean; currentPeriodEnd?: string };
     }>("/api/v1/billing/plans");
   }
 
@@ -458,7 +460,7 @@ export class WibeStyleApiClient {
     });
   }
 
-  checkout(plan: SubscriptionPlan, period: BillingPeriod) {
+  checkout(plan: SubscriptionPlan, period: BillingPeriod, options?: { savePaymentMethod?: boolean; client?: "web" | "mobile" }) {
     return this.request<{
       checkoutId: string;
       status: "pending";
@@ -470,7 +472,40 @@ export class WibeStyleApiClient {
       paymentUrl: string;
     }>("/api/v1/billing/checkout", {
       method: "POST",
-      body: JSON.stringify({ plan, period }),
+      body: JSON.stringify({ plan, period, savePaymentMethod: options?.savePaymentMethod ?? false, client: options?.client ?? "web" }),
+    });
+  }
+
+  getBillingSubscription() {
+    return this.request<BillingSubscription>("/api/v1/billing/subscription");
+  }
+
+  setAutoRenew(enabled: boolean) {
+    return this.request<BillingSubscription>("/api/v1/billing/subscription/auto-renew", {
+      method: "PATCH",
+      body: JSON.stringify({ enabled }),
+    });
+  }
+
+  getNotifications() {
+    return this.request<{ items: UserNotification[] }>("/api/v1/notifications");
+  }
+
+  markNotificationRead(notificationId: string) {
+    return this.request<UserNotification>(`/api/v1/notifications/${encodeURIComponent(notificationId)}/read`, { method: "POST" });
+  }
+
+  registerPushDevice(token: string, platform: "android" | "ios") {
+    return this.request<{ status: string }>("/api/v1/notifications/push-devices", {
+      method: "POST",
+      body: JSON.stringify({ token, platform }),
+    });
+  }
+
+  unregisterPushDevice(token: string, platform: "android" | "ios") {
+    return this.request<{ status: string }>("/api/v1/notifications/push-devices", {
+      method: "DELETE",
+      body: JSON.stringify({ token, platform }),
     });
   }
 

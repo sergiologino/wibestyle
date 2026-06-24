@@ -1,4 +1,5 @@
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
+import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -10,6 +11,16 @@ import {
 } from "@expo-google-fonts/manrope";
 import { SessionProvider } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
+import { addPushResponseListener } from "@/lib/push-notifications";
+
+function PushNotificationObserver() {
+  const router = useRouter();
+  useEffect(() => {
+    const subscription = addPushResponseListener((url) => router.push(url as never));
+    return () => subscription.remove();
+  }, [router]);
+  return null;
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -30,6 +41,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SessionProvider>
+        <PushNotificationObserver />
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
           <Stack.Screen name="index" />

@@ -1,9 +1,9 @@
 # Implementation Status
 
 > Живой чеклист: что сделано и что осталось. Обновляется по мере реализации.
-> Оплата: **YooKassa позже** — сейчас mock checkout без реального провайдера.
+> Оплата: YooKassa checkout/webhook и recurring готовы; для production нужны env, webhook, чеки 54-ФЗ и Expo/FCM credentials.
 
-**Последнее обновление:** 2026-06-02
+**Последнее обновление:** 2026-06-23
 
 ## План работ
 
@@ -29,6 +29,8 @@
 | Admin `/users` UI | ✅ |
 | RUNBOOK (local + prod) | ✅ |
 | YooKassa checkout + webhook | ✅ код готов — нужны env |
+| YooKassa auto-renew + T−3 warning | ✅ web/mobile, 3 retries, regular tariff |
+| In-app + Android Expo push notifications | ✅ нужны Expo project/FCM credentials |
 | Paywall UX + trial nudges | ✅ |
 | Mobile app | ✅ Android (Expo RN) |
 | Auth persistence | ✅ refresh 365 дней + web/mobile hardening |
@@ -87,7 +89,7 @@
 
 ### Этап 3+ roadmap
 - Multi-item, video, new marketplaces
-- Mobile: iOS, push, YooKassa in-app
+- Mobile: iOS release/testing
 
 ---
 

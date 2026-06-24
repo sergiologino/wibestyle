@@ -1,6 +1,6 @@
 # Mobile App — Android
 
-Native **Expo (React Native)** приложение «Я на стиле» — parity с web-app: OTP/логин, аватар, примерка по ссылке/фото, галерея, избранное, paywall (dev subscribe).
+Native **Expo (React Native)** приложение «Я на стиле» — parity с web-app: OTP/логин, аватар, примерка по ссылке/фото, галерея, избранное, YooKassa checkout/autorenew и Expo push.
 
 **Платформа:** Android 12+ (`minSdkVersion` 31), оптимизировано под экраны ≥ 1080×2400.
 
@@ -23,6 +23,7 @@ npm run verify:bundle
 
 ```env
 EXPO_PUBLIC_API_URL=http://10.0.2.2:8080
+EXPO_PUBLIC_EAS_PROJECT_ID=<Expo project UUID; нужен для production push>
 ```
 
 | Среда | `EXPO_PUBLIC_API_URL` |

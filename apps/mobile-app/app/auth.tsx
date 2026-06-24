@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, 
 import { useRouter } from "expo-router";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
-import { OAuthButtons } from "../components/auth/OAuthButtons";
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
