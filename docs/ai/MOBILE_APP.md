@@ -2,6 +2,8 @@
 
 Native **Expo (React Native)** приложение «Я на стиле» — parity с web-app: OTP/логин, аватар, примерка по ссылке/фото, галерея, избранное, YooKassa checkout/autorenew и Expo push.
 
+Paywall показывает отдельный бесплатный trial на 3 примерки, если он ещё доступен. Платные квоты: Wibe — 20 в месяц или 240 в год; Elite — 100 в месяц или 1200 в год. Годовые карточки показывают экономию относительно 12 месячных платежей, а активная скидка с лендинга помечается как уже включённая в цену.
+
 **Платформа:** Android 12+ (`minSdkVersion` 31), оптимизировано под экраны ≥ 1080×2400.
 
 ## Пошаговый запуск (после ошибок или с нуля)
@@ -155,6 +157,12 @@ Debug-сборка **не содержит JS внутри APK** — ей нуж
 После `npx expo prebuild` папка `apps/mobile-app/android/` — открывайте её в Android Studio.
 
 ### Release bundle: `Unable to resolve module ./node_modules/expo-router/entry.js`
+
+При Node 24/npm 11 возможен другой вариант ошибки: `babel-preset-expo` или Metro попадает в корневой
+`node_modules`, а `expo`/`expo-asset` остаются в `apps/mobile-app/node_modules`. Симптомы:
+`Cannot find module 'expo/config'` или `Cannot find module 'expo-asset/tools/hashAssetFiles'`.
+Общий bootstrap `scripts/register-workspace-modules.js` подключается до Babel и Metro; команда
+`npm run verify:bundle` проверяет оба импорта до запуска Gradle.
 
 На Windows React Native Gradle передаёт entry-файл относительно корня мобильного
 приложения. В monorepo Metro должен использовать тот же server root. Это закреплено в

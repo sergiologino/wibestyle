@@ -1,5 +1,17 @@
 # Current State
 
+## Mobile paywall trial and period-accurate quotas (2026-06-24)
+- Mobile paywall exposes the existing free trial as a separate CTA for trial users with remaining quota; a new trial contains exactly 3 try-ons and does not open checkout.
+- Paid offer copy now says `per month` or `per year`. Backend grants Wibe 20/month or 240/year and Elite 100/month or 1200/year, including initial checkout and renewals.
+- Annual cards show the ruble saving against twelve monthly payments. When a redeemed landing promo is active, the paywall explicitly says the discount is already included and shows the undiscounted price.
+- Flyway V25 changes the database trial default to 3 and caps unused active trial balances above 3. Verified with full API tests, 26 mobile tests, mobile TypeScript and bundle checks.
+
+## Android release bundle resolution with npm 11 (2026-06-24)
+- Fixed `assembleRelease` failures where npm 11 hoisted Babel/Metro tools to the monorepo root but kept `expo` and `expo-asset` under the mobile workspace.
+- A shared Node resolution bootstrap now exposes `apps/mobile-app/node_modules` before both Babel and Metro load hoisted Expo tools.
+- `verify:bundle` checks `expo/config`, `expo-asset/tools/hashAssetFiles`, and the Hermes-safe `webidl-conversions` shim before Android builds.
+- Verified: mobile TypeScript and 21 tests pass; the production Metro release bundle completes with 1288 modules and 59 assets. Full Gradle verification in the Codex sandbox stops later only because local Android SDK `android.jar` is outside the readable workspace.
+
 ## Deployment dependency hardening (2026-06-24)
 - The payment deployment failed during `npm ci` because the npm registry connection was reset (`ECONNRESET`), not because payment code failed to compile.
 - npm registry downloads now use bounded retries, increased timeouts and the local cache through the repository `.npmrc`.

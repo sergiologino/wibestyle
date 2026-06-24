@@ -1,5 +1,16 @@
 # AI Changelog
 
+## 2026-06-24 (Mobile paywall trial, quotas and savings)
+- Restored a visible free-trial path on Android: eligible users can start their 3 free try-ons without entering checkout.
+- Made paid quotas period-accurate end to end: Wibe 20/month or 240/year; Elite 100/month or 1200/year. Annual activation and renewal now grant the annual amount.
+- Added annual savings in rubles, concrete month/year labels, promo-already-applied copy and pre-discount pricing to the mobile paywall.
+- Added Flyway V25 and regression coverage for trial allowance, annual quota, savings, promo copy and mobile period labels.
+
+## 2026-06-24 (Android release build under npm 11)
+- Fixed release bundling errors `Cannot find module 'expo/config'` and `Cannot find module 'expo-asset/tools/hashAssetFiles'` caused by npm 11 splitting hoisted Expo tooling from workspace-local peer dependencies.
+- Added a shared workspace module-resolution bootstrap for Babel and Metro and extended `verify:bundle` with regression checks for both imports.
+- Verified mobile lint, all 21 mobile tests, and successful production Metro bundling of 1288 modules/59 assets.
+
 ## 2026-06-24 (Deployment dependency compatibility)
 - Identified the deployment stop as a transient npm registry `ECONNRESET`; added bounded fetch retries, longer timeouts and cache preference in `.npmrc`.
 - Regenerated the lockfile without Node 22.11-incompatible React Native 0.85, Vite 8 and jsdom 29 packages. Expo SDK 52 now resolves React Native 0.76.9 consistently.

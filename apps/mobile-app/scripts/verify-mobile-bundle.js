@@ -1,12 +1,35 @@
 /**
- * Verifies Metro resolves webidl-conversions to the Hermes-safe vendored copy.
+ * Verifies dependencies required by the Android release bundle resolve correctly.
  */
 const fs = require("node:fs");
 const path = require("node:path");
+const { createRequire } = require("node:module");
 
 const projectRoot = path.join(__dirname, "..");
 const metroConfig = require(path.join(projectRoot, "metro.config.js"));
 const shimEntry = path.join(projectRoot, "shims/webidl-conversions/lib/index.js");
+
+try {
+  const babelConfig = require(path.join(projectRoot, "babel.config.js"));
+  babelConfig({ cache() {} });
+  require("babel-preset-expo");
+} catch {
+  console.error("babel-preset-expo cannot resolve expo/config.");
+  console.error(
+    "Run npm install from the repository root and verify the mobile Babel workspace resolution.",
+  );
+  process.exit(1);
+}
+
+try {
+  const metroAssetsEntry = require.resolve("metro/src/Assets", {
+    paths: [projectRoot],
+  });
+  createRequire(metroAssetsEntry)("expo-asset/tools/hashAssetFiles");
+} catch {
+  console.error("Hoisted Metro cannot resolve expo-asset tools.");
+  process.exit(1);
+}
 
 if (!fs.existsSync(shimEntry)) {
   console.error(`Missing vendored shim: ${shimEntry}`);
@@ -50,3 +73,5 @@ if (normalized !== expected) {
 
 console.log("Metro webidl-conversions resolution OK:");
 console.log(`  ${normalized}`);
+console.log("Babel expo/config resolution OK.");
+console.log("Metro expo-asset tools resolution OK.");

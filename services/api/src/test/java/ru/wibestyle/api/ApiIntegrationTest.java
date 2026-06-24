@@ -297,7 +297,7 @@ class ApiIntegrationTest {
 
         mockMvc.perform(get("/api/v1/me").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.profile.trialGenerationsLeft").value(5))
+                .andExpect(jsonPath("$.profile.trialGenerationsLeft").value(3))
                 .andExpect(jsonPath("$.profile.plan").value("trial"));
     }
 
@@ -491,7 +491,7 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.session.status").value("ready"))
                 .andExpect(jsonPath("$.result.afterImageUrl").value("/assets/demo-after.svg"))
-                .andExpect(jsonPath("$.trialGenerationsLeft").value(4));
+                .andExpect(jsonPath("$.trialGenerationsLeft").value(2));
 
         mockMvc.perform(get("/api/v1/try-on/sessions/" + sessionId)
                         .header("Authorization", "Bearer " + accessToken))
@@ -622,6 +622,9 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.defaultSelection.plan").value("wibe"))
                 .andExpect(jsonPath("$.defaultSelection.period").value("annual"))
+                .andExpect(jsonPath("$.items[?(@.plan=='wibe' && @.period=='monthly')].generationsPerPeriod").value(20))
+                .andExpect(jsonPath("$.items[?(@.plan=='wibe' && @.period=='annual')].generationsPerPeriod").value(240))
+                .andExpect(jsonPath("$.items[?(@.plan=='elite' && @.period=='annual')].generationsPerPeriod").value(1200))
                 .andExpect(jsonPath("$.items[?(@.plan=='wibe' && @.period=='annual')].basePriceRub").value(3840));
     }
 
@@ -694,7 +697,7 @@ class ApiIntegrationTest {
                         .content("{\"plan\":\"wibe\",\"period\":\"annual\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.plan").value("wibe"))
-                .andExpect(jsonPath("$.planGenerationsLeft").value(20));
+                .andExpect(jsonPath("$.planGenerationsLeft").value(240));
 
         mockMvc.perform(get("/api/v1/me").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())

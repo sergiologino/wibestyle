@@ -97,4 +97,9 @@ public class QuotaService {
             default -> 0;
         };
     }
+
+    public int generationsForPlanPeriod(String plan, String period) {
+        int monthlyGenerations = defaultGenerationsForPlan(plan);
+        return "annual".equals(period) ? Math.multiplyExact(monthlyGenerations, 12) : monthlyGenerations;
+    }
 }

@@ -8,11 +8,17 @@ import { ApiError } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
+import {
+  annualSavingsRub,
+  formatTryOnAllowance,
+  promoAppliedText,
+  TRIAL_TRY_ONS,
+} from "@/lib/paywall-logic";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
 export default function PaywallScreen() {
   const router = useRouter();
-  const { api, refreshProfile } = useSession();
+  const { api, profile, refreshProfile } = useSession();
   const [plans, setPlans] = useState<BillingPlanOffer[]>([]);
   const [selected, setSelected] = useState<{ plan: SubscriptionPlan; period: BillingPeriod }>({
     plan: "wibe",
@@ -21,6 +27,8 @@ export default function PaywallScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentProvider, setPaymentProvider] = useState("mock");
+  const [annualDiscountPercent, setAnnualDiscountPercent] = useState(20);
+  const [promoDiscountPercent, setPromoDiscountPercent] = useState(0);
   const [savePaymentMethod, setSavePaymentMethod] = useState(false);
 
   useEffect(() => {
@@ -28,10 +36,15 @@ export default function PaywallScreen() {
       setPlans(payload.items);
       setSelected(payload.defaultSelection);
       setPaymentProvider(payload.paymentProvider ?? "mock");
+      setAnnualDiscountPercent(payload.annualDiscountPercent);
+      setPromoDiscountPercent(payload.promoDiscountPercent);
     });
   }, [api]);
 
   const current = plans.find((p) => p.plan === selected.plan && p.period === selected.period);
+  const promoMessage = promoAppliedText(promoDiscountPercent);
+  const showTrial = profile?.plan === "trial";
+  const trialRemaining = showTrial ? profile.trialGenerationsLeft : 0;
 
   async function checkout() {
     setLoading(true);
@@ -69,10 +82,28 @@ export default function PaywallScreen() {
         </Pressable>
 
         <Eyebrow>Пейволл</Eyebrow>
-        <DisplayTitle>Подключи trial</DisplayTitle>
+        <DisplayTitle>Выбери свой формат примерок</DisplayTitle>
         <BodyText>
-          Больше AI-примерок, история образов и доступ к тарифам Wibe и Elite. Для первых 100 пользователей действует промокод с лендинга.
+          Начни с бесплатных примерок или подключи Wibe либо Elite для большего количества образов.
         </BodyText>
+
+        {showTrial ? (
+          <View style={styles.trialCard}>
+            <View style={styles.trialCopy}>
+              <Text style={styles.trialTitle}>Бесплатный trial</Text>
+              <Text style={styles.trialText}>
+                {trialRemaining > 0
+                  ? `${TRIAL_TRY_ONS} бесплатные примерки · осталось ${trialRemaining}`
+                  : "Три бесплатные примерки уже использованы"}
+              </Text>
+            </View>
+            {trialRemaining > 0 ? (
+              <Button label="Попробовать бесплатно" onPress={() => router.replace("/(main)/home")} />
+            ) : null}
+          </View>
+        ) : null}
+
+        {promoMessage ? <Text style={styles.promoBanner}>{promoMessage}</Text> : null}
 
         <View style={styles.toggle}>
           {(["monthly", "annual"] as BillingPeriod[]).map((period) => (
@@ -82,7 +113,7 @@ export default function PaywallScreen() {
               onPress={() => setSelected((s) => ({ ...s, period }))}
             >
               <Text style={[styles.toggleText, selected.period === period && styles.toggleTextActive]}>
-                {period === "annual" ? "Год −20%" : "Месяц"}
+                {period === "annual" ? `Год −${annualDiscountPercent}%` : "Месяц"}
               </Text>
             </Pressable>
           ))}
@@ -92,6 +123,7 @@ export default function PaywallScreen() {
           const offer = plans.find((p) => p.plan === plan && p.period === selected.period);
           if (!offer) return null;
           const active = selected.plan === plan;
+          const savings = selected.period === "annual" ? annualSavingsRub(plans, plan) : 0;
           return (
             <Pressable
               key={plan}
@@ -100,7 +132,15 @@ export default function PaywallScreen() {
             >
               <Text style={styles.planName}>{plan === "elite" ? "Elite" : "Wibe"}</Text>
               <Text style={styles.planPrice}>{offer.priceRub.toLocaleString("ru-RU")} ₽</Text>
-              <Text style={styles.planMeta}>{offer.generationsPerPeriod} примерок / период</Text>
+              {promoDiscountPercent > 0 && offer.basePriceRub > offer.priceRub ? (
+                <Text style={styles.oldPrice}>Без промокода: {offer.basePriceRub.toLocaleString("ru-RU")} ₽</Text>
+              ) : null}
+              <Text style={styles.planMeta}>{formatTryOnAllowance(offer.generationsPerPeriod, offer.period)}</Text>
+              {savings > 0 ? (
+                <Text style={styles.savingsBadge}>
+                  Экономия {savings.toLocaleString("ru-RU")} ₽ за год по сравнению с помесячной оплатой
+                </Text>
+              ) : null}
               {offer.recommended ? <Text style={styles.badge}>Рекомендуем</Text> : null}
             </Pressable>
           );
@@ -108,7 +148,7 @@ export default function PaywallScreen() {
 
         {current ? (
           <Text style={styles.summary}>
-            Итого: {current.priceRub.toLocaleString("ru-RU")} ₽ · {current.generationsPerPeriod} генераций
+            Итого: {current.priceRub.toLocaleString("ru-RU")} ₽ · {formatTryOnAllowance(current.generationsPerPeriod, current.period)}
           </Text>
         ) : null}
 
@@ -144,6 +184,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "flex-end",
+  },
+  trialCard: {
+    padding: spacing.lg,
+    gap: spacing.md,
+    borderRadius: radius.xl,
+    borderWidth: 2,
+    borderColor: colors.pink,
+    backgroundColor: colors.pinkBg,
+  },
+  trialCopy: { gap: 4 },
+  trialTitle: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 18,
+    color: colors.black,
+  },
+  trialText: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 13,
+    color: colors.muted,
+  },
+  promoBanner: {
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.black,
+    color: colors.white,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 13,
+    textAlign: "center",
   },
   toggle: {
     flexDirection: "row",
@@ -195,6 +263,22 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: colors.muted,
+  },
+  oldPrice: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    color: colors.muted,
+    textDecorationLine: "line-through",
+  },
+  savingsBadge: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    backgroundColor: colors.black,
+    color: colors.white,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 12,
   },
   badge: {
     fontFamily: "Manrope_500Medium",

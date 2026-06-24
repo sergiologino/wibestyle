@@ -337,7 +337,7 @@ public class BillingService {
 
         profile.setPlan(plan);
         profile.setBillingPeriod(period);
-        profile.setPlanGenerationsLeft(quotaService.defaultGenerationsForPlan(plan));
+        profile.setPlanGenerationsLeft(quotaService.generationsForPlanPeriod(plan, period));
         profile.setSubscriptionExpiresAt(expiresAt);
         profile.setUpdatedAt(now);
         userProfileRepository.save(profile);
@@ -604,7 +604,7 @@ public class BillingService {
         map.put("period", period);
         map.put("basePriceRub", basePriceRub);
         map.put("priceRub", finalPrice);
-        map.put("generationsPerPeriod", quotaService.defaultGenerationsForPlan(plan));
+        map.put("generationsPerPeriod", quotaService.generationsForPlanPeriod(plan, period));
         if ("annual".equals(period)) {
             map.put("monthlyEquivalentRub", Math.round(finalPrice / 12.0));
             map.put("savingsPercent", billingProperties.getAnnualDiscountPercent());

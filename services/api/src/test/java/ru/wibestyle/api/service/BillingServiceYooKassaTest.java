@@ -111,7 +111,7 @@ class BillingServiceYooKassaTest {
         paymentMethod.put("saved", true);
         when(yooKassaClient.fetchPayment("pay-99")).thenReturn(payment);
         when(userProfileRepository.findById(userId)).thenReturn(Optional.of(profile));
-        when(quotaService.defaultGenerationsForPlan("wibe")).thenReturn(20);
+        when(quotaService.generationsForPlanPeriod("wibe", "annual")).thenReturn(240);
         when(billingCheckoutRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Map<String, Object> result = billingService.getCheckout(userId, checkoutId);

@@ -1,3 +1,5 @@
+require("./scripts/register-workspace-modules")();
+
 const { getDefaultConfig } = require("expo/metro-config");
 const path = require("path");
 
