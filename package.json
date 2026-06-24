@@ -11,6 +11,8 @@
     "expo-font": "13.0.4",
     "expo-asset": "11.0.5",
     "@expo/vector-icons": "14.0.4",
+    "react-native": "0.76.9",
+    "vite": "6.1.0",
     "@wibestyle/mobile-app": {
       "webidl-conversions": "5.0.0"
     },

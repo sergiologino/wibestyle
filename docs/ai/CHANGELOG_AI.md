@@ -1,5 +1,11 @@
 # AI Changelog
 
+## 2026-06-24 (Deployment dependency compatibility)
+- Identified the deployment stop as a transient npm registry `ECONNRESET`; added bounded fetch retries, longer timeouts and cache preference in `.npmrc`.
+- Regenerated the lockfile without Node 22.11-incompatible React Native 0.85, Vite 8 and jsdom 29 packages. Expo SDK 52 now resolves React Native 0.76.9 consistently.
+- Added a narrow mobile icon declaration shim and explicit Headers callback types required by clean workspace TypeScript resolution.
+- Verified clean `npm ci` with npm 10, full npm tests/builds, mobile lint/bundle, and Android debug APK assembly.
+
 ## 2026-06-23 (YooKassa auto-renew + mobile push)
 - Added saved YooKassa payment methods with explicit opt-in, recurring subscription state, T−3 warnings, T0 regular-price renewal, calendar periods and three bounded retries.
 - Added durable in-app notifications and Expo push-device registration/delivery for Android; web/mobile expose notifications and auto-renew controls.

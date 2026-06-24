@@ -86,7 +86,7 @@ export class WibeStyleApiClient {
   private async request<T>(path: string, init: RequestInit = {}, allowRefreshRetry = true): Promise<T> {
     const headers = this.authHeaders(!(init.body instanceof FormData));
     const incoming = new Headers(init.headers);
-    incoming.forEach((value, key) => headers.set(key, value));
+    incoming.forEach((value: string, key: string) => headers.set(key, value));
 
     const response = await fetch(`${this.baseUrl}${path}`, { ...init, headers });
     const body = (await response.json().catch(() => ({}))) as T & { error?: string; code?: string };

@@ -1,5 +1,11 @@
 # Current State
 
+## Deployment dependency hardening (2026-06-24)
+- The payment deployment failed during `npm ci` because the npm registry connection was reset (`ECONNRESET`), not because payment code failed to compile.
+- npm registry downloads now use bounded retries, increased timeouts and the local cache through the repository `.npmrc`.
+- The lockfile is compatible with the deployment Node 22.11 image: React Native is pinned to Expo SDK 52's `0.76.9`, Vite to `6.1.0`, jsdom to `26.1.0`, and the landing React plugin to `4.4.1`; incompatible transitive React Native 0.85/Vite 8/jsdom 29 copies were removed.
+- Verified from a clean npm 10 install without engine warnings: full npm tests and web builds, mobile TypeScript/bundle, and Android `assembleDebug` pass.
+
 ## YooKassa recurring subscriptions and push notifications (2026-06-23)
 - Initial YooKassa checkout supports explicit consent to save a payment method; the checkbox is off by default. Only `payment_method.id` from a verified successful payment is stored.
 - `billing_subscriptions` stores current plan/period, period end, auto-renew flag, provider token and retry state. Renewal price is the current regular tariff; one-time promo/upgrade discounts are not repeated.
