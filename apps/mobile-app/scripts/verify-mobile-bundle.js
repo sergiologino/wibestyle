@@ -56,6 +56,33 @@ const resolved = metroConfig.resolver.resolveRequest(
   "android",
 );
 
+const aliasOrigin = path.join(projectRoot, "app/(main)/_layout.tsx");
+const aliasResolved = metroConfig.resolver.resolveRequest(
+  {
+    originModulePath: aliasOrigin,
+    resolveRequest: (_context, moduleName) => {
+      for (const extension of ["", ".ts", ".tsx", ".js", ".jsx"]) {
+        const candidate = `${moduleName}${extension}`;
+        if (fs.existsSync(candidate)) {
+          return { type: "sourceFile", filePath: candidate };
+        }
+      }
+      throw new Error(`Alias target not found: ${moduleName}`);
+    },
+  },
+  "@/theme/tokens",
+  "android",
+);
+
+const expectedAlias = path.join(projectRoot, "src/theme/tokens.ts").replace(/\\/g, "/");
+const actualAlias = aliasResolved?.filePath?.replace(/\\/g, "/");
+if (actualAlias !== expectedAlias) {
+  console.error("Metro did not resolve the @/* alias correctly:");
+  console.error(`  expected: ${expectedAlias}`);
+  console.error(`  actual:   ${actualAlias ?? "not resolved"}`);
+  process.exit(1);
+}
+
 if (!resolved?.filePath) {
   console.error("Metro did not resolve webidl-conversions.");
   process.exit(1);
@@ -75,3 +102,4 @@ console.log("Metro webidl-conversions resolution OK:");
 console.log(`  ${normalized}`);
 console.log("Babel expo/config resolution OK.");
 console.log("Metro expo-asset tools resolution OK.");
+console.log("Metro @/* alias resolution OK.");

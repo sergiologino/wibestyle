@@ -1,10 +1,15 @@
 # AI Changelog
 
+## 2026-06-24 (Android clean-build alias resolution)
+- Added explicit Metro resolution for the mobile TypeScript alias `@/*` to `apps/mobile-app/src/*`.
+- Extended `verify:bundle` with a regression assertion for `@/theme/tokens`.
+- Confirmed clean production bundling after Gradle `clean`: 1289 modules and 59 assets; mobile tests and TypeScript pass.
+
 ## 2026-06-24 (Mobile paywall trial, quotas and savings)
-- Restored a visible free-trial path on Android: eligible users can start their 3 free try-ons without entering checkout.
+- Restored a visible free-trial path on Android before registration and for eligible profiles: users can start 3 free try-ons without entering checkout. Onboarding skip now opens paywall.
 - Made paid quotas period-accurate end to end: Wibe 20/month or 240/year; Elite 100/month or 1200/year. Annual activation and renewal now grant the annual amount.
-- Added annual savings in rubles, concrete month/year labels, promo-already-applied copy and pre-discount pricing to the mobile paywall.
-- Added Flyway V25 and regression coverage for trial allowance, annual quota, savings, promo copy and mobile period labels.
+- Made annual Elite the recommended default, added its video/best-AI/priority-support benefits, and replaced the black savings badge with a light treatment inside gradient annual cards.
+- Added annual savings in rubles, concrete month/year labels, promo-already-applied copy, pre-discount pricing, Flyway V25 and regression coverage.
 
 ## 2026-06-24 (Android release build under npm 11)
 - Fixed release bundling errors `Cannot find module 'expo/config'` and `Cannot find module 'expo-asset/tools/hashAssetFiles'` caused by npm 11 splitting hoisted Expo tooling from workspace-local peer dependencies.

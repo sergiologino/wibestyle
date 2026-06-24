@@ -1,10 +1,16 @@
 # Current State
 
+## Android Metro `@/*` alias in clean release builds (2026-06-24)
+- Fixed clean `assembleRelease` bundling failure `Unable to resolve module @/theme/tokens`: Metro now resolves the TypeScript `@/*` alias explicitly to `apps/mobile-app/src/*`.
+- `verify:bundle` includes an alias regression check, so a broken alias fails before Gradle starts.
+- Verified with 29 mobile tests, TypeScript and a clean production Metro bundle (1289 modules, 59 assets). Full APK assembly in the Codex sandbox proceeds past bundling and stops later only because the local Android SDK is outside the readable workspace.
+
 ## Mobile paywall trial and period-accurate quotas (2026-06-24)
-- Mobile paywall exposes the existing free trial as a separate CTA for trial users with remaining quota; a new trial contains exactly 3 try-ons and does not open checkout.
+- Mobile paywall exposes the free trial before authentication and for trial users with remaining quota; choosing it explicitly opens registration when needed, then grants exactly 3 try-ons without checkout.
 - Paid offer copy now says `per month` or `per year`. Backend grants Wibe 20/month or 240/year and Elite 100/month or 1200/year, including initial checkout and renewals.
-- Annual cards show the ruble saving against twelve monthly payments. When a redeemed landing promo is active, the paywall explicitly says the discount is already included and shows the undiscounted price.
-- Flyway V25 changes the database trial default to 3 and caps unused active trial balances above 3. Verified with full API tests, 26 mobile tests, mobile TypeScript and bundle checks.
+- Annual cards use a light gradient and show the ruble saving against twelve monthly payments. Annual Elite is the recommended default and highlights video for every try-on, the best AI providers and priority support. When a redeemed landing promo is active, the paywall explicitly says the discount is already included and shows the undiscounted price.
+- Skipping mobile onboarding opens paywall instead of registration; login remains an explicit header action. Flyway V25 changes the database trial default to 3 and caps unused active trial balances above 3.
+- Verified with full API tests, 29 mobile tests, mobile TypeScript and production bundle checks.
 
 ## Android release bundle resolution with npm 11 (2026-06-24)
 - Fixed `assembleRelease` failures where npm 11 hoisted Babel/Metro tools to the monorepo root but kept `expo` and `expo-asset` under the mobile workspace.

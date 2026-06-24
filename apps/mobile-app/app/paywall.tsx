@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { LinearGradient } from "expo-linear-gradient";
 import type { BillingPlanOffer, BillingPeriod, SubscriptionPlan } from "@wibestyle/shared-types";
 import { Feather } from "@expo/vector-icons";
 import { ApiError } from "@wibestyle/api-client";
@@ -21,7 +22,7 @@ export default function PaywallScreen() {
   const { api, profile, refreshProfile } = useSession();
   const [plans, setPlans] = useState<BillingPlanOffer[]>([]);
   const [selected, setSelected] = useState<{ plan: SubscriptionPlan; period: BillingPeriod }>({
-    plan: "wibe",
+    plan: "elite",
     period: "annual",
   });
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,7 @@ export default function PaywallScreen() {
   useEffect(() => {
     void api.getBillingPlans().then((payload) => {
       setPlans(payload.items);
-      setSelected(payload.defaultSelection);
+      setSelected({ plan: "elite", period: "annual" });
       setPaymentProvider(payload.paymentProvider ?? "mock");
       setAnnualDiscountPercent(payload.annualDiscountPercent);
       setPromoDiscountPercent(payload.promoDiscountPercent);
@@ -43,10 +44,22 @@ export default function PaywallScreen() {
 
   const current = plans.find((p) => p.plan === selected.plan && p.period === selected.period);
   const promoMessage = promoAppliedText(promoDiscountPercent);
-  const showTrial = profile?.plan === "trial";
-  const trialRemaining = showTrial ? profile.trialGenerationsLeft : 0;
+  const showTrial = !profile || profile.plan === "trial";
+  const trialRemaining = profile?.plan === "trial" ? profile.trialGenerationsLeft : TRIAL_TRY_ONS;
+
+  function startTrial() {
+    if (!profile) {
+      router.replace("/auth");
+      return;
+    }
+    router.replace("/(main)/home");
+  }
 
   async function checkout() {
+    if (!profile) {
+      router.replace("/auth");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -98,7 +111,7 @@ export default function PaywallScreen() {
               </Text>
             </View>
             {trialRemaining > 0 ? (
-              <Button label="Попробовать бесплатно" onPress={() => router.replace("/(main)/home")} />
+              <Button label="Попробовать бесплатно" onPress={startTrial} />
             ) : null}
           </View>
         ) : null}
@@ -124,25 +137,53 @@ export default function PaywallScreen() {
           if (!offer) return null;
           const active = selected.plan === plan;
           const savings = selected.period === "annual" ? annualSavingsRub(plans, plan) : 0;
+          const featured = plan === "elite" && selected.period === "annual";
           return (
-            <Pressable
+            <LinearGradient
               key={plan}
-              style={[styles.planCard, active && styles.planCardActive]}
-              onPress={() => setSelected((s) => ({ ...s, plan }))}
+              colors={
+                featured
+                  ? ["#fff0f8", "#f4efff", "#eef7ff"]
+                  : selected.period === "annual"
+                    ? ["#fffafc", "#fff2f9"]
+                    : [colors.white, colors.white]
+              }
+              style={[
+                styles.planCard,
+                selected.period === "annual" && styles.annualPlanCard,
+                active && styles.planCardActive,
+                featured && styles.featuredPlanCard,
+              ]}
             >
-              <Text style={styles.planName}>{plan === "elite" ? "Elite" : "Wibe"}</Text>
-              <Text style={styles.planPrice}>{offer.priceRub.toLocaleString("ru-RU")} ₽</Text>
-              {promoDiscountPercent > 0 && offer.basePriceRub > offer.priceRub ? (
-                <Text style={styles.oldPrice}>Без промокода: {offer.basePriceRub.toLocaleString("ru-RU")} ₽</Text>
-              ) : null}
-              <Text style={styles.planMeta}>{formatTryOnAllowance(offer.generationsPerPeriod, offer.period)}</Text>
-              {savings > 0 ? (
-                <Text style={styles.savingsBadge}>
-                  Экономия {savings.toLocaleString("ru-RU")} ₽ за год по сравнению с помесячной оплатой
-                </Text>
-              ) : null}
-              {offer.recommended ? <Text style={styles.badge}>Рекомендуем</Text> : null}
-            </Pressable>
+              <Pressable
+                style={styles.planCardContent}
+                onPress={() => setSelected((s) => ({ ...s, plan }))}
+                accessibilityRole="button"
+              >
+                {featured ? <Text style={styles.badge}>Рекомендуем годовой Elite</Text> : null}
+                <Text style={styles.planName}>{plan === "elite" ? "Elite" : "Wibe"}</Text>
+                <Text style={styles.planPrice}>{offer.priceRub.toLocaleString("ru-RU")} ₽</Text>
+                {promoDiscountPercent > 0 && offer.basePriceRub > offer.priceRub ? (
+                  <Text style={styles.oldPrice}>Без промокода: {offer.basePriceRub.toLocaleString("ru-RU")} ₽</Text>
+                ) : null}
+                <Text style={styles.planMeta}>{formatTryOnAllowance(offer.generationsPerPeriod, offer.period)}</Text>
+                {plan === "elite" ? (
+                  <View style={styles.elitePerks}>
+                    {["Генерация видео к любой примерке", "Лучшие нейросети", "Приоритетная поддержка"].map((perk) => (
+                      <View key={perk} style={styles.elitePerk}>
+                        <Feather name="check" size={14} color={colors.violet} />
+                        <Text style={styles.elitePerkText}>{perk}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+                {savings > 0 ? (
+                  <Text style={styles.savingsBadge}>
+                    Экономия {savings.toLocaleString("ru-RU")} ₽ за год по сравнению с помесячной оплатой
+                  </Text>
+                ) : null}
+              </Pressable>
+            </LinearGradient>
           );
         })}
 
@@ -238,16 +279,25 @@ const styles = StyleSheet.create({
     color: colors.pink,
   },
   planCard: {
-    padding: spacing.lg,
     borderRadius: radius.xl,
     borderWidth: hairline,
     borderColor: colors.borderLight,
-    backgroundColor: colors.white,
+    overflow: "hidden",
+  },
+  planCardContent: {
+    padding: spacing.lg,
     gap: 4,
+  },
+  annualPlanCard: {
+    borderWidth: 1,
+    borderColor: colors.pinkSoft,
   },
   planCardActive: {
     borderColor: colors.pink,
-    backgroundColor: colors.pinkBg,
+    borderWidth: 2,
+  },
+  featuredPlanCard: {
+    borderColor: colors.violet,
   },
   planName: {
     fontFamily: "Manrope_500Medium",
@@ -275,10 +325,27 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     borderRadius: radius.md,
     overflow: "hidden",
-    backgroundColor: colors.black,
-    color: colors.white,
+    backgroundColor: "rgba(255,255,255,0.78)",
+    borderWidth: hairline,
+    borderColor: colors.pinkSoft,
+    color: colors.pinkDark,
     fontFamily: "Manrope_500Medium",
     fontSize: 12,
+  },
+  elitePerks: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  elitePerk: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  elitePerkText: {
+    flex: 1,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 13,
+    color: colors.black,
   },
   badge: {
     fontFamily: "Manrope_500Medium",
