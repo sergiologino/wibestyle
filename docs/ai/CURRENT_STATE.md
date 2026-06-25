@@ -1,5 +1,10 @@
 # Current State
 
+## Favorites product images and marketplace links (2026-06-25)
+- Mobile favorites resolve relative marketplace/API image paths against `EXPO_PUBLIC_API_URL`; legacy `/assets/*` favorites load from `EXPO_PUBLIC_APP_URL`. Authorization is attached only to protected API media and is never sent to public marketplace/CDN images.
+- Mobile and web favorites now expose an explicit marketplace CTA. Web keeps the existing `Try on` action and opens the product card in a new tab; Android opens it in the system browser/app.
+- Verified: 35 mobile tests, mobile TypeScript and production Metro bundle; 62 web tests and Next.js production build.
+
 ## Android Metro `@/*` alias in clean release builds (2026-06-24)
 - Fixed clean `assembleRelease` bundling failure `Unable to resolve module @/theme/tokens`: Metro now resolves the TypeScript `@/*` alias explicitly to `apps/mobile-app/src/*`.
 - `verify:bundle` includes an alias regression check, so a broken alias fails before Gradle starts.

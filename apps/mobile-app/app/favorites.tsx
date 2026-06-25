@@ -3,15 +3,15 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import type { FavoriteRecord } from "@wibestyle/shared-types";
 import { Feather } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useSession } from "@/context/SessionProvider";
+import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
 export default function FavoritesScreen() {
   const router = useRouter();
-  const { api } = useSession();
+  const { api, accessToken } = useSession();
   const [items, setItems] = useState<FavoriteRecord[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -46,16 +46,9 @@ export default function FavoritesScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={<BodyText style={styles.empty}>Пока пусто — нажми ♥ на результате примерки.</BodyText>}
         renderItem={({ item }) => (
-          <Pressable
-            style={styles.row}
-            onPress={() => {
-              if (item.productUrl) {
-                void Linking.openURL(item.productUrl);
-              }
-            }}
-          >
+          <View style={styles.row}>
             {item.imageUrl ? (
-              <Image source={{ uri: item.imageUrl }} style={styles.thumb} contentFit="cover" />
+              <AuthenticatedImage path={item.imageUrl} accessToken={accessToken} style={styles.thumb} contentFit="cover" />
             ) : (
               <View style={[styles.thumb, styles.thumbPlaceholder]} />
             )}
@@ -66,9 +59,14 @@ export default function FavoritesScreen() {
               {item.priceRub ? (
                 <Text style={styles.price}>{item.priceRub.toLocaleString("ru-RU")} ₽</Text>
               ) : null}
+              {item.productUrl ? (
+                <Pressable style={styles.marketplaceLink} onPress={() => void Linking.openURL(item.productUrl!)}>
+                  <Text style={styles.marketplaceLinkText}>Открыть на маркетплейсе</Text>
+                  <Feather name="external-link" size={14} color={colors.pink} />
+                </Pressable>
+              ) : null}
             </View>
-            <Feather name="external-link" size={16} color={colors.eyebrow} />
-          </Pressable>
+          </View>
         )}
       />
     </Screen>
@@ -130,5 +128,18 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_400Regular",
     fontSize: 13,
     color: colors.muted,
+  },
+  marketplaceLink: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  marketplaceLinkText: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 13,
+    color: colors.pink,
   },
 });

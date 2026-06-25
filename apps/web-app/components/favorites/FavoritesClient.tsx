@@ -91,6 +91,16 @@ export default function FavoritesClient() {
                   </div>
                   <div className="flex flex-col gap-2">
                     {item.productUrl ? (
+                      <a
+                        href={item.productUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-full border border-[#ffd1ed] bg-white px-4 py-2 text-center text-sm font-bold text-[#ff1fa2]"
+                      >
+                        На маркетплейс ↗
+                      </a>
+                    ) : null}
+                    {item.productUrl ? (
                       <Link href={`/try-on/link?url=${encodeURIComponent(item.productUrl)}`}>
                         <Button>Примерить</Button>
                       </Link>

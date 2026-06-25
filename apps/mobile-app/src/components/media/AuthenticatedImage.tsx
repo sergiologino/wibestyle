@@ -1,8 +1,8 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
 import { colors } from "@/theme/tokens";
-import { resolveApiPath } from "@/lib/mobile-api";
-import { getApiBaseUrl } from "@/lib/config";
+import { buildProductImageSource, isProtectedApiImagePath } from "@/lib/mobile-api";
+import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
 
 type AuthenticatedImageProps = {
   path: string;
@@ -17,7 +17,7 @@ export function AuthenticatedImage({
   style,
   contentFit = "cover",
 }: AuthenticatedImageProps) {
-  if (!path || !accessToken) {
+  if (!path || (isProtectedApiImagePath(path) && !accessToken)) {
     return (
       <View style={[styles.placeholder, style]}>
         <ActivityIndicator color={colors.pink} />
@@ -25,11 +25,11 @@ export function AuthenticatedImage({
     );
   }
 
-  const uri = resolveApiPath(getApiBaseUrl(), path);
+  const source = buildProductImageSource(getApiBaseUrl(), path, accessToken, getAppBaseUrl());
 
   return (
     <Image
-      source={{ uri, headers: { Authorization: `Bearer ${accessToken}` } }}
+      source={source}
       style={style}
       contentFit={contentFit}
       transition={200}

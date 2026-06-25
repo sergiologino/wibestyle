@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-06-25 (Favorites images and marketplace CTAs)
+- Fixed blank Android favorite thumbnails by resolving relative API image paths and conditionally authorizing only protected session media.
+- Added visible direct marketplace links to Android and web favorite cards; the web `Try on` action remains available separately.
+- Added regression tests for URL normalization, token isolation, protected media and both favorites UIs; mobile and web production builds pass.
+
 ## 2026-06-24 (Android clean-build alias resolution)
 - Added explicit Metro resolution for the mobile TypeScript alias `@/*` to `apps/mobile-app/src/*`.
 - Extended `verify:bundle` with a regression assertion for `@/theme/tokens`.
