@@ -1,3 +1,5 @@
+require("./scripts/register-workspace-modules")();
+
 const { getDefaultConfig } = require("expo/metro-config");
 const path = require("path");
 
@@ -24,6 +26,11 @@ config.resolver.disableHierarchicalLookup = true;
 
 const upstreamResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName.startsWith("@/")) {
+    const aliasedModule = path.resolve(projectRoot, "src", moduleName.slice(2));
+    return context.resolveRequest(context, aliasedModule, platform);
+  }
+
   if (
     moduleName === "webidl-conversions" ||
     moduleName.startsWith("webidl-conversions/")

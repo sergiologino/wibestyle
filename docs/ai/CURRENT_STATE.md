@@ -1,5 +1,43 @@
 # Current State
 
+## Favorites product images and marketplace links (2026-06-25)
+- Mobile favorites resolve relative marketplace/API image paths against `EXPO_PUBLIC_API_URL`; legacy `/assets/*` favorites load from `EXPO_PUBLIC_APP_URL`. Authorization is attached only to protected API media and is never sent to public marketplace/CDN images.
+- Mobile and web favorites now expose an explicit marketplace CTA. Web keeps the existing `Try on` action and opens the product card in a new tab; Android opens it in the system browser/app.
+- Verified: 35 mobile tests, mobile TypeScript and production Metro bundle; 62 web tests and Next.js production build.
+
+## Android Metro `@/*` alias in clean release builds (2026-06-24)
+- Fixed clean `assembleRelease` bundling failure `Unable to resolve module @/theme/tokens`: Metro now resolves the TypeScript `@/*` alias explicitly to `apps/mobile-app/src/*`.
+- `verify:bundle` includes an alias regression check, so a broken alias fails before Gradle starts.
+- Verified with 29 mobile tests, TypeScript and a clean production Metro bundle (1289 modules, 59 assets). Full APK assembly in the Codex sandbox proceeds past bundling and stops later only because the local Android SDK is outside the readable workspace.
+
+## Mobile paywall trial and period-accurate quotas (2026-06-24)
+- Mobile paywall exposes the free trial before authentication and for trial users with remaining quota; choosing it explicitly opens registration when needed, then grants exactly 3 try-ons without checkout.
+- Paid offer copy now says `per month` or `per year`. Backend grants Wibe 20/month or 240/year and Elite 100/month or 1200/year, including initial checkout and renewals.
+- Annual cards use a light gradient and show the ruble saving against twelve monthly payments. Annual Elite is the recommended default and highlights video for every try-on, the best AI providers and priority support. When a redeemed landing promo is active, the paywall explicitly says the discount is already included and shows the undiscounted price.
+- Skipping mobile onboarding opens paywall instead of registration; login remains an explicit header action. Flyway V25 changes the database trial default to 3 and caps unused active trial balances above 3.
+- Verified with full API tests, 29 mobile tests, mobile TypeScript and production bundle checks.
+
+## Android release bundle resolution with npm 11 (2026-06-24)
+- Fixed `assembleRelease` failures where npm 11 hoisted Babel/Metro tools to the monorepo root but kept `expo` and `expo-asset` under the mobile workspace.
+- A shared Node resolution bootstrap now exposes `apps/mobile-app/node_modules` before both Babel and Metro load hoisted Expo tools.
+- `verify:bundle` checks `expo/config`, `expo-asset/tools/hashAssetFiles`, and the Hermes-safe `webidl-conversions` shim before Android builds.
+- Verified: mobile TypeScript and 21 tests pass; the production Metro release bundle completes with 1288 modules and 59 assets. Full Gradle verification in the Codex sandbox stops later only because local Android SDK `android.jar` is outside the readable workspace.
+
+## Deployment dependency hardening (2026-06-24)
+- The payment deployment failed during `npm ci` because the npm registry connection was reset (`ECONNRESET`), not because payment code failed to compile.
+- npm registry downloads now use bounded retries, increased timeouts and the local cache through the repository `.npmrc`.
+- The lockfile is compatible with the deployment Node 22.11 image: React Native is pinned to Expo SDK 52's `0.76.9`, Vite to `6.1.0`, jsdom to `26.1.0`, and the landing React plugin to `4.4.1`; incompatible transitive React Native 0.85/Vite 8/jsdom 29 copies were removed.
+- Verified from a clean npm 10 install without engine warnings: full npm tests and web builds, mobile TypeScript/bundle, and Android `assembleDebug` pass.
+
+## YooKassa recurring subscriptions and push notifications (2026-06-23)
+- Initial YooKassa checkout supports explicit consent to save a payment method; the checkbox is off by default. Only `payment_method.id` from a verified successful payment is stored.
+- `billing_subscriptions` stores current plan/period, period end, auto-renew flag, provider token and retry state. Renewal price is the current regular tariff; one-time promo/upgrade discounts are not repeated.
+- Hourly scheduler warns three days before expiry and charges at the period end. Successful renewal extends from the previous end using calendar month/year. Rejected charges retry up to three times; uncertain network responses reuse the same YooKassa idempotence key.
+- Web and Android show in-app notifications and auto-renew controls. Android registers Expo push tokens and receives renewal warnings/results while closed.
+- Mobile paywall now creates the same checkout as web instead of using dev subscribe.
+- Flyway: `V24__recurring_billing_notifications.sql`. Remaining payment task: fiscal receipt details for 54-FZ.
+- Verified: API tests, web tests/build, mobile tests/TypeScript/bundle, Android `assembleDebug`, api-client recurring tests.
+
 ## Onboarding replaceable media and brand logo (2026-06-16)
 - Web onboarding uses dedicated replaceable media in `apps/web-app/public/assets/onboarding/slides/`.
 - For each web onboarding slide, place `<basename>.mp4` to show video first; if the mp4 is absent or fails, the app falls back to `<basename>.png`.
@@ -121,12 +159,12 @@
 - Flyway `V6__billing_promo.sql`.
 
 ## Mobile app (Android)
-- Expo React Native в `apps/mobile-app`: OTP/логин, onboarding аватар, try-on link/photo, result slider, gallery, favorites, settings, paywall (dev subscribe).
+- Expo React Native в `apps/mobile-app`: OTP/логин, onboarding аватар, try-on link/photo, result slider, gallery, favorites, settings, YooKassa checkout/autorenew и Expo push.
 - Bottom tabs, Manrope, design tokens как web-app. См. [MOBILE_APP.md](./MOBILE_APP.md).
 
 ## Что дальше
 - Production: Redis OTP, S3, age gate.
-- YooKassa: код готов — задать env и webhook URL (см. RUNBOOK).
+- YooKassa recurring: код готов — задать env, webhook URL и production receipt settings (см. RUNBOOK).
 - Admin RBAC (роли SUPER_ADMIN/MODERATOR).
 - Age gate, блокировка пользователей.
 
@@ -164,7 +202,7 @@
 - `/search` — поиск + избранное (feature flag `search`)
 - `/favorites` — список сохранённых товаров
 - `/settings` — профиль, privacy, удаление аккаунта
-- `/paywall` → `/paywall/payment` — checkout-flow (mock, YooKassa позже)
+- `/paywall` → YooKassa redirect/return или mock payment; сохранение способа оплаты только по явному согласию
 
 ## Ключевые пути
 - Session: `apps/web-app/components/providers/AppSessionProvider.tsx`

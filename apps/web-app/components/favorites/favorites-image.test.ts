@@ -11,4 +11,13 @@ describe("favorites product image", () => {
     expect(source).toContain("imageUrl={item.imageUrl}");
     expect(source).not.toContain("<img src={item.imageUrl}");
   });
+
+  it("shows a direct marketplace link in addition to try-on", () => {
+    const source = readFileSync(join(process.cwd(), "components", "favorites", "FavoritesClient.tsx"), "utf8");
+
+    expect(source).toContain("href={item.productUrl}");
+    expect(source).toContain('target="_blank"');
+    expect(source).toContain("На маркетплейс ↗");
+    expect(source).toContain("/try-on/link?url=");
+  });
 });

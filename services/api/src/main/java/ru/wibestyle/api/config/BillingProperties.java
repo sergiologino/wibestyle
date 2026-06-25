@@ -8,6 +8,7 @@ public class BillingProperties {
     private String provider = "mock";
     private boolean subscribeDevEnabled = true;
     private String returnUrl = "http://localhost:3001/paywall/return";
+    private String mobileReturnUrl = "wibestyle://paywall/return";
     private int wibeMonthlyRub = 400;
     private int wibeAnnualRub = 3840;
     private int eliteMonthlyRub = 900;
@@ -50,6 +51,10 @@ public class BillingProperties {
     public void setReturnUrl(String returnUrl) {
         this.returnUrl = returnUrl;
     }
+
+    public String getMobileReturnUrl() { return mobileReturnUrl; }
+
+    public void setMobileReturnUrl(String mobileReturnUrl) { this.mobileReturnUrl = mobileReturnUrl; }
 
     public int getWibeMonthlyRub() {
         return wibeMonthlyRub;

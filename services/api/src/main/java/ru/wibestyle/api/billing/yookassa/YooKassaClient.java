@@ -37,7 +37,9 @@ public class YooKassaClient {
             UUID checkoutId,
             int priceRub,
             String description,
-            UUID userId
+            UUID userId,
+            boolean savePaymentMethod,
+            String returnUrl
     ) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("amount", Map.of(
@@ -46,9 +48,10 @@ public class YooKassaClient {
         ));
         body.put("capture", true);
         body.put("description", description);
+        body.put("save_payment_method", savePaymentMethod);
         body.put("confirmation", Map.of(
                 "type", "redirect",
-                "return_url", billingProperties.getReturnUrl()
+                "return_url", returnUrl
         ));
         body.put("metadata", Map.of(
                 "checkout_id", checkoutId.toString(),
@@ -63,6 +66,27 @@ public class YooKassaClient {
             throw new IllegalStateException("YOOKASSA_CONFIRMATION_URL_MISSING");
         }
         return new YooKassaPaymentResult(paymentId, status, confirmationUrl);
+    }
+
+    public YooKassaChargeResult createSavedPayment(
+            UUID checkoutId,
+            int priceRub,
+            String description,
+            UUID userId,
+            String paymentMethodId
+    ) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("amount", Map.of("value", formatRub(priceRub), "currency", "RUB"));
+        body.put("capture", true);
+        body.put("description", description);
+        body.put("payment_method_id", paymentMethodId);
+        body.put("metadata", Map.of(
+                "checkout_id", checkoutId.toString(),
+                "user_id", userId.toString(),
+                "checkout_type", "renewal"
+        ));
+        JsonNode response = post("/v3/payments", checkoutId.toString(), body);
+        return new YooKassaChargeResult(requiredText(response, "id"), requiredText(response, "status"));
     }
 
     public JsonNode fetchPayment(String paymentId) {

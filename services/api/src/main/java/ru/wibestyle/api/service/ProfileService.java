@@ -61,7 +61,7 @@ public class ProfileService {
     public UserProfileEntity anonymousProfile() {
         UserProfileEntity profile = new UserProfileEntity(UUID.randomUUID(), Instant.now());
         profile.setPlan("trial");
-        profile.setTrialGenerationsLeft(5);
+        profile.setTrialGenerationsLeft(3);
         return profile;
     }
 

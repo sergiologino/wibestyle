@@ -3,6 +3,7 @@ package ru.wibestyle.api;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import ru.wibestyle.api.config.AdminProperties;
 import ru.wibestyle.api.config.AiIntegrationProperties;
 import ru.wibestyle.api.config.AuthProperties;
@@ -14,8 +15,10 @@ import ru.wibestyle.api.config.MailProperties;
 import ru.wibestyle.api.config.OAuthProperties;
 import ru.wibestyle.api.config.SmsProperties;
 import ru.wibestyle.api.config.StorageProperties;
+import ru.wibestyle.api.config.PushProperties;
 
 @SpringBootApplication
+@EnableScheduling
 @EnableConfigurationProperties({
         FeatureFlagsProperties.class,
         StorageProperties.class,
@@ -27,7 +30,8 @@ import ru.wibestyle.api.config.StorageProperties;
         OAuthProperties.class,
         MailProperties.class,
         GeoIpProperties.class,
-        SmsProperties.class
+        SmsProperties.class,
+        PushProperties.class
 })
 public class WibestyleApiApplication {
     public static void main(String[] args) {

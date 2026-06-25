@@ -4,18 +4,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.wibestyle.api.billing.yookassa.YooKassaClient;
+import ru.wibestyle.api.billing.yookassa.YooKassaChargeResult;
 import ru.wibestyle.api.billing.yookassa.YooKassaPaymentResult;
 import ru.wibestyle.api.config.BillingProperties;
 import ru.wibestyle.api.domain.BillingCheckoutEntity;
+import ru.wibestyle.api.domain.BillingSubscriptionEntity;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.dto.BillingWebhookRequest;
 import ru.wibestyle.api.repository.BillingCheckoutRepository;
+import ru.wibestyle.api.repository.BillingSubscriptionRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,20 +33,26 @@ public class BillingService {
     private final UserProfileRepository userProfileRepository;
     private final QuotaService quotaService;
     private final BillingCheckoutRepository billingCheckoutRepository;
+    private final BillingSubscriptionRepository billingSubscriptionRepository;
     private final YooKassaClient yooKassaClient;
+    private final NotificationService notificationService;
 
     public BillingService(
             BillingProperties billingProperties,
             UserProfileRepository userProfileRepository,
             QuotaService quotaService,
             BillingCheckoutRepository billingCheckoutRepository,
-            YooKassaClient yooKassaClient
+            BillingSubscriptionRepository billingSubscriptionRepository,
+            YooKassaClient yooKassaClient,
+            NotificationService notificationService
     ) {
         this.billingProperties = billingProperties;
         this.userProfileRepository = userProfileRepository;
         this.quotaService = quotaService;
         this.billingCheckoutRepository = billingCheckoutRepository;
+        this.billingSubscriptionRepository = billingSubscriptionRepository;
         this.yooKassaClient = yooKassaClient;
+        this.notificationService = notificationService;
     }
 
     public Map<String, Object> listPlans(UserProfileEntity profile) {
@@ -59,11 +69,15 @@ public class BillingService {
         response.put("defaultSelection", Map.of("plan", "wibe", "period", "annual"));
         response.put("promoDiscountPercent", promoDiscount);
         response.put("paymentProvider", activeProvider());
-        response.put("subscriber", Map.of(
-                "plan", profile.getPlan(),
-                "billingPeriod", profile.getBillingPeriod() == null ? "monthly" : profile.getBillingPeriod(),
-                "subscriptionActive", subscriptionActive(profile)
-        ));
+        Map<String, Object> subscriber = new HashMap<>();
+        subscriber.put("plan", profile.getPlan());
+        subscriber.put("billingPeriod", profile.getBillingPeriod() == null ? "monthly" : profile.getBillingPeriod());
+        subscriber.put("subscriptionActive", subscriptionActive(profile));
+        billingSubscriptionRepository.findById(profile.getUserId()).ifPresent(subscription -> {
+            subscriber.put("autoRenewEnabled", subscription.isAutoRenewEnabled());
+            subscriber.put("currentPeriodEnd", subscription.getCurrentPeriodEnd().toString());
+        });
+        response.put("subscriber", subscriber);
         return response;
     }
 
@@ -73,14 +87,15 @@ public class BillingService {
             throw new IllegalArgumentException("SUBSCRIBE_DEV_DISABLED");
         }
         CheckoutPricing pricing = resolvePricing(userId, plan, period);
-        activateSubscription(userId, plan, period, pricing.finalPrice(), pricing.basePrice());
+        activateSubscription(userId, plan, period, false);
         UserProfileEntity profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
         return buildActiveSubscriptionResponse(plan, period, pricing, profile);
     }
 
     @Transactional
-    public Map<String, Object> createCheckout(UUID userId, String plan, String period) {
+    public Map<String, Object> createCheckout(UUID userId, String plan, String period,
+                                               boolean savePaymentMethod, boolean mobileClient) {
         CheckoutPricing pricing = resolvePricing(userId, plan, period);
         Instant now = Instant.now();
         UUID checkoutId = UUID.randomUUID();
@@ -95,6 +110,7 @@ public class BillingService {
                 provider,
                 now
         );
+        checkout.setSavePaymentMethod(savePaymentMethod);
 
         String paymentUrl;
         if ("yookassa".equals(provider)) {
@@ -102,7 +118,9 @@ public class BillingService {
                     checkoutId,
                     pricing.finalPrice(),
                     checkoutDescription(plan, period),
-                    userId
+                    userId,
+                    savePaymentMethod,
+                    mobileClient ? billingProperties.getMobileReturnUrl() : billingProperties.getReturnUrl()
             );
             checkout.setExternalPaymentId(payment.paymentId());
             paymentUrl = payment.confirmationUrl();
@@ -121,6 +139,7 @@ public class BillingService {
         response.put("basePriceRub", pricing.basePrice());
         response.put("provider", provider);
         response.put("paymentUrl", paymentUrl);
+        response.put("savePaymentMethod", savePaymentMethod);
         return response;
     }
 
@@ -146,9 +165,9 @@ public class BillingService {
             throw new IllegalArgumentException("CHECKOUT_ID_REQUIRED");
         }
 
-        BillingCheckoutEntity checkout = billingCheckoutRepository.findById(request.checkoutId())
+        BillingCheckoutEntity checkout = billingCheckoutRepository.findLockedById(request.checkoutId())
                 .orElseThrow(() -> new IllegalArgumentException("CHECKOUT_NOT_FOUND"));
-        return completeCheckout(checkout, request.externalPaymentId());
+        return completeCheckout(checkout, request.externalPaymentId(), null);
     }
 
     @Transactional
@@ -166,7 +185,7 @@ public class BillingService {
 
         BillingCheckoutEntity checkout = checkoutId == null
                 ? billingCheckoutRepository.findByExternalPaymentId(paymentId).orElse(null)
-                : billingCheckoutRepository.findById(checkoutId).orElse(null);
+                : billingCheckoutRepository.findLockedById(checkoutId).orElse(null);
         if (checkout == null) {
             return;
         }
@@ -174,7 +193,7 @@ public class BillingService {
         if ("payment.succeeded".equals(event) && "succeeded".equals(verifiedStatus)) {
             verifyPaymentAmount(checkout, verified);
             try {
-                completeCheckout(checkout, paymentId);
+                completeCheckout(checkout, paymentId, verified);
             } catch (IllegalArgumentException ex) {
                 if (!"CHECKOUT_ALREADY_PROCESSED".equals(ex.getMessage())) {
                     throw ex;
@@ -183,27 +202,27 @@ public class BillingService {
             return;
         }
         if ("payment.canceled".equals(event) || "canceled".equals(verifiedStatus)) {
-            markCheckoutCanceled(checkout);
+            boolean newlyCanceled = markCheckoutCanceled(checkout);
+            if (newlyCanceled && "renewal".equals(checkout.getCheckoutType())) {
+                recordRenewalFailure(checkout, "Платёж отклонён");
+            }
         }
     }
 
-    private Map<String, Object> completeCheckout(BillingCheckoutEntity checkout, String externalPaymentId) {
+    private Map<String, Object> completeCheckout(BillingCheckoutEntity checkout, String externalPaymentId, JsonNode payment) {
         if (!"pending".equals(checkout.getStatus())) {
             throw new IllegalArgumentException("CHECKOUT_ALREADY_PROCESSED");
         }
 
-        activateSubscription(
-                checkout.getUserId(),
-                checkout.getPlan(),
-                checkout.getBillingPeriod(),
-                checkout.getPriceRub(),
-                checkout.getPriceRub()
-        );
+        boolean renewal = "renewal".equals(checkout.getCheckoutType());
+        activateSubscription(checkout.getUserId(), checkout.getPlan(), checkout.getBillingPeriod(), renewal);
 
         checkout.setStatus("completed");
         checkout.setExternalPaymentId(externalPaymentId);
         checkout.setCompletedAt(Instant.now());
         billingCheckoutRepository.save(checkout);
+
+        updateRecurringSubscription(checkout, payment, renewal);
 
         UserProfileEntity profile = userProfileRepository.findById(checkout.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
@@ -227,14 +246,17 @@ public class BillingService {
         if ("succeeded".equals(status)) {
             verifyPaymentAmount(checkout, payment);
             try {
-                completeCheckout(checkout, checkout.getExternalPaymentId());
+                completeCheckout(checkout, checkout.getExternalPaymentId(), payment);
             } catch (IllegalArgumentException ex) {
                 if (!"CHECKOUT_ALREADY_PROCESSED".equals(ex.getMessage())) {
                     throw ex;
                 }
             }
         } else if ("canceled".equals(status)) {
-            markCheckoutCanceled(checkout);
+            boolean newlyCanceled = markCheckoutCanceled(checkout);
+            if (newlyCanceled && "renewal".equals(checkout.getCheckoutType())) {
+                recordRenewalFailure(checkout, "Платёж отклонён");
+            }
         }
     }
 
@@ -246,11 +268,13 @@ public class BillingService {
         }
     }
 
-    private void markCheckoutCanceled(BillingCheckoutEntity checkout) {
+    private boolean markCheckoutCanceled(BillingCheckoutEntity checkout) {
         if ("pending".equals(checkout.getStatus())) {
             checkout.setStatus("canceled");
             billingCheckoutRepository.save(checkout);
+            return true;
         }
+        return false;
     }
 
     private Map<String, Object> toCheckoutResponse(BillingCheckoutEntity checkout) {
@@ -301,18 +325,211 @@ public class BillingService {
         return "WibeStyle подписка " + planLabel + " (" + periodLabel + ")";
     }
 
-    private void activateSubscription(UUID userId, String plan, String period, int finalPrice, int basePrice) {
+    private void activateSubscription(UUID userId, String plan, String period, boolean renewal) {
         UserProfileEntity profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
         Instant now = Instant.now();
-        Instant expiresAt = "annual".equals(period) ? now.plus(365, ChronoUnit.DAYS) : now.plus(30, ChronoUnit.DAYS);
+        Instant periodStart = renewal && profile.getSubscriptionExpiresAt() != null
+                ? profile.getSubscriptionExpiresAt()
+                : now;
+        ZonedDateTime start = periodStart.atZone(ZoneOffset.UTC);
+        Instant expiresAt = ("annual".equals(period) ? start.plusYears(1) : start.plusMonths(1)).toInstant();
 
         profile.setPlan(plan);
         profile.setBillingPeriod(period);
-        profile.setPlanGenerationsLeft(quotaService.defaultGenerationsForPlan(plan));
+        profile.setPlanGenerationsLeft(quotaService.generationsForPlanPeriod(plan, period));
         profile.setSubscriptionExpiresAt(expiresAt);
         profile.setUpdatedAt(now);
         userProfileRepository.save(profile);
+    }
+
+    private void updateRecurringSubscription(BillingCheckoutEntity checkout, JsonNode payment, boolean renewal) {
+        UserProfileEntity profile = userProfileRepository.findById(checkout.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
+        Instant now = Instant.now();
+        BillingSubscriptionEntity subscription = billingSubscriptionRepository.findById(checkout.getUserId())
+                .orElseGet(() -> new BillingSubscriptionEntity(
+                        checkout.getUserId(), checkout.getPlan(), checkout.getBillingPeriod(),
+                        profile.getSubscriptionExpiresAt(), checkout.getProvider(), now));
+        subscription.setPlan(checkout.getPlan());
+        subscription.setBillingPeriod(checkout.getBillingPeriod());
+        subscription.setCurrentPeriodEnd(profile.getSubscriptionExpiresAt());
+        subscription.setProvider(checkout.getProvider());
+        subscription.setStatus("active");
+        subscription.setRenewalFailureCount(0);
+        subscription.setNextRenewalAttemptAt(null);
+        subscription.setWarningSentFor(null);
+
+        if (!renewal) {
+            String paymentMethodId = payment == null ? null : payment.path("payment_method").path("id").asText(null);
+            boolean saved = payment != null && payment.path("payment_method").path("saved").asBoolean(false);
+            if (checkout.isSavePaymentMethod() && saved && paymentMethodId != null && !paymentMethodId.isBlank()) {
+                subscription.setProviderPaymentMethodId(paymentMethodId);
+                subscription.setAutoRenewEnabled(true);
+            } else {
+                subscription.setAutoRenewEnabled(false);
+            }
+        }
+        subscription.setUpdatedAt(now);
+        billingSubscriptionRepository.save(subscription);
+
+        if (renewal) {
+            notificationService.create(checkout.getUserId(), "subscription_renewed", "Подписка продлена",
+                    "Оплата прошла успешно. Тариф " + checkout.getPlan().toUpperCase()
+                            + " действует до " + formatDate(profile.getSubscriptionExpiresAt()) + ".",
+                    "/settings", "renewal-success:" + checkout.getRenewalKey());
+        }
+    }
+
+    public Map<String, Object> getSubscription(UUID userId) {
+        BillingSubscriptionEntity subscription = billingSubscriptionRepository.findById(userId)
+                .orElse(null);
+        if (subscription == null) {
+            return Map.of("autoRenewEnabled", false, "paymentMethodSaved", false);
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("plan", subscription.getPlan());
+        result.put("period", subscription.getBillingPeriod());
+        result.put("currentPeriodEnd", subscription.getCurrentPeriodEnd().toString());
+        result.put("autoRenewEnabled", subscription.isAutoRenewEnabled());
+        result.put("paymentMethodSaved", subscription.getProviderPaymentMethodId() != null);
+        result.put("status", subscription.getStatus());
+        return result;
+    }
+
+    @Transactional
+    public Map<String, Object> setAutoRenew(UUID userId, boolean enabled) {
+        BillingSubscriptionEntity subscription = billingSubscriptionRepository.findLockedByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("SUBSCRIPTION_NOT_FOUND"));
+        if (enabled && (subscription.getProviderPaymentMethodId() == null
+                || subscription.getProviderPaymentMethodId().isBlank())) {
+            throw new IllegalArgumentException("PAYMENT_METHOD_NOT_SAVED");
+        }
+        subscription.setAutoRenewEnabled(enabled);
+        subscription.setStatus(enabled ? "active" : "canceled");
+        subscription.setNextRenewalAttemptAt(null);
+        subscription.setUpdatedAt(Instant.now());
+        billingSubscriptionRepository.save(subscription);
+        return getSubscription(userId);
+    }
+
+    @Transactional
+    public void sendRenewalWarnings(Instant now) {
+        Instant deadline = now.plusSeconds(3 * 24 * 60 * 60L);
+        for (BillingSubscriptionEntity candidate :
+                billingSubscriptionRepository.findByAutoRenewEnabledTrueAndCurrentPeriodEndBetween(now, deadline)) {
+            BillingSubscriptionEntity subscription = billingSubscriptionRepository.findLockedByUserId(candidate.getUserId())
+                    .orElse(null);
+            if (subscription == null || !subscription.isAutoRenewEnabled()
+                    || subscription.getCurrentPeriodEnd().isAfter(deadline)) continue;
+            if (subscription.getCurrentPeriodEnd().equals(subscription.getWarningSentFor())) continue;
+            int price = basePrice(subscription.getPlan(), subscription.getBillingPeriod());
+            notificationService.create(subscription.getUserId(), "subscription_expiring", "Скоро продление подписки",
+                    formatDate(subscription.getCurrentPeriodEnd()) + " спишем " + price
+                            + " ₽ за тариф " + subscription.getPlan().toUpperCase() + ". Автопродление можно отключить в профиле.",
+                    "/settings", "renewal-warning:" + subscription.getCurrentPeriodEnd());
+            subscription.setWarningSentFor(subscription.getCurrentPeriodEnd());
+            subscription.setUpdatedAt(now);
+            billingSubscriptionRepository.save(subscription);
+        }
+    }
+
+    @Transactional
+    public void processDueRenewals(Instant now) {
+        for (BillingSubscriptionEntity candidate :
+                billingSubscriptionRepository.findByAutoRenewEnabledTrueAndCurrentPeriodEndLessThanEqual(now)) {
+            BillingSubscriptionEntity subscription = billingSubscriptionRepository.findLockedByUserId(candidate.getUserId())
+                    .orElse(null);
+            if (subscription == null || !subscription.isAutoRenewEnabled()
+                    || subscription.getCurrentPeriodEnd().isAfter(now)) continue;
+            if (subscription.getNextRenewalAttemptAt() != null
+                    && subscription.getNextRenewalAttemptAt().isAfter(now)) continue;
+            createRenewalAttempt(subscription, now);
+        }
+    }
+
+    private void createRenewalAttempt(BillingSubscriptionEntity subscription, Instant now) {
+        int attempt = subscription.getRenewalFailureCount() + 1;
+        String renewalKey = subscription.getUserId() + ":" + subscription.getCurrentPeriodEnd() + ":" + attempt;
+        BillingCheckoutEntity existing = billingCheckoutRepository.findByRenewalKey(renewalKey).orElse(null);
+        if (existing != null) {
+            resumeRenewalAttempt(existing, subscription, now);
+            return;
+        }
+        int price = basePrice(subscription.getPlan(), subscription.getBillingPeriod());
+        BillingCheckoutEntity checkout = new BillingCheckoutEntity(UUID.randomUUID(), subscription.getUserId(),
+                subscription.getPlan(), subscription.getBillingPeriod(), price, subscription.getProvider(), now);
+        checkout.setCheckoutType("renewal");
+        checkout.setRenewalKey(renewalKey);
+        billingCheckoutRepository.saveAndFlush(checkout);
+        resumeRenewalAttempt(checkout, subscription, now);
+    }
+
+    private void resumeRenewalAttempt(BillingCheckoutEntity checkout, BillingSubscriptionEntity subscription, Instant now) {
+        if (!"pending".equals(checkout.getStatus())) return;
+        try {
+            if ("yookassa".equals(subscription.getProvider())) {
+                String status;
+                if (checkout.getExternalPaymentId() == null || checkout.getExternalPaymentId().isBlank()) {
+                    YooKassaChargeResult payment = yooKassaClient.createSavedPayment(checkout.getId(), checkout.getPriceRub(),
+                            checkoutDescription(subscription.getPlan(), subscription.getBillingPeriod()),
+                            subscription.getUserId(), subscription.getProviderPaymentMethodId());
+                    checkout.setExternalPaymentId(payment.paymentId());
+                    billingCheckoutRepository.save(checkout);
+                    status = payment.status();
+                } else {
+                    status = yooKassaClient.fetchPayment(checkout.getExternalPaymentId()).path("status").asText("");
+                }
+                if ("succeeded".equals(status)) {
+                    JsonNode verified = yooKassaClient.fetchPayment(checkout.getExternalPaymentId());
+                    verifyPaymentAmount(checkout, verified);
+                    completeCheckout(checkout, checkout.getExternalPaymentId(), verified);
+                } else if ("canceled".equals(status) && markCheckoutCanceled(checkout)) {
+                    recordRenewalFailure(checkout, "Платёж отклонён");
+                } else {
+                    subscription.setNextRenewalAttemptAt(now.plusSeconds(15 * 60L));
+                    subscription.setUpdatedAt(now);
+                    billingSubscriptionRepository.save(subscription);
+                }
+            } else {
+                completeCheckout(checkout, "mock-renewal-" + checkout.getId(), null);
+            }
+        } catch (RuntimeException ex) {
+            if ("YOOKASSA_AMOUNT_MISMATCH".equals(ex.getMessage())) throw ex;
+            subscription.setStatus("retrying");
+            subscription.setNextRenewalAttemptAt(now.plusSeconds(15 * 60L));
+            subscription.setUpdatedAt(now);
+            billingSubscriptionRepository.save(subscription);
+        }
+    }
+
+    private void recordRenewalFailure(BillingCheckoutEntity checkout, String reason) {
+        BillingSubscriptionEntity subscription = billingSubscriptionRepository.findById(checkout.getUserId())
+                .orElse(null);
+        if (subscription == null || !subscription.isAutoRenewEnabled()) return;
+        int failures = subscription.getRenewalFailureCount() + 1;
+        subscription.setRenewalFailureCount(failures);
+        subscription.setUpdatedAt(Instant.now());
+        if (failures >= 3) {
+            subscription.setAutoRenewEnabled(false);
+            subscription.setStatus("payment_failed");
+            subscription.setNextRenewalAttemptAt(null);
+            notificationService.create(checkout.getUserId(), "subscription_payment_failed",
+                    "Автопродление отключено", reason + " после трёх попыток. Обновите способ оплаты в профиле.",
+                    "/paywall", "renewal-failed-final:" + subscription.getCurrentPeriodEnd());
+        } else {
+            subscription.setStatus("retrying");
+            subscription.setNextRenewalAttemptAt(Instant.now().plusSeconds(24 * 60 * 60L));
+            notificationService.create(checkout.getUserId(), "subscription_payment_retry",
+                    "Не удалось продлить подписку", reason + ". Повторим попытку через сутки.",
+                    "/settings", "renewal-failed:" + checkout.getRenewalKey());
+        }
+        billingSubscriptionRepository.save(subscription);
+    }
+
+    private static String formatDate(Instant instant) {
+        return java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")
+                .withZone(ZoneOffset.UTC).format(instant);
     }
 
     private Map<String, Object> buildActiveSubscriptionResponse(
@@ -387,7 +604,7 @@ public class BillingService {
         map.put("period", period);
         map.put("basePriceRub", basePriceRub);
         map.put("priceRub", finalPrice);
-        map.put("generationsPerPeriod", quotaService.defaultGenerationsForPlan(plan));
+        map.put("generationsPerPeriod", quotaService.generationsForPlanPeriod(plan, period));
         if ("annual".equals(period)) {
             map.put("monthlyEquivalentRub", Math.round(finalPrice / 12.0));
             map.put("savingsPercent", billingProperties.getAnnualDiscountPercent());

@@ -14,7 +14,7 @@ import {
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { ApiError } from "@wibestyle/api-client";
-import type { UpdateProfilePayload } from "@wibestyle/shared-types";
+import type { BillingSubscription, UpdateProfilePayload } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { AvatarManager } from "@/components/avatar/AvatarManager";
 import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
@@ -23,6 +23,7 @@ import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/c
 import { TextField } from "@/components/ui/TextField";
 import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
+import { legalLinks } from "@/lib/legal-links";
 
 type ProfileEditorProps = {
   showBackButton?: boolean;
@@ -49,6 +50,8 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
   const [confirmDelete, setConfirmDelete] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [billingSubscription, setBillingSubscription] = useState<BillingSubscription | null>(null);
+  const [autoRenewSaving, setAutoRenewSaving] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -63,6 +66,23 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
     setClothingSize(profile.anthropometry?.clothingSize ?? "M");
     setShoeSizeEu(profile.anthropometry?.shoeSizeEu ? String(profile.anthropometry.shoeSizeEu) : "");
   }, [profile]);
+
+  useEffect(() => {
+    if (!accessToken || !profile || profile.plan === "trial") return;
+    void api.getBillingSubscription().then(setBillingSubscription).catch(() => undefined);
+  }, [accessToken, api, profile]);
+
+  async function toggleAutoRenew(value: boolean) {
+    setAutoRenewSaving(true);
+    setError(null);
+    try {
+      setBillingSubscription(await api.setAutoRenew(value));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось изменить автопродление");
+    } finally {
+      setAutoRenewSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!accessToken || !profile?.activeAvatarId) {
@@ -204,6 +224,24 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
                 <BodyText>
                   Действует до: {new Date(profile.subscriptionExpiresAt).toLocaleDateString("ru-RU")}
                 </BodyText>
+              ) : null}
+              {billingSubscription?.paymentMethodSaved ? (
+                <View style={styles.autoRenewRow}>
+                  <View style={styles.autoRenewCopy}>
+                    <Text style={styles.autoRenewTitle}>Автопродление</Text>
+                    <BodyText>
+                      {billingSubscription.autoRenewEnabled
+                        ? "Включено. Предупредим за 3 дня."
+                        : "Отключено. Подписка завершится в указанную дату."}
+                    </BodyText>
+                  </View>
+                  <Switch
+                    value={billingSubscription.autoRenewEnabled}
+                    disabled={autoRenewSaving}
+                    onValueChange={(value) => void toggleAutoRenew(value)}
+                    trackColor={{ true: colors.pink }}
+                  />
+                </View>
               ) : null}
             </View>
           ) : null}
@@ -383,6 +421,17 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginVertical: spacing.sm,
   },
+  autoRenewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.pinkBg,
+  },
+  autoRenewCopy: { flex: 1, gap: 2 },
+  autoRenewTitle: { fontFamily: "Manrope_500Medium", fontSize: 15, color: colors.black },
   planStrong: {
     fontFamily: "Manrope_500Medium",
     fontSize: 20,

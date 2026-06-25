@@ -44,6 +44,7 @@ export default function PaywallClient() {
   const [subscriptionActive, setSubscriptionActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [savePaymentMethod, setSavePaymentMethod] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reason = searchParams.get("reason");
@@ -99,7 +100,7 @@ export default function PaywallClient() {
     setError(null);
     setSubmitting(true);
     try {
-      const result = await api.checkout(selectedPlan, period);
+      const result = await api.checkout(selectedPlan, period, { savePaymentMethod, client: "web" });
       if (isExternalPaymentUrl(result.provider, result.paymentUrl)) {
         rememberCheckoutId(result.checkoutId);
         window.location.href = result.paymentUrl;
@@ -205,6 +206,23 @@ export default function PaywallClient() {
             К оплате: <strong>{formatRub(displayPrice)}</strong>
             {currentOffer?.monthlyEquivalentRub ? ` · ~${formatRub(currentOffer.monthlyEquivalentRub)}/мес` : ""}
           </p>
+        ) : null}
+
+        {paymentProvider === "yookassa" ? (
+          <label className="mt-5 flex max-w-2xl cursor-pointer items-start gap-3 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] p-4 text-sm text-[#302637]">
+            <input
+              type="checkbox"
+              checked={savePaymentMethod}
+              onChange={(event) => setSavePaymentMethod(event.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-[#ff1fa2]"
+            />
+            <span>
+              <strong>Сохранить способ оплаты и включить автопродление</strong>
+              <span className="mt-1 block text-xs leading-5 text-[#6d6273]">
+                Следующее списание — в дату окончания подписки по обычной цене тарифа. За 3 дня пришлём уведомление. Автопродление можно отключить в профиле.
+              </span>
+            </span>
+          </label>
         ) : null}
 
         <Button className="mt-6 w-full md:w-auto" disabled={loading || submitting || !currentOffer} onClick={() => void onCheckout()} size="lg">

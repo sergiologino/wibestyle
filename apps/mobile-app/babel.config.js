@@ -1,3 +1,5 @@
+require("./scripts/register-workspace-modules")();
+
 const { expoRouterBabelPlugin } = require("babel-preset-expo/build/expo-router-plugin");
 
 module.exports = function (api) {

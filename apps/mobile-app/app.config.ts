@@ -29,6 +29,7 @@ const config: ExpoConfig = {
     "expo-router",
     "expo-secure-store",
     "expo-video",
+    "expo-notifications",
     [
       "expo-build-properties",
       {
@@ -49,7 +50,7 @@ const config: ExpoConfig = {
     telegramChannelUrl: process.env.EXPO_PUBLIC_TELEGRAM_CHANNEL_URL ?? "https://t.me/vibestyle_channel",
     telegramChannelName: process.env.EXPO_PUBLIC_TELEGRAM_CHANNEL_NAME ?? "Я на стиле. Поддержка",
     eas: {
-      projectId: "wibestyle-mobile-local",
+      projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? "wibestyle-mobile-local",
     },
   },
 };

@@ -6,6 +6,15 @@
 
 ---
 
+## npm install в Nixpacks/Coolify
+
+- Текущий deployment image использует Node 22.11; версии в корневом `package-lock.json` закреплены с учетом этой версии.
+- В production всегда используйте `npm ci`, а не `npm install`, чтобы сборка точно воспроизводила lockfile.
+- Репозиторий содержит `.npmrc` с ограниченными повторами и увеличенными таймаутами на случай временного `ECONNRESET` от npm registry. Если все попытки исчерпаны, повторите deploy: это сетевая ошибка загрузки, а не ошибка компиляции.
+- Не обновляйте отдельно React Native, Vite или jsdom без проверки требований Expo SDK и версии Node в Nixpacks.
+
+---
+
 ## Архитектура сервисов
 
 | Сервис | Пакет / путь | Порт (dev) | URL (prod) |
@@ -273,9 +282,12 @@ cd services\api
 | `WIBESTYLE_BILLING_PROVIDER` | `mock` | `mock` или `yookassa` |
 | `WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED` | `true` | `false` в prod (мгновенный subscribe без оплаты) |
 | `WIBESTYLE_BILLING_RETURN_URL` | `http://localhost:3001/paywall/return` | URL возврата после YooKassa |
+| `WIBESTYLE_BILLING_MOBILE_RETURN_URL` | `wibestyle://paywall/return` | Deep link возврата в Android checkout |
 | `WIBESTYLE_YOOKASSA_SHOP_ID` | — | Shop ID из личного кабинета |
 | `WIBESTYLE_YOOKASSA_SECRET_KEY` | — | Secret key |
 | `WIBESTYLE_YOOKASSA_API_BASE` | `https://api.yookassa.ru` | API base (обычно не менять) |
+| `WIBESTYLE_PUSH_ENABLED` | `true` | Отправка через Expo Push Service |
+| `WIBESTYLE_EXPO_PUSH_ACCESS_TOKEN` | — | Нужен только при включённой enhanced push security Expo |
 
 ### YooKassa — подключение
 
@@ -289,12 +301,22 @@ cd services\api
 WIBESTYLE_BILLING_PROVIDER=yookassa
 WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=false
 WIBESTYLE_BILLING_RETURN_URL=https://app.vibestyle.art/paywall/return
+WIBESTYLE_BILLING_MOBILE_RETURN_URL=wibestyle://paywall/return
 WIBESTYLE_YOOKASSA_SHOP_ID=123456
 WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 ```
 
 5. Перезапустите API. Paywall покажет «Оплатить через YooKassa» и редирект на страницу оплаты.
 6. После оплаты пользователь возвращается на `/paywall/return` — фронт опрашивает `GET /billing/checkout/{id}` до `completed`.
+7. Для recurring убедитесь, что магазин разрешает сохранение способов оплаты. Повторные платежи создаются backend-планировщиком; отдельный cron вне приложения не нужен.
+
+### Android push — production
+
+1. Создайте/привяжите Expo EAS project и укажите его UUID в `EXPO_PUBLIC_EAS_PROJECT_ID` при сборке APK/AAB.
+2. Настройте FCM v1 credentials для Android package `ru.wibestyle.app` в Expo/EAS.
+3. Соберите новый native APK/AAB: production push не проверяется через Expo Go.
+4. Если в Expo включена enhanced push security, передайте access token API-серверу через `WIBESTYLE_EXPO_PUSH_ACCESS_TOKEN`.
+5. Проверяйте push на физическом устройстве; dev project id `wibestyle-mobile-local` намеренно не регистрирует токен.
 
 Локально без ключей оставьте `WIBESTYLE_BILLING_PROVIDER=mock` — работает `/paywall/payment` с mock-кнопкой.
 

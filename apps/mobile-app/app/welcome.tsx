@@ -54,6 +54,11 @@ export default function WelcomeScreen() {
     router.replace("/paywall");
   }
 
+  function skipOnboarding() {
+    completeOnboardingStep("welcome");
+    router.replace("/paywall");
+  }
+
   function nextSlide() {
     if (activeIndex < mobileOnboardingSlides.length - 1) {
       setActiveIndex((value) => value + 1);
@@ -142,7 +147,7 @@ export default function WelcomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={activeIndex === 0 ? "Пропустить" : "Назад"}
-              onPress={() => (activeIndex === 0 ? openAuth() : setActiveIndex((value) => value - 1))}
+              onPress={() => (activeIndex === 0 ? skipOnboarding() : setActiveIndex((value) => value - 1))}
               style={styles.secondaryButton}
             >
               <Text style={styles.secondaryText}>{activeIndex === 0 ? "Пропустить" : "Назад"}</Text>

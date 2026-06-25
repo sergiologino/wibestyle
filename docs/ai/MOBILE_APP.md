@@ -1,6 +1,10 @@
 # Mobile App — Android
 
-Native **Expo (React Native)** приложение «Я на стиле» — parity с web-app: OTP/логин, аватар, примерка по ссылке/фото, галерея, избранное, paywall (dev subscribe).
+Native **Expo (React Native)** приложение «Я на стиле» — parity с web-app: OTP/логин, аватар, примерка по ссылке/фото, галерея, избранное, YooKassa checkout/autorenew и Expo push.
+
+Paywall показывает отдельный бесплатный trial на 3 примерки ещё до регистрации и при доступном остатке. Пропуск onboarding ведёт сначала на paywall; регистрация открывается после явного выбора trial или оплаты. Платные квоты: Wibe — 20 в месяц или 240 в год; Elite — 100 в месяц или 1200 в год. Рекомендуется годовой Elite; его карточка выделяет видео к каждой примерке, лучшие нейросети и приоритетную поддержку. Годовые карточки показывают экономию относительно 12 месячных платежей, а активная скидка с лендинга помечается как уже включённая в цену.
+
+Избранное использует API-aware загрузку фотографий: относительные marketplace URL преобразуются через `EXPO_PUBLIC_API_URL`, а Bearer-токен отправляется только для защищённых снимков примерки. В каждой карточке с `productUrl` есть явная кнопка перехода на маркетплейс.
 
 **Платформа:** Android 12+ (`minSdkVersion` 31), оптимизировано под экраны ≥ 1080×2400.
 
@@ -18,11 +22,13 @@ npm run verify:bundle
 ```
 
 `verify:bundle` проверяет, что Metro не подтянет `webidl-conversions@8` (источник ошибки `SharedArrayBuffer`). Перед `npm run android` проверка запускается автоматически (`preandroid`).
+Также проверяется Metro-алиас `@/* → src/*`; это предотвращает clean-release ошибку `Unable to resolve module @/theme/tokens`.
 
 Скопируйте `apps/mobile-app/.env.example` → `apps/mobile-app/.env`:
 
 ```env
 EXPO_PUBLIC_API_URL=http://10.0.2.2:8080
+EXPO_PUBLIC_EAS_PROJECT_ID=<Expo project UUID; нужен для production push>
 ```
 
 | Среда | `EXPO_PUBLIC_API_URL` |
@@ -154,6 +160,12 @@ Debug-сборка **не содержит JS внутри APK** — ей нуж
 После `npx expo prebuild` папка `apps/mobile-app/android/` — открывайте её в Android Studio.
 
 ### Release bundle: `Unable to resolve module ./node_modules/expo-router/entry.js`
+
+При Node 24/npm 11 возможен другой вариант ошибки: `babel-preset-expo` или Metro попадает в корневой
+`node_modules`, а `expo`/`expo-asset` остаются в `apps/mobile-app/node_modules`. Симптомы:
+`Cannot find module 'expo/config'` или `Cannot find module 'expo-asset/tools/hashAssetFiles'`.
+Общий bootstrap `scripts/register-workspace-modules.js` подключается до Babel и Metro; команда
+`npm run verify:bundle` проверяет оба импорта до запуска Gradle.
 
 На Windows React Native Gradle передаёт entry-файл относительно корня мобильного
 приложения. В monorepo Metro должен использовать тот же server root. Это закреплено в

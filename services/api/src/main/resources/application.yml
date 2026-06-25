@@ -80,6 +80,7 @@ wibestyle:
     provider: ${WIBESTYLE_BILLING_PROVIDER:mock}
     subscribe-dev-enabled: ${WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED:true}
     return-url: ${WIBESTYLE_BILLING_RETURN_URL:http://localhost:3001/paywall/return}
+    mobile-return-url: ${WIBESTYLE_BILLING_MOBILE_RETURN_URL:wibestyle://paywall/return}
     yookassa:
       shop-id: ${WIBESTYLE_YOOKASSA_SHOP_ID:}
       secret-key: ${WIBESTYLE_YOOKASSA_SECRET_KEY:}
@@ -93,6 +94,10 @@ wibestyle:
     annual-discount-percent: 20
     annual-rub: 6990
     discounted-annual-rub: 3495
+  push:
+    enabled: ${WIBESTYLE_PUSH_ENABLED:true}
+    expo-api-url: ${WIBESTYLE_EXPO_PUSH_API_URL:https://exp.host/--/api/v2/push/send}
+    access-token: ${WIBESTYLE_EXPO_PUSH_ACCESS_TOKEN:}
   storage:
     backend: ${WIBESTYLE_STORAGE_BACKEND:local}
     # Persistent volume root (local/Coolify). Override: WIBESTYLE_STORAGE_ROOT=/data/wibestyle-media

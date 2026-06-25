@@ -1,5 +1,39 @@
 # AI Changelog
 
+## 2026-06-25 (Favorites images and marketplace CTAs)
+- Fixed blank Android favorite thumbnails by resolving relative API image paths and conditionally authorizing only protected session media.
+- Added visible direct marketplace links to Android and web favorite cards; the web `Try on` action remains available separately.
+- Added regression tests for URL normalization, token isolation, protected media and both favorites UIs; mobile and web production builds pass.
+
+## 2026-06-24 (Android clean-build alias resolution)
+- Added explicit Metro resolution for the mobile TypeScript alias `@/*` to `apps/mobile-app/src/*`.
+- Extended `verify:bundle` with a regression assertion for `@/theme/tokens`.
+- Confirmed clean production bundling after Gradle `clean`: 1289 modules and 59 assets; mobile tests and TypeScript pass.
+
+## 2026-06-24 (Mobile paywall trial, quotas and savings)
+- Restored a visible free-trial path on Android before registration and for eligible profiles: users can start 3 free try-ons without entering checkout. Onboarding skip now opens paywall.
+- Made paid quotas period-accurate end to end: Wibe 20/month or 240/year; Elite 100/month or 1200/year. Annual activation and renewal now grant the annual amount.
+- Made annual Elite the recommended default, added its video/best-AI/priority-support benefits, and replaced the black savings badge with a light treatment inside gradient annual cards.
+- Added annual savings in rubles, concrete month/year labels, promo-already-applied copy, pre-discount pricing, Flyway V25 and regression coverage.
+
+## 2026-06-24 (Android release build under npm 11)
+- Fixed release bundling errors `Cannot find module 'expo/config'` and `Cannot find module 'expo-asset/tools/hashAssetFiles'` caused by npm 11 splitting hoisted Expo tooling from workspace-local peer dependencies.
+- Added a shared workspace module-resolution bootstrap for Babel and Metro and extended `verify:bundle` with regression checks for both imports.
+- Verified mobile lint, all 21 mobile tests, and successful production Metro bundling of 1288 modules/59 assets.
+
+## 2026-06-24 (Deployment dependency compatibility)
+- Identified the deployment stop as a transient npm registry `ECONNRESET`; added bounded fetch retries, longer timeouts and cache preference in `.npmrc`.
+- Regenerated the lockfile without Node 22.11-incompatible React Native 0.85, Vite 8 and jsdom 29 packages. Expo SDK 52 now resolves React Native 0.76.9 consistently.
+- Added a narrow mobile icon declaration shim and explicit Headers callback types required by clean workspace TypeScript resolution.
+- Verified clean `npm ci` with npm 10, full npm tests/builds, mobile lint/bundle, and Android debug APK assembly.
+
+## 2026-06-23 (YooKassa auto-renew + mobile push)
+- Added saved YooKassa payment methods with explicit opt-in, recurring subscription state, T−3 warnings, T0 regular-price renewal, calendar periods and three bounded retries.
+- Added durable in-app notifications and Expo push-device registration/delivery for Android; web/mobile expose notifications and auto-renew controls.
+- Mobile paywall now uses real checkout and polls verified payment instead of dev subscribe.
+- Added Flyway V24, API/shared client contracts and recurring billing tests.
+- Verified API test suite, web tests/build, mobile tests/lint/bundle, api-client tests and Android debug build.
+
 ## 2026-06-23 (Landing first example caption)
 - В первой карточке «Образы, которые хочется повторить» заголовок «Платье» заменён на «Отдых» без изменения изображения `look-1`.
 - Добавлен regression test подписи и сохранения media slot первой карточки.

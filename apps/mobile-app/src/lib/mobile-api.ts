@@ -104,6 +104,25 @@ export function resolveApiPath(baseUrl: string, path: string): string {
   return `${baseUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+export function isProtectedApiImagePath(path: string): boolean {
+  return path.includes("/api/") && !path.includes("/api/v1/marketplaces/");
+}
+
+export function buildProductImageSource(
+  baseUrl: string,
+  path: string,
+  accessToken: string | null,
+  appBaseUrl = baseUrl,
+): { uri: string; headers?: { Authorization: string } } {
+  const source: { uri: string; headers?: { Authorization: string } } = {
+    uri: path.startsWith("/assets/") ? resolveApiPath(appBaseUrl, path) : resolveApiPath(baseUrl, path),
+  };
+  if (isProtectedApiImagePath(path) && accessToken) {
+    source.headers = { Authorization: `Bearer ${accessToken}` };
+  }
+  return source;
+}
+
 export function formatTryOnError(session: {
   errorCode?: string;
   errorMessage?: string;

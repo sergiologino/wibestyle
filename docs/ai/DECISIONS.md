@@ -88,3 +88,9 @@
 
 ## Superseded
 - ADR-0002 частично: вместо одного frontend-сервиса — monorepo (landing + web-app + API). Лендинг остаётся отдельным deployable app.
+
+## ADR-0017: Merchant-managed recurring billing and durable notifications
+- Status: Accepted (2026-06-23)
+- Context: YooKassa saves a payment method but does not schedule merchant subscription renewals; web and mobile need the same renewal state and reliable notices.
+- Decision: Keep entitlement expiry in `user_profiles`, recurring orchestration in `billing_subscriptions`, every payment attempt in `billing_checkouts`, and user-visible events in `user_notifications`. Charge at T0, warn at T−3 days, retry a rejected payment up to three times, and reuse checkout UUID as YooKassa idempotence key for uncertain network outcomes. Expo push is a transport over durable in-app notifications.
+- Consequences: Card data never enters WibeStyle; users can disable renewal without losing the paid period; unique renewal keys prevent duplicate checkout creation. 54-FZ receipt payload remains a separate production task.
