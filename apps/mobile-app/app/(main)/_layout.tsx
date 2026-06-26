@@ -2,9 +2,11 @@ import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, hairline, radius } from "@/theme/tokens";
+import { useAppTheme } from "@/theme/palettes";
 
 export default function MainTabsLayout() {
   const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
   const bottomInset = Math.max(insets.bottom, 12);
 
   return (
@@ -12,13 +14,13 @@ export default function MainTabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarHideOnKeyboard: true,
-        tabBarActiveTintColor: colors.pink,
-        tabBarInactiveTintColor: colors.muted,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.muted,
         tabBarStyle: {
-          backgroundColor: colors.white,
+          backgroundColor: theme.colors.white,
           borderWidth: hairline,
-          borderTopColor: colors.borderLight,
-          borderColor: colors.borderLight,
+          borderTopColor: theme.colors.borderLight,
+          borderColor: theme.colors.borderLight,
           borderRadius: radius.xxl,
           height: 62 + bottomInset,
           marginHorizontal: 12,

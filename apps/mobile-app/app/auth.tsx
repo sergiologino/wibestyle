@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
@@ -15,6 +15,7 @@ import { colors, spacing } from "@/theme/tokens";
 
 export default function AuthScreen() {
   const router = useRouter();
+  const searchParams = useLocalSearchParams<{ next?: string }>();
   const { api, setAuth } = useSession();
   const [phone, setPhone] = useState("+7 ");
   const [requestId, setRequestId] = useState<string | null>(null);
@@ -61,6 +62,7 @@ export default function AuthScreen() {
         resolvePostAuthRoute({
           newUser: Boolean(auth.newUser),
           hasActiveAvatar: Boolean(me.profile.activeAvatarId),
+          nextParam: typeof searchParams.next === "string" ? searchParams.next : null,
         }) as never,
       );
     } catch {

@@ -39,9 +39,50 @@
 
 :root {
   --pink: #ff1fa2;
+  --pink-dark: #eb1692;
+  --pink-soft: #ffd1ed;
+  --pink-bg: #fff4fb;
+  --pink-glow: rgba(255, 31, 162, 0.22);
   --violet: #782cff;
   --black: #14101a;
   --muted: #6d6273;
+  --eyebrow: #9a8f99;
+  --surface-1: #ffffff;
+  --surface-2: #fff4fb;
+  --surface-3: #ffffff;
+  --shadow-accent: rgba(255, 31, 162, 0.08);
+}
+
+:root[data-interface-palette="pistachio"] {
+  --pink: #7a9b56;
+  --pink-dark: #5f7e3d;
+  --pink-soft: #dfeacb;
+  --pink-bg: #f8f6ec;
+  --pink-glow: rgba(122, 155, 86, 0.22);
+  --violet: #b78347;
+  --black: #181610;
+  --muted: #6f6858;
+  --eyebrow: #988f7b;
+  --surface-1: #ffffff;
+  --surface-2: #f8f6ec;
+  --surface-3: #ffffff;
+  --shadow-accent: rgba(122, 155, 86, 0.1);
+}
+
+:root[data-interface-palette="graphite"] {
+  --pink: #42677f;
+  --pink-dark: #2f5067;
+  --pink-soft: #d7e4ea;
+  --pink-bg: #f4f7f8;
+  --pink-glow: rgba(66, 103, 127, 0.2);
+  --violet: #8a6f58;
+  --black: #111820;
+  --muted: #63707a;
+  --eyebrow: #89949c;
+  --surface-1: #ffffff;
+  --surface-2: #f4f7f8;
+  --surface-3: #ffffff;
+  --shadow-accent: rgba(66, 103, 127, 0.1);
 }
 
 html {
@@ -52,9 +93,9 @@ body {
   margin: 0;
   color: var(--black);
   background:
-    radial-gradient(circle at 12% 8%, rgba(255, 31, 162, 0.08), transparent 28%),
+    radial-gradient(circle at 12% 8%, var(--shadow-accent), transparent 28%),
     radial-gradient(circle at 88% 0%, rgba(120, 44, 255, 0.08), transparent 24%),
-    linear-gradient(180deg, #fff 0%, #fff4fb 36%, #fff 100%);
+    linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 36%, var(--surface-3) 100%);
 }
 
 h1,
@@ -70,7 +111,7 @@ h3 {
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #9a8f99;
+  color: var(--eyebrow);
 }
 
 .text-display {
@@ -149,9 +190,9 @@ h3 {
 }
 
 .app-surface {
-  border: 1px solid rgba(255, 209, 237, 0.85);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 248, 253, 0.92));
-  box-shadow: 0 24px 60px rgba(255, 31, 162, 0.08);
+  border: 1px solid var(--pink-soft);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), var(--surface-2));
+  box-shadow: 0 24px 60px var(--shadow-accent);
 }
 
 a {

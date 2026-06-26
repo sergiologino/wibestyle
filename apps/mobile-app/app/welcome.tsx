@@ -19,7 +19,7 @@ import { FIRST_100_PROMO_CODE, mobileOnboardingSlides } from "@/lib/onboarding-c
 import { colors, hairline, radius, shadows, spacing } from "@/theme/tokens";
 
 const assets = {
-  upload: require("../assets/onboarding/slides/upload-photo.png"),
+  upload: require("../assets/onboarding/slides/upload-photo.webp"),
   flow: require("../assets/onboarding/slides/flow-photo.webp"),
   privacy: require("../assets/onboarding/slides/privacy-photo.png"),
   future: require("../assets/onboarding/slides/future-photo.webp"),
@@ -55,12 +55,12 @@ export default function WelcomeScreen() {
 
   function openTrial() {
     completeOnboardingStep("welcome");
-    router.replace("/paywall");
+    router.replace("/auth?next=/paywall");
   }
 
   function skipOnboarding() {
     completeOnboardingStep("welcome");
-    router.replace("/paywall");
+    router.replace("/auth?next=/paywall");
   }
 
   function nextSlide() {

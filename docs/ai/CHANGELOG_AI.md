@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-06-26 (Registration-first trial and interface palettes)
+- Changed onboarding trial path to `onboarding → registration/auth → paywall → trial`; `/paywall` is now an allowed explicit post-auth `next` target for this flow.
+- Added persisted profile field `interfacePalette` with Flyway V28 and shared type support. Available palettes: `vibe`, `pistachio`, `graphite`.
+- Added palette selectors to web and Android profile screens. Web applies palette CSS variables from the profile; Android applies the palette through a session-backed theme provider for core surfaces, buttons, cards and tab bar.
+
 ## 2026-06-26 (Onboarding, privacy preprocessing, trial and favorites result links)
 - Removed the mobile onboarding “Меньше хаоса перед покупкой” slide, removed the screen-3 “товар рядом” tag, made onboarding media shorter on compact phones, and switched the result slide to `result-photo.mp4` with `.webp` preferred for static slots where present.
 - Reduced trial quota to 2 free try-ons end-to-end: mobile paywall constant, API profile default and Flyway V26.

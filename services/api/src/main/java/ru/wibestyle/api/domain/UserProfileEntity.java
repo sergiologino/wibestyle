@@ -22,6 +22,9 @@ public class UserProfileEntity {
     @Column(length = 16)
     private String gender;
 
+    @Column(name = "interface_palette", nullable = false, length = 24)
+    private String interfacePalette = "vibe";
+
     @Column(nullable = false, length = 16)
     private String plan = "trial";
 
@@ -108,6 +111,14 @@ public class UserProfileEntity {
 
     public void setGender(String gender) {
         this.gender = gender;
+    }
+
+    public String getInterfacePalette() {
+        return interfacePalette;
+    }
+
+    public void setInterfacePalette(String interfacePalette) {
+        this.interfacePalette = interfacePalette;
     }
 
     public String getPlan() {

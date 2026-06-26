@@ -31,6 +31,12 @@ describe("resolvePostAuthRoute", () => {
     ).toBe("/onboarding/avatar");
   });
 
+  it("allows the onboarding trial path to continue to paywall after registration", () => {
+    expect(
+      resolvePostAuthRoute({ newUser: true, hasActiveAvatar: false, nextParam: "/paywall" }),
+    ).toBe("/paywall");
+  });
+
   it("respects next for returning users with avatar", () => {
     expect(
       resolvePostAuthRoute({ newUser: false, hasActiveAvatar: true, nextParam: "/favorites" }),

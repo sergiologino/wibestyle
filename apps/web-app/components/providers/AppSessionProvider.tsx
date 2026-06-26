@@ -226,6 +226,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
       && prev.profile?.userId === synced.profile?.userId
       && prev.profile?.plan === synced.profile?.plan
       && prev.profile?.activeAvatarId === synced.profile?.activeAvatarId
+      && prev.profile?.interfacePalette === synced.profile?.interfacePalette
       && prev.profile?.trialGenerationsLeft === synced.profile?.trialGenerationsLeft
       && prev.profile?.planGenerationsLeft === synced.profile?.planGenerationsLeft
       && prev.onboarding.step === synced.onboarding.step
@@ -1157,6 +1158,10 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
   );
 
+
+  useEffect(() => {
+    document.documentElement.dataset.interfacePalette = session.profile?.interfacePalette ?? "vibe";
+  }, [session.profile?.interfacePalette]);
 
 
   return <AppSessionContext.Provider value={value}>{children}</AppSessionContext.Provider>;

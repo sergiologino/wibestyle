@@ -28,6 +28,8 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 
 Avatar photo privacy: `GET /avatars/{id}/photo?variant=original` returns the uploaded original. `variant=processed` returns the server-generated privacy-aware image. When face/background hiding is enabled on the profile/avatar, preprocessing blurs the detected face and/or background in the processed variant.
 
+Profile UI preference: `profile.interfacePalette` is one of `vibe`, `pistachio`, `graphite`. `PUT /profile` accepts `interfacePalette`; new profiles default to `vibe`.
+
 ## Marketplace & Try-on
 
 | Method | Path |

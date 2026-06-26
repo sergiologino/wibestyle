@@ -1,5 +1,10 @@
 # Current State
 
+## Onboarding registration-first trial and interface palettes (2026-06-26)
+- Onboarding trial path is now registration-first: onboarding CTA/skip routes to auth with `next=/paywall`, then the paywall exposes the free trial. Web `resolvePostAuthRoute` and mobile `resolvePostAuthRoute` explicitly allow `/paywall` as the post-auth destination for this flow.
+- Profiles now persist `interfacePalette` (`vibe`, `pistachio`, `graphite`) through API/shared types/Flyway V28. `vibe` keeps the current pink/violet look, `pistachio` is beige-pistachio, and `graphite` is a calm blue-graphite alternative.
+- Web applies the selected palette through `data-interface-palette` and CSS variables for global surfaces and shared UI buttons/cards. Android wraps the session in `InterfaceThemeProvider`; core mobile components (`Screen`, `Button`, `Card`, tab bar) use the selected palette and profile settings include a palette picker.
+
 ## Mobile onboarding, 2-try-on trial, privacy preprocessing and favorites detail (2026-06-26)
 - Mobile onboarding now has 6 screens: the old screen 4 “Меньше хаоса перед покупкой” is removed, screen 3 no longer shows the redundant “товар рядом” bullet, media height is capped by viewport size, and the result slide uses `result-photo.mp4`. Static onboarding assets prefer available `.webp` replacements before PNG.
 - Trial quota is reduced from 3 to 2 free try-ons. Flyway V26 sets the database default to 2 and caps unused active trial balances above 2.

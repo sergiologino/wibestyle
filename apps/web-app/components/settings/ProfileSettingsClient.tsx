@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
-import type { BillingSubscription, UpdateProfilePayload } from "@wibestyle/shared-types";
+import type { BillingSubscription, InterfacePalette, UpdateProfilePayload } from "@wibestyle/shared-types";
 import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
 import AvatarManager from "@/components/avatar/AvatarManager";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
@@ -21,11 +21,38 @@ import {
   sectionTitleClassName,
 } from "@/components/ui/fields";
 
+const interfacePaletteOptions: Array<{
+  value: InterfacePalette;
+  label: string;
+  description: string;
+  swatches: string[];
+}> = [
+  {
+    value: "vibe",
+    label: "Vibe pink",
+    description: "Розовый и фиолетовый — текущий фирменный стиль.",
+    swatches: ["#ff1fa2", "#782cff", "#fff4fb"],
+  },
+  {
+    value: "pistachio",
+    label: "Фисташка",
+    description: "Тёплый бежевый фон и спокойный зелёный акцент.",
+    swatches: ["#7a9b56", "#b78347", "#f8f6ec"],
+  },
+  {
+    value: "graphite",
+    label: "Графит",
+    description: "Нейтральная светлая схема с сине-графитовым акцентом.",
+    swatches: ["#42677f", "#8a6f58", "#f4f7f8"],
+  },
+];
+
 export default function ProfileSettingsClient() {
   const router = useRouter();
   const { api, profile, accessToken, phone, logout, refreshProfile } = useAppSession();
   const [displayName, setDisplayName] = useState("");
   const [gender, setGender] = useState<"female" | "male" | "other" | "">("");
+  const [interfacePalette, setInterfacePalette] = useState<InterfacePalette>("vibe");
   const [heightCm, setHeightCm] = useState("");
   const [bustCm, setBustCm] = useState("");
   const [waistCm, setWaistCm] = useState("");
@@ -48,6 +75,7 @@ export default function ProfileSettingsClient() {
     if (!profile) return;
     setDisplayName(profile.displayName ?? "");
     setGender(profile.gender ?? "");
+    setInterfacePalette(profile.interfacePalette ?? "vibe");
     setHideFace(profile.privacy?.faceHidden ?? true);
     setHideBackground(profile.privacy?.backgroundHidden ?? false);
     setHeightCm(profile.anthropometry?.heightCm ? String(profile.anthropometry.heightCm) : "");
@@ -57,6 +85,14 @@ export default function ProfileSettingsClient() {
     setClothingSize(profile.anthropometry?.clothingSize ?? "M");
     setShoeSizeEu(profile.anthropometry?.shoeSizeEu ? String(profile.anthropometry.shoeSizeEu) : "");
   }, [profile]);
+
+  useEffect(() => {
+    const previousPalette = document.documentElement.dataset.interfacePalette ?? "vibe";
+    document.documentElement.dataset.interfacePalette = interfacePalette;
+    return () => {
+      document.documentElement.dataset.interfacePalette = profile?.interfacePalette ?? previousPalette;
+    };
+  }, [interfacePalette, profile?.interfacePalette]);
 
   useEffect(() => {
     if (!accessToken || !isPaidSubscription(profile)) return;
@@ -110,6 +146,7 @@ export default function ProfileSettingsClient() {
     const payload: UpdateProfilePayload = {
       displayName: displayName.trim() || undefined,
       gender: gender || undefined,
+      interfacePalette,
       heightCm: heightCm ? Number(heightCm) : undefined,
       bustCm: bustCm ? Number(bustCm) : undefined,
       waistCm: waistCm ? Number(waistCm) : undefined,
@@ -213,6 +250,39 @@ export default function ProfileSettingsClient() {
             {isPaidSubscription(profile) ? "Upgrade на Elite" : "Оформить подписку"}
           </Button>
         </Link>
+      </Card>
+
+      <Card>
+        <p className={sectionTitleClassName}>Палитра интерфейса</p>
+        <p className={`mt-1 ${mutedTextClassName}`}>
+          Выбери цветовую гамму приложения. Текущая розово-фиолетовая остается доступной.
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {interfacePaletteOptions.map((option) => {
+            const active = interfacePalette === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setInterfacePalette(option.value)}
+                className={`rounded-3xl border p-4 text-left transition ${
+                  active
+                    ? "border-[var(--pink)] bg-[var(--pink-bg)] shadow-[0_10px_28px_var(--pink-glow)]"
+                    : "border-[var(--pink-soft)] bg-white hover:border-[var(--pink)]"
+                }`}
+              >
+                <span className="flex gap-2">
+                  {option.swatches.map((swatch) => (
+                    <span key={swatch} className="h-6 w-9 rounded-full" style={{ backgroundColor: swatch }} />
+                  ))}
+                </span>
+                <span className="mt-3 block font-medium text-[var(--black)]">{option.label}</span>
+                <span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{option.description}</span>
+                {active ? <span className="mt-3 block text-xs font-medium text-[var(--pink)]">Выбрано</span> : null}
+              </button>
+            );
+          })}
+        </div>
       </Card>
 
       <Card>

@@ -23,6 +23,8 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureFlag, boolean> = {
 
 export type SubscriptionPlan = "trial" | "wibe" | "elite";
 
+export type InterfacePalette = "vibe" | "pistachio" | "graphite";
+
 export type User = {
   id: string;
   phone: string;
@@ -149,6 +151,7 @@ export type UserProfile = {
   userId: string;
   displayName?: string;
   gender?: "female" | "male" | "other";
+  interfacePalette?: InterfacePalette;
   anthropometry?: Anthropometry;
   privacy?: ProfilePrivacy;
   plan: SubscriptionPlan;
@@ -274,6 +277,7 @@ export const MAX_AVATARS_PER_USER = 3;
 export type UpdateProfilePayload = {
   displayName?: string;
   gender?: "female" | "male" | "other";
+  interfacePalette?: InterfacePalette;
   heightCm?: number;
   weightKg?: number;
   bustCm?: number;

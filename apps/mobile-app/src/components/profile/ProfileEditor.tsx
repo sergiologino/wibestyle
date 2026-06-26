@@ -14,7 +14,7 @@ import {
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { ApiError } from "@wibestyle/api-client";
-import type { BillingSubscription, UpdateProfilePayload } from "@wibestyle/shared-types";
+import type { BillingSubscription, InterfacePalette, UpdateProfilePayload } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { AvatarManager } from "@/components/avatar/AvatarManager";
 import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
@@ -23,6 +23,7 @@ import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/c
 import { TextField } from "@/components/ui/TextField";
 import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
+import { interfacePalettes, useAppTheme } from "@/theme/palettes";
 import { legalLinks } from "@/lib/legal-links";
 
 type ProfileEditorProps = {
@@ -33,9 +34,11 @@ type ProfileEditorProps = {
 export function ProfileEditor({ showBackButton = false, showQuickLinks = true }: ProfileEditorProps) {
   const router = useRouter();
   const { api, profile, phone, accessToken, logout, refreshProfile } = useSession();
+  const theme = useAppTheme();
 
   const [displayName, setDisplayName] = useState("");
   const [gender, setGender] = useState<"female" | "male" | "other" | "">("");
+  const [interfacePalette, setInterfacePalette] = useState<InterfacePalette>("vibe");
   const [heightCm, setHeightCm] = useState("");
   const [bustCm, setBustCm] = useState("");
   const [waistCm, setWaistCm] = useState("");
@@ -57,6 +60,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
     if (!profile) return;
     setDisplayName(profile.displayName ?? "");
     setGender(profile.gender ?? "");
+    setInterfacePalette(profile.interfacePalette ?? "vibe");
     setHideFace(profile.privacy?.faceHidden ?? true);
     setHideBackground(profile.privacy?.backgroundHidden ?? false);
     setHeightCm(profile.anthropometry?.heightCm ? String(profile.anthropometry.heightCm) : "");
@@ -121,6 +125,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
     const payload: UpdateProfilePayload = {
       displayName: displayName.trim() || undefined,
       gender: gender || undefined,
+      interfacePalette,
       heightCm: heightCm ? Number(heightCm) : undefined,
       bustCm: bustCm ? Number(bustCm) : undefined,
       waistCm: waistCm ? Number(waistCm) : undefined,
@@ -209,6 +214,41 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
         </Card>
 
         <Card>
+          <SectionTitle>Палитра интерфейса</SectionTitle>
+          <BodyText>Выбери цветовую гамму приложения. Можно оставить фирменную розовую или переключиться на более спокойный вариант.</BodyText>
+          <View style={styles.paletteGrid}>
+            {(Object.keys(interfacePalettes) as InterfacePalette[]).map((paletteId) => {
+              const option = interfacePalettes[paletteId];
+              const active = interfacePalette === paletteId;
+              return (
+                <Pressable
+                  key={paletteId}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Выбрать палитру ${option.label}`}
+                  onPress={() => setInterfacePalette(paletteId)}
+                  style={[
+                    styles.paletteCard,
+                    {
+                      borderColor: active ? option.colors.primary : option.colors.borderLight,
+                      backgroundColor: option.colors.primaryBg,
+                    },
+                  ]}
+                >
+                  <View style={styles.paletteSwatches}>
+                    <View style={[styles.paletteSwatch, { backgroundColor: option.colors.primary }]} />
+                    <View style={[styles.paletteSwatch, { backgroundColor: option.colors.secondary }]} />
+                    <View style={[styles.paletteSwatch, { backgroundColor: option.colors.primarySoft }]} />
+                  </View>
+                  <Text style={[styles.paletteTitle, { color: option.colors.black }]}>{option.label}</Text>
+                  <Text style={[styles.paletteDescription, { color: option.colors.muted }]}>{option.description}</Text>
+                  {active ? <Text style={[styles.paletteActive, { color: option.colors.primary }]}>Выбрано</Text> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        </Card>
+
+        <Card>
           <SectionTitle>Подписка</SectionTitle>
           {profile ? (
             <View style={styles.subscriptionMeta}>
@@ -239,7 +279,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
                     value={billingSubscription.autoRenewEnabled}
                     disabled={autoRenewSaving}
                     onValueChange={(value) => void toggleAutoRenew(value)}
-                    trackColor={{ true: colors.pink }}
+                    trackColor={{ true: theme.colors.primary }}
                   />
                 </View>
               ) : null}
@@ -265,11 +305,11 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
           </View>
           <View style={styles.toggleRow}>
             <Text style={styles.toggleLabel}>Скрыть лицо в ленте</Text>
-            <Switch value={hideFace} onValueChange={setHideFace} trackColor={{ true: colors.pink }} />
+            <Switch value={hideFace} onValueChange={setHideFace} trackColor={{ true: theme.colors.primary }} />
           </View>
           <View style={styles.toggleRow}>
             <Text style={styles.toggleLabel}>Скрыть фон</Text>
-            <Switch value={hideBackground} onValueChange={setHideBackground} trackColor={{ true: colors.pink }} />
+            <Switch value={hideBackground} onValueChange={setHideBackground} trackColor={{ true: theme.colors.primary }} />
           </View>
         </Card>
 
@@ -416,6 +456,40 @@ const styles = StyleSheet.create({
   profileActions: {
     marginTop: spacing.md,
     gap: spacing.sm,
+  },
+  paletteGrid: {
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  paletteCard: {
+    borderWidth: 2,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+  },
+  paletteSwatches: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  paletteSwatch: {
+    width: 34,
+    height: 22,
+    borderRadius: radius.pill,
+  },
+  paletteTitle: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 15,
+  },
+  paletteDescription: {
+    marginTop: 3,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  paletteActive: {
+    marginTop: spacing.sm,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 12,
   },
   subscriptionMeta: {
     gap: spacing.xs,

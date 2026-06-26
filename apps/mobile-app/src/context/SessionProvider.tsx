@@ -34,6 +34,7 @@ import {
 } from "@/lib/session-auth";
 import { createMobileUploadHelpers } from "@/lib/mobile-api";
 import { obtainExpoPushToken } from "@/lib/push-notifications";
+import { InterfaceThemeProvider } from "@/theme/palettes";
 
 type SessionContextValue = StoredSession & {
   api: WibeStyleApiClient;
@@ -302,7 +303,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
+  return (
+    <SessionContext.Provider value={value}>
+      <InterfaceThemeProvider palette={session.profile?.interfacePalette}>{children}</InterfaceThemeProvider>
+    </SessionContext.Provider>
+  );
 }
 
 export function useSession() {
