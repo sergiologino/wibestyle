@@ -49,6 +49,8 @@ export default function TryOnResultScreen() {
   const [afterVideoUrl, setAfterVideoUrl] = useState<string | null>(null);
   const [videoGenerating, setVideoGenerating] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   useEffect(() => {
     void getAccessTokenForMedia().then(setToken);
@@ -153,6 +155,22 @@ export default function TryOnResultScreen() {
     };
   }, [api, sessionId, videoStatus]);
 
+  useEffect(() => {
+    const product = result?.product;
+    if (!product?.marketplace || !product.id) {
+      setIsFavorite(false);
+      return;
+    }
+    let cancelled = false;
+    void api.listFavorites().then(({ items }) => {
+      if (cancelled) return;
+      setIsFavorite(items.some((item) => item.marketplace === product.marketplace && item.externalProductId === product.id));
+    }).catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [api, result?.product]);
+
   const imageUris = useMemo(() => {
     if (!result || !token) return { before: null, after: null };
     const base = getApiBaseUrl();
@@ -248,6 +266,38 @@ export default function TryOnResultScreen() {
     }
   }
 
+  async function toggleFavorite() {
+    const product = result?.product;
+    if (!product?.marketplace || !product.id || !sessionId) {
+      return;
+    }
+    setFavoriteLoading(true);
+    setShareError(null);
+    try {
+      if (isFavorite) {
+        await api.removeFavorite(product.marketplace, product.id);
+        setIsFavorite(false);
+      } else {
+        await api.addFavorite({
+          marketplace: product.marketplace,
+          externalProductId: product.id,
+          title: product.title,
+          brand: product.brand,
+          priceRub: product.priceRub,
+          imageUrl: product.imageUrl,
+          productUrl: product.productUrl,
+          tryOnSessionId: sessionId,
+          sizes: product.sizes,
+        });
+        setIsFavorite(true);
+      }
+    } catch (err) {
+      setShareError(err instanceof ApiError ? err.message : "Не удалось обновить избранное");
+    } finally {
+      setFavoriteLoading(false);
+    }
+  }
+
   if (loading) {
     return (
       <Screen>
@@ -318,6 +368,14 @@ export default function TryOnResultScreen() {
         {result.sizeFitMessage ? <Text style={styles.fit}>{result.sizeFitMessage}</Text> : null}
 
         <View style={styles.actions}>
+          {result.product ? (
+            <Button
+              label={isFavorite ? "В избранном" : "Понравилось"}
+              variant="secondary"
+              loading={favoriteLoading}
+              onPress={toggleFavorite}
+            />
+          ) : null}
           {videoStatus !== "ready" && videoStatus !== "generating" ? (
             <Button
               label="Создать видео"

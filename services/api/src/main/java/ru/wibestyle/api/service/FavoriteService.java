@@ -51,6 +51,7 @@ public class FavoriteService {
         favorite.setProductPriceRub(request.priceRub());
         favorite.setProductImageUrl(request.imageUrl());
         favorite.setProductUrl(request.productUrl());
+        favorite.setTryOnSessionId(request.tryOnSessionId());
         favorite.setProductSizes(serializeSizes(request.sizes()));
         favorite.setNote(request.note());
         favorite.setTags(request.tags());
@@ -81,6 +82,7 @@ public class FavoriteService {
         map.put("priceRub", favorite.getProductPriceRub());
         map.put("imageUrl", favorite.getProductImageUrl());
         map.put("productUrl", favorite.getProductUrl());
+        map.put("tryOnSessionId", favorite.getTryOnSessionId() == null ? null : favorite.getTryOnSessionId().toString());
         map.put("sizes", deserializeSizes(favorite.getProductSizes()));
         map.put("note", favorite.getNote());
         map.put("tags", favorite.getTags());

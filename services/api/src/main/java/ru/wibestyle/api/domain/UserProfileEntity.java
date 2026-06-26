@@ -26,7 +26,7 @@ public class UserProfileEntity {
     private String plan = "trial";
 
     @Column(name = "trial_generations_left", nullable = false)
-    private int trialGenerationsLeft = 3;
+    private int trialGenerationsLeft = 2;
 
     @Column(name = "height_cm")
     private Integer heightCm;

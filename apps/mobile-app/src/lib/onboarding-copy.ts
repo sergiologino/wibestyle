@@ -5,7 +5,7 @@ export type MobileOnboardingSlide = {
   eyebrow: string;
   title: string;
   text: string;
-  asset: "upload" | "flow" | "result" | "style" | "privacy" | "future" | "paywall";
+  asset: "upload" | "flow" | "result" | "privacy" | "future" | "paywall";
   tone: "coral" | "blue" | "sand" | "pink";
   bullets: string[];
   footnote?: string;
@@ -38,17 +38,8 @@ export const mobileOnboardingSlides: MobileOnboardingSlide[] = [
     text: "AI покажет, как вещь может выглядеть на твоей фигуре до заказа. Удачные варианты можно сохранить.",
     asset: "result",
     tone: "coral",
-    bullets: ["до / после", "история образов", "товар рядом"],
+    bullets: ["до / после", "история образов"],
     footnote: "AI-примерка не гарантирует точную посадку, размер и ткань.",
-  },
-  {
-    id: "style",
-    eyebrow: "Уже работает",
-    title: "Меньше хаоса перед покупкой",
-    text: "Сравнивай looks до пункта выдачи: платье, пиджак, обувь и аксессуары на одном экране.",
-    asset: "style",
-    tone: "pink",
-    bullets: ["женский стиль", "мужской стиль", "шэринг"],
   },
   {
     id: "privacy",

@@ -439,6 +439,7 @@ export type FavoriteRecord = {
   priceRub?: number;
   imageUrl?: string;
   productUrl?: string;
+  tryOnSessionId?: string;
   sizes?: string[];
   note?: string;
   tags?: string;

@@ -39,6 +39,9 @@ public class FavoriteEntity {
     @Column(name = "product_url", length = 512)
     private String productUrl;
 
+    @Column(name = "try_on_session_id")
+    private UUID tryOnSessionId;
+
     @Column(name = "product_sizes", length = 255)
     private String productSizes;
 
@@ -116,6 +119,14 @@ public class FavoriteEntity {
 
     public void setProductUrl(String productUrl) {
         this.productUrl = productUrl;
+    }
+
+    public UUID getTryOnSessionId() {
+        return tryOnSessionId;
+    }
+
+    public void setTryOnSessionId(UUID tryOnSessionId) {
+        this.tryOnSessionId = tryOnSessionId;
     }
 
     public String getProductSizes() {
