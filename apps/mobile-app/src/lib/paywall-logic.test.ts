@@ -39,7 +39,7 @@ describe("mobile paywall pricing copy", () => {
     expect(promoAppliedText(0)).toBeNull();
   });
 
-  it("keeps the free trial at three try-ons", () => {
-    expect(TRIAL_TRY_ONS).toBe(3);
+  it("keeps the free trial at two try-ons", () => {
+    expect(TRIAL_TRY_ONS).toBe(2);
   });
 });

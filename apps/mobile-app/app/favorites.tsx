@@ -1,4 +1,4 @@
-import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { FlatList, Linking, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import type { FavoriteRecord } from "@wibestyle/shared-types";
@@ -6,7 +6,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSession } from "@/context/SessionProvider";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { Screen } from "@/components/ui/Screen";
-import { BodyText, DisplayTitle, Eyebrow } from "@/components/ui/Button";
+import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
 export default function FavoritesScreen() {
@@ -14,6 +14,7 @@ export default function FavoritesScreen() {
   const { api, accessToken } = useSession();
   const [items, setItems] = useState<FavoriteRecord[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [selected, setSelected] = useState<FavoriteRecord | null>(null);
 
   const load = useCallback(async () => {
     const payload = await api.listFavorites();
@@ -46,7 +47,7 @@ export default function FavoritesScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={<BodyText style={styles.empty}>Пока пусто — нажми ♥ на результате примерки.</BodyText>}
         renderItem={({ item }) => (
-          <View style={styles.row}>
+          <Pressable style={styles.row} onPress={() => setSelected(item)}>
             {item.imageUrl ? (
               <AuthenticatedImage path={item.imageUrl} accessToken={accessToken} style={styles.thumb} contentFit="cover" />
             ) : (
@@ -66,9 +67,51 @@ export default function FavoritesScreen() {
                 </Pressable>
               ) : null}
             </View>
-          </View>
+          </Pressable>
         )}
       />
+      <Modal visible={selected != null} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSelected(null)}>
+        {selected ? (
+          <Screen>
+            <View style={styles.detailHeader}>
+              <Pressable style={styles.back} onPress={() => setSelected(null)}>
+                <Feather name="x" size={22} color={colors.black} />
+              </Pressable>
+              <Eyebrow>{selected.marketplace}</Eyebrow>
+              <DisplayTitle>{selected.title ?? "Товар"}</DisplayTitle>
+            </View>
+            <View style={styles.detailBody}>
+              {selected.imageUrl ? (
+                <AuthenticatedImage path={selected.imageUrl} accessToken={accessToken} style={styles.detailImage} contentFit="cover" />
+              ) : (
+                <View style={[styles.detailImage, styles.thumbPlaceholder]} />
+              )}
+              {selected.brand ? <BodyText>{selected.brand}</BodyText> : null}
+              {selected.priceRub ? <Text style={styles.detailPrice}>{selected.priceRub.toLocaleString("ru-RU")} ₽</Text> : null}
+              {selected.sizes?.length ? <BodyText>Размеры: {selected.sizes.join(", ")}</BodyText> : null}
+              <View style={styles.detailActions}>
+                {selected.tryOnSessionId ? (
+                  <Button
+                    label="Открыть результат примерки"
+                    onPress={() => {
+                      const target = selected.tryOnSessionId;
+                      setSelected(null);
+                      router.push(`/try-on/result/${target}`);
+                    }}
+                  />
+                ) : null}
+                {selected.productUrl ? (
+                  <Button
+                    label="Открыть на маркетплейсе"
+                    variant="secondary"
+                    onPress={() => void Linking.openURL(selected.productUrl!)}
+                  />
+                ) : null}
+              </View>
+            </View>
+          </Screen>
+        ) : null}
+      </Modal>
     </Screen>
   );
 }
@@ -104,6 +147,29 @@ const styles = StyleSheet.create({
     borderWidth: hairline,
     borderColor: colors.borderLight,
     marginBottom: spacing.sm,
+  },
+  detailHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    gap: 6,
+  },
+  detailBody: {
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  detailImage: {
+    width: "100%",
+    aspectRatio: 3 / 4,
+    borderRadius: radius.xxl,
+    backgroundColor: colors.pinkBg,
+  },
+  detailPrice: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 18,
+    color: colors.pink,
+  },
+  detailActions: {
+    gap: spacing.sm,
   },
   thumb: {
     width: 56,

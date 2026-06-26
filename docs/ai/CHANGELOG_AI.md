@@ -1,5 +1,11 @@
 # AI Changelog
 
+## 2026-06-26 (Onboarding, privacy preprocessing, trial and favorites result links)
+- Removed the mobile onboarding “Меньше хаоса перед покупкой” slide, removed the screen-3 “товар рядом” tag, made onboarding media shorter on compact phones, and switched the result slide to `result-photo.mp4` with `.webp` preferred for static slots where present.
+- Reduced trial quota to 2 free try-ons end-to-end: mobile paywall constant, API profile default and Flyway V26.
+- Added server-side avatar privacy preprocessing: original avatar photo remains unchanged, processed avatar photo blurs the detected face and/or background according to privacy flags; profile privacy changes rebuild ready avatar processed images.
+- Added `tryOnSessionId` to favorites through Flyway V27/API/shared client. Favorites saved from try-on results now open the saved result; web card actions are equal-width and Android opens a large detail sheet on tap.
+
 ## 2026-06-25 (Favorites images and marketplace CTAs)
 - Fixed blank Android favorite thumbnails by resolving relative API image paths and conditionally authorizing only protected session media.
 - Added visible direct marketplace links to Android and web favorite cards; the web `Try on` action remains available separately.
@@ -11,7 +17,7 @@
 - Confirmed clean production bundling after Gradle `clean`: 1289 modules and 59 assets; mobile tests and TypeScript pass.
 
 ## 2026-06-24 (Mobile paywall trial, quotas and savings)
-- Restored a visible free-trial path on Android before registration and for eligible profiles: users can start 3 free try-ons without entering checkout. Onboarding skip now opens paywall.
+- Restored a visible free-trial path on Android before registration and for eligible profiles: users can start 2 free try-ons without entering checkout. Onboarding skip now opens paywall.
 - Made paid quotas period-accurate end to end: Wibe 20/month or 240/year; Elite 100/month or 1200/year. Annual activation and renewal now grant the annual amount.
 - Made annual Elite the recommended default, added its video/best-AI/priority-support benefits, and replaced the black savings badge with a light treatment inside gradient annual cards.
 - Added annual savings in rubles, concrete month/year labels, promo-already-applied copy, pre-discount pricing, Flyway V25 and regression coverage.

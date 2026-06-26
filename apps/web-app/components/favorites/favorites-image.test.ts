@@ -12,12 +12,14 @@ describe("favorites product image", () => {
     expect(source).not.toContain("<img src={item.imageUrl}");
   });
 
-  it("shows a direct marketplace link in addition to try-on", () => {
+  it("shows aligned direct marketplace and result links", () => {
     const source = readFileSync(join(process.cwd(), "components", "favorites", "FavoritesClient.tsx"), "utf8");
 
     expect(source).toContain("href={item.productUrl}");
     expect(source).toContain('target="_blank"');
     expect(source).toContain("На маркетплейс ↗");
+    expect(source).toContain("/try-on/result/${item.tryOnSessionId}");
+    expect(source).toContain('className="w-full"');
     expect(source).toContain("/try-on/link?url=");
   });
 });

@@ -89,24 +89,29 @@ export default function FavoritesClient() {
                       <p className="mt-1 text-sm font-bold text-[#6d6273]">Размеры: {item.sizes.join(", ")}</p>
                     ) : null}
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex min-w-[170px] flex-col gap-2">
                     {item.productUrl ? (
                       <a
                         href={item.productUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-full border border-[#ffd1ed] bg-white px-4 py-2 text-center text-sm font-bold text-[#ff1fa2]"
+                        className="inline-flex min-h-10 w-full items-center justify-center rounded-full border border-[#ffd1ed] bg-white px-4 py-2 text-center text-sm font-bold text-[#ff1fa2]"
                       >
                         На маркетплейс ↗
                       </a>
                     ) : null}
-                    {item.productUrl ? (
-                      <Link href={`/try-on/link?url=${encodeURIComponent(item.productUrl)}`}>
-                        <Button>Примерить</Button>
+                    {item.tryOnSessionId ? (
+                      <Link href={`/try-on/result/${item.tryOnSessionId}`} className="w-full">
+                        <Button className="w-full">Примерить</Button>
+                      </Link>
+                    ) : item.productUrl ? (
+                      <Link href={`/try-on/link?url=${encodeURIComponent(item.productUrl)}`} className="w-full">
+                        <Button className="w-full">Примерить снова</Button>
                       </Link>
                     ) : null}
                     <Button
                       variant="secondary"
+                      className="w-full"
                       disabled={removingKey === key}
                       onClick={() => void removeFavorite(item)}
                     >

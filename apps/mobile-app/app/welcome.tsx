@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { Feather } from "@expo/vector-icons";
 import { Button } from "@/components/ui/Button";
 import { BrandMark } from "@/components/ui/BrandMark";
@@ -19,13 +20,13 @@ import { colors, hairline, radius, shadows, spacing } from "@/theme/tokens";
 
 const assets = {
   upload: require("../assets/onboarding/slides/upload-photo.png"),
-  flow: require("../assets/onboarding/slides/flow-photo.png"),
-  result: require("../assets/onboarding/slides/result-photo.png"),
-  style: require("../assets/onboarding/slides/style-photo.png"),
+  flow: require("../assets/onboarding/slides/flow-photo.webp"),
   privacy: require("../assets/onboarding/slides/privacy-photo.png"),
-  future: require("../assets/onboarding/slides/future-photo.png"),
-  paywall: require("../assets/onboarding/slides/paywall-photo.png"),
+  future: require("../assets/onboarding/slides/future-photo.webp"),
+  paywall: require("../assets/onboarding/slides/paywall-photo.webp"),
 } as const;
+
+const resultVideo = require("../assets/onboarding/slides/result-photo.mp4");
 
 const toneStyles = {
   coral: { backgroundColor: "#fff1ed", borderColor: "#ffb8a5", accent: "#ff5b3d" },
@@ -41,8 +42,11 @@ export default function WelcomeScreen() {
   const { height, width } = useWindowDimensions();
   const activeSlide = mobileOnboardingSlides[activeIndex];
   const tone = toneStyles[activeSlide.tone];
-  const cardHeight = useMemo(() => Math.min(height - 42, 760), [height]);
-  const imageHeight = Math.max(260, Math.min(cardHeight * 0.48, width * 1.02));
+  const cardHeight = useMemo(() => Math.min(height - 32, 760), [height]);
+  const imageHeight = useMemo(() => {
+    const compactHeight = Math.max(188, height * 0.31);
+    return Math.round(Math.min(compactHeight, width * 0.86, 310));
+  }, [height, width]);
 
   function openAuth() {
     completeOnboardingStep("welcome");
@@ -85,20 +89,7 @@ export default function WelcomeScreen() {
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <ImageBackground
-            source={assets[activeSlide.asset]}
-            resizeMode="cover"
-            style={[styles.image, { height: imageHeight }]}
-            imageStyle={styles.imageInner}
-          >
-            <View style={styles.imageLabel}>
-              <Text style={styles.imageLabelText}>виртуальная примерочная</Text>
-            </View>
-            <View style={styles.photoCaption}>
-              <Text style={styles.photoCaptionTop}>{activeSlide.eyebrow}</Text>
-              <Text style={styles.photoCaptionTitle}>{activeSlide.title}</Text>
-            </View>
-          </ImageBackground>
+          <OnboardingMedia slide={activeSlide} imageHeight={imageHeight} />
 
           <View style={styles.content}>
             <View style={styles.counterRow}>
@@ -214,6 +205,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: spacing.md,
     backgroundColor: colors.white,
+  },
+  mediaFill: {
+    ...StyleSheet.absoluteFillObject,
   },
   imageInner: {
     borderRadius: 28,
@@ -375,3 +369,53 @@ const styles = StyleSheet.create({
     color: colors.pink,
   },
 });
+
+function OnboardingMedia({ slide, imageHeight }: { slide: (typeof mobileOnboardingSlides)[number]; imageHeight: number }) {
+  const player = useVideoPlayer(slide.asset === "result" ? resultVideo : null, (instance) => {
+    instance.loop = true;
+    instance.muted = true;
+    if (slide.asset === "result") {
+      instance.play();
+    }
+  });
+
+  if (slide.asset === "result") {
+    return (
+      <View style={[styles.image, { height: imageHeight }]}>
+        <VideoView
+          player={player}
+          style={styles.mediaFill}
+          nativeControls={false}
+          contentFit="cover"
+          allowsFullscreen={false}
+        />
+        <MediaOverlay slide={slide} />
+      </View>
+    );
+  }
+
+  return (
+    <ImageBackground
+      source={assets[slide.asset]}
+      resizeMode="cover"
+      style={[styles.image, { height: imageHeight }]}
+      imageStyle={styles.imageInner}
+    >
+      <MediaOverlay slide={slide} />
+    </ImageBackground>
+  );
+}
+
+function MediaOverlay({ slide }: { slide: (typeof mobileOnboardingSlides)[number] }) {
+  return (
+    <>
+      <View style={styles.imageLabel}>
+        <Text style={styles.imageLabelText}>виртуальная примерочная</Text>
+      </View>
+      <View style={styles.photoCaption}>
+        <Text style={styles.photoCaptionTop}>{slide.eyebrow}</Text>
+        <Text style={styles.photoCaptionTitle}>{slide.title}</Text>
+      </View>
+    </>
+  );
+}

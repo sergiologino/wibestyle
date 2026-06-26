@@ -25,7 +25,7 @@ describe("onboarding-logic", () => {
     const profile = {
       userId: "u1",
       plan: "trial",
-      trialGenerationsLeft: 3,
+      trialGenerationsLeft: 2,
       activeAvatarId: "a1",
     } as UserProfile;
     const synced = syncOnboardingFromProfile(INITIAL_ONBOARDING, profile);

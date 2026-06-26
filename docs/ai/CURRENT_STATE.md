@@ -1,5 +1,11 @@
 # Current State
 
+## Mobile onboarding, 2-try-on trial, privacy preprocessing and favorites detail (2026-06-26)
+- Mobile onboarding now has 6 screens: the old screen 4 “Меньше хаоса перед покупкой” is removed, screen 3 no longer shows the redundant “товар рядом” bullet, media height is capped by viewport size, and the result slide uses `result-photo.mp4`. Static onboarding assets prefer available `.webp` replacements before PNG.
+- Trial quota is reduced from 3 to 2 free try-ons. Flyway V26 sets the database default to 2 and caps unused active trial balances above 2.
+- Avatar preprocessing now writes a real privacy-aware processed image: original photo stays intact, processed photo blurs the detected face when face hiding is enabled and blurs the background outside the central figure area when background hiding is enabled. The current `noteapp-ai-integration` contract has no dedicated OpenAI image-edit route, so this is implemented locally in the API.
+- Favorites now store `tryOnSessionId` for items saved from a try-on result. Web favorite card buttons are equal-width; “Примерить” opens the saved result when `tryOnSessionId` exists and falls back to a new try-on only for legacy favorites. Android favorites open a large detail sheet on tap with a bigger image, result action and marketplace action.
+
 ## Favorites product images and marketplace links (2026-06-25)
 - Mobile favorites resolve relative marketplace/API image paths against `EXPO_PUBLIC_API_URL`; legacy `/assets/*` favorites load from `EXPO_PUBLIC_APP_URL`. Authorization is attached only to protected API media and is never sent to public marketplace/CDN images.
 - Mobile and web favorites now expose an explicit marketplace CTA. Web keeps the existing `Try on` action and opens the product card in a new tab; Android opens it in the system browser/app.
@@ -11,10 +17,10 @@
 - Verified with 29 mobile tests, TypeScript and a clean production Metro bundle (1289 modules, 59 assets). Full APK assembly in the Codex sandbox proceeds past bundling and stops later only because the local Android SDK is outside the readable workspace.
 
 ## Mobile paywall trial and period-accurate quotas (2026-06-24)
-- Mobile paywall exposes the free trial before authentication and for trial users with remaining quota; choosing it explicitly opens registration when needed, then grants exactly 3 try-ons without checkout.
+- Mobile paywall exposes the free trial before authentication and for trial users with remaining quota; choosing it explicitly opens registration when needed, then grants exactly 2 try-ons without checkout.
 - Paid offer copy now says `per month` or `per year`. Backend grants Wibe 20/month or 240/year and Elite 100/month or 1200/year, including initial checkout and renewals.
 - Annual cards use a light gradient and show the ruble saving against twelve monthly payments. Annual Elite is the recommended default and highlights video for every try-on, the best AI providers and priority support. When a redeemed landing promo is active, the paywall explicitly says the discount is already included and shows the undiscounted price.
-- Skipping mobile onboarding opens paywall instead of registration; login remains an explicit header action. Flyway V25 changes the database trial default to 3 and caps unused active trial balances above 3.
+- Skipping mobile onboarding opens paywall instead of registration; login remains an explicit header action. Flyway V26 changes the database trial default to 2 and caps unused active trial balances above 2.
 - Verified with full API tests, 29 mobile tests, mobile TypeScript and production bundle checks.
 
 ## Android release bundle resolution with npm 11 (2026-06-24)

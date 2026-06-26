@@ -1,7 +1,10 @@
 package ru.wibestyle.api.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.wibestyle.api.domain.AvatarStatus;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.dto.UpdateProfileRequest;
 import ru.wibestyle.api.repository.AvatarRepository;
@@ -9,6 +12,7 @@ import ru.wibestyle.api.repository.UserProfileRepository;
 import ru.wibestyle.api.repository.UserRepository;
 import ru.wibestyle.api.support.AuthSupport;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,20 +21,25 @@ import java.util.UUID;
 @Service
 public class ProfileService {
 
+    private static final Logger log = LoggerFactory.getLogger(ProfileService.class);
+
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final AvatarRepository avatarRepository;
+    private final AvatarPreprocessService avatarPreprocessService;
     private final EntitlementsService entitlementsService;
 
     public ProfileService(
             UserRepository userRepository,
             UserProfileRepository userProfileRepository,
             AvatarRepository avatarRepository,
+            AvatarPreprocessService avatarPreprocessService,
             EntitlementsService entitlementsService
     ) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.avatarRepository = avatarRepository;
+        this.avatarPreprocessService = avatarPreprocessService;
         this.entitlementsService = entitlementsService;
     }
 
@@ -61,7 +70,7 @@ public class ProfileService {
     public UserProfileEntity anonymousProfile() {
         UserProfileEntity profile = new UserProfileEntity(UUID.randomUUID(), Instant.now());
         profile.setPlan("trial");
-        profile.setTrialGenerationsLeft(3);
+        profile.setTrialGenerationsLeft(2);
         return profile;
     }
 
@@ -79,10 +88,14 @@ public class ProfileService {
     @Transactional
     public Map<String, Object> updateProfile(UUID userId, UpdateProfileRequest request) {
         UserProfileEntity profile = requireProfile(userId);
+        boolean privacyChanged = privacyChanged(profile, request);
         applyProfileUpdate(profile, request);
         validateRequiredAnthropometryIfPresent(request);
         profile.setUpdatedAt(Instant.now());
         userProfileRepository.save(profile);
+        if (privacyChanged) {
+            syncAvatarPrivacy(userId, profile);
+        }
         return Map.of("profile", toProfileMap(profile));
     }
 
@@ -148,6 +161,29 @@ public class ProfileService {
         if (request.privacyFaceHidden() != null) profile.setPrivacyFaceHidden(request.privacyFaceHidden());
         if (request.privacyBackgroundHidden() != null) profile.setPrivacyBackgroundHidden(request.privacyBackgroundHidden());
         if (request.privacyFeaturesHidden() != null) profile.setPrivacyFeaturesHidden(request.privacyFeaturesHidden());
+    }
+
+    private boolean privacyChanged(UserProfileEntity profile, UpdateProfileRequest request) {
+        return (request.privacyFaceHidden() != null && request.privacyFaceHidden() != profile.isPrivacyFaceHidden())
+                || (request.privacyBackgroundHidden() != null && request.privacyBackgroundHidden() != profile.isPrivacyBackgroundHidden())
+                || (request.privacyFeaturesHidden() != null && request.privacyFeaturesHidden() != profile.isPrivacyFeaturesHidden());
+    }
+
+    private void syncAvatarPrivacy(UUID userId, UserProfileEntity profile) {
+        avatarRepository.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, AvatarStatus.DELETED).forEach(avatar -> {
+            avatar.setPrivacyFaceHidden(profile.isPrivacyFaceHidden());
+            avatar.setPrivacyBackgroundHidden(profile.isPrivacyBackgroundHidden());
+            avatar.setPrivacyFeaturesHidden(profile.isPrivacyFeaturesHidden());
+            if (avatar.getPhotoOriginalPath() != null) {
+                try {
+                    avatarPreprocessService.preprocess(avatar);
+                } catch (IOException ex) {
+                    log.warn("Failed to rebuild avatar privacy image avatarId={}: {}", avatar.getId(), ex.getMessage());
+                }
+            }
+            avatar.setUpdatedAt(Instant.now());
+            avatarRepository.save(avatar);
+        });
     }
 
     private Map<String, Object> toProfileMap(UserProfileEntity profile) {

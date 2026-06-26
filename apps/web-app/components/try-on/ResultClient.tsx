@@ -222,6 +222,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
           priceRub: product.priceRub,
           imageUrl: product.imageUrl,
           productUrl: product.productUrl,
+          tryOnSessionId: sessionId,
           sizes: product.sizes,
         });
         setIsFavorite(true);
