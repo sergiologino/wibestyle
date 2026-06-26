@@ -242,6 +242,22 @@ a.category-card {
 }
 @media (max-width: 860px) {
   .examples-mosaic { grid-template-columns: 1fr; }
+  .hero-person-card img,
+  .hero-look-card img,
+  .example-look-card img,
+  .example-look-card__media,
+  .before-after-card__side img,
+  .before-after-card__video,
+  .style-card img {
+    object-fit: contain;
+    object-position: center;
+    background: #f7f1f6;
+  }
+  .example-look-card:hover img,
+  .example-look-card:hover .example-look-card__media,
+  .style-card:hover img {
+    transform: none;
+  }
   .lead-form-full .form-row { grid-template-columns: 1fr; }
   .app-redirect-cta--compact,
   .app-redirect-cta {

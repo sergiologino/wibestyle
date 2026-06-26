@@ -11,6 +11,8 @@ describe("web interface palettes", () => {
     expect(settings).toContain('value: "pistachio"');
     expect(settings).toContain('value: "graphite"');
     expect(settings).toContain("interfacePalette,");
+    expect(settings).toContain("saveInterfacePalette(option.value)");
+    expect(settings).toContain("api.updateProfile({ interfacePalette: nextPalette })");
   });
 
   it("maps profile palette to CSS variables", () => {

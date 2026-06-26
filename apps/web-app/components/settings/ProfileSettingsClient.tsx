@@ -70,6 +70,7 @@ export default function ProfileSettingsClient() {
   const [error, setError] = useState<string | null>(null);
   const [billingSubscription, setBillingSubscription] = useState<BillingSubscription | null>(null);
   const [autoRenewSaving, setAutoRenewSaving] = useState(false);
+  const [paletteSaving, setPaletteSaving] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -165,6 +166,25 @@ export default function ProfileSettingsClient() {
       setError(err instanceof ApiError ? err.message : "Не удалось сохранить профиль");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveInterfacePalette(nextPalette: InterfacePalette) {
+    if (paletteSaving || nextPalette === interfacePalette) return;
+    const previousPalette = interfacePalette;
+    setPaletteSaving(true);
+    setError(null);
+    setMessage(null);
+    setInterfacePalette(nextPalette);
+    try {
+      await api.updateProfile({ interfacePalette: nextPalette });
+      await refreshProfile();
+      setMessage("Палитра сохранена");
+    } catch (err) {
+      setInterfacePalette(profile?.interfacePalette ?? previousPalette);
+      setError(err instanceof ApiError ? err.message : "Не удалось сохранить палитру");
+    } finally {
+      setPaletteSaving(false);
     }
   }
 
@@ -264,12 +284,13 @@ export default function ProfileSettingsClient() {
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setInterfacePalette(option.value)}
+                disabled={paletteSaving}
+                onClick={() => void saveInterfacePalette(option.value)}
                 className={`rounded-3xl border p-4 text-left transition ${
                   active
                     ? "border-[var(--pink)] bg-[var(--pink-bg)] shadow-[0_10px_28px_var(--pink-glow)]"
                     : "border-[var(--pink-soft)] bg-white hover:border-[var(--pink)]"
-                }`}
+                } disabled:cursor-wait disabled:opacity-70`}
               >
                 <span className="flex gap-2">
                   {option.swatches.map((swatch) => (
@@ -278,7 +299,11 @@ export default function ProfileSettingsClient() {
                 </span>
                 <span className="mt-3 block font-medium text-[var(--black)]">{option.label}</span>
                 <span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{option.description}</span>
-                {active ? <span className="mt-3 block text-xs font-medium text-[var(--pink)]">Выбрано</span> : null}
+                {active ? (
+                  <span className="mt-3 block text-xs font-medium text-[var(--pink)]">
+                    {paletteSaving ? "Сохраняем..." : "Выбрано"}
+                  </span>
+                ) : null}
               </button>
             );
           })}

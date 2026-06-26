@@ -15,5 +15,7 @@ describe("mobile interface palettes", () => {
     const source = readFileSync(join(process.cwd(), "src", "components", "profile", "ProfileEditor.tsx"), "utf8");
     expect(source).toContain("interfacePalette,");
     expect(source).toContain("setInterfacePalette(profile.interfacePalette ?? \"vibe\")");
+    expect(source).toContain("saveInterfacePalette(paletteId)");
+    expect(source).toContain("api.updateProfile({ interfacePalette: nextPalette })");
   });
 });

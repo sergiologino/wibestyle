@@ -55,6 +55,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
   const [error, setError] = useState<string | null>(null);
   const [billingSubscription, setBillingSubscription] = useState<BillingSubscription | null>(null);
   const [autoRenewSaving, setAutoRenewSaving] = useState(false);
+  const [paletteSaving, setPaletteSaving] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -147,6 +148,25 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
     }
   }
 
+  async function saveInterfacePalette(nextPalette: InterfacePalette) {
+    if (paletteSaving || nextPalette === interfacePalette) return;
+    const previousPalette = interfacePalette;
+    setPaletteSaving(true);
+    setError(null);
+    setMessage(null);
+    setInterfacePalette(nextPalette);
+    try {
+      await api.updateProfile({ interfacePalette: nextPalette });
+      await refreshProfile();
+      setMessage("Палитра сохранена");
+    } catch (err) {
+      setInterfacePalette(profile?.interfacePalette ?? previousPalette);
+      setError(err instanceof ApiError ? err.message : "Не удалось сохранить палитру");
+    } finally {
+      setPaletteSaving(false);
+    }
+  }
+
   async function deleteAccount() {
     if (confirmDelete !== "УДАЛИТЬ") {
       setError('Введите слово «УДАЛИТЬ» для подтверждения');
@@ -225,12 +245,14 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
                   key={paletteId}
                   accessibilityRole="button"
                   accessibilityLabel={`Выбрать палитру ${option.label}`}
-                  onPress={() => setInterfacePalette(paletteId)}
+                  disabled={paletteSaving}
+                  onPress={() => void saveInterfacePalette(paletteId)}
                   style={[
                     styles.paletteCard,
                     {
                       borderColor: active ? option.colors.primary : option.colors.borderLight,
                       backgroundColor: option.colors.primaryBg,
+                      opacity: paletteSaving ? 0.7 : 1,
                     },
                   ]}
                 >
@@ -241,7 +263,11 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
                   </View>
                   <Text style={[styles.paletteTitle, { color: option.colors.black }]}>{option.label}</Text>
                   <Text style={[styles.paletteDescription, { color: option.colors.muted }]}>{option.description}</Text>
-                  {active ? <Text style={[styles.paletteActive, { color: option.colors.primary }]}>Выбрано</Text> : null}
+                  {active ? (
+                    <Text style={[styles.paletteActive, { color: option.colors.primary }]}>
+                      {paletteSaving ? "Сохраняем..." : "Выбрано"}
+                    </Text>
+                  ) : null}
                 </Pressable>
               );
             })}

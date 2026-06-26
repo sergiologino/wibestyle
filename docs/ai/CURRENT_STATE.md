@@ -1,5 +1,13 @@
 # Current State
 
+## Landing mobile media framing (2026-06-27)
+- On screens up to 860 px, landing model photos and videos are fitted with `object-fit: contain` and centered inside their existing containers.
+- Hero, examples, before/after and style cards keep their current heights, so the fix does not add vertical scrolling.
+
+## Interface palette persistence fix (2026-06-26)
+- Palette selection in web and mobile profile settings is now an immediate persisted action.
+- After `PUT /api/v1/profile`, clients refresh the session profile so navigation no longer restores the default `vibe` palette.
+
 ## Onboarding registration-first trial and interface palettes (2026-06-26)
 - Onboarding trial path is now registration-first: onboarding CTA/skip routes to auth with `next=/paywall`, then the paywall exposes the free trial. Web `resolvePostAuthRoute` and mobile `resolvePostAuthRoute` explicitly allow `/paywall` as the post-auth destination for this flow.
 - Profiles now persist `interfacePalette` (`vibe`, `pistachio`, `graphite`) through API/shared types/Flyway V28. `vibe` keeps the current pink/violet look, `pistachio` is beige-pistachio, and `graphite` is a calm blue-graphite alternative.

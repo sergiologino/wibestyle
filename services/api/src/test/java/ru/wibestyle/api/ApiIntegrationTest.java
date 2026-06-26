@@ -336,6 +336,11 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.profile.anthropometry.heightCm").value(170))
                 .andExpect(jsonPath("$.profile.interfacePalette").value("pistachio"));
 
+        mockMvc.perform(get("/api/v1/me")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.interfacePalette").value("pistachio"));
+
         String avatarBody = mockMvc.perform(post("/api/v1/avatars")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)

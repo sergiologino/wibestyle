@@ -1,5 +1,15 @@
 # AI Changelog
 
+## 2026-06-27 (Landing mobile media framing)
+- Mobile landing model photos and videos now use contained vertical framing instead of cropping with `cover`.
+- Existing card and section heights are unchanged, avoiding additional page scrolling; mobile hover scaling is disabled so the full model remains visible.
+- Added a landing regression test for mobile photo/video fitting.
+
+## 2026-06-26 (Interface palette persistence)
+- Web and mobile palette selectors now persist immediately on selection instead of waiting for the general profile form save action.
+- Clients refresh the session profile after persistence so the selected palette remains active across navigation.
+- API integration coverage verifies that a subsequent `/api/v1/me` request returns the saved `interfacePalette`.
+
 ## 2026-06-26 (Registration-first trial and interface palettes)
 - Changed onboarding trial path to `onboarding → registration/auth → paywall → trial`; `/paywall` is now an allowed explicit post-auth `next` target for this flow.
 - Added persisted profile field `interfacePalette` with Flyway V28 and shared type support. Available palettes: `vibe`, `pistachio`, `graphite`.
