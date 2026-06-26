@@ -19,6 +19,7 @@ describe("mobile welcome UI", () => {
   });
 
   it("prefers webp slide assets where available", () => {
+    expect(source).toContain("upload-photo.webp");
     expect(source).toContain("flow-photo.webp");
     expect(source).toContain("future-photo.webp");
     expect(source).toContain("paywall-photo.webp");
