@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-06-27 (Mobile onboarding media framing)
+- Onboarding photos and the result video now use contained framing, so the model remains visible from head to toe.
+- Existing viewport-aware media heights are unchanged, preserving the compact no-extra-scroll layout.
+- Added a regression test covering both image and video fit modes.
+
 ## 2026-06-27 (Landing mobile media framing)
 - Mobile landing model photos and videos now use contained vertical framing instead of cropping with `cover`.
 - Existing card and section heights are unchanged, avoiding additional page scrolling; mobile hover scaling is disabled so the full model remains visible.

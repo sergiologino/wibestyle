@@ -1,5 +1,9 @@
 # Current State
 
+## Mobile onboarding media framing (2026-06-27)
+- Static onboarding photos and `result-photo.mp4` use contained, centered framing instead of `cover`.
+- The existing responsive media-height calculation remains unchanged, so full models are visible without increasing screen height or adding scroll.
+
 ## Landing mobile media framing (2026-06-27)
 - On screens up to 860 px, landing model photos and videos are fitted with `object-fit: contain` and centered inside their existing containers.
 - Hero, examples, before/after and style cards keep their current heights, so the fix does not add vertical scrolling.

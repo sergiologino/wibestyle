@@ -386,7 +386,7 @@ function OnboardingMedia({ slide, imageHeight }: { slide: (typeof mobileOnboardi
           player={player}
           style={styles.mediaFill}
           nativeControls={false}
-          contentFit="cover"
+          contentFit="contain"
           allowsFullscreen={false}
         />
         <MediaOverlay slide={slide} />
@@ -397,7 +397,7 @@ function OnboardingMedia({ slide, imageHeight }: { slide: (typeof mobileOnboardi
   return (
     <ImageBackground
       source={assets[slide.asset]}
-      resizeMode="cover"
+      resizeMode="contain"
       style={[styles.image, { height: imageHeight }]}
       imageStyle={styles.imageInner}
     >

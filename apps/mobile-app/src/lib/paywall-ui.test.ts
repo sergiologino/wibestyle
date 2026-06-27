@@ -20,10 +20,10 @@ describe("mobile paywall UI contract", () => {
     expect(paywall).toContain("Приоритетная поддержка");
   });
 
-  it("uses a light savings treatment and sends onboarding skip to paywall", () => {
+  it("uses a light savings treatment and sends onboarding skip through auth to paywall", () => {
     expect(paywall).toContain('backgroundColor: "rgba(255,255,255,0.78)"');
     expect(welcome).toContain("function skipOnboarding()");
-    expect(welcome).toContain('router.replace("/paywall")');
+    expect(welcome).toContain('router.replace("/auth?next=/paywall")');
     expect(welcome).toContain("activeIndex === 0 ? skipOnboarding()");
   });
 });
