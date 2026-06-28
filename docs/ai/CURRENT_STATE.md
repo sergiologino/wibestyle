@@ -1,5 +1,10 @@
 # Current State
 
+## Admin referral conversion report (2026-06-28)
+- Admin section `/referrals` reports the full referral funnel: sender, invited user, registration, first completed subscription checkout and bonus award.
+- Summary counters show invitations, purchases, successful rewards and total generations awarded. A paid referral without a reward shows the inactive-sender-subscription reason.
+- API: `GET /api/v1/admin/referrals` protected by `X-Admin-Key`.
+
 ## Paid-subscriber referral program (2026-06-28)
 - Active Wibe/Elite subscribers receive a personal `/welcome?ref=CODE` link on dedicated referral screens in web and Android.
 - OTP and OAuth registration bind a new user to the inviter. The friend's first successful paid checkout awards 3 bonus try-ons for monthly billing or 15 for annual billing.

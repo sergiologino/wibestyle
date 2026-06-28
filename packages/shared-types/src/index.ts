@@ -181,6 +181,34 @@ export type ReferralOverview = {
   rewards: ReferralReward[];
 };
 
+export type AdminReferralRecord = {
+  senderUserId: string;
+  sender: string;
+  referredUserId: string;
+  referred: string;
+  referralCode: string;
+  referredAt: string;
+  purchased: boolean;
+  purchasePlan?: Exclude<SubscriptionPlan, "trial">;
+  purchasePeriod?: BillingPeriod;
+  purchaseAmountRub?: number;
+  purchasedAt?: string;
+  rewarded: boolean;
+  rewardGenerations?: number;
+  rewardedAt?: string;
+  rewardSkippedReason?: "REFERRER_SUBSCRIPTION_INACTIVE_AT_PURCHASE";
+};
+
+export type AdminReferralReport = {
+  summary: {
+    invites: number;
+    purchases: number;
+    rewarded: number;
+    generationsAwarded: number;
+  };
+  items: AdminReferralRecord[];
+};
+
 export type UserEntitlements = {
   singleTryOn: boolean;
   multiItemTryOn: boolean;

@@ -1,5 +1,12 @@
 export const adminSections = [
   {
+    id: "referrals",
+    title: "Реферальная программа",
+    description: "Отправители ссылок, регистрации, покупки подписок и начисления дополнительных примерок.",
+    status: "Ready",
+    href: "/referrals",
+  },
+  {
     id: "promo",
     title: "Промокоды",
     description: "Создание кодов, лимиты регистраций, ссылки для VK и отмена.",

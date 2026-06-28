@@ -9,6 +9,7 @@ import ru.wibestyle.api.domain.UserEntity;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.repository.ReferralAccountRepository;
 import ru.wibestyle.api.repository.ReferralRewardRepository;
+import ru.wibestyle.api.repository.BillingCheckoutRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
 import ru.wibestyle.api.repository.UserRepository;
 
@@ -27,15 +28,17 @@ public class ReferralService {
     private final UserProfileRepository profileRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final BillingCheckoutRepository checkoutRepository;
 
     public ReferralService(ReferralAccountRepository accountRepository, ReferralRewardRepository rewardRepository,
                            UserProfileRepository profileRepository, UserRepository userRepository,
-                           NotificationService notificationService) {
+                           NotificationService notificationService, BillingCheckoutRepository checkoutRepository) {
         this.accountRepository = accountRepository;
         this.rewardRepository = rewardRepository;
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.checkoutRepository = checkoutRepository;
     }
 
     @Transactional
@@ -100,6 +103,58 @@ public class ReferralService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Object> adminOverview() {
+        List<Map<String, Object>> items = accountRepository
+                .findAllByReferredByUserIdIsNotNullOrderByReferredAtDesc()
+                .stream()
+                .map(invitee -> {
+                    UserEntity sender = userRepository.findById(invitee.getReferredByUserId()).orElse(null);
+                    UserEntity friend = userRepository.findById(invitee.getUserId()).orElse(null);
+                    String code = accountRepository.findById(invitee.getReferredByUserId())
+                            .map(ReferralAccountEntity::getReferralCode).orElse("—");
+                    BillingCheckoutEntity purchase = checkoutRepository
+                            .findFirstByUserIdAndCheckoutTypeAndStatusOrderByCompletedAtAsc(
+                                    invitee.getUserId(), "initial", "completed")
+                            .orElse(null);
+                    ReferralRewardEntity reward = rewardRepository.findByReferredUserId(invitee.getUserId()).orElse(null);
+                    Map<String, Object> row = new java.util.LinkedHashMap<>();
+                    row.put("senderUserId", invitee.getReferredByUserId().toString());
+                    row.put("sender", adminUserLabel(sender));
+                    row.put("referredUserId", invitee.getUserId().toString());
+                    row.put("referred", adminUserLabel(friend));
+                    row.put("referralCode", code);
+                    row.put("referredAt", invitee.getReferredAt().toString());
+                    row.put("purchased", purchase != null);
+                    row.put("rewarded", reward != null);
+                    if (purchase != null) {
+                        row.put("purchasePlan", purchase.getPlan());
+                        row.put("purchasePeriod", purchase.getBillingPeriod());
+                        row.put("purchaseAmountRub", purchase.getPriceRub());
+                        row.put("purchasedAt", purchase.getCompletedAt().toString());
+                    }
+                    if (reward != null) {
+                        row.put("rewardGenerations", reward.getRewardGenerations());
+                        row.put("rewardedAt", reward.getRewardedAt().toString());
+                    } else if (purchase != null) {
+                        row.put("rewardSkippedReason", "REFERRER_SUBSCRIPTION_INACTIVE_AT_PURCHASE");
+                    }
+                    return row;
+                }).toList();
+        long purchases = items.stream().filter(item -> Boolean.TRUE.equals(item.get("purchased"))).count();
+        long rewarded = items.stream().filter(item -> Boolean.TRUE.equals(item.get("rewarded"))).count();
+        int generations = items.stream().mapToInt(item -> (Integer) item.getOrDefault("rewardGenerations", 0)).sum();
+        return Map.of(
+                "summary", Map.of(
+                        "invites", items.size(),
+                        "purchases", purchases,
+                        "rewarded", rewarded,
+                        "generationsAwarded", generations
+                ),
+                "items", items
+        );
+    }
+
     private ReferralAccountEntity ensureAccount(UUID userId) {
         return accountRepository.findById(userId).orElseGet(() ->
                 accountRepository.save(new ReferralAccountEntity(userId, generateUniqueCode(), Instant.now())));
@@ -131,5 +186,13 @@ public class ReferralService {
             return at > 0 ? user.getEmail().substring(0, 1) + "•••" + user.getEmail().substring(at) : "Приглашённый друг";
         }
         return "Приглашённый друг";
+    }
+
+    private String adminUserLabel(UserEntity user) {
+        if (user == null) return "Удалённый пользователь";
+        if (user.getPhone() != null) return user.getPhone();
+        if (user.getEmail() != null) return user.getEmail();
+        if (user.getLogin() != null) return user.getLogin();
+        return user.getId().toString();
     }
 }

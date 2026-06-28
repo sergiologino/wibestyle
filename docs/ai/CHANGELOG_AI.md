@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-06-28 (Admin referral conversion report)
+- Added `/api/v1/admin/referrals` with referral invitation, first successful subscription purchase and bonus-award status.
+- Admin `/referrals` shows inviter/invitee identities, referral code, registration and payment timestamps, tariff/period/amount, awarded generations and aggregate totals.
+- Purchases without a reward are explicitly marked as ineligible because the inviter had no active subscription at payment time.
+
 ## 2026-06-28 (Paid-subscriber referral program)
 - Added personal referral links for active Wibe/Elite subscribers and referral capture through OTP and OAuth registration.
 - A friend's first successful purchase awards 3 bonus try-ons for monthly billing or 15 for annual billing; renewals, upgrades and duplicate webhooks cannot award twice.

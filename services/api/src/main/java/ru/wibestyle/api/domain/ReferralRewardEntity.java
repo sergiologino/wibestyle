@@ -43,6 +43,9 @@ public class ReferralRewardEntity {
     }
 
     public UUID getId() { return id; }
+    public UUID getReferrerUserId() { return referrerUserId; }
+    public UUID getReferredUserId() { return referredUserId; }
+    public UUID getCheckoutId() { return checkoutId; }
     public String getBillingPeriod() { return billingPeriod; }
     public int getRewardGenerations() { return rewardGenerations; }
     public String getFriendLabel() { return friendLabel; }

@@ -18,6 +18,8 @@ public interface BillingCheckoutRepository extends JpaRepository<BillingCheckout
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<BillingCheckoutEntity> findByRenewalKey(String renewalKey);
+    Optional<BillingCheckoutEntity> findFirstByUserIdAndCheckoutTypeAndStatusOrderByCompletedAtAsc(
+            UUID userId, String checkoutType, String status);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select checkout from BillingCheckoutEntity checkout where checkout.id = :id")

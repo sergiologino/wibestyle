@@ -6,6 +6,12 @@ describe("adminSections", () => {
     expect(adminSections.some((section) => section.id === "leads")).toBe(true);
   });
 
+  it("links referral conversion report", () => {
+    const referrals = adminSections.find((section) => section.id === "referrals");
+    expect(referrals?.href).toBe("/referrals");
+    expect(referrals?.status).toBe("Ready");
+  });
+
   it("includes gallery moderation module", () => {
     const gallery = adminSections.find((section) => section.id === "gallery");
     expect(gallery?.href).toBe("/gallery");

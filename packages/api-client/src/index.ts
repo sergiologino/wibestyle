@@ -28,6 +28,7 @@ import type {
   BillingSubscription,
   UserNotification,
   ReferralOverview,
+  AdminReferralReport,
 } from "@wibestyle/shared-types";
 import { extractMarketplaceUrl } from "@wibestyle/shared-types";
 
@@ -494,6 +495,12 @@ export class WibeStyleApiClient {
 
   getReferrals() {
     return this.request<ReferralOverview>("/api/v1/referrals");
+  }
+
+  listAdminReferrals(adminKey: string) {
+    return this.request<AdminReferralReport>("/api/v1/admin/referrals", {
+      headers: { "X-Admin-Key": adminKey },
+    });
   }
 
   getNotifications() {
