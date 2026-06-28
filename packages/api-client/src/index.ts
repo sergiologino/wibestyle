@@ -27,6 +27,7 @@ import type {
   UserProfile,
   BillingSubscription,
   UserNotification,
+  ReferralOverview,
 } from "@wibestyle/shared-types";
 import { extractMarketplaceUrl } from "@wibestyle/shared-types";
 
@@ -121,7 +122,7 @@ export class WibeStyleApiClient {
     });
   }
 
-  verifyOtp(requestId: string, code: string, promoCode?: string) {
+  verifyOtp(requestId: string, code: string, promoCode?: string, referralCode?: string) {
     return this.request<
       AuthTokens & {
         user: { id: string; phone?: string; email?: string; login?: string };
@@ -131,7 +132,7 @@ export class WibeStyleApiClient {
       }
     >("/api/v1/auth/otp/verify", {
       method: "POST",
-      body: JSON.stringify({ requestId, code, promoCode: promoCode || undefined }),
+      body: JSON.stringify({ requestId, code, promoCode: promoCode || undefined, referralCode: referralCode || undefined }),
     });
   }
 
@@ -164,10 +165,13 @@ export class WibeStyleApiClient {
     return this.request<{ yandex: { enabled: boolean }; google: { enabled: boolean } }>("/api/v1/auth/oauth/providers");
   }
 
-  startOAuth(provider: "yandex" | "google", options?: { returnUrl?: string }) {
+  startOAuth(provider: "yandex" | "google", options?: { returnUrl?: string; referralCode?: string }) {
     const params = new URLSearchParams();
     if (options?.returnUrl) {
       params.set("returnUrl", options.returnUrl);
+    }
+    if (options?.referralCode) {
+      params.set("referralCode", options.referralCode);
     }
     const query = params.toString();
     return this.request<{ provider: string; authorizationUrl: string; state: string }>(
@@ -486,6 +490,10 @@ export class WibeStyleApiClient {
       method: "PATCH",
       body: JSON.stringify({ enabled }),
     });
+  }
+
+  getReferrals() {
+    return this.request<ReferralOverview>("/api/v1/referrals");
   }
 
   getNotifications() {

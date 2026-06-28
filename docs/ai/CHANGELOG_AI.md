@@ -1,5 +1,18 @@
 # AI Changelog
 
+## 2026-06-28 (Paid-subscriber referral program)
+- Added personal referral links for active Wibe/Elite subscribers and referral capture through OTP and OAuth registration.
+- A friend's first successful purchase awards 3 bonus try-ons for monthly billing or 15 for annual billing; renewals, upgrades and duplicate webhooks cannot award twice.
+- Bonus quota is separate from period quota, survives renewals and is usable while the paid subscription is active.
+- Added dedicated referral/history screens linked from web and mobile profiles, masked friend identity, reward time, sharing controls and reward notifications.
+- Added the referral pitch as the final seventh onboarding screen on web/mobile, Flyway V29, API/shared-client contracts and tests.
+
+## 2026-06-27 (Web onboarding parity)
+- Web onboarding now matches the six-screen mobile flow: photo, marketplace link, result, privacy, future stylist and trial.
+- Removed the obsolete web-only chaos/style slide and redundant result tag copy; static assets prefer WebP and the result screen plays `result-photo.mp4`.
+- Web photos and video use contained framing inside the same compact viewport-aware height, and skip/trial follows registration/auth → paywall.
+- Added copy, media, routing and responsive framing regression tests.
+
 ## 2026-06-27 (Mobile onboarding media framing)
 - Onboarding photos and the result video now use contained framing, so the model remains visible from head to toe.
 - Existing viewport-aware media heights are unchanged, preserving the compact no-extra-scroll layout.

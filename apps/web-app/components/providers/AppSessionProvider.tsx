@@ -229,6 +229,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
       && prev.profile?.interfacePalette === synced.profile?.interfacePalette
       && prev.profile?.trialGenerationsLeft === synced.profile?.trialGenerationsLeft
       && prev.profile?.planGenerationsLeft === synced.profile?.planGenerationsLeft
+      && prev.profile?.bonusGenerationsLeft === synced.profile?.bonusGenerationsLeft
       && prev.onboarding.step === synced.onboarding.step
       && prev.onboarding.authComplete === synced.onboarding.authComplete
       && prev.onboarding.avatarComplete === synced.onboarding.avatarComplete

@@ -15,7 +15,7 @@ import { colors, spacing } from "@/theme/tokens";
 
 export default function AuthScreen() {
   const router = useRouter();
-  const searchParams = useLocalSearchParams<{ next?: string }>();
+  const searchParams = useLocalSearchParams<{ next?: string; ref?: string }>();
   const { api, setAuth } = useSession();
   const [phone, setPhone] = useState("+7 ");
   const [requestId, setRequestId] = useState<string | null>(null);
@@ -45,7 +45,12 @@ export default function AuthScreen() {
     setError(null);
     setLoading(true);
     try {
-      const auth = await api.verifyOtp(requestId, code);
+      const auth = await api.verifyOtp(
+        requestId,
+        code,
+        undefined,
+        typeof searchParams.ref === "string" ? searchParams.ref : undefined,
+      );
       const meClient = new WibeStyleApiClient({
         baseUrl: getApiBaseUrl(),
         getAccessToken: () => auth.accessToken,
@@ -118,7 +123,7 @@ export default function AuthScreen() {
             )}
           </View>
 
-          <OAuthButtons />
+          <OAuthButtons referralCode={typeof searchParams.ref === "string" ? searchParams.ref : undefined} />
 
           <Text style={styles.legalText}>
             Продолжая, вы принимаете{" "}

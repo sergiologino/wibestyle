@@ -29,6 +29,7 @@ class AuthServiceSmsFailureTest {
                 mock(UserRepository.class),
                 mock(ProfileService.class),
                 mock(PromoService.class),
+                mock(ReferralService.class),
                 mock(JwtService.class),
                 mock(RefreshTokenStore.class),
                 new AuthProperties(),

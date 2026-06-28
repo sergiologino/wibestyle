@@ -73,6 +73,9 @@ public class UserProfileEntity {
     @Column(name = "plan_generations_left", nullable = false)
     private int planGenerationsLeft;
 
+    @Column(name = "bonus_generations_left", nullable = false)
+    private int bonusGenerationsLeft;
+
     @Column(name = "billing_period", length = 16)
     private String billingPeriod;
 
@@ -247,6 +250,14 @@ public class UserProfileEntity {
 
     public void setPlanGenerationsLeft(int planGenerationsLeft) {
         this.planGenerationsLeft = planGenerationsLeft;
+    }
+
+    public int getBonusGenerationsLeft() {
+        return bonusGenerationsLeft;
+    }
+
+    public void setBonusGenerationsLeft(int bonusGenerationsLeft) {
+        this.bonusGenerationsLeft = bonusGenerationsLeft;
     }
 
     public String getBillingPeriod() {

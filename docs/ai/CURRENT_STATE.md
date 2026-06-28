@@ -1,5 +1,17 @@
 # Current State
 
+## Paid-subscriber referral program (2026-06-28)
+- Active Wibe/Elite subscribers receive a personal `/welcome?ref=CODE` link on dedicated referral screens in web and Android.
+- OTP and OAuth registration bind a new user to the inviter. The friend's first successful paid checkout awards 3 bonus try-ons for monthly billing or 15 for annual billing.
+- Rewards are unique by invited user and checkout; webhook retries, renewals and upgrades cannot duplicate them. Bonus quota is separate from plan quota and survives renewal.
+- Profiles link to referral details instead of embedding history. History shows masked friend identity, billing period, reward amount and timestamp.
+- Web/mobile onboarding now ends with a seventh referral screen and continues through registration to paywall. Flyway: `V29__referral_system.sql`.
+
+## Web onboarding parity (2026-06-27)
+- `/welcome` uses the same six screens, copy order and media as Android onboarding; the obsolete web-only style/chaos slide is removed.
+- Static onboarding images prefer WebP where available, the result slide uses `result-photo.mp4`, and every medium is fitted with `object-contain`.
+- Mobile-browser media height remains `clamp(188px, 31dvh, 310px)`; skip and trial continue through `/auth?next=/paywall` with `FIRST100`.
+
 ## Mobile onboarding media framing (2026-06-27)
 - Static onboarding photos and `result-photo.mp4` use contained, centered framing instead of `cover`.
 - The existing responsive media-height calculation remains unchanged, so full models are visible without increasing screen height or adding scroll.

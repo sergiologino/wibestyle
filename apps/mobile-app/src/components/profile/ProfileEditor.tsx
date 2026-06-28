@@ -286,6 +286,9 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
               ) : (
                 <BodyText>Активная подписка</BodyText>
               )}
+              {profile.bonusGenerationsLeft ? (
+                <BodyText>Дополнительных примерок: {profile.bonusGenerationsLeft}</BodyText>
+              ) : null}
               {profile.subscriptionExpiresAt ? (
                 <BodyText>
                   Действует до: {new Date(profile.subscriptionExpiresAt).toLocaleDateString("ru-RU")}
@@ -312,6 +315,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
             </View>
           ) : null}
           <Button label="Тарифы и подписка" variant="secondary" onPress={() => router.push("/paywall")} />
+          <Button label="Реферальная программа" variant="ghost" onPress={() => router.push("/referrals" as never)} />
         </Card>
 
         <Card>

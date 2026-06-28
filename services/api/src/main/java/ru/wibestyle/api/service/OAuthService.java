@@ -29,6 +29,7 @@ public class OAuthService {
     private final TokenIssuanceService tokenIssuanceService;
     private final PlatformSettingsService platformSettingsService;
     private final GeoIpService geoIpService;
+    private final ReferralService referralService;
     private final Map<String, OAuthState> states = new ConcurrentHashMap<>();
 
     public OAuthService(
@@ -38,7 +39,8 @@ public class OAuthService {
             ProfileService profileService,
             TokenIssuanceService tokenIssuanceService,
             PlatformSettingsService platformSettingsService,
-            GeoIpService geoIpService
+            GeoIpService geoIpService,
+            ReferralService referralService
     ) {
         this.oauthProperties = oauthProperties;
         this.userRepository = userRepository;
@@ -47,6 +49,7 @@ public class OAuthService {
         this.tokenIssuanceService = tokenIssuanceService;
         this.platformSettingsService = platformSettingsService;
         this.geoIpService = geoIpService;
+        this.referralService = referralService;
     }
 
     public Map<String, Object> providerStatus(HttpServletRequest request) {
@@ -57,6 +60,10 @@ public class OAuthService {
     }
 
     public Map<String, Object> start(String provider, String returnUrl, HttpServletRequest request) {
+        return start(provider, returnUrl, null, request);
+    }
+
+    public Map<String, Object> start(String provider, String returnUrl, String referralCode, HttpServletRequest request) {
         if ("google".equalsIgnoreCase(provider) && !isGoogleVisible(request)) {
             throw new IllegalArgumentException("OAUTH_PROVIDER_DISABLED");
         }
@@ -66,7 +73,7 @@ public class OAuthService {
         }
         String state = UUID.randomUUID().toString();
         String redirectTarget = normalizeReturnUrl(returnUrl);
-        states.put(state, new OAuthState(Instant.now().plusSeconds(600), redirectTarget));
+        states.put(state, new OAuthState(Instant.now().plusSeconds(600), redirectTarget, referralCode));
         String redirectUri = callbackUri(provider);
         String authorizationUrl = switch (provider.toLowerCase()) {
             case "yandex" -> UriComponentsBuilder
@@ -119,6 +126,7 @@ public class OAuthService {
                     Instant.now()
             ));
             profileService.ensureProfile(user.getId());
+            referralService.captureNewUser(user.getId(), oauthState.referralCode());
             userOAuthIdentityRepository.save(new UserOAuthIdentityEntity(
                     UUID.randomUUID(),
                     user.getId(),
@@ -279,7 +287,7 @@ public class OAuthService {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private record OAuthState(Instant expiresAt, String returnUrl) {
+    private record OAuthState(Instant expiresAt, String returnUrl, String referralCode) {
     }
 
     private record OAuthProfile(String providerUserId, String email, String displayName) {

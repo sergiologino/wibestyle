@@ -210,6 +210,7 @@ public class ProfileService {
         map.put("plan", profile.getPlan());
         map.put("trialGenerationsLeft", profile.getTrialGenerationsLeft());
         map.put("planGenerationsLeft", profile.getPlanGenerationsLeft());
+        map.put("bonusGenerationsLeft", profile.getBonusGenerationsLeft());
         if (profile.getBillingPeriod() != null) {
             map.put("billingPeriod", profile.getBillingPeriod());
         }

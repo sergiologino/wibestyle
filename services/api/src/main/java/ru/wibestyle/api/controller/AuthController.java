@@ -40,7 +40,8 @@ public class AuthController {
             AuthService.AuthResult result = authService.verifyOtp(
                     request.requestId(),
                     request.code(),
-                    request.promoCode()
+                    request.promoCode(),
+                    request.referralCode()
             );
             return AuthResponseSupport.fromAuthResult(result);
         } catch (IllegalArgumentException ex) {

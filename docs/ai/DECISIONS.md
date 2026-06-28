@@ -94,3 +94,8 @@
 - Context: YooKassa saves a payment method but does not schedule merchant subscription renewals; web and mobile need the same renewal state and reliable notices.
 - Decision: Keep entitlement expiry in `user_profiles`, recurring orchestration in `billing_subscriptions`, every payment attempt in `billing_checkouts`, and user-visible events in `user_notifications`. Charge at T0, warn at T−3 days, retry a rejected payment up to three times, and reuse checkout UUID as YooKassa idempotence key for uncertain network outcomes. Expo push is a transport over durable in-app notifications.
 - Consequences: Card data never enters WibeStyle; users can disable renewal without losing the paid period; unique renewal keys prevent duplicate checkout creation. 54-FZ receipt payload remains a separate production task.
+## ADR-0018: Referral rewards as durable bonus quota
+
+- Context: Subscribers should earn try-ons when an invited friend completes a first paid checkout, without webhook retries or recurring charges duplicating rewards.
+- Decision: Store referral ownership in `referral_accounts`, one first-purchase reward per invited user in `referral_rewards`, and bonus balance separately in `user_profiles.bonus_generations_left`. Award only while the referrer has an active Wibe/Elite subscription.
+- Consequences: Monthly/annual rewards are 3/15, bonus quota survives plan renewals, is unavailable while paid access is inactive, and history shows who triggered it and when.

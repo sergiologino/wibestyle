@@ -70,7 +70,7 @@ export default function OtpForm() {
     }
 
     try {
-      const auth = await api.verifyOtp(requestId, code, normalizedPromo);
+      const auth = await api.verifyOtp(requestId, code, normalizedPromo, searchParams.get("ref") ?? undefined);
       const meClient = new WibeStyleApiClient({
         baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
         getAccessToken: () => auth.accessToken,

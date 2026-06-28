@@ -34,7 +34,8 @@ export default function OAuthButtons() {
     setLoading(provider);
     setError(null);
     try {
-      const result = await api.startOAuth(provider);
+      const referralCode = new URLSearchParams(window.location.search).get("ref") ?? undefined;
+      const result = await api.startOAuth(provider, { referralCode });
       window.location.href = result.authorizationUrl;
     } catch {
       setError("OAuth временно недоступен — проверьте настройки провайдера");

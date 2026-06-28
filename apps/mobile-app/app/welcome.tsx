@@ -24,6 +24,7 @@ const assets = {
   privacy: require("../assets/onboarding/slides/privacy-photo.png"),
   future: require("../assets/onboarding/slides/future-photo.webp"),
   paywall: require("../assets/onboarding/slides/paywall-photo.webp"),
+  referral: require("../assets/onboarding/slides/paywall-photo.webp"),
 } as const;
 
 const resultVideo = require("../assets/onboarding/slides/result-photo.mp4");

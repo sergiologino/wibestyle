@@ -36,6 +36,7 @@ public class BillingService {
     private final BillingSubscriptionRepository billingSubscriptionRepository;
     private final YooKassaClient yooKassaClient;
     private final NotificationService notificationService;
+    private final ReferralService referralService;
 
     public BillingService(
             BillingProperties billingProperties,
@@ -44,7 +45,8 @@ public class BillingService {
             BillingCheckoutRepository billingCheckoutRepository,
             BillingSubscriptionRepository billingSubscriptionRepository,
             YooKassaClient yooKassaClient,
-            NotificationService notificationService
+            NotificationService notificationService,
+            ReferralService referralService
     ) {
         this.billingProperties = billingProperties;
         this.userProfileRepository = userProfileRepository;
@@ -53,6 +55,7 @@ public class BillingService {
         this.billingSubscriptionRepository = billingSubscriptionRepository;
         this.yooKassaClient = yooKassaClient;
         this.notificationService = notificationService;
+        this.referralService = referralService;
     }
 
     public Map<String, Object> listPlans(UserProfileEntity profile) {
@@ -223,6 +226,7 @@ public class BillingService {
         billingCheckoutRepository.save(checkout);
 
         updateRecurringSubscription(checkout, payment, renewal);
+        referralService.rewardFirstPurchase(checkout);
 
         UserProfileEntity profile = userProfileRepository.findById(checkout.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));

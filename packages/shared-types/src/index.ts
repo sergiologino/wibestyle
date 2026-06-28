@@ -157,10 +157,28 @@ export type UserProfile = {
   plan: SubscriptionPlan;
   trialGenerationsLeft: number;
   planGenerationsLeft?: number;
+  bonusGenerationsLeft?: number;
   billingPeriod?: "monthly" | "annual";
   subscriptionExpiresAt?: string;
   promoDiscountPercent?: number;
   activeAvatarId?: string;
+};
+
+export type ReferralReward = {
+  id: string;
+  friend: string;
+  billingPeriod: BillingPeriod;
+  generations: number;
+  rewardedAt: string;
+};
+
+export type ReferralOverview = {
+  eligible: boolean;
+  referralCode: string;
+  bonusGenerationsLeft: number;
+  monthlyReward: number;
+  annualReward: number;
+  rewards: ReferralReward[];
 };
 
 export type UserEntitlements = {

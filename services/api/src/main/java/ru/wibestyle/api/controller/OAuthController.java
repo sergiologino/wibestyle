@@ -34,10 +34,11 @@ public class OAuthController {
     public Map<String, Object> start(
             @PathVariable String provider,
             @RequestParam(required = false) String returnUrl,
+            @RequestParam(required = false) String referralCode,
             HttpServletRequest request
     ) {
         try {
-            return oAuthService.start(provider, returnUrl, request);
+            return oAuthService.start(provider, returnUrl, referralCode, request);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }

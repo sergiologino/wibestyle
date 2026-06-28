@@ -7,7 +7,8 @@ describe("mobile auth screen", () => {
     const source = readFileSync(join(process.cwd(), "app", "auth.tsx"), "utf8");
 
     expect(source).toContain("api.startOtp(phone)");
-    expect(source).toContain("api.verifyOtp(requestId, code)");
+    expect(source).toContain("api.verifyOtp(");
+    expect(source).toContain("searchParams.ref");
     expect(source).not.toContain("startEmailOtp");
     expect(source).not.toContain('label="Email"');
   });

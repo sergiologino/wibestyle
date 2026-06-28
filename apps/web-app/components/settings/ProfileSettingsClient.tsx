@@ -245,6 +245,9 @@ export default function ProfileSettingsClient() {
             ) : profile.planGenerationsLeft != null ? (
               <p>Генераций в периоде: {profile.planGenerationsLeft}</p>
             ) : null}
+            {profile.bonusGenerationsLeft ? (
+              <p>Дополнительных примерок: {profile.bonusGenerationsLeft}</p>
+            ) : null}
             {profile.subscriptionExpiresAt ? (
               <p>Действует до: {new Date(profile.subscriptionExpiresAt).toLocaleDateString("ru-RU")}</p>
             ) : null}
@@ -269,6 +272,9 @@ export default function ProfileSettingsClient() {
           <Button className="mt-4" size="md" variant={isPaidSubscription(profile) ? "secondary" : "primary"}>
             {isPaidSubscription(profile) ? "Upgrade на Elite" : "Оформить подписку"}
           </Button>
+        </Link>
+        <Link href="/referrals" className="mt-3 inline-flex font-medium text-[var(--pink)]">
+          Реферальная программа и история начислений →
         </Link>
       </Card>
 

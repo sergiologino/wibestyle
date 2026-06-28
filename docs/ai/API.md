@@ -101,6 +101,14 @@ Provider priorities only select the `networkName` sent to `noteapp-ai-integratio
 
 Recurring: initial payment sends `save_payment_method=true` only after explicit user consent. Only verified YooKassa `payment_method.id` is stored. Scheduler warns at T−3 days, charges the regular current tariff at T0 and retries rejected charges up to three times. Unknown network outcomes reuse the same checkout UUID as YooKassa idempotence key.
 
+## Referrals
+
+| Method | Path |
+|--------|------|
+| GET | `/referrals` |
+
+The authenticated response contains the personal referral code, eligibility, remaining bonus try-ons and reward history. Links use `/welcome?ref=CODE`; OTP and OAuth bind the code only for a new user. The friend's first successful purchase awards 3 bonus try-ons for monthly billing or 15 for annual billing. Rewards require an active Wibe/Elite subscription and are idempotent across webhook retries, renewals and upgrades.
+
 ## Notifications
 
 | Method | Path |

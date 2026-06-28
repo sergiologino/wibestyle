@@ -24,6 +24,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final ProfileService profileService;
     private final PromoService promoService;
+    private final ReferralService referralService;
     private final JwtService jwtService;
     private final RefreshTokenStore refreshTokenStore;
     private final AuthProperties authProperties;
@@ -39,6 +40,7 @@ public class AuthService {
             UserRepository userRepository,
             ProfileService profileService,
             PromoService promoService,
+            ReferralService referralService,
             JwtService jwtService,
             RefreshTokenStore refreshTokenStore,
             AuthProperties authProperties,
@@ -49,6 +51,7 @@ public class AuthService {
         this.userRepository = userRepository;
         this.profileService = profileService;
         this.promoService = promoService;
+        this.referralService = referralService;
         this.jwtService = jwtService;
         this.refreshTokenStore = refreshTokenStore;
         this.authProperties = authProperties;
@@ -103,8 +106,12 @@ public class AuthService {
         return new OtpStartResult(requestId, authProperties.getOtpTtlSeconds());
     }
 
-    @Transactional
     public AuthResult verifyOtp(String requestId, String code, String promoCode) {
+        return verifyOtp(requestId, code, promoCode, null);
+    }
+
+    @Transactional
+    public AuthResult verifyOtp(String requestId, String code, String promoCode, String referralCode) {
         PhoneOtpChallenge challenge = phoneChallenges.get(requestId);
         if (challenge == null || challenge.expiresAt().isBefore(Instant.now())) {
             phoneChallenges.remove(requestId);
@@ -124,6 +131,7 @@ public class AuthService {
         UserEntity user = userRepository.findByPhone(challenge.phone())
                 .orElseGet(() -> userRepository.saveAndFlush(new UserEntity(UUID.randomUUID(), challenge.phone(), Instant.now())));
         profileService.ensureProfile(user.getId());
+        if (isNewUser) referralService.captureNewUser(user.getId(), referralCode);
 
         Map<String, Object> promoResult = Map.of("redeemed", false);
         if (promoCode != null && !promoCode.isBlank()) {
