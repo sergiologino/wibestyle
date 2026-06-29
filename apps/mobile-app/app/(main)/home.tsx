@@ -82,8 +82,22 @@ export default function HomeScreen() {
               <Text style={styles.avatarCtaText}>Добавьте аватар в профиле</Text>
             </Pressable>
           ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Примерить по ссылке Wildberries или Ozon"
+            style={({ pressed }) => [styles.marketplaceCta, pressed && styles.marketplaceCtaPressed]}
+            onPress={() => router.push("/try-on/link")}
+          >
+            <View style={styles.marketplaceCtaIcon}>
+              <Text style={styles.marketplaceCtaIconText}>🔗</Text>
+            </View>
+            <View style={styles.marketplaceCtaCopy}>
+              <Text style={styles.marketplaceCtaTitle}>Примерить по ссылке WB / Ozon</Text>
+              <Text style={styles.marketplaceCtaText}>Вставь ссылку на товар — фото вещи загрузится автоматически</Text>
+            </View>
+            <Text style={styles.marketplaceCtaArrow}>›</Text>
+          </Pressable>
           <View style={styles.actions}>
-            <Button label="Примерить по ссылке" onPress={() => router.push("/try-on/link")} />
             <Button label="Примерить по фото" variant="secondary" onPress={() => router.push("/try-on/photo")} />
             <TelegramChannelButton />
           </View>
@@ -138,6 +152,50 @@ const styles = StyleSheet.create({
   actions: {
     marginTop: spacing.lg,
     gap: spacing.sm,
+  },
+  marketplaceCta: {
+    marginTop: spacing.lg,
+    minHeight: 92,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.xl,
+    backgroundColor: colors.pink,
+  },
+  marketplaceCtaPressed: {
+    opacity: 0.86,
+  },
+  marketplaceCtaIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  marketplaceCtaIconText: {
+    fontSize: 22,
+  },
+  marketplaceCtaCopy: {
+    flex: 1,
+    gap: 3,
+  },
+  marketplaceCtaTitle: {
+    color: colors.white,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 16,
+  },
+  marketplaceCtaText: {
+    color: "rgba(255,255,255,0.85)",
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  marketplaceCtaArrow: {
+    color: colors.white,
+    fontSize: 30,
+    fontFamily: "Manrope_400Regular",
   },
   notificationCard: { borderColor: colors.violet },
   notificationActions: { marginTop: spacing.md, gap: spacing.sm },

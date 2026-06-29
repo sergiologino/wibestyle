@@ -54,9 +54,19 @@ export default function TryOnHubPage() {
                   <h2 className="text-display-md text-2xl">{option.title}</h2>
                   <p className="text-body mt-2">{option.description}</p>
                 </div>
-                <Link href={option.href} className="mt-6 inline-flex">
-                  <Button size="md" variant={option.variant}>{option.cta}</Button>
-                </Link>
+                {option.href === "/try-on/link" ? (
+                  <Link
+                    href={option.href}
+                    data-testid="marketplace-try-on-hub"
+                    className="mt-6 inline-flex min-h-9 items-center justify-center rounded-2xl bg-[var(--pink)] px-4 py-2 text-sm font-medium text-white shadow-lg hover:bg-[var(--pink-dark)]"
+                  >
+                    {option.cta}
+                  </Link>
+                ) : (
+                  <Link href={option.href} className="mt-6 inline-flex">
+                    <Button size="md" variant={option.variant}>{option.cta}</Button>
+                  </Link>
+                )}
               </Card>
             );
           })}

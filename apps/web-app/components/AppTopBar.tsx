@@ -49,6 +49,15 @@ export default function AppTopBar() {
           </nav>
           <div className="flex items-center gap-1.5">
             {sessionReady && isAuthenticated ? (
+              <Link
+                href="/try-on/link"
+                data-testid="marketplace-try-on-header"
+                className="hidden min-h-8 items-center rounded-xl bg-[var(--pink)] px-3 text-xs font-medium text-white shadow-sm hover:bg-[var(--pink-dark)] sm:inline-flex"
+              >
+                WB / Ozon
+              </Link>
+            ) : null}
+            {sessionReady && isAuthenticated ? (
               <TelegramChannelButton compact className="hidden lg:inline-flex" />
             ) : null}
             {sessionReady && isAuthenticated && profile && !isPaidSubscription(profile) ? (

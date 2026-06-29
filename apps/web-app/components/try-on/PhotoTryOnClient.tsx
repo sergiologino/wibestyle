@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Button, Card, StepIndicator } from "@wibestyle/ui";
+import { Card, StepIndicator } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { GarmentCategory, ProductPreview } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
@@ -201,17 +201,40 @@ export default function PhotoTryOnClient() {
             Снимок из галереи или скрин карточки товара. Тип вещи определится автоматически.
           </p>
           <form className="mt-6 grid gap-4" onSubmit={(event) => void continueToPreview(event)}>
-            <input
-              accept="image/*"
-              className="rounded-2xl border border-dashed border-[#ffb8e4] bg-[#fff8fd] px-4 py-8 font-normal text-[#6d6273]"
-              type="file"
-              onChange={onFileChange}
-              required
-            />
-            {photoFile ? <p className="font-normal text-[#302637]">Файл: {photoFile.name}</p> : null}
-            <Button disabled={!photoFile || classifying} loading={classifying} size="md" type="submit">
-              {classifying ? "Определяем вещь…" : "Продолжить"}
-            </Button>
+            <label className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-[#ffb8e4] bg-[#fff8fd] px-5 py-3 text-sm font-medium text-[#ff1fa2] transition hover:border-[#ff1fa2] hover:bg-[#fff0f8]">
+              <input
+                accept="image/*"
+                className="sr-only"
+                type="file"
+                onChange={onFileChange}
+                required
+              />
+              {photoFile ? "Выбрать другое фото" : "Выбрать фото"}
+            </label>
+            {photoFile && previewUrl ? (
+              <div className="flex items-center gap-4 rounded-2xl border border-[#ffd1ed] bg-white p-3">
+                <ProductPreviewImage
+                  imageUrl={previewUrl}
+                  alt="Выбранное фото одежды"
+                  className="h-24 w-20 rounded-xl object-cover"
+                />
+                <div>
+                  <p className="font-medium text-[#302637]">Фото выбрано</p>
+                  <p className="mt-1 text-sm font-normal text-[#6d6273]">Можно продолжать к выбору размера</p>
+                </div>
+              </div>
+            ) : null}
+            <button
+              type="submit"
+              data-testid="photo-try-on-continue"
+              disabled={!photoFile || classifying}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#ff1fa2] px-6 py-3 text-sm font-medium text-white shadow-[0_10px_28px_rgba(255,31,162,0.28)] transition hover:bg-[#eb1692] active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-[#f3c5df] disabled:shadow-none"
+            >
+              {classifying ? (
+                <span aria-hidden className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : null}
+              <span>{classifying ? "Определяем вещь…" : "Продолжить к примерке"}</span>
+            </button>
           </form>
         </Card>
       ) : null}
@@ -230,10 +253,6 @@ export default function PhotoTryOnClient() {
               {classificationSource === "ai" ? (
                 <p className="mt-2 text-sm font-normal text-[#782cff]">Определено AI по фото</p>
               ) : null}
-              {photoFile ? (
-                <p className="mt-2 text-sm font-normal text-[#6d6273]">{photoFile.name}</p>
-              ) : null}
-
               <div className="mt-6 border-t border-[#ffd1ed] pt-6">
                 <h3 className="text-display-md text-lg">Какой размер примерить?</h3>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -263,14 +282,15 @@ export default function PhotoTryOnClient() {
           ) : null}
 
           {step >= 1 && sessionReady && isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
-            <Button
-              className="mt-6"
+            <button
+              type="button"
+              data-testid="photo-try-on-start"
+              className="mt-6 inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#ff1fa2] px-6 py-3 text-sm font-medium text-white shadow-[0_10px_28px_rgba(255,31,162,0.28)] transition hover:bg-[#eb1692] active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-[#f3c5df] disabled:shadow-none"
               disabled={loading || !size || !product.sizes.includes(size)}
-              size="md"
               onClick={() => void startGeneration()}
             >
-              Запустить AI-примерку
-            </Button>
+              Примерить эту вещь
+            </button>
           ) : null}
         </Card>
       ) : null}

@@ -22,6 +22,7 @@ import {
   favoriteProductKey,
   shouldShowProductBanner,
 } from "@/lib/try-on-product";
+import { Clapperboard, Plus } from "lucide-react";
 
 const POLL_MS = 2000;
 /** ~3 minutes — aligned with backend AI timeout */
@@ -505,14 +506,16 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
 
         <div className="flex flex-wrap gap-3">
           {!hasVideo && videoStatus !== "generating" ? (
-            <Button
-              className="animate-[attentionPulse_2.4s_ease-in-out_infinite]"
+            <button
+              type="button"
+              aria-label="Сделать видео из результата примерки"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl bg-[#782cff] px-5 py-2.5 text-sm font-medium text-white shadow-[0_10px_28px_rgba(120,44,255,0.3)] transition hover:bg-[#6420dc] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={videoGenerating}
-              size="md"
               onClick={() => void onMakeVideo()}
             >
-              Сделать видео
-            </Button>
+              <Clapperboard size={18} aria-hidden />
+              <span>Сделать видео</span>
+            </button>
           ) : null}
           <FeedbackActionButton
             feedbackState={saveFeedback}
@@ -576,8 +579,13 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
 
       <TryOnReviewForm api={api} sessionId={sessionId} />
 
-      <Link href="/try-on" className="text-link text-sm">
-        Примерить ещё одну вещь
+      <Link
+        href="/try-on"
+        data-testid="try-on-again"
+        className="inline-flex min-h-12 items-center justify-center gap-2 self-start rounded-2xl bg-[#ff1fa2] px-6 py-3 text-sm font-medium text-white shadow-[0_10px_28px_rgba(255,31,162,0.28)] transition hover:bg-[#eb1692] active:scale-[0.97]"
+      >
+        <Plus size={18} aria-hidden />
+        <span>Примерить ещё одну вещь</span>
       </Link>
     </div>
   );
