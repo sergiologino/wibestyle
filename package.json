@@ -21,6 +21,7 @@
     }
   },
   "scripts": {
+    "deps:repair": "node scripts/repair-dependencies.mjs",
     "dev:landing": "npm run dev -w @wibestyle/landing",
     "dev:web": "npm run dev -w @wibestyle/web-app",
     "dev:admin": "npm run dev -w @wibestyle/admin",
