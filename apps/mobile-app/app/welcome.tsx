@@ -19,11 +19,12 @@ import { FIRST_100_PROMO_CODE, mobileOnboardingSlides } from "@/lib/onboarding-c
 import { colors, hairline, radius, shadows, spacing } from "@/theme/tokens";
 
 const assets = {
-  upload: require("../assets/onboarding/slides/upload-photo.png"),
+  upload: require("../assets/onboarding/slides/upload-photo.webp"),
   flow: require("../assets/onboarding/slides/flow-photo.webp"),
   privacy: require("../assets/onboarding/slides/privacy-photo.png"),
   future: require("../assets/onboarding/slides/future-photo.webp"),
   paywall: require("../assets/onboarding/slides/paywall-photo.webp"),
+  referral: require("../assets/onboarding/slides/paywall-photo.webp"),
 } as const;
 
 const resultVideo = require("../assets/onboarding/slides/result-photo.mp4");
@@ -55,12 +56,12 @@ export default function WelcomeScreen() {
 
   function openTrial() {
     completeOnboardingStep("welcome");
-    router.replace("/paywall");
+    router.replace("/auth?next=/paywall");
   }
 
   function skipOnboarding() {
     completeOnboardingStep("welcome");
-    router.replace("/paywall");
+    router.replace("/auth?next=/paywall");
   }
 
   function nextSlide() {
@@ -386,7 +387,7 @@ function OnboardingMedia({ slide, imageHeight }: { slide: (typeof mobileOnboardi
           player={player}
           style={styles.mediaFill}
           nativeControls={false}
-          contentFit="cover"
+          contentFit="contain"
           allowsFullscreen={false}
         />
         <MediaOverlay slide={slide} />
@@ -397,7 +398,7 @@ function OnboardingMedia({ slide, imageHeight }: { slide: (typeof mobileOnboardi
   return (
     <ImageBackground
       source={assets[slide.asset]}
-      resizeMode="cover"
+      resizeMode="contain"
       style={[styles.image, { height: imageHeight }]}
       imageStyle={styles.imageInner}
     >

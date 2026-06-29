@@ -31,10 +31,11 @@ export default function WelcomeClient() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const activeSlide = onboardingSlides[activeIndex];
+  const referralCode = searchParams.get("ref");
   const promoCode = useMemo(() => {
     const explicitPromo = searchParams.get("promo");
     if (explicitPromo) return explicitPromo;
-    return searchParams.get("offer") === "first100" ? FIRST_100_PROMO_CODE : null;
+    return FIRST_100_PROMO_CODE;
   }, [searchParams]);
 
   useEffect(() => {
@@ -56,6 +57,9 @@ export default function WelcomeClient() {
     if (promoCode) {
       url.searchParams.set("promo", promoCode);
     }
+    if (referralCode) {
+      url.searchParams.set("ref", referralCode);
+    }
     router.push(`${url.pathname}${url.search}`);
   }
 
@@ -72,19 +76,20 @@ export default function WelcomeClient() {
     const authUrl = new URL("/auth", window.location.origin);
     authUrl.searchParams.set("next", "/paywall");
     authUrl.searchParams.set("promo", promoCode ?? FIRST_100_PROMO_CODE);
+    if (referralCode) authUrl.searchParams.set("ref", referralCode);
     router.push(`${authUrl.pathname}${authUrl.search}`);
   }
 
   return (
-    <main className="min-h-dvh px-4 py-4 sm:px-6 sm:py-8">
+    <div className="min-h-dvh px-4 py-4 sm:px-6 sm:py-8">
       <div className="mx-auto flex min-h-[calc(100dvh-32px)] w-full max-w-6xl flex-col justify-center">
         <section
           className={`relative mx-auto grid w-full max-w-[430px] overflow-hidden rounded-[34px] border p-3 shadow-[0_22px_70px_rgba(20,16,26,0.12)] md:max-w-5xl md:grid-cols-[0.92fr_1.08fr] md:p-4 ${toneStyles[activeSlide.tone]}`}
         >
-          <div className="relative min-h-[58dvh] overflow-hidden rounded-[28px] bg-white md:min-h-[650px]">
+          <div className="relative h-[clamp(188px,31dvh,310px)] overflow-hidden rounded-[28px] bg-white md:h-auto md:min-h-[650px]">
             <OnboardingMedia
-              mediaBase={activeSlide.mediaBase}
               image={activeSlide.image}
+              video={activeSlide.video}
               alt={activeSlide.alt}
               priority={activeIndex === 0}
             />
@@ -163,9 +168,9 @@ export default function WelcomeClient() {
                   size="lg"
                   variant="secondary"
                   className="w-full sm:w-auto"
-                  onClick={() => (activeIndex === 0 ? goAuth("/auth") : setActiveIndex((value) => value - 1))}
+                  onClick={() => (activeIndex === 0 ? openTrial() : setActiveIndex((value) => value - 1))}
                 >
-                  {activeIndex === 0 ? "Уже есть аккаунт" : "Назад"}
+                  {activeIndex === 0 ? "Пропустить" : "Назад"}
                 </Button>
               </div>
             </div>
@@ -191,6 +196,6 @@ export default function WelcomeClient() {
           <Sparkles className="absolute right-7 top-7 hidden text-[#ff5b3d] md:block" size={22} aria-hidden />
         </section>
       </div>
-    </main>
+    </div>
   );
 }

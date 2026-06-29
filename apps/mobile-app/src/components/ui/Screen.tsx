@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { ReactNode } from "react";
 import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
-import { colors } from "@/theme/tokens";
+import { useAppTheme } from "@/theme/palettes";
 
 type ScreenProps = {
   children?: ReactNode;
@@ -13,13 +13,14 @@ type ScreenProps = {
 
 export function Screen({ children, edges = ["top", "bottom"], style, loading }: ScreenProps) {
   const safeStyle = [styles.safe, style] as any;
+  const theme = useAppTheme();
 
   return (
-    <LinearGradient colors={["#ffffff", "#fff4fb", "#ffffff"]} style={styles.gradient}>
+    <LinearGradient colors={theme.colors.surfaceGradient} style={styles.gradient}>
       <SafeAreaView edges={edges} style={safeStyle}>
         {loading ? (
           <View style={styles.loader}>
-            <ActivityIndicator color={colors.pink} size="large" />
+            <ActivityIndicator color={theme.colors.primary} size="large" />
           </View>
         ) : (
           children

@@ -2,7 +2,13 @@
 
 Native **Expo (React Native)** приложение «Я на стиле» — parity с web-app: OTP/логин, аватар, примерка по ссылке/фото, галерея, избранное, YooKassa checkout/autorenew и Expo push.
 
-Paywall показывает отдельный бесплатный trial на 2 примерки ещё до регистрации и при доступном остатке. Пропуск onboarding ведёт сначала на paywall; регистрация открывается после явного выбора trial или оплаты. Платные квоты: Wibe — 20 в месяц или 240 в год; Elite — 100 в месяц или 1200 в год. Рекомендуется годовой Elite; его карточка выделяет видео к каждой примерке, лучшие нейросети и приоритетную поддержку. Годовые карточки показывают экономию относительно 12 месячных платежей, а активная скидка с лендинга помечается как уже включённая в цену.
+Referral parity: profile links to `/referrals`, where active Wibe/Elite subscribers can share their personal web deep link and inspect masked reward history. Monthly/annual first purchases award 3/15 durable bonus try-ons.
+
+Onboarding trial path: `welcome/onboarding → auth → paywall → trial`. The final onboarding trial CTA and skip action open auth with `next=/paywall`; after registration/auth the paywall shows the free trial option.
+
+Profile settings include three interface palettes: `vibe` (current pink/violet), `pistachio` (beige-pistachio) and `graphite` (calm blue-graphite). Android core UI reads the selected palette from `profile.interfacePalette`.
+
+Paywall показывает отдельный бесплатный trial на 2 примерки для авторизованного trial-профиля. Онбординг больше не открывает trial напрямую: финальный CTA и пропуск ведут на auth с `next=/paywall`, после регистрации/авторизации открывается paywall, затем пользователь выбирает trial или оплату. Платные квоты: Wibe — 20 в месяц или 240 в год; Elite — 100 в месяц или 1200 в год. Рекомендуется годовой Elite; его карточка выделяет видео к каждой примерке, лучшие нейросети и приоритетную поддержку. Годовые карточки показывают экономию относительно 12 месячных платежей, а активная скидка с лендинга помечается как уже включённая в цену.
 
 Избранное использует API-aware загрузку фотографий: относительные marketplace URL преобразуются через `EXPO_PUBLIC_API_URL`, а Bearer-токен отправляется только для защищённых снимков примерки. В каждой карточке с `productUrl` есть явная кнопка перехода на маркетплейс. Тап по карточке открывает детальный просмотр с крупным фото; если избранное сохранено из результата примерки, доступна кнопка перехода к этому результату.
 

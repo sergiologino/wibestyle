@@ -10,7 +10,7 @@ const YANDEX_RED = "#FC3F1D";
 
 WebBrowser.maybeCompleteAuthSession();
 
-export function OAuthButtons() {
+export function OAuthButtons({ referralCode }: { referralCode?: string }) {
   const { api } = useSession();
   const [providers, setProviders] = useState({ yandex: false, google: false });
   const [loading, setLoading] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export function OAuthButtons() {
     setError(null);
     try {
       const returnUrl = Linking.createURL("auth/oauth/callback");
-      const result = await api.startOAuth(provider, { returnUrl });
+      const result = await api.startOAuth(provider, { returnUrl, referralCode });
       await WebBrowser.openAuthSessionAsync(result.authorizationUrl, returnUrl);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "OAuth временно недоступен");

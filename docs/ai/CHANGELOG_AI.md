@@ -1,5 +1,43 @@
 # AI Changelog
 
+## 2026-06-28 (Admin referral conversion report)
+- Added `/api/v1/admin/referrals` with referral invitation, first successful subscription purchase and bonus-award status.
+- Admin `/referrals` shows inviter/invitee identities, referral code, registration and payment timestamps, tariff/period/amount, awarded generations and aggregate totals.
+- Purchases without a reward are explicitly marked as ineligible because the inviter had no active subscription at payment time.
+
+## 2026-06-28 (Paid-subscriber referral program)
+- Added personal referral links for active Wibe/Elite subscribers and referral capture through OTP and OAuth registration.
+- A friend's first successful purchase awards 3 bonus try-ons for monthly billing or 15 for annual billing; renewals, upgrades and duplicate webhooks cannot award twice.
+- Bonus quota is separate from period quota, survives renewals and is usable while the paid subscription is active.
+- Added dedicated referral/history screens linked from web and mobile profiles, masked friend identity, reward time, sharing controls and reward notifications.
+- Added the referral pitch as the final seventh onboarding screen on web/mobile, Flyway V29, API/shared-client contracts and tests.
+
+## 2026-06-27 (Web onboarding parity)
+- Web onboarding now matches the six-screen mobile flow: photo, marketplace link, result, privacy, future stylist and trial.
+- Removed the obsolete web-only chaos/style slide and redundant result tag copy; static assets prefer WebP and the result screen plays `result-photo.mp4`.
+- Web photos and video use contained framing inside the same compact viewport-aware height, and skip/trial follows registration/auth → paywall.
+- Added copy, media, routing and responsive framing regression tests.
+
+## 2026-06-27 (Mobile onboarding media framing)
+- Onboarding photos and the result video now use contained framing, so the model remains visible from head to toe.
+- Existing viewport-aware media heights are unchanged, preserving the compact no-extra-scroll layout.
+- Added a regression test covering both image and video fit modes.
+
+## 2026-06-27 (Landing mobile media framing)
+- Mobile landing model photos and videos now use contained vertical framing instead of cropping with `cover`.
+- Existing card and section heights are unchanged, avoiding additional page scrolling; mobile hover scaling is disabled so the full model remains visible.
+- Added a landing regression test for mobile photo/video fitting.
+
+## 2026-06-26 (Interface palette persistence)
+- Web and mobile palette selectors now persist immediately on selection instead of waiting for the general profile form save action.
+- Clients refresh the session profile after persistence so the selected palette remains active across navigation.
+- API integration coverage verifies that a subsequent `/api/v1/me` request returns the saved `interfacePalette`.
+
+## 2026-06-26 (Registration-first trial and interface palettes)
+- Changed onboarding trial path to `onboarding → registration/auth → paywall → trial`; `/paywall` is now an allowed explicit post-auth `next` target for this flow.
+- Added persisted profile field `interfacePalette` with Flyway V28 and shared type support. Available palettes: `vibe`, `pistachio`, `graphite`.
+- Added palette selectors to web and Android profile screens. Web applies palette CSS variables from the profile; Android applies the palette through a session-backed theme provider for core surfaces, buttons, cards and tab bar.
+
 ## 2026-06-26 (Onboarding, privacy preprocessing, trial and favorites result links)
 - Removed the mobile onboarding “Меньше хаоса перед покупкой” slide, removed the screen-3 “товар рядом” tag, made onboarding media shorter on compact phones, and switched the result slide to `result-photo.mp4` with `.webp` preferred for static slots where present.
 - Reduced trial quota to 2 free try-ons end-to-end: mobile paywall constant, API profile default and Flyway V26.

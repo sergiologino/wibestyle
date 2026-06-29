@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { colors, hairline, radius, shadows, typography } from "@/theme/tokens";
+import { useAppTheme } from "@/theme/palettes";
 
 type ButtonProps = PressableProps & {
   variant?: "primary" | "secondary" | "ghost";
@@ -34,6 +35,19 @@ export function Button({
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const theme = useAppTheme();
+  const themedButtonStyle =
+    variant === "primary"
+      ? { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primary }
+      : variant === "secondary"
+        ? { borderColor: theme.colors.borderLight, backgroundColor: theme.colors.white }
+        : null;
+  const themedLabelStyle =
+    variant === "primary"
+      ? { color: theme.colors.white }
+      : variant === "secondary"
+        ? { color: theme.colors.primary }
+        : { color: theme.colors.muted };
 
   return (
     <Pressable
@@ -48,6 +62,7 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         variantStyles[variant],
+        themedButtonStyle,
         sizeStyles[size],
         pressed && !isDisabled && styles.pressed,
         isDisabled && styles.disabled,
@@ -55,9 +70,9 @@ export function Button({
       ]}
       {...props}
     >
-      {loading ? <ActivityIndicator color={variant === "primary" ? colors.white : colors.pink} size="small" /> : null}
+      {loading ? <ActivityIndicator color={variant === "primary" ? theme.colors.white : theme.colors.primary} size="small" /> : null}
       {!loading ? icon : null}
-      <Text style={[styles.label, labelVariantStyles[variant], sizeLabelStyles[size]]}>{label}</Text>
+      <Text style={[styles.label, labelVariantStyles[variant], themedLabelStyle, sizeLabelStyles[size]]}>{label}</Text>
     </Pressable>
   );
 }
@@ -69,23 +84,28 @@ type CardProps = {
 };
 
 export function Card({ children, style, padded = true }: CardProps) {
-  return <View style={[styles.card, padded && styles.cardPadded, style]}>{children}</View>;
+  const theme = useAppTheme();
+  return <View style={[styles.card, { borderColor: theme.colors.borderLight, backgroundColor: theme.colors.white }, padded && styles.cardPadded, style]}>{children}</View>;
 }
 
 export function Eyebrow({ children }: { children: string }) {
-  return <Text style={styles.eyebrow}>{children}</Text>;
+  const theme = useAppTheme();
+  return <Text style={[styles.eyebrow, { color: theme.colors.eyebrow }]}>{children}</Text>;
 }
 
 export function DisplayTitle({ children }: { children: string }) {
-  return <Text style={styles.display}>{children}</Text>;
+  const theme = useAppTheme();
+  return <Text style={[styles.display, { color: theme.colors.black }]}>{children}</Text>;
 }
 
 export function SectionTitle({ children }: { children: string }) {
-  return <Text style={styles.sectionTitle}>{children}</Text>;
+  const theme = useAppTheme();
+  return <Text style={[styles.sectionTitle, { color: theme.colors.black }]}>{children}</Text>;
 }
 
 export function BodyText({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
-  return <Text style={[styles.body, style]}>{children}</Text>;
+  const theme = useAppTheme();
+  return <Text style={[styles.body, { color: theme.colors.muted }, style]}>{children}</Text>;
 }
 
 const styles = StyleSheet.create({

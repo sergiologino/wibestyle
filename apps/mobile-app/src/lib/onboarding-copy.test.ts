@@ -12,12 +12,12 @@ describe("mobileOnboardingSlides", () => {
   });
 
   it("ends with a trial paywall action and first-100 promo", () => {
-    expect(mobileOnboardingSlides.at(-1)).toMatchObject({ id: "trial", cta: "trial" });
+    expect(mobileOnboardingSlides.at(-1)).toMatchObject({ id: "referral", cta: "trial" });
     expect(FIRST_100_PROMO_CODE).toBe("FIRST100");
   });
 
   it("uses replaceable local assets by stable keys", () => {
     const assetKeys = mobileOnboardingSlides.map((slide) => slide.asset);
-    expect(assetKeys).toEqual(["upload", "flow", "result", "privacy", "future", "paywall"]);
+    expect(assetKeys).toEqual(["upload", "flow", "result", "privacy", "future", "paywall", "referral"]);
   });
 });

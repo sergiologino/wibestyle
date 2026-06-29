@@ -18,9 +18,21 @@ describe("mobile welcome UI", () => {
     expect(copy).not.toContain("товар рядом");
   });
 
+  it("fits onboarding photos and video without cropping the model", () => {
+    expect(source).toContain('contentFit="contain"');
+    expect(source).toContain('resizeMode="contain"');
+    expect(source).not.toContain('contentFit="cover"');
+    expect(source).not.toContain('resizeMode="cover"');
+  });
+
   it("prefers webp slide assets where available", () => {
+    expect(source).toContain("upload-photo.webp");
     expect(source).toContain("flow-photo.webp");
     expect(source).toContain("future-photo.webp");
     expect(source).toContain("paywall-photo.webp");
+  });
+
+  it("routes the trial CTA through registration before paywall", () => {
+    expect(source).toContain('router.replace("/auth?next=/paywall")');
   });
 });

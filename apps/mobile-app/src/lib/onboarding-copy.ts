@@ -5,7 +5,7 @@ export type MobileOnboardingSlide = {
   eyebrow: string;
   title: string;
   text: string;
-  asset: "upload" | "flow" | "result" | "privacy" | "future" | "paywall";
+  asset: "upload" | "flow" | "result" | "privacy" | "future" | "paywall" | "referral";
   tone: "coral" | "blue" | "sand" | "pink";
   bullets: string[];
   footnote?: string;
@@ -69,6 +69,16 @@ export const mobileOnboardingSlides: MobileOnboardingSlide[] = [
     tone: "coral",
     bullets: ["FIRST100", "trial", "пейволл внутри"],
     footnote: "Возможны ошибки генерации: AI может неверно обработать бельё, слой одежды или край вещи.",
+  },
+  {
+    id: "referral",
+    eyebrow: "Больше примерок",
+    title: "Пригласи друга — получай бонусы",
+    text: "Поделись личной ссылкой. После первой оплаты друга мы сразу добавим примерки к твоей активной подписке.",
+    asset: "referral",
+    tone: "pink",
+    bullets: ["+3 за месяц", "+15 за год", "начисление после оплаты"],
+    footnote: "Реферальная программа действует для пользователей с активной подпиской Wibe или Elite.",
     cta: "trial",
   },
 ];

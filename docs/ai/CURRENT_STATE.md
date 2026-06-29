@@ -1,5 +1,39 @@
 # Current State
 
+## Admin referral conversion report (2026-06-28)
+- Admin section `/referrals` reports the full referral funnel: sender, invited user, registration, first completed subscription checkout and bonus award.
+- Summary counters show invitations, purchases, successful rewards and total generations awarded. A paid referral without a reward shows the inactive-sender-subscription reason.
+- API: `GET /api/v1/admin/referrals` protected by `X-Admin-Key`.
+
+## Paid-subscriber referral program (2026-06-28)
+- Active Wibe/Elite subscribers receive a personal `/welcome?ref=CODE` link on dedicated referral screens in web and Android.
+- OTP and OAuth registration bind a new user to the inviter. The friend's first successful paid checkout awards 3 bonus try-ons for monthly billing or 15 for annual billing.
+- Rewards are unique by invited user and checkout; webhook retries, renewals and upgrades cannot duplicate them. Bonus quota is separate from plan quota and survives renewal.
+- Profiles link to referral details instead of embedding history. History shows masked friend identity, billing period, reward amount and timestamp.
+- Web/mobile onboarding now ends with a seventh referral screen and continues through registration to paywall. Flyway: `V29__referral_system.sql`.
+
+## Web onboarding parity (2026-06-27)
+- `/welcome` uses the same six screens, copy order and media as Android onboarding; the obsolete web-only style/chaos slide is removed.
+- Static onboarding images prefer WebP where available, the result slide uses `result-photo.mp4`, and every medium is fitted with `object-contain`.
+- Mobile-browser media height remains `clamp(188px, 31dvh, 310px)`; skip and trial continue through `/auth?next=/paywall` with `FIRST100`.
+
+## Mobile onboarding media framing (2026-06-27)
+- Static onboarding photos and `result-photo.mp4` use contained, centered framing instead of `cover`.
+- The existing responsive media-height calculation remains unchanged, so full models are visible without increasing screen height or adding scroll.
+
+## Landing mobile media framing (2026-06-27)
+- On screens up to 860 px, landing model photos and videos are fitted with `object-fit: contain` and centered inside their existing containers.
+- Hero, examples, before/after and style cards keep their current heights, so the fix does not add vertical scrolling.
+
+## Interface palette persistence fix (2026-06-26)
+- Palette selection in web and mobile profile settings is now an immediate persisted action.
+- After `PUT /api/v1/profile`, clients refresh the session profile so navigation no longer restores the default `vibe` palette.
+
+## Onboarding registration-first trial and interface palettes (2026-06-26)
+- Onboarding trial path is now registration-first: onboarding CTA/skip routes to auth with `next=/paywall`, then the paywall exposes the free trial. Web `resolvePostAuthRoute` and mobile `resolvePostAuthRoute` explicitly allow `/paywall` as the post-auth destination for this flow.
+- Profiles now persist `interfacePalette` (`vibe`, `pistachio`, `graphite`) through API/shared types/Flyway V28. `vibe` keeps the current pink/violet look, `pistachio` is beige-pistachio, and `graphite` is a calm blue-graphite alternative.
+- Web applies the selected palette through `data-interface-palette` and CSS variables for global surfaces and shared UI buttons/cards. Android wraps the session in `InterfaceThemeProvider`; core mobile components (`Screen`, `Button`, `Card`, tab bar) use the selected palette and profile settings include a palette picker.
+
 ## Mobile onboarding, 2-try-on trial, privacy preprocessing and favorites detail (2026-06-26)
 - Mobile onboarding now has 6 screens: the old screen 4 “Меньше хаоса перед покупкой” is removed, screen 3 no longer shows the redundant “товар рядом” bullet, media height is capped by viewport size, and the result slide uses `result-photo.mp4`. Static onboarding assets prefer available `.webp` replacements before PNG.
 - Trial quota is reduced from 3 to 2 free try-ons. Flyway V26 sets the database default to 2 and caps unused active trial balances above 2.

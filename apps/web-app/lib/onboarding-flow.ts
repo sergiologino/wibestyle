@@ -42,6 +42,9 @@ export function resolvePostAuthRoute(options: {
   hasActiveAvatar: boolean;
   nextParam: string | null;
 }): string {
+  if (options.nextParam === "/paywall") {
+    return "/paywall";
+  }
   const needsOnboarding = options.newUser || !options.hasActiveAvatar;
   if (needsOnboarding) {
     return "/onboarding/avatar";

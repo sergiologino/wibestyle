@@ -23,6 +23,8 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureFlag, boolean> = {
 
 export type SubscriptionPlan = "trial" | "wibe" | "elite";
 
+export type InterfacePalette = "vibe" | "pistachio" | "graphite";
+
 export type User = {
   id: string;
   phone: string;
@@ -149,15 +151,62 @@ export type UserProfile = {
   userId: string;
   displayName?: string;
   gender?: "female" | "male" | "other";
+  interfacePalette?: InterfacePalette;
   anthropometry?: Anthropometry;
   privacy?: ProfilePrivacy;
   plan: SubscriptionPlan;
   trialGenerationsLeft: number;
   planGenerationsLeft?: number;
+  bonusGenerationsLeft?: number;
   billingPeriod?: "monthly" | "annual";
   subscriptionExpiresAt?: string;
   promoDiscountPercent?: number;
   activeAvatarId?: string;
+};
+
+export type ReferralReward = {
+  id: string;
+  friend: string;
+  billingPeriod: BillingPeriod;
+  generations: number;
+  rewardedAt: string;
+};
+
+export type ReferralOverview = {
+  eligible: boolean;
+  referralCode: string;
+  bonusGenerationsLeft: number;
+  monthlyReward: number;
+  annualReward: number;
+  rewards: ReferralReward[];
+};
+
+export type AdminReferralRecord = {
+  senderUserId: string;
+  sender: string;
+  referredUserId: string;
+  referred: string;
+  referralCode: string;
+  referredAt: string;
+  purchased: boolean;
+  purchasePlan?: Exclude<SubscriptionPlan, "trial">;
+  purchasePeriod?: BillingPeriod;
+  purchaseAmountRub?: number;
+  purchasedAt?: string;
+  rewarded: boolean;
+  rewardGenerations?: number;
+  rewardedAt?: string;
+  rewardSkippedReason?: "REFERRER_SUBSCRIPTION_INACTIVE_AT_PURCHASE";
+};
+
+export type AdminReferralReport = {
+  summary: {
+    invites: number;
+    purchases: number;
+    rewarded: number;
+    generationsAwarded: number;
+  };
+  items: AdminReferralRecord[];
 };
 
 export type UserEntitlements = {
@@ -274,6 +323,7 @@ export const MAX_AVATARS_PER_USER = 3;
 export type UpdateProfilePayload = {
   displayName?: string;
   gender?: "female" | "male" | "other";
+  interfacePalette?: InterfacePalette;
   heightCm?: number;
   weightKg?: number;
   bustCm?: number;

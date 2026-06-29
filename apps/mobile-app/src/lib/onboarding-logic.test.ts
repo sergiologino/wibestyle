@@ -37,4 +37,8 @@ describe("onboarding-logic", () => {
     expect(resolvePostAuthRoute({ newUser: true, hasActiveAvatar: false })).toBe("/onboarding/avatar");
     expect(resolvePostAuthRoute({ newUser: false, hasActiveAvatar: true })).toBe("/(main)/home");
   });
+
+  it("respects explicit paywall route after onboarding registration", () => {
+    expect(resolvePostAuthRoute({ newUser: true, hasActiveAvatar: false, nextParam: "/paywall" })).toBe("/paywall");
+  });
 });

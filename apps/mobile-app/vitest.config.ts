@@ -8,6 +8,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@": path.resolve(__dirname, "src"),
       "@react-native-async-storage/async-storage": path.resolve(
         __dirname,
         "src/test/async-storage-mock.ts",

@@ -299,6 +299,7 @@ class ApiIntegrationTest {
         mockMvc.perform(get("/api/v1/me").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.profile.trialGenerationsLeft").value(2))
+                .andExpect(jsonPath("$.profile.interfacePalette").value("vibe"))
                 .andExpect(jsonPath("$.profile.plan").value("trial"));
     }
 
@@ -327,11 +328,18 @@ class ApiIntegrationTest {
                                   "waistCm": 70,
                                   "hipsCm": 98,
                                   "clothingSize": "M",
+                                  "interfacePalette": "pistachio",
                                   "privacyFaceHidden": true
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.profile.anthropometry.heightCm").value(170));
+                .andExpect(jsonPath("$.profile.anthropometry.heightCm").value(170))
+                .andExpect(jsonPath("$.profile.interfacePalette").value("pistachio"));
+
+        mockMvc.perform(get("/api/v1/me")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.interfacePalette").value("pistachio"));
 
         String avatarBody = mockMvc.perform(post("/api/v1/avatars")
                         .header("Authorization", "Bearer " + accessToken)

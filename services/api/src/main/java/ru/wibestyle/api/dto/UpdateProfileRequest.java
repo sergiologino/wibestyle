@@ -3,6 +3,7 @@ package ru.wibestyle.api.dto;
 public record UpdateProfileRequest(
         String displayName,
         String gender,
+        String interfacePalette,
         Integer heightCm,
         Integer weightKg,
         Integer bustCm,

@@ -22,6 +22,9 @@ public class UserProfileEntity {
     @Column(length = 16)
     private String gender;
 
+    @Column(name = "interface_palette", nullable = false, length = 24)
+    private String interfacePalette = "vibe";
+
     @Column(nullable = false, length = 16)
     private String plan = "trial";
 
@@ -70,6 +73,9 @@ public class UserProfileEntity {
     @Column(name = "plan_generations_left", nullable = false)
     private int planGenerationsLeft;
 
+    @Column(name = "bonus_generations_left", nullable = false)
+    private int bonusGenerationsLeft;
+
     @Column(name = "billing_period", length = 16)
     private String billingPeriod;
 
@@ -108,6 +114,14 @@ public class UserProfileEntity {
 
     public void setGender(String gender) {
         this.gender = gender;
+    }
+
+    public String getInterfacePalette() {
+        return interfacePalette;
+    }
+
+    public void setInterfacePalette(String interfacePalette) {
+        this.interfacePalette = interfacePalette;
     }
 
     public String getPlan() {
@@ -236,6 +250,14 @@ public class UserProfileEntity {
 
     public void setPlanGenerationsLeft(int planGenerationsLeft) {
         this.planGenerationsLeft = planGenerationsLeft;
+    }
+
+    public int getBonusGenerationsLeft() {
+        return bonusGenerationsLeft;
+    }
+
+    public void setBonusGenerationsLeft(int bonusGenerationsLeft) {
+        this.bonusGenerationsLeft = bonusGenerationsLeft;
     }
 
     public String getBillingPeriod() {

@@ -116,6 +116,7 @@ public class ProfileService {
         profile.setPrivacyFaceHidden(true);
         profile.setPrivacyBackgroundHidden(false);
         profile.setPrivacyFeaturesHidden(false);
+        profile.setInterfacePalette("vibe");
         profile.setUpdatedAt(Instant.now());
         userProfileRepository.save(profile);
         return Map.of("profile", toProfileMap(profile));
@@ -149,6 +150,7 @@ public class ProfileService {
     private void applyProfileUpdate(UserProfileEntity profile, UpdateProfileRequest request) {
         if (request.displayName() != null) profile.setDisplayName(request.displayName());
         if (request.gender() != null) profile.setGender(request.gender());
+        if (request.interfacePalette() != null) profile.setInterfacePalette(normalizeInterfacePalette(request.interfacePalette()));
         if (request.heightCm() != null) profile.setHeightCm(request.heightCm());
         if (request.weightKg() != null) profile.setWeightKg(request.weightKg());
         if (request.bustCm() != null) profile.setBustCm(request.bustCm());
@@ -167,6 +169,13 @@ public class ProfileService {
         return (request.privacyFaceHidden() != null && request.privacyFaceHidden() != profile.isPrivacyFaceHidden())
                 || (request.privacyBackgroundHidden() != null && request.privacyBackgroundHidden() != profile.isPrivacyBackgroundHidden())
                 || (request.privacyFeaturesHidden() != null && request.privacyFeaturesHidden() != profile.isPrivacyFeaturesHidden());
+    }
+
+    private String normalizeInterfacePalette(String value) {
+        return switch (value) {
+            case "vibe", "pistachio", "graphite" -> value;
+            default -> throw new IllegalArgumentException("INVALID_INTERFACE_PALETTE");
+        };
     }
 
     private void syncAvatarPrivacy(UUID userId, UserProfileEntity profile) {
@@ -201,6 +210,7 @@ public class ProfileService {
         map.put("plan", profile.getPlan());
         map.put("trialGenerationsLeft", profile.getTrialGenerationsLeft());
         map.put("planGenerationsLeft", profile.getPlanGenerationsLeft());
+        map.put("bonusGenerationsLeft", profile.getBonusGenerationsLeft());
         if (profile.getBillingPeriod() != null) {
             map.put("billingPeriod", profile.getBillingPeriod());
         }
@@ -212,6 +222,7 @@ public class ProfileService {
         }
         if (profile.getDisplayName() != null) map.put("displayName", profile.getDisplayName());
         if (profile.getGender() != null) map.put("gender", profile.getGender());
+        map.put("interfacePalette", profile.getInterfacePalette() == null ? "vibe" : profile.getInterfacePalette());
         if (!anthropometry.isEmpty()) map.put("anthropometry", anthropometry);
         map.put("privacy", Map.of(
                 "faceHidden", profile.isPrivacyFaceHidden(),

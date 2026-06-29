@@ -57,7 +57,11 @@ export function advanceOnboarding(state: OnboardingState, completed: OnboardingS
 export function resolvePostAuthRoute(options: {
   newUser: boolean;
   hasActiveAvatar: boolean;
+  nextParam?: string | null;
 }): string {
+  if (options.nextParam && options.nextParam.startsWith("/") && !options.nextParam.startsWith("//")) {
+    return options.nextParam;
+  }
   if (options.newUser || !options.hasActiveAvatar) {
     return "/onboarding/avatar";
   }

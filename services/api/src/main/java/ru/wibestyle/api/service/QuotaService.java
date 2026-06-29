@@ -54,6 +54,8 @@ public class QuotaService {
                 }
             } else if (profile.getPlanGenerationsLeft() > 0) {
                 profile.setPlanGenerationsLeft(profile.getPlanGenerationsLeft() - 1);
+            } else if (profile.getBonusGenerationsLeft() > 0) {
+                profile.setBonusGenerationsLeft(profile.getBonusGenerationsLeft() - 1);
             }
             profile.setUpdatedAt(Instant.now());
             userProfileRepository.save(profile);
@@ -78,7 +80,7 @@ public class QuotaService {
                     && profile.getSubscriptionExpiresAt().isBefore(Instant.now())) {
                 return 0;
             }
-            return profile.getPlanGenerationsLeft();
+            return profile.getPlanGenerationsLeft() + profile.getBonusGenerationsLeft();
         }
         return profile.getTrialGenerationsLeft();
     }
