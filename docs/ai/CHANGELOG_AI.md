@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-06-28 (Reproducible npm dependency repair)
+- Added `npm run deps:repair` for the npm 11 `ENOENT` failure caused by a missing Tailwind platform optional package in a partially damaged `node_modules`.
+- The repair validates workspace boundaries, removes only monorepo dependency directories, and restores exact lockfile dependencies with optional packages included.
+- Documented the recovery workflow and the reason not to use forced audit upgrades for this failure.
+
 ## 2026-06-28 (Admin referral conversion report)
 - Added `/api/v1/admin/referrals` with referral invitation, first successful subscription purchase and bonus-award status.
 - Admin `/referrals` shows inviter/invitee identities, referral code, registration and payment timestamps, tariff/period/amount, awarded generations and aggregate totals.
