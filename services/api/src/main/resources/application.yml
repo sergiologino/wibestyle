@@ -76,6 +76,8 @@ wibestyle:
     otp-start-per-minute: 10
     media-access-ttl-seconds: 900
     max-upload-bytes: 10485760
+  marketing:
+    hash-salt: ${WIBESTYLE_MARKETING_HASH_SALT:${WIBESTYLE_JWT_SECRET:dev-marketing-salt-change-me}}
   billing:
     provider: ${WIBESTYLE_BILLING_PROVIDER:mock}
     subscribe-dev-enabled: ${WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED:true}

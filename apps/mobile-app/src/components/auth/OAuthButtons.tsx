@@ -5,6 +5,7 @@ import * as WebBrowser from "expo-web-browser";
 import { ApiError } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
+import { readVisitorId, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
 
 const YANDEX_RED = "#FC3F1D";
 
@@ -27,7 +28,8 @@ export function OAuthButtons({ referralCode }: { referralCode?: string }) {
     setError(null);
     try {
       const returnUrl = Linking.createURL("auth/oauth/callback");
-      const result = await api.startOAuth(provider, { returnUrl, referralCode });
+      const result = await api.startOAuth(provider, { returnUrl, referralCode, visitorId: await readVisitorId() });
+      void trackMobileMarketingEvent("signup_started", { method: provider });
       await WebBrowser.openAuthSessionAsync(result.authorizationUrl, returnUrl);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "OAuth временно недоступен");

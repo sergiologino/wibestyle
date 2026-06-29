@@ -564,6 +564,44 @@ export type PublishedReview = {
   publishedAt: string;
 };
 
+export type MarketingStatsRow = {
+  channelName?: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content?: string;
+  term?: string;
+  visits: number;
+  registrations: number;
+  registrationConversion: number;
+  payments: number;
+  paymentConversion: number;
+};
+
+export type MarketingChannel = {
+  id: string;
+  code: string;
+  displayName: string;
+  utmSource: string;
+  utmMedium: string;
+  description: string;
+  enabled: boolean;
+  updatedAt: string;
+};
+
+export type MarketingChannelPayload = Omit<MarketingChannel, "id" | "updatedAt">;
+
+export type MarketingRegistration = {
+  userId: string;
+  registeredAt: string;
+  firstSource: string;
+  firstMedium: string;
+  firstCampaign: string;
+  lastSource: string;
+  lastMedium: string;
+  lastCampaign: string;
+};
+
 export type ApiError = {
   error: string;
   code?: string;

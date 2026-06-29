@@ -12,6 +12,7 @@ import ru.wibestyle.api.config.FeatureFlagsProperties;
 import ru.wibestyle.api.config.SecurityProperties;
 import ru.wibestyle.api.config.GeoIpProperties;
 import ru.wibestyle.api.config.MailProperties;
+import ru.wibestyle.api.config.MarketingProperties;
 import ru.wibestyle.api.config.OAuthProperties;
 import ru.wibestyle.api.config.SmsProperties;
 import ru.wibestyle.api.config.StorageProperties;
@@ -29,6 +30,7 @@ import ru.wibestyle.api.config.PushProperties;
         SecurityProperties.class,
         OAuthProperties.class,
         MailProperties.class,
+        MarketingProperties.class,
         GeoIpProperties.class,
         SmsProperties.class,
         PushProperties.class

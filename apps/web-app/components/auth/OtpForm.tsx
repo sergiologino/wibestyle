@@ -9,6 +9,7 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { capturePromoFromSearchParams, clearPendingPromo, readPendingPromo } from "@/lib/promo-storage";
 import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
 import { formatRussianPhone, isRussianPhoneComplete } from "@/lib/phone-mask";
+import { readVisitorId, trackAppMarketingEvent } from "@/lib/marketing/visitor";
 
 export default function OtpForm() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function OtpForm() {
     setLoading(true);
     try {
       const result = await api.startOtp(phone);
+      void trackAppMarketingEvent("signup_started", { method: "sms" });
       setRequestId(result.requestId);
     } catch (err) {
       setError(err instanceof ApiError && err.code === "OTP_RESEND_COOLDOWN"
@@ -70,7 +72,13 @@ export default function OtpForm() {
     }
 
     try {
-      const auth = await api.verifyOtp(requestId, code, normalizedPromo, searchParams.get("ref") ?? undefined);
+      const auth = await api.verifyOtp(
+        requestId,
+        code,
+        normalizedPromo,
+        searchParams.get("ref") ?? undefined,
+        readVisitorId(),
+      );
       const meClient = new WibeStyleApiClient({
         baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
         getAccessToken: () => auth.accessToken,

@@ -68,7 +68,8 @@ class BillingServiceYooKassaTest {
                 billingSubscriptionRepository,
                 yooKassaClient,
                 notificationService,
-                org.mockito.Mockito.mock(ReferralService.class)
+                org.mockito.Mockito.mock(ReferralService.class),
+                org.mockito.Mockito.mock(MarketingAttributionService.class)
         );
         userId = UUID.randomUUID();
     }

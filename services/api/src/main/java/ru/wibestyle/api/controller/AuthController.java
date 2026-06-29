@@ -41,7 +41,8 @@ public class AuthController {
                     request.requestId(),
                     request.code(),
                     request.promoCode(),
-                    request.referralCode()
+                    request.referralCode(),
+                    request.visitorId()
             );
             return AuthResponseSupport.fromAuthResult(result);
         } catch (IllegalArgumentException ex) {
