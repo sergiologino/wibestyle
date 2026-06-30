@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Grid2X2, Heart, Home, Search, Shirt } from "lucide-react";
+import { useState } from "react";
+import { Grid2X2, Heart, Home, Search, Share2, Shirt } from "lucide-react";
 import { BrandLogo, Button } from "@wibestyle/ui";
+import type { ReferralOverview } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { isAuthenticatedSession } from "@/lib/session-auth";
 import { isPaidSubscription } from "@/lib/billing-plan";
 import TelegramChannelButton from "@/components/community/TelegramChannelButton";
+import OverlayModal from "@/components/ui/OverlayModal";
 
 const nav = [
   { href: "/home", label: "Главная", icon: Home },
@@ -18,12 +21,49 @@ const nav = [
 ];
 
 export default function AppTopBar() {
-  const { accessToken, refreshToken, profile, accessTokenExpiresAt, sessionReady } = useAppSession();
+  const { api, accessToken, refreshToken, profile, accessTokenExpiresAt, sessionReady } = useAppSession();
   const pathname = usePathname();
+  const [shareOpen, setShareOpen] = useState(false);
+  const [referral, setReferral] = useState<ReferralOverview | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
   const isAuthenticated = isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt });
 
   const logoHref = !sessionReady ? "/welcome" : isAuthenticated ? "/home" : "/welcome";
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+  async function openShare() {
+    setShareOpen(true);
+    setShareMessage(null);
+    if (referral) return;
+    setShareLoading(true);
+    try {
+      setReferral(await api.getReferrals());
+    } catch {
+      setShareMessage("Не удалось подготовить персональную ссылку. Попробуйте ещё раз.");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function shareApplication() {
+    if (!referral?.eligible) return;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
+    const referralUrl = `${appUrl.replace(/\/$/, "")}/welcome?ref=${encodeURIComponent(referral.referralCode)}`;
+    const text = `Попробуй виртуальную примерочную «Я на стиле». Если ты купишь подписку, я получу дополнительные примерки: ${referralUrl}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Я на стиле", text, url: referralUrl });
+        setShareMessage("Ссылка отправлена");
+      } else {
+        await navigator.clipboard.writeText(text);
+        setShareMessage("Ссылка и сообщение скопированы");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareMessage("Не удалось поделиться ссылкой");
+    }
+  }
 
   return (
     <>
@@ -49,13 +89,16 @@ export default function AppTopBar() {
           </nav>
           <div className="flex items-center gap-1.5">
             {sessionReady && isAuthenticated ? (
-              <Link
-                href="/try-on/link"
-                data-testid="marketplace-try-on-header"
-                className="hidden min-h-8 items-center rounded-xl bg-[var(--pink)] px-3 text-xs font-medium text-white shadow-sm hover:bg-[var(--pink-dark)] sm:inline-flex"
+              <button
+                type="button"
+                aria-label="Поделиться приложением"
+                title="Поделиться приложением"
+                data-testid="share-application-header"
+                className="inline-flex size-9 items-center justify-center rounded-xl border border-[#ffd1ed]/70 bg-[#fff4fb]/70 text-[#782cff] transition hover:border-[#ffb8e4] hover:bg-[#fff0f8]"
+                onClick={() => void openShare()}
               >
-                WB / Ozon
-              </Link>
+                <Share2 size={17} strokeWidth={1.7} aria-hidden />
+              </button>
             ) : null}
             {sessionReady && isAuthenticated ? (
               <TelegramChannelButton compact className="hidden lg:inline-flex" />
@@ -105,6 +148,44 @@ export default function AppTopBar() {
           })}
         </nav>
       ) : null}
+      <OverlayModal
+        ariaLabel="Поделиться приложением"
+        className="max-w-md"
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+      >
+        <div className="rounded-[28px] border border-[#ffd1ed] bg-white p-6 shadow-xl">
+          <div className="flex size-11 items-center justify-center rounded-2xl border border-[#ffd1ed] bg-[#fff4fb] text-[#782cff]">
+            <Share2 size={20} aria-hidden />
+          </div>
+          <h2 className="mt-4 text-2xl">Поделиться приложением</h2>
+          <p className="mt-3 text-sm leading-6 text-[#6d6273]">
+            Отправьте персональную ссылку другу. Если он купит месячную подписку, вы получите{" "}
+            <strong>{referral?.monthlyReward ?? 3} дополнительные примерки</strong>; за годовую —{" "}
+            <strong>{referral?.annualReward ?? 15}</strong>.
+          </p>
+          {referral && !referral.eligible ? (
+            <p className="mt-3 rounded-2xl bg-[#fff4fb] p-3 text-sm text-[#6d6273]">
+              Бонус начисляется, если у отправителя активна подписка Wibe или Elite.
+            </p>
+          ) : null}
+          {shareMessage ? <p className="mt-3 text-sm text-[#6d6273]">{shareMessage}</p> : null}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={shareLoading || !referral?.eligible}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-[#ffd1ed] bg-[#fff4fb]/80 px-4 py-2 text-sm font-medium text-[#782cff] transition hover:bg-[#fff0f8] disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => void shareApplication()}
+            >
+              <Share2 size={17} aria-hidden />
+              {shareLoading ? "Готовим ссылку…" : "Поделиться"}
+            </button>
+            <Link href="/referrals" className="inline-flex min-h-10 items-center px-2 text-sm font-medium text-[#6d6273]">
+              Подробнее о бонусах
+            </Link>
+          </div>
+        </div>
+      </OverlayModal>
     </>
   );
 }

@@ -582,7 +582,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       <Link
         href="/try-on"
         data-testid="try-on-again"
-        className="inline-flex min-h-12 items-center justify-center gap-2 self-start rounded-2xl bg-[#ff1fa2] px-6 py-3 text-sm font-medium text-white shadow-[0_10px_28px_rgba(255,31,162,0.28)] transition hover:bg-[#eb1692] active:scale-[0.97]"
+        className="inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-2xl border border-[#ffd1ed] bg-[#fff4fb]/75 px-5 py-2.5 text-sm font-medium text-[#782cff] shadow-[0_6px_18px_rgba(58,12,82,0.05)] transition hover:border-[#ffb8e4] hover:bg-[#fff0f8] active:scale-[0.98]"
       >
         <Plus size={18} aria-hidden />
         <span>Примерить ещё одну вещь</span>
