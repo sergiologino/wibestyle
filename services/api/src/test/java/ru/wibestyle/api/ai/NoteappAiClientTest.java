@@ -1,5 +1,6 @@
 package ru.wibestyle.api.ai;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.domain.TryOnSessionStatus;
@@ -13,6 +14,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class NoteappAiClientTest {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     void virtualTryOnPayloadLabelsImage1AndImage2Explicitly() {
@@ -58,5 +61,25 @@ class NoteappAiClientTest {
         assertThat(image1.get("base64")).isEqualTo("person-base64");
         assertThat(image2.get("label")).isEqualTo("image2");
         assertThat(image2.get("base64")).isEqualTo("garment-base64");
+    }
+
+    @Test
+    void extractsProviderErrorFieldUsedByContentModerationResponses() throws Exception {
+        var response = objectMapper.readTree("""
+                {"status":"error","error":"Generated image rejected by content moderation."}
+                """);
+
+        assertThat(NoteappAiClient.extractErrorMessage(response, "fallback"))
+                .isEqualTo("Generated image rejected by content moderation.");
+    }
+
+    @Test
+    void extractsNestedProviderErrorMessage() throws Exception {
+        var response = objectMapper.readTree("""
+                {"status":"error","response":{"errorMessage":"provider moderation failure"}}
+                """);
+
+        assertThat(NoteappAiClient.extractErrorMessage(response, "fallback"))
+                .isEqualTo("provider moderation failure");
     }
 }

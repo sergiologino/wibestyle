@@ -77,6 +77,10 @@ All endpoints require `X-Admin-Key`.
 |--------|------|-------------|
 | GET | `/admin/ai-providers` | Returns provider priority lists for `VIRTUAL_TRY_ON_PHOTO` and `VIRTUAL_TRY_ON_VIDEO`. |
 | PUT | `/admin/ai-providers/{operation}` | Replaces priority/display/enabled settings for one operation. Body: `{ items: [{ networkName, displayName, priorityOrder, enabled }] }`. |
+| GET | `/admin/ai-provider-errors` | Lists case-insensitive provider error fragments and user-facing descriptions. |
+| POST | `/admin/ai-provider-errors` | Creates a mapping: `{ errorText, description, enabled }`. |
+| PUT | `/admin/ai-provider-errors/{id}` | Updates a provider error mapping. |
+| DELETE | `/admin/ai-provider-errors/{id}` | Deletes a provider error mapping. |
 | GET | `/admin/ai-logs?page=&size=` | Returns AI integration request/response logs. Items include `operation`, `attemptNumber`, `fallbackReason`, `modelName`, `provider`, `noteappRequestId`. |
 
 Provider priorities only select the `networkName` sent to `noteapp-ai-integration`; all integrations still go through `/api/ai/process`.

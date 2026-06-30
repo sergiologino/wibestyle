@@ -1,5 +1,10 @@
 # Current State
 
+## Provider moderation error registry (2026-06-30)
+- Flyway V31 stores provider error fragments and user-facing descriptions in `ai_provider_error_mappings`; matching is case-insensitive and accepts the configured text inside a longer response.
+- Admin `/ai-provider-errors` can add, edit, disable and delete mappings when a new neural provider is connected.
+- A final `VTON_CONTENT_MODERATION` failure releases the reserved quota without consuming a try-on. The API response, web app and Android app explicitly tell the user that the try-on was not deducted.
+
 ## Admin referral conversion report (2026-06-28)
 - Admin section `/referrals` reports the full referral funnel: sender, invited user, registration, first completed subscription checkout and bonus award.
 - Summary counters show invitations, purchases, successful rewards and total generations awarded. A paid referral without a reward shows the inactive-sender-subscription reason.

@@ -63,6 +63,13 @@ export const adminSections = [
     href: "/ai-prompts",
   },
   {
+    id: "ai-provider-errors",
+    title: "Ошибки нейросетей",
+    description: "Реестр ответов провайдеров: распознавание модерации и понятные сообщения пользователю.",
+    status: "Ready",
+    href: "/ai-provider-errors",
+  },
+  {
     id: "settings",
     title: "Настройки",
     description: "Блокировка Google OAuth и другие глобальные опции.",

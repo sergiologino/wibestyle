@@ -54,6 +54,19 @@ export type AiProviderPriorityRecord = {
 
 export type AdminAiProviderSnapshot = Record<AiProviderOperation, AiProviderPriorityRecord[]>;
 
+export type AiProviderErrorMappingRecord = {
+  id: string;
+  errorText: string;
+  description: string;
+  enabled: boolean;
+  updatedAt: string;
+};
+
+export type AiProviderErrorMappingPayload = Pick<
+  AiProviderErrorMappingRecord,
+  "errorText" | "description" | "enabled"
+>;
+
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -1081,5 +1094,34 @@ export class WibeStyleApiClient {
         body: JSON.stringify({ items }),
       },
     );
+  }
+
+  listAdminAiProviderErrors(adminKey: string) {
+    return this.request<{ items: AiProviderErrorMappingRecord[] }>("/api/v1/admin/ai-provider-errors", {
+      headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  createAdminAiProviderError(adminKey: string, payload: AiProviderErrorMappingPayload) {
+    return this.request<AiProviderErrorMappingRecord>("/api/v1/admin/ai-provider-errors", {
+      method: "POST",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  updateAdminAiProviderError(adminKey: string, id: string, payload: AiProviderErrorMappingPayload) {
+    return this.request<AiProviderErrorMappingRecord>(`/api/v1/admin/ai-provider-errors/${id}`, {
+      method: "PUT",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  deleteAdminAiProviderError(adminKey: string, id: string) {
+    return this.request<void>(`/api/v1/admin/ai-provider-errors/${id}`, {
+      method: "DELETE",
+      headers: { "X-Admin-Key": adminKey },
+    });
   }
 }

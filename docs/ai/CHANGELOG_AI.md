@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-06-30 (Provider moderation error registry)
+- Added a database-backed registry that maps stable fragments of AI provider errors to user-facing explanations.
+- Seeded `Generated image rejected by content moderation.` as `VTON_CONTENT_MODERATION`; web and Android explain that intimate/erotic garment detection may have triggered automatic moderation and that the try-on was not deducted.
+- Added admin CRUD at `/ai-provider-errors`, parsing of top-level/nested `error` and `errorMessage` responses, and quota-refund regression coverage.
+
 ## 2026-06-28 (Reproducible npm dependency repair)
 - Added `npm run deps:repair` for the npm 11 `ENOENT` failure caused by a missing Tailwind platform optional package in a partially damaged `node_modules`.
 - The repair validates workspace boundaries, removes only monorepo dependency directories, and restores exact lockfile dependencies with optional packages included.
