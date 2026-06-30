@@ -10,7 +10,7 @@ import TryOnHistoryGrid from "@/components/home/TryOnHistoryGrid";
 import SubscriptionNudgeBanner from "@/components/billing/SubscriptionNudgeBanner";
 import { isPaidSubscription, subscriptionNudgeLevel } from "@/lib/billing-plan";
 import NotificationInboxBanner from "@/components/notifications/NotificationInboxBanner";
-import { ArrowRight, Link2 } from "lucide-react";
+import { ImageIcon, Link2 } from "lucide-react";
 
 export default function HomeDashboardClient() {
   const searchParams = useSearchParams();
@@ -70,22 +70,25 @@ export default function HomeDashboardClient() {
               ? `Генераций в подписке: ${profile.planGenerationsLeft}`
               : "Подписка активна — примеряй без ограничений trial."}
         </p>
-        <Link
-          href="/try-on/link"
-          data-testid="marketplace-try-on-primary"
-          className="mt-6 flex items-center gap-4 rounded-[24px] bg-[var(--pink)] p-5 text-white shadow-[0_14px_34px_var(--pink-glow)] transition-transform hover:-translate-y-0.5"
-        >
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/18">
-            <Link2 size={24} aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <strong className="block text-lg font-medium">Примерить по ссылке WB / Ozon</strong>
-            <span className="mt-1 block text-sm text-white/85">Вставь ссылку на карточку товара — фото вещи загрузится автоматически</span>
-          </span>
-          <ArrowRight className="shrink-0" size={22} aria-hidden />
-        </Link>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <Link
+            href="/try-on/link"
+            data-testid="marketplace-try-on-primary"
+            className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-[var(--pink-soft)] bg-[var(--pink-bg)] px-4 py-3 font-medium text-[var(--pink-dark)] shadow-[0_6px_18px_var(--shadow-accent)] transition hover:-translate-y-0.5 hover:border-[var(--pink)]"
+          >
+            <Link2 size={19} aria-hidden />
+            <span>Примерить по ссылке WB / Ozon</span>
+          </Link>
+          <Link
+            href="/try-on/photo"
+            data-testid="photo-try-on-primary"
+            className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-[var(--pink-soft)] bg-white px-4 py-3 font-medium text-[var(--muted)] transition hover:-translate-y-0.5 hover:bg-[var(--pink-bg)]"
+          >
+            <ImageIcon size={19} aria-hidden />
+            <span>Примерить по фото</span>
+          </Link>
+        </div>
         <div className="mt-4 flex flex-wrap gap-3">
-          <Link href="/try-on/photo"><Button size="md" variant="secondary">Примерить по фото</Button></Link>
           <Link href="/gallery"><Button size="md" variant="ghost">Галерея сообщества</Button></Link>
           {!isPaidSubscription(profile) ? (
             <Link href="/paywall"><Button size="md" variant="ghost">Тарифы</Button></Link>

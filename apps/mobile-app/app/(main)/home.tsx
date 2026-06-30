@@ -11,9 +11,11 @@ import { TelegramChannelButton } from "@/components/community/TelegramChannelBut
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { Pressable, Text } from "react-native";
 import { getAppBaseUrl } from "@/lib/config";
+import { useAppTheme } from "@/theme/palettes";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const theme = useAppTheme();
   const { api, profile, phone, accessToken, ensureSession } = useSession();
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,23 +128,35 @@ export default function HomeScreen() {
               <Text style={styles.avatarCtaText}>Добавьте аватар в профиле</Text>
             </Pressable>
           ) : null}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Примерить по ссылке Wildberries или Ozon"
-            style={({ pressed }) => [styles.marketplaceCta, pressed && styles.marketplaceCtaPressed]}
-            onPress={() => router.push("/try-on/link")}
-          >
-            <View style={styles.marketplaceCtaIcon}>
-              <Text style={styles.marketplaceCtaIconText}>🔗</Text>
-            </View>
-            <View style={styles.marketplaceCtaCopy}>
-              <Text style={styles.marketplaceCtaTitle}>Примерить по ссылке WB / Ozon</Text>
-              <Text style={styles.marketplaceCtaText}>Вставь ссылку на товар — фото вещи загрузится автоматически</Text>
-            </View>
-            <Text style={styles.marketplaceCtaArrow}>›</Text>
-          </Pressable>
+          <View style={styles.tryOnActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Примерить по ссылке Wildberries или Ozon"
+              style={({ pressed }) => [
+                styles.tryOnAction,
+                { backgroundColor: theme.colors.primaryBg, borderColor: theme.colors.primarySoft },
+                pressed && styles.tryOnActionPressed,
+              ]}
+              onPress={() => router.push("/try-on/link")}
+            >
+              <Feather name="link-2" size={19} color={theme.colors.primaryDark} />
+              <Text style={[styles.tryOnActionText, { color: theme.colors.primaryDark }]}>По ссылке WB / Ozon</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Примерить по фото"
+              style={({ pressed }) => [
+                styles.tryOnAction,
+                { backgroundColor: theme.colors.white, borderColor: theme.colors.borderLight },
+                pressed && styles.tryOnActionPressed,
+              ]}
+              onPress={() => router.push("/try-on/photo")}
+            >
+              <Feather name="image" size={19} color={theme.colors.muted} />
+              <Text style={[styles.tryOnActionText, { color: theme.colors.muted }]}>По фото</Text>
+            </Pressable>
+          </View>
           <View style={styles.actions}>
-            <Button label="Примерить по фото" variant="secondary" onPress={() => router.push("/try-on/photo")} />
             <TelegramChannelButton />
           </View>
         </Card>
@@ -216,49 +230,32 @@ const styles = StyleSheet.create({
   shareButtonPressed: {
     opacity: 0.7,
   },
-  marketplaceCta: {
+  tryOnActions: {
     marginTop: spacing.lg,
-    minHeight: 92,
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  tryOnAction: {
+    flex: 1,
+    minHeight: 56,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radius.xl,
-    backgroundColor: colors.pink,
-  },
-  marketplaceCtaPressed: {
-    opacity: 0.86,
-  },
-  marketplaceCtaIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
   },
-  marketplaceCtaIconText: {
-    fontSize: 22,
+  tryOnActionPressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.98 }],
   },
-  marketplaceCtaCopy: {
-    flex: 1,
-    gap: 3,
-  },
-  marketplaceCtaTitle: {
-    color: colors.white,
+  tryOnActionText: {
+    flexShrink: 1,
     fontFamily: "Manrope_600SemiBold",
-    fontSize: 16,
-  },
-  marketplaceCtaText: {
-    color: "rgba(255,255,255,0.85)",
-    fontFamily: "Manrope_400Regular",
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  marketplaceCtaArrow: {
-    color: colors.white,
-    fontSize: 30,
-    fontFamily: "Manrope_400Regular",
+    fontSize: 13,
+    textAlign: "center",
   },
   notificationCard: { borderColor: colors.violet },
   notificationActions: { marginTop: spacing.md, gap: spacing.sm },

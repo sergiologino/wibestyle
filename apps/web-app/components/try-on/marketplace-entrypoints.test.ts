@@ -7,7 +7,10 @@ describe("marketplace try-on entry points", () => {
     const home = readFileSync(join(process.cwd(), "components", "home", "HomeDashboardClient.tsx"), "utf8");
 
     expect(home).toContain('data-testid="marketplace-try-on-primary"');
+    expect(home).toContain('data-testid="photo-try-on-primary"');
     expect(home).toContain('href="/try-on/link"');
+    expect(home).toContain("sm:grid-cols-2");
+    expect(home).not.toContain("bg-[var(--pink)] p-5");
   });
 
   it("keeps the link scenario on the try-on hub", () => {
