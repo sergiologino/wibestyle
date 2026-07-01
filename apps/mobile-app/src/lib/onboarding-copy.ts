@@ -26,7 +26,7 @@ export const mobileOnboardingSlides: MobileOnboardingSlide[] = [
     id: "link",
     eyebrow: "Шаг 2",
     title: "Вставь ссылку на товар",
-    text: "Добавь вещь с маркетплейса: платье, пиджак, обувь, сумку или аксессуар. Примерка сохранит связь с покупкой.",
+    text: "Добавь ссылку с маркетплейса или фото вещи. На телефоне вещь также можно сфотографировать камерой.",
     asset: "flow",
     tone: "blue",
     bullets: ["WB", "Ozon", "Яндекс Маркет", "AliExpress"],

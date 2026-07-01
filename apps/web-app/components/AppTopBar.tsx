@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { Grid2X2, Heart, Home, Search, Share2, Shirt } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Grid2X2, Heart, Home, Search, Share2, Shirt, UserRound } from "lucide-react";
 import { BrandLogo, Button } from "@wibestyle/ui";
 import type { ReferralOverview } from "@wibestyle/shared-types";
-import { useAppSession } from "@/components/providers/AppSessionProvider";
+import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
 import { isAuthenticatedSession } from "@/lib/session-auth";
 import { isPaidSubscription } from "@/lib/billing-plan";
 import TelegramChannelButton from "@/components/community/TelegramChannelButton";
@@ -27,10 +27,30 @@ export default function AppTopBar() {
   const [referral, setReferral] = useState<ReferralOverview | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const [avatarPhotoPath, setAvatarPhotoPath] = useState<string | null>(null);
   const isAuthenticated = isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt });
+  const avatarUrl = useAuthenticatedBlob(avatarPhotoPath);
 
   const logoHref = !sessionReady ? "/welcome" : isAuthenticated ? "/home" : "/welcome";
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+  useEffect(() => {
+    if (!isAuthenticated || !profile?.activeAvatarId) {
+      setAvatarPhotoPath(null);
+      return;
+    }
+    let cancelled = false;
+    void api.listAvatars().then(({ items }) => {
+      if (cancelled) return;
+      const activeAvatar = items.find((item) => item.id === profile.activeAvatarId);
+      setAvatarPhotoPath(activeAvatar?.photoProcessedUrl ?? activeAvatar?.photoOriginalUrl ?? null);
+    }).catch(() => {
+      if (!cancelled) setAvatarPhotoPath(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, isAuthenticated, profile?.activeAvatarId]);
 
   async function openShare() {
     setShareOpen(true);
@@ -109,10 +129,18 @@ export default function AppTopBar() {
               </Link>
             ) : null}
             {sessionReady && isAuthenticated ? (
-              <Link href="/settings">
-                <Button size="sm" variant="ghost">
-                  Профиль
-                </Button>
+              <Link
+                href="/settings"
+                aria-label="Открыть профиль"
+                title="Профиль"
+                className="inline-flex size-9 items-center justify-center overflow-hidden rounded-full border border-[#ffd1ed] bg-[#fff4fb] text-[#782cff] shadow-sm transition hover:border-[#ff1fa2] hover:ring-2 hover:ring-[#ff1fa2]/15"
+              >
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="" className="size-full object-cover" />
+                ) : (
+                  <UserRound size={18} strokeWidth={1.8} aria-hidden />
+                )}
               </Link>
             ) : null}
             {sessionReady && !isAuthenticated ? (

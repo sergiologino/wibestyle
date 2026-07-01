@@ -215,35 +215,39 @@ const styles = StyleSheet.create({
   },
   imageLabel: {
     alignSelf: "flex-start",
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     backgroundColor: "rgba(255,255,255,0.9)",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
   },
   imageLabelText: {
     fontFamily: "Manrope_500Medium",
-    fontSize: 11,
+    fontSize: 9,
+    lineHeight: 11,
     color: colors.black,
     textTransform: "uppercase",
-    letterSpacing: 0.7,
+    letterSpacing: 0.5,
   },
   photoCaption: {
-    borderRadius: 22,
+    alignSelf: "flex-start",
+    maxWidth: "88%",
+    borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.9)",
-    padding: spacing.md,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
   },
   photoCaptionTop: {
-    fontFamily: "Manrope_500Medium",
-    fontSize: 11,
-    letterSpacing: 1.4,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 9,
+    letterSpacing: 1,
     textTransform: "uppercase",
     color: colors.eyebrow,
   },
   photoCaptionTitle: {
-    marginTop: 4,
-    fontFamily: "Manrope_300Light",
-    fontSize: 25,
-    lineHeight: 28,
+    marginTop: 2,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 13,
+    lineHeight: 16,
     color: colors.black,
   },
   content: {
@@ -411,7 +415,7 @@ function MediaOverlay({ slide }: { slide: (typeof mobileOnboardingSlides)[number
   return (
     <>
       <View style={styles.imageLabel}>
-        <Text style={styles.imageLabelText}>виртуальная примерочная</Text>
+        <Text style={styles.imageLabelText}>виртуальная{"\n"}примерочная</Text>
       </View>
       <View style={styles.photoCaption}>
         <Text style={styles.photoCaptionTop}>{slide.eyebrow}</Text>
