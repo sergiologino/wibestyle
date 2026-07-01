@@ -67,7 +67,7 @@ export default function AppTopBar() {
   }
 
   async function shareApplication() {
-    if (!referral?.eligible) return;
+    if (!referral) return;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
     const referralUrl = `${appUrl.replace(/\/$/, "")}/welcome?ref=${encodeURIComponent(referral.referralCode)}`;
     const text = `Попробуй виртуальную примерочную «Я на стиле». Если ты купишь подписку, я получу дополнительные примерки: ${referralUrl}`;
@@ -192,16 +192,14 @@ export default function AppTopBar() {
             <strong>{referral?.monthlyReward ?? 3} дополнительные примерки</strong>; за годовую —{" "}
             <strong>{referral?.annualReward ?? 15}</strong>.
           </p>
-          {referral && !referral.eligible ? (
-            <p className="mt-3 rounded-2xl bg-[#fff4fb] p-3 text-sm text-[#6d6273]">
-              Бонус начисляется, если у отправителя активна подписка Wibe или Elite.
-            </p>
-          ) : null}
+          <p className="mt-3 rounded-2xl bg-[#fff4fb] p-3 text-sm text-[#6d6273]">
+            Делиться ссылкой и получать бесплатные примерки могут все пользователи — подписка не нужна.
+          </p>
           {shareMessage ? <p className="mt-3 text-sm text-[#6d6273]">{shareMessage}</p> : null}
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
-              disabled={shareLoading || !referral?.eligible}
+              disabled={shareLoading || !referral}
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-[#ffd1ed] bg-[#fff4fb]/80 px-4 py-2 text-sm font-medium text-[#782cff] transition hover:bg-[#fff0f8] disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => void shareApplication()}
             >

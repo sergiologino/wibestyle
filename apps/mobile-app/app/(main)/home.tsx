@@ -45,20 +45,13 @@ export default function HomeScreen() {
 
   const gensLeft =
     profile?.plan === "trial"
-      ? profile.trialGenerationsLeft
+      ? profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0)
       : profile?.planGenerationsLeft ?? null;
   const publishedVerb = profile?.gender === "male" ? "публиковал" : "публиковала";
 
   async function shareApplication() {
     try {
       const referral = await api.getReferrals();
-      if (!referral.eligible) {
-        Alert.alert(
-          "Реферальные бонусы",
-          "Дополнительные примерки начисляются отправителю с активной подпиской Wibe или Elite.",
-        );
-        return;
-      }
       const link = `${getAppBaseUrl()}/welcome?ref=${encodeURIComponent(referral.referralCode)}`;
       Alert.alert(
         "Поделиться приложением",

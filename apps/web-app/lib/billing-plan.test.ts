@@ -24,6 +24,7 @@ describe("billing-plan", () => {
     expect(subscriptionNudgeLevel(trialProfile(3))).toBe("medium");
     expect(subscriptionNudgeLevel(trialProfile(1))).toBe("urgent");
     expect(subscriptionNudgeLevel({ ...trialProfile(2), plan: "elite" })).toBe("none");
+    expect(subscriptionNudgeLevel({ ...trialProfile(0), bonusGenerationsLeft: 5 })).toBe("soft");
   });
 
   it("builds nudge copy", () => {

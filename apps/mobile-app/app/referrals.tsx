@@ -27,12 +27,12 @@ export default function ReferralsScreen() {
         <DisplayTitle>Больше образов вместе</DisplayTitle>
         <Card>
           <BodyText>Друг покупает месяц — тебе 3 примерки. Покупает год — получаешь 15.</BodyText>
+          <BodyText>Программа доступна всем. Получай бесплатные примерки даже без подписки.</BodyText>
           <Text style={styles.balance}>Бонусных примерок: {data?.bonusGenerationsLeft ?? "…"}</Text>
-          {!data?.eligible ? <BodyText>Программа доступна при активной подписке Wibe или Elite.</BodyText> : null}
           <Text selectable style={styles.link}>{link || "Загружаем ссылку…"}</Text>
           <Button
             label="Поделиться ссылкой"
-            disabled={!data?.eligible}
+            disabled={!data}
             onPress={() => void Share.share({ message: `Попробуй виртуальную примерочную «Я на стиле»: ${link}` })}
           />
         </Card>

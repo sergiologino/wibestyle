@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { UserProfile } from "@wibestyle/shared-types";
 import {
   advanceOnboarding,
+  canStartGeneration,
   getInitialRoute,
   INITIAL_ONBOARDING,
   resolvePostAuthRoute,
@@ -40,5 +41,14 @@ describe("onboarding-logic", () => {
 
   it("respects explicit paywall route after onboarding registration", () => {
     expect(resolvePostAuthRoute({ newUser: true, hasActiveAvatar: false, nextParam: "/paywall" })).toBe("/paywall");
+  });
+
+  it("allows trial users to spend referral bonuses", () => {
+    expect(canStartGeneration({
+      userId: "u1",
+      plan: "trial",
+      trialGenerationsLeft: 0,
+      bonusGenerationsLeft: 3,
+    })).toBe(true);
   });
 });

@@ -48,12 +48,10 @@ public class QuotaService {
             return;
         }
         userProfileRepository.findById(session.getUserId()).ifPresent(profile -> {
-            if ("trial".equals(profile.getPlan())) {
-                if (profile.getTrialGenerationsLeft() > 0) {
-                    profile.setTrialGenerationsLeft(profile.getTrialGenerationsLeft() - 1);
-                }
-            } else if (profile.getPlanGenerationsLeft() > 0) {
+            if (hasActivePaidPlan(profile) && profile.getPlanGenerationsLeft() > 0) {
                 profile.setPlanGenerationsLeft(profile.getPlanGenerationsLeft() - 1);
+            } else if ("trial".equals(profile.getPlan()) && profile.getTrialGenerationsLeft() > 0) {
+                profile.setTrialGenerationsLeft(profile.getTrialGenerationsLeft() - 1);
             } else if (profile.getBonusGenerationsLeft() > 0) {
                 profile.setBonusGenerationsLeft(profile.getBonusGenerationsLeft() - 1);
             }
@@ -75,14 +73,17 @@ public class QuotaService {
     }
 
     private int availableUnits(UserProfileEntity profile) {
-        if ("wibe".equals(profile.getPlan()) || "elite".equals(profile.getPlan())) {
-            if (profile.getSubscriptionExpiresAt() != null
-                    && profile.getSubscriptionExpiresAt().isBefore(Instant.now())) {
-                return 0;
-            }
+        if (hasActivePaidPlan(profile)) {
             return profile.getPlanGenerationsLeft() + profile.getBonusGenerationsLeft();
         }
-        return profile.getTrialGenerationsLeft();
+        int trialUnits = "trial".equals(profile.getPlan()) ? profile.getTrialGenerationsLeft() : 0;
+        return trialUnits + profile.getBonusGenerationsLeft();
+    }
+
+    private boolean hasActivePaidPlan(UserProfileEntity profile) {
+        return ("wibe".equals(profile.getPlan()) || "elite".equals(profile.getPlan()))
+                && (profile.getSubscriptionExpiresAt() == null
+                    || profile.getSubscriptionExpiresAt().isAfter(Instant.now()));
     }
 
     private long activeReservations(UUID userId) {

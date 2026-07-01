@@ -451,3 +451,7 @@
 - Добавлены robots, sitemap, llms.txt, Яндекс.Метрика, автотесты в сборке.
 - Ревью: визуалы и тексты на ключевых SEO-страницах, нейростилист вместо AI, брендовая форма, фичи памяти и оценки лука.
 - Переработаны шаблоны «Как работает», «Подбор образа», «Макияж»: fashion-layout, градиентный CTA раннего доступа.
+## 2026-07-01 (Referral rewards for all users)
+- Opened personal referral links and first-purchase rewards to trial users and expired subscribers.
+- Bonus try-ons now participate in quota calculation and consumption even without an active subscription.
+- Updated web/mobile profile, sharing, referral-history and onboarding copy to present free referral try-ons.

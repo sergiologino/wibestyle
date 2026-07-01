@@ -280,8 +280,9 @@ export default function ProfileSettingsClient() {
           href="/referrals"
           className="mt-6 flex w-fit text-xs font-medium text-[var(--pink)] underline decoration-[var(--pink)]/50 underline-offset-4 transition hover:decoration-[var(--pink)]"
         >
-          Реферальная программа и история начислений →
+          Приглашай друзей — получай бесплатные примерки →
         </Link>
+        <p className="mt-2 text-xs text-[var(--muted)]">Доступно всем пользователям, подписка не нужна.</p>
       </Card>
 
       <Card>

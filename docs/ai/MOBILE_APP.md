@@ -2,7 +2,7 @@
 
 Native **Expo (React Native)** приложение «Я на стиле» — parity с web-app: OTP/логин, аватар, примерка по ссылке/фото, галерея, избранное, YooKassa checkout/autorenew и Expo push.
 
-Referral parity: profile links to `/referrals`, where active Wibe/Elite subscribers can share their personal web deep link and inspect masked reward history. Monthly/annual first purchases award 3/15 durable bonus try-ons.
+Referral parity: profile links to `/referrals`, where every user can share a personal web deep link and inspect masked reward history. Monthly/annual first purchases award 3/15 durable bonus try-ons that can be spent without a subscription.
 
 Onboarding trial path: `welcome/onboarding → auth → paywall → trial`. The final onboarding trial CTA and skip action open auth with `next=/paywall`; after registration/auth the paywall shows the free trial option.
 

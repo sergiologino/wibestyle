@@ -10,7 +10,7 @@ export function subscriptionNudgeLevel(profile: UserProfile | null | undefined):
   if (!profile || isPaidSubscription(profile)) {
     return "none";
   }
-  const left = profile.trialGenerationsLeft;
+  const left = profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0);
   if (left <= 1) return "urgent";
   if (left <= 3) return "medium";
   return "soft";

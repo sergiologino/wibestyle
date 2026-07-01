@@ -57,7 +57,10 @@ export default function HomeDashboardClient() {
       ) : null}
 
       {!isPaidSubscription(profile) && profile ? (
-        <SubscriptionNudgeBanner level={nudgeLevel} trialLeft={profile.trialGenerationsLeft} />
+        <SubscriptionNudgeBanner
+          level={nudgeLevel}
+          trialLeft={profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0)}
+        />
       ) : null}
 
       <section className="rounded-[28px] border border-[#ffd1ed] bg-white p-8 shadow-[0_16px_48px_rgba(58,12,82,0.06)]">
@@ -65,7 +68,7 @@ export default function HomeDashboardClient() {
         <h1 className="text-display mt-3 text-4xl">Готова примерить новый look?</h1>
         <p className="text-body mt-3">
           {profile?.plan === "trial"
-            ? `Осталось бесплатных примерок: ${profile.trialGenerationsLeft}`
+            ? `Осталось бесплатных примерок: ${profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0)}`
             : profile?.planGenerationsLeft != null
               ? `Генераций в подписке: ${profile.planGenerationsLeft}`
               : "Подписка активна — примеряй без ограничений trial."}

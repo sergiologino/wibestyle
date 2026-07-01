@@ -19,7 +19,7 @@ export default function ReferralClient() {
   }, [api]);
 
   async function share() {
-    if (!data?.eligible) return;
+    if (!data) return;
     if (navigator.share) {
       await navigator.share({ title: "Я на стиле", text: "Попробуй виртуальную примерочную", url: link });
     } else {
@@ -37,14 +37,12 @@ export default function ReferralClient() {
         <p className="mt-3 text-[var(--muted)]">
           Друг оформляет месячную подписку — тебе 3 примерки. Выбирает год — получаешь 15.
         </p>
+        <p className="mt-3 rounded-2xl bg-[var(--pink-bg)] p-3 text-sm text-[var(--muted)]">
+          Программа доступна всем. Приглашай друзей и получай бесплатные примерки даже без подписки.
+        </p>
         <p className="mt-4 font-medium">Бонусных примерок доступно: {data?.bonusGenerationsLeft ?? "…"}</p>
-        {!data?.eligible ? (
-          <p className="mt-3 rounded-2xl bg-[var(--pink-bg)] p-3 text-sm text-[var(--muted)]">
-            Реферальные бонусы доступны при активной подписке Wibe или Elite.
-          </p>
-        ) : null}
         <div className="mt-5 rounded-2xl border border-[var(--pink-soft)] bg-white p-3 text-sm break-all">{link || "Загружаем ссылку…"}</div>
-        <Button className="mt-4" disabled={!data?.eligible} onClick={() => void share()}>
+        <Button className="mt-4" disabled={!data} onClick={() => void share()}>
           {copied ? "Ссылка скопирована" : "Поделиться ссылкой"}
         </Button>
       </Card>
