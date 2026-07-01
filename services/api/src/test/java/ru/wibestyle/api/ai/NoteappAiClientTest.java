@@ -85,8 +85,8 @@ class NoteappAiClientTest {
 
     @Test
     void detectsWhenIntegrationSubstitutesAnotherNetwork() {
-        assertThat(NoteappAiClient.isUnexpectedNetwork("kling-try-on-photo", "wibestyle-vton")).isTrue();
-        assertThat(NoteappAiClient.isUnexpectedNetwork("kling-try-on-photo", "KLING-TRY-ON-PHOTO")).isFalse();
-        assertThat(NoteappAiClient.isUnexpectedNetwork("kling-try-on-photo", null)).isFalse();
+        assertThat(NoteappAiClient.isUnexpectedNetwork("kling-kolors-tryon", "wibestyle-vton")).isTrue();
+        assertThat(NoteappAiClient.isUnexpectedNetwork("kling-kolors-tryon", "KLING-KOLORS-TRYON")).isFalse();
+        assertThat(NoteappAiClient.isUnexpectedNetwork("kling-kolors-tryon", null)).isFalse();
     }
 }

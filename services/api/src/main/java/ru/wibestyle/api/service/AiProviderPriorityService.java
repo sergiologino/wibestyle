@@ -21,13 +21,13 @@ public class AiProviderPriorityService {
 
     private static final List<ProviderDefinition> PHOTO_DEFAULTS = List.of(
             new ProviderDefinition("wibestyle-vton", "Grok Imagine", 10),
-            new ProviderDefinition("fashn-try-on-photo", "FASHN Try-On Photo", 20),
-            new ProviderDefinition("kling-try-on-photo", "Kling Virtual Try-On", 30)
+            new ProviderDefinition("fashn-tryon-max", "FASHN Try-On Photo", 20),
+            new ProviderDefinition("kling-kolors-tryon", "Kling Virtual Try-On", 30)
     );
     private static final List<ProviderDefinition> VIDEO_DEFAULTS = List.of(
             new ProviderDefinition("wibestyle-season-video", "Grok Imagine Video", 10),
-            new ProviderDefinition("fashn-try-on-video", "FASHN Try-On Video", 20),
-            new ProviderDefinition("kling-try-on-video", "Kling Virtual Try-On Video", 30)
+            new ProviderDefinition("fashn-tryon-video", "FASHN Try-On Video", 20),
+            new ProviderDefinition("kling-tryon-video", "Kling Virtual Try-On Video", 30)
     );
 
     private final AiProviderPriorityRepository repository;

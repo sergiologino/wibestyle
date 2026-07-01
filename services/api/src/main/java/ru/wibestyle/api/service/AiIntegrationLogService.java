@@ -212,16 +212,16 @@ public class AiIntegrationLogService {
         if (network != null && network.contains("season-video")) {
             return "WibeStyle Season Hit Video";
         }
-        if (network != null && network.contains("fashn-try-on-photo")) {
+        if (network != null && network.contains("fashn-tryon-max")) {
             return "FASHN Try-On Photo";
         }
-        if (network != null && network.contains("fashn-try-on-video")) {
+        if (network != null && network.contains("fashn-tryon-video")) {
             return "FASHN Try-On Video";
         }
-        if (network != null && network.contains("kling-try-on-photo")) {
+        if (network != null && network.contains("kling-kolors-tryon")) {
             return "Kling Try-On Photo";
         }
-        if (network != null && network.contains("kling-try-on-video")) {
+        if (network != null && network.contains("kling-tryon-video")) {
             return "Kling Try-On Video";
         }
         return network != null ? network : "—";

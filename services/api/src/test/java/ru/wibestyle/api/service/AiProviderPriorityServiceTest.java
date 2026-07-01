@@ -24,20 +24,20 @@ class AiProviderPriorityServiceTest {
     void routeForUsesEnabledProvidersInPriorityOrder() {
         when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
                 .thenReturn(List.of(
-                        entity("fashn-try-on-photo", "FASHN", 20, true),
-                        entity("kling-try-on-photo", "Kling", 30, true)
+                        entity("fashn-tryon-max", "FASHN", 20, true),
+                        entity("kling-kolors-tryon", "Kling", 30, true)
                 ));
         when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
                 .thenReturn(List.of(
-                        entity("kling-try-on-photo", "Kling", 30, true),
-                        entity("fashn-try-on-photo", "FASHN", 20, true)
+                        entity("kling-kolors-tryon", "Kling", 30, true),
+                        entity("fashn-tryon-max", "FASHN", 20, true)
                 ));
 
         List<AiProviderPriorityService.ProviderRoute> route =
                 service.routeFor(AiOperations.VIRTUAL_TRY_ON_PHOTO);
 
         assertThat(route).extracting(AiProviderPriorityService.ProviderRoute::networkName)
-                .containsExactly("fashn-try-on-photo", "kling-try-on-photo");
+                .containsExactly("fashn-tryon-max", "kling-kolors-tryon");
     }
 
     @Test
@@ -45,17 +45,17 @@ class AiProviderPriorityServiceTest {
         when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
                 .thenReturn(List.of(
                         entity("wibestyle-vton", "Grok", 10, true),
-                        entity("kling-try-on-photo", "Kling", 10, true)
+                        entity("kling-kolors-tryon", "Kling", 10, true)
                 ));
         when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
                 .thenReturn(List.of(
                         entity("wibestyle-vton", "Grok", 10, true),
-                        entity("kling-try-on-photo", "Kling", 10, true)
+                        entity("kling-kolors-tryon", "Kling", 10, true)
                 ));
 
         assertThat(service.routeFor(AiOperations.VIRTUAL_TRY_ON_PHOTO))
                 .extracting(AiProviderPriorityService.ProviderRoute::networkName)
-                .containsExactly("kling-try-on-photo", "wibestyle-vton");
+                .containsExactly("kling-kolors-tryon", "wibestyle-vton");
     }
 
     @Test
