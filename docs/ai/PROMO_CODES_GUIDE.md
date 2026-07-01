@@ -77,7 +77,7 @@ http://localhost:3001/auth?promo=VK2026
 
 ```
 Примерь одежду с Wildberries и Ozon на себе — до покупки.
-2 бесплатные AI-примерки + скидка 20% по промокоду VK2026:
+3 бесплатные AI-примерки и 1 видео + скидка 20% по промокоду VK2026:
 https://app.vibestyle.art/welcome?promo=VK2026
 ```
 

@@ -101,7 +101,7 @@ Provider priorities only select the `networkName` sent to `noteapp-ai-integratio
 | POST | `/billing/webhooks/{provider}` | webhook провайдера (`mock` + `payment.succeeded`) |
 | POST | `/billing/webhooks/mock/simulate?checkoutId=` | dev shortcut для завершения оплаты |
 
-`GET /billing/plans` returns period-accurate `generationsPerPeriod`: Wibe is 20 monthly or 240 annual; Elite is 100 monthly or 1200 annual. New profiles receive 2 free trial generations.
+`GET /billing/plans` returns period-accurate `generationsPerPeriod`: Wibe is 20 monthly or 240 annual; Elite is 100 monthly or 1200 annual. New profiles receive 3 free trial try-ons and 1 successful trial video.
 
 Recurring: initial payment sends `save_payment_method=true` only after explicit user consent. Only verified YooKassa `payment_method.id` is stored. Scheduler warns at T−3 days, charges the regular current tariff at T0 and retries rejected charges up to three times. Unknown network outcomes reuse the same checkout UUID as YooKassa idempotence key.
 

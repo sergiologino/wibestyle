@@ -156,6 +156,7 @@ export type UserProfile = {
   privacy?: ProfilePrivacy;
   plan: SubscriptionPlan;
   trialGenerationsLeft: number;
+  trialVideoGenerationsLeft?: number;
   planGenerationsLeft?: number;
   bonusGenerationsLeft?: number;
   billingPeriod?: "monthly" | "annual";
@@ -216,6 +217,7 @@ export type UserEntitlements = {
   eliteFrame: boolean;
   earlyAccess: boolean;
   videoTryOn: boolean;
+  trialVideoGenerationsLeft?: number;
   search: boolean;
   sizeAdvisory: boolean;
   favorites: boolean;
@@ -360,6 +362,7 @@ export type TryOnErrorCode =
   | "INSUFFICIENT_GENERATIONS"
   | "SESSION_NOT_FOUND"
   | "VIDEO_ELITE_REQUIRED"
+  | "VIDEO_TRIAL_EXHAUSTED"
   | "VIDEO_GENERATION_FAILED";
 
 export type SeasonHitVideoStatus = "none" | "generating" | "ready" | "failed";

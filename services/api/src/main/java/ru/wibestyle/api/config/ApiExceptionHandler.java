@@ -84,6 +84,8 @@ public class ApiExceptionHandler {
                     "Сервис изображений отклонил примерку по модерации. Для домашней одежды это ложное срабатывание — попробуйте позже.";
             case "VIDEO_ELITE_REQUIRED" ->
                     "Видео «Хит сезона» доступно только подписчикам Elite. Оформите Elite, чтобы создавать кинематографичные ролики.";
+            case "VIDEO_TRIAL_EXHAUSTED" ->
+                    "Бесплатное видео в trial уже использовано. Оформите Elite, чтобы создавать видео к каждой примерке.";
             case "VIDEO_GENERATION_FAILED" -> "Не удалось создать видео";
             case "SIZE_ADVISORY_DISABLED" -> "Size advisory временно выключен";
             case "POST_NOT_FOUND" -> "Пост не найден";

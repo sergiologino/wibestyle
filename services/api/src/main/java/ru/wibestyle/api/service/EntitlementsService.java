@@ -25,7 +25,10 @@ public class EntitlementsService {
         entitlements.put("priorityQueue", "elite".equals(plan));
         entitlements.put("eliteFrame", "elite".equals(plan));
         entitlements.put("earlyAccess", "elite".equals(plan));
-        entitlements.put("videoTryOn", "elite".equals(plan) && featureFlagsProperties.isEnabled("videoTryOn"));
+        boolean videoEnabled = featureFlagsProperties.isEnabled("videoTryOn");
+        boolean trialVideoAvailable = "trial".equals(plan) && profile.getTrialVideoGenerationsLeft() > 0;
+        entitlements.put("videoTryOn", videoEnabled && ("elite".equals(plan) || trialVideoAvailable));
+        entitlements.put("trialVideoGenerationsLeft", profile.getTrialVideoGenerationsLeft());
         entitlements.put("search", featureFlagsProperties.isEnabled("search"));
         entitlements.put("sizeAdvisory", featureFlagsProperties.isEnabled("sizeAdvisory"));
         entitlements.put("favorites", !"trial".equals(plan) || profile.getTrialGenerationsLeft() >= 0);

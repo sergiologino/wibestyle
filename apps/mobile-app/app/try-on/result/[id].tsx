@@ -258,7 +258,10 @@ export default function TryOnResultScreen() {
     } catch (err) {
       setVideoGenerating(false);
       setVideoStatus("none");
-      if (err instanceof ApiError && err.code === "VIDEO_ELITE_REQUIRED") {
+      if (
+        err instanceof ApiError
+        && (err.code === "VIDEO_ELITE_REQUIRED" || err.code === "VIDEO_TRIAL_EXHAUSTED")
+      ) {
         router.push("/paywall?reason=elite_perk" as never);
         return;
       }
@@ -377,12 +380,15 @@ export default function TryOnResultScreen() {
             />
           ) : null}
           {videoStatus !== "ready" && videoStatus !== "generating" ? (
-            <Button
-              label="Создать видео"
-              icon={<Feather name="video" size={18} color={colors.white} />}
-              loading={videoGenerating}
-              onPress={makeVideo}
-            />
+            <>
+              <Button
+                label="Создать видео"
+                icon={<Feather name="video" size={18} color={colors.white} />}
+                loading={videoGenerating}
+                onPress={makeVideo}
+              />
+              <BodyText>В trial доступно одно бесплатное видео. В Elite — видео к каждой примерке.</BodyText>
+            </>
           ) : null}
           {videoStatus === "ready" && afterVideoUrl ? (
             <Button label="Видео в галерею" loading={saving} onPress={() => saveToGallery("video")} />

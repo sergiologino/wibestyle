@@ -298,7 +298,8 @@ class ApiIntegrationTest {
 
         mockMvc.perform(get("/api/v1/me").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.profile.trialGenerationsLeft").value(2))
+                .andExpect(jsonPath("$.profile.trialGenerationsLeft").value(3))
+                .andExpect(jsonPath("$.profile.trialVideoGenerationsLeft").value(1))
                 .andExpect(jsonPath("$.profile.interfacePalette").value("vibe"))
                 .andExpect(jsonPath("$.profile.plan").value("trial"));
     }
@@ -500,7 +501,7 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.session.status").value("ready"))
                 .andExpect(jsonPath("$.result.afterImageUrl").value("/assets/demo-after.svg"))
-                .andExpect(jsonPath("$.trialGenerationsLeft").value(1));
+                .andExpect(jsonPath("$.trialGenerationsLeft").value(2));
 
         mockMvc.perform(get("/api/v1/try-on/sessions/" + sessionId)
                         .header("Authorization", "Bearer " + accessToken))

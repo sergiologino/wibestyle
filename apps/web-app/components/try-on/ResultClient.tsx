@@ -335,7 +335,10 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     } catch (err) {
       setVideoGenerating(false);
       setVideoStatus("none");
-      if (err instanceof ApiError && err.code === "VIDEO_ELITE_REQUIRED") {
+      if (
+        err instanceof ApiError
+        && (err.code === "VIDEO_ELITE_REQUIRED" || err.code === "VIDEO_TRIAL_EXHAUSTED")
+      ) {
         router.push("/paywall?reason=elite_perk");
         return;
       }
@@ -535,7 +538,8 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         </div>
         {!hasVideo && videoStatus !== "generating" ? (
           <p className="text-body mt-3 text-sm">
-            Кинематографичное видео с look — эксклюзив Elite. Подходящая локация подбирается автоматически.
+            В trial доступно одно бесплатное видео. В Elite можно создавать видео к каждой примерке.
+            Подходящая локация подбирается автоматически.
           </p>
         ) : null}
         {videoError ? <p className="mt-3 font-normal text-[#c01278]">{videoError}</p> : null}

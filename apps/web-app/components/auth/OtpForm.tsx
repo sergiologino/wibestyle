@@ -114,7 +114,7 @@ export default function OtpForm() {
 
   return (
     <Card>
-      <p className="text-eyebrow">2 бесплатные AI-примерки</p>
+      <p className="text-eyebrow">3 бесплатные AI-примерки и 1 видео</p>
       <h1 className="text-display-md mt-4 text-3xl">Вход по телефону</h1>
       <p className="text-body mt-3">
         Получи код, войди и создай avatar-профиль для первой примерки.
