@@ -228,6 +228,15 @@ public class NoteappAiClient {
                 logService.logInboundResponse(session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, error, responseSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
                 return ProcessResult.failure(resolution.errorCode(), resolution.userMessage());
             }
+            if (isUnexpectedNetwork(networkName, networkUsed)) {
+                String error = "Requested network " + networkName + " but integration used " + networkUsed;
+                log.warn("Noteapp try-on provider mismatch: {}", error);
+                logService.logInboundResponse(
+                        session, false, requestId, networkUsed, provider, executionTimeMs,
+                        error, responseSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason
+                );
+                return ProcessResult.failure("AI_PROVIDER_MISMATCH", error);
+            }
 
             ImageResult imageResult = extractImageResult(response.path("response"));
             if (imageResult == null) {
@@ -258,6 +267,14 @@ public class NoteappAiClient {
             logService.logInboundResponse(session, false, null, networkName, null, 0, rawError, Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
             return ProcessResult.failure(resolution.errorCode(), resolution.userMessage());
         }
+    }
+
+    static boolean isUnexpectedNetwork(String requestedNetwork, String networkUsed) {
+        return requestedNetwork != null
+                && !requestedNetwork.isBlank()
+                && networkUsed != null
+                && !networkUsed.isBlank()
+                && !requestedNetwork.trim().equalsIgnoreCase(networkUsed.trim());
     }
 
     static Map<String, Object> buildVirtualTryOnPayload(

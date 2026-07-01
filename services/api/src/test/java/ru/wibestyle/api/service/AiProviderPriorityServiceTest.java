@@ -41,6 +41,24 @@ class AiProviderPriorityServiceTest {
     }
 
     @Test
+    void routeForBreaksEqualPrioritiesDeterministically() {
+        when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of(
+                        entity("wibestyle-vton", "Grok", 10, true),
+                        entity("kling-try-on-photo", "Kling", 10, true)
+                ));
+        when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of(
+                        entity("wibestyle-vton", "Grok", 10, true),
+                        entity("kling-try-on-photo", "Kling", 10, true)
+                ));
+
+        assertThat(service.routeFor(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .extracting(AiProviderPriorityService.ProviderRoute::networkName)
+                .containsExactly("kling-try-on-photo", "wibestyle-vton");
+    }
+
+    @Test
     void routeForFallsBackToConfiguredNetworkWhenDatabaseRouteIsEmpty() {
         properties.setVirtualTryOnNetwork("custom-primary");
         when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
@@ -71,6 +89,7 @@ class AiProviderPriorityServiceTest {
         assertThat(service.shouldFallback("VTON_CONTENT_MODERATION")).isTrue();
         assertThat(service.shouldFallback("AI_PROVIDER_TOKENS_EXHAUSTED")).isTrue();
         assertThat(service.shouldFallback("AI_PROVIDER_TIMEOUT")).isTrue();
+        assertThat(service.shouldFallback("AI_PROVIDER_MISMATCH")).isTrue();
         assertThat(service.shouldFallback("EMPTY_RESPONSE")).isTrue();
         assertThat(service.shouldFallback("SESSION_NOT_FOUND")).isFalse();
     }

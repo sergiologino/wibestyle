@@ -39,7 +39,7 @@ public class GarmentClassifierService {
             coverageLevel must be one of: normal, revealing, intimate
             moderationRisk must be one of: low, medium, high
             hasHumanModel is true when a person/model/mannequin body is visible in the product photo.
-            title: concise product name (2-5 words), e.g. "Midi dress", "Oversize jacket".
+            title: concise product name in Russian (2-5 words), e.g. "Платье миди", "Куртка оверсайз".
             """;
 
     private final NoteappAiClient noteappAiClient;
@@ -148,32 +148,32 @@ public class GarmentClassifierService {
     public GarmentClassification fallbackFromText(String text, String defaultTitle) {
         String lower = text == null ? "" : text.toLowerCase(Locale.ROOT).replace('ё', 'е');
         String category = "other";
-        String title = defaultTitle == null || defaultTitle.isBlank() ? "Garment" : defaultTitle.trim();
+        String title = defaultTitle == null || defaultTitle.isBlank() ? "Предмет одежды" : defaultTitle.trim();
 
         if (containsAny(lower, "underwear", "lingerie", "bra", "panties", "бель", "бюстгальтер", "трусы")) {
             category = "underwear";
-            title = "Underwear";
+            title = "Нижнее бельё";
         } else if (containsAny(lower, "sleep", "pajama", "night", "пижам", "ночн", "халат")) {
             category = "sleepwear";
-            title = "Sleepwear";
+            title = "Одежда для сна";
         } else if (containsAny(lower, "swim", "bikini", "купаль", "пляж")) {
             category = "swimwear";
-            title = "Swimwear";
+            title = "Купальник";
         } else if (containsAny(lower, "dress", "plat", "плать", "сарафан")) {
             category = "dress";
-            title = "Dress";
+            title = "Платье";
         } else if (containsAny(lower, "shoe", "obuv", "boot", "обув", "ботин", "кроссов", "туфл")) {
             category = "shoes";
-            title = "Shoes";
+            title = "Обувь";
         } else if (containsAny(lower, "jacket", "pidzh", "coat", "куртк", "пидж", "пальто", "кардиган")) {
             category = "jacket";
-            title = "Outerwear";
+            title = "Верхняя одежда";
         } else if (containsAny(lower, "pant", "jean", "bruk", "брюк", "джинс", "юбк", "шорт")) {
             category = "pants";
-            title = "Bottom garment";
+            title = "Брюки или юбка";
         } else if (containsAny(lower, "shirt", "top", "blouse", "рубаш", "блуз", "футбол", "свитер", "худи")) {
             category = "top";
-            title = "Top garment";
+            title = "Верх одежды";
         }
 
         return conservativeFallback(new GarmentClassification(category, title, "fallback"));

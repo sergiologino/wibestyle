@@ -21,7 +21,9 @@ const operations: Array<{ key: AiProviderOperation; title: string; description: 
 ];
 
 function sorted(items: AiProviderPriorityRecord[]) {
-  return [...items].sort((a, b) => a.priorityOrder - b.priorityOrder);
+  return [...items].sort(
+    (a, b) => a.priorityOrder - b.priorityOrder || a.networkName.localeCompare(b.networkName),
+  );
 }
 
 function roleLabel(index: number, enabled: boolean) {
@@ -156,7 +158,9 @@ export default function AdminAiProvidersPage() {
                       />
                     </label>
                     <label className="grid gap-1">
-                      <span className="text-xs font-black uppercase tracking-wide text-[#6d6273]">Приоритет</span>
+                      <span className="text-xs font-black uppercase tracking-wide text-[#6d6273]">
+                        Приоритет (1 — первый)
+                      </span>
                       <input
                         className="rounded-xl border border-[#ffd1ed] px-3 py-2 font-bold text-[#302637] outline-none focus:border-[#ff1fa2]"
                         type="number"

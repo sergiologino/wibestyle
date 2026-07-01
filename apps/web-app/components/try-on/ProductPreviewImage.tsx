@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@wibestyle/ui";
 import { useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
 import { isProtectedApiMediaUrl } from "@/lib/api-media";
@@ -14,8 +14,8 @@ type ProductPreviewImageProps = {
 
 export default function ProductPreviewImage({ imageUrl, alt, className }: ProductPreviewImageProps) {
   const [retry, setRetry] = useState(0);
-  const [failed, setFailed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const protectedMedia = isProtectedApiMediaUrl(imageUrl);
   const protectedBlob = useAuthenticatedBlob(protectedMedia ? imageUrl : null);
 
@@ -31,10 +31,8 @@ export default function ProductPreviewImage({ imageUrl, alt, className }: Produc
     return `${base}${separator}retry=${retry}&t=${Date.now()}`;
   }, [imageUrl, protectedBlob, protectedMedia, retry]);
 
-  useEffect(() => {
-    setFailed(false);
-    setLoaded(false);
-  }, [src]);
+  const failed = Boolean(src) && failedSrc === src;
+  const loaded = Boolean(src) && loadedSrc === src;
 
   return (
     <div className="relative">
@@ -51,16 +49,16 @@ export default function ProductPreviewImage({ imageUrl, alt, className }: Produc
           className={`${className ?? ""} ${!loaded && !failed ? "absolute inset-0 opacity-0" : ""}`}
           referrerPolicy="no-referrer"
           onLoad={() => {
-            setLoaded(true);
-            setFailed(false);
+            setLoadedSrc(src);
+            setFailedSrc(null);
           }}
           onError={() => {
             if (retry < 3) {
               setRetry((value) => value + 1);
               return;
             }
-            setFailed(true);
-            setLoaded(false);
+            setFailedSrc(src);
+            setLoadedSrc(null);
           }}
         />
       ) : null}
