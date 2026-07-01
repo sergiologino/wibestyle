@@ -36,6 +36,15 @@ public class UserEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "visitor_id", length = 64)
+    private String visitorId;
+
+    @Column(name = "first_marketing_visit_id")
+    private UUID firstMarketingVisitId;
+
+    @Column(name = "last_marketing_visit_id")
+    private UUID lastMarketingVisitId;
+
     protected UserEntity() {
     }
 
@@ -108,6 +117,16 @@ public class UserEntity {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getVisitorId() { return visitorId; }
+    public UUID getFirstMarketingVisitId() { return firstMarketingVisitId; }
+    public UUID getLastMarketingVisitId() { return lastMarketingVisitId; }
+
+    public void attachMarketing(String visitorId, UUID firstVisitId, UUID lastVisitId) {
+        if (this.visitorId == null) this.visitorId = visitorId;
+        if (this.firstMarketingVisitId == null) this.firstMarketingVisitId = firstVisitId;
+        if (lastVisitId != null) this.lastMarketingVisitId = lastVisitId;
     }
 
     public void setEmail(String email) {

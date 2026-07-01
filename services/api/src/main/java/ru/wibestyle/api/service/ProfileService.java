@@ -70,7 +70,8 @@ public class ProfileService {
     public UserProfileEntity anonymousProfile() {
         UserProfileEntity profile = new UserProfileEntity(UUID.randomUUID(), Instant.now());
         profile.setPlan("trial");
-        profile.setTrialGenerationsLeft(2);
+        profile.setTrialGenerationsLeft(3);
+        profile.setTrialVideoGenerationsLeft(1);
         return profile;
     }
 
@@ -209,6 +210,7 @@ public class ProfileService {
         map.put("userId", profile.getUserId().toString());
         map.put("plan", profile.getPlan());
         map.put("trialGenerationsLeft", profile.getTrialGenerationsLeft());
+        map.put("trialVideoGenerationsLeft", profile.getTrialVideoGenerationsLeft());
         map.put("planGenerationsLeft", profile.getPlanGenerationsLeft());
         map.put("bonusGenerationsLeft", profile.getBonusGenerationsLeft());
         if (profile.getBillingPeriod() != null) {

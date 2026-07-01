@@ -16,4 +16,19 @@ describe("formatTryOnError", () => {
     });
     expect(message).toContain("WIBESTYLE_AI");
   });
+
+  it("explains moderation rejection and preserved balance", () => {
+    const message = formatTryOnError({
+      id: "1",
+      userId: "2",
+      sourceType: "marketplace_link",
+      status: "failed",
+      visibility: "private",
+      errorCode: "VTON_CONTENT_MODERATION",
+      createdAt: "",
+      updatedAt: "",
+    });
+    expect(message).toContain("автоматической модерации");
+    expect(message).toContain("не списана");
+  });
 });

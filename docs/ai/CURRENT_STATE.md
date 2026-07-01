@@ -1,5 +1,15 @@
 # Current State
 
+## Trial allowance: 3 photos + 1 video (2026-07-01)
+- New trial profiles receive three photo try-ons and one successful season-hit video across the whole trial.
+- Flyway V32 adds one remaining photo try-on to existing trial accounts (up to three) and initializes one trial video.
+- A trial video is reserved before dispatch, consumed only on success and returned after AI/provider/storage failure. Elite keeps video access for every completed try-on; Wibe still requires an Elite upgrade.
+
+## Provider moderation error registry (2026-06-30)
+- Flyway V31 stores provider error fragments and user-facing descriptions in `ai_provider_error_mappings`; matching is case-insensitive and accepts the configured text inside a longer response.
+- Admin `/ai-provider-errors` can add, edit, disable and delete mappings when a new neural provider is connected.
+- A final `VTON_CONTENT_MODERATION` failure releases the reserved quota without consuming a try-on. The API response, web app and Android app explicitly tell the user that the try-on was not deducted.
+
 ## Admin referral conversion report (2026-06-28)
 - Admin section `/referrals` reports the full referral funnel: sender, invited user, registration, first completed subscription checkout and bonus award.
 - Summary counters show invitations, purchases, successful rewards and total generations awarded. A paid referral without a reward shows the inactive-sender-subscription reason.

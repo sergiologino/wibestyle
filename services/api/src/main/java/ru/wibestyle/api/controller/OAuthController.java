@@ -35,10 +35,11 @@ public class OAuthController {
             @PathVariable String provider,
             @RequestParam(required = false) String returnUrl,
             @RequestParam(required = false) String referralCode,
+            @RequestParam(required = false) String visitorId,
             HttpServletRequest request
     ) {
         try {
-            return oAuthService.start(provider, returnUrl, referralCode, request);
+            return oAuthService.start(provider, returnUrl, referralCode, visitorId, request);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, Card } from "@wibestyle/ui";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
+import { readVisitorId, trackAppMarketingEvent } from "@/lib/marketing/visitor";
 
 const YANDEX_RED = "#FC3F1D";
 
@@ -35,7 +36,8 @@ export default function OAuthButtons() {
     setError(null);
     try {
       const referralCode = new URLSearchParams(window.location.search).get("ref") ?? undefined;
-      const result = await api.startOAuth(provider, { referralCode });
+      const result = await api.startOAuth(provider, { referralCode, visitorId: readVisitorId() });
+      void trackAppMarketingEvent("signup_started", { method: provider });
       window.location.href = result.authorizationUrl;
     } catch {
       setError("OAuth временно недоступен — проверьте настройки провайдера");

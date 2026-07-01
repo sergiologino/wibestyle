@@ -12,6 +12,8 @@ import {
 import { SessionProvider } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { addPushResponseListener } from "@/lib/push-notifications";
+import * as Linking from "expo-linking";
+import { captureVisitorIdFromUrl, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
 
 function PushNotificationObserver() {
   const router = useRouter();
@@ -19,6 +21,20 @@ function PushNotificationObserver() {
     const subscription = addPushResponseListener((url) => router.push(url as never));
     return () => subscription.remove();
   }, [router]);
+  return null;
+}
+
+function MarketingVisitorObserver() {
+  useEffect(() => {
+    void Linking.getInitialURL().then(async (url) => {
+      const visitorId = await captureVisitorIdFromUrl(url);
+      if (visitorId) void trackMobileMarketingEvent("app_opened");
+    });
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      void captureVisitorIdFromUrl(url);
+    });
+    return () => subscription.remove();
+  }, []);
   return null;
 }
 
@@ -42,6 +58,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SessionProvider>
         <PushNotificationObserver />
+        <MarketingVisitorObserver />
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
           <Stack.Screen name="index" />

@@ -9,13 +9,10 @@ import ru.wibestyle.api.config.FeatureFlagsProperties;
 import ru.wibestyle.api.domain.AiJobStatus;
 import ru.wibestyle.api.domain.AiOperations;
 import ru.wibestyle.api.domain.QueueNames;
-import ru.wibestyle.api.domain.TryOnErrorCodes;
 import ru.wibestyle.api.domain.TryOnJobEntity;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.domain.TryOnSessionStatus;
-import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.repository.TryOnJobRepository;
-import ru.wibestyle.api.repository.UserProfileRepository;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -26,42 +23,27 @@ import java.util.UUID;
 public class SeasonHitVideoService {
 
     private final TryOnJobRepository tryOnJobRepository;
-    private final UserProfileRepository userProfileRepository;
-    private final EntitlementsService entitlementsService;
     private final FeatureFlagsProperties featureFlagsProperties;
     private final AiIntegrationProperties aiProperties;
     private final SeasonHitVideoJobWorker seasonHitVideoJobWorker;
+    private final TrialVideoQuotaService trialVideoQuotaService;
 
     public SeasonHitVideoService(
             TryOnJobRepository tryOnJobRepository,
-            UserProfileRepository userProfileRepository,
-            EntitlementsService entitlementsService,
             FeatureFlagsProperties featureFlagsProperties,
             AiIntegrationProperties aiProperties,
-            SeasonHitVideoJobWorker seasonHitVideoJobWorker
+            SeasonHitVideoJobWorker seasonHitVideoJobWorker,
+            TrialVideoQuotaService trialVideoQuotaService
     ) {
         this.tryOnJobRepository = tryOnJobRepository;
-        this.userProfileRepository = userProfileRepository;
-        this.entitlementsService = entitlementsService;
         this.featureFlagsProperties = featureFlagsProperties;
         this.aiProperties = aiProperties;
         this.seasonHitVideoJobWorker = seasonHitVideoJobWorker;
-    }
-
-    public void requireVideoEntitlement(UUID userId) {
-        UserProfileEntity profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
-        @SuppressWarnings("unchecked")
-        boolean videoTryOn = (boolean) entitlementsService.forProfile(profile).getOrDefault("videoTryOn", false);
-        if (!videoTryOn) {
-            throw new IllegalArgumentException(TryOnErrorCodes.VIDEO_ELITE_REQUIRED);
-        }
+        this.trialVideoQuotaService = trialVideoQuotaService;
     }
 
     @Transactional
     public Map<String, Object> generateVideo(UUID userId, TryOnSessionEntity session) {
-        requireVideoEntitlement(userId);
-
         if (session.getStatus() != TryOnSessionStatus.READY) {
             throw new IllegalArgumentException("SESSION_NOT_READY");
         }
@@ -88,6 +70,7 @@ public class SeasonHitVideoService {
             throw new IllegalArgumentException("FEATURE_DISABLED");
         }
 
+        trialVideoQuotaService.reserve(userId, session);
         session.setVideoStatus("generating");
         session.setVideoErrorCode(null);
         session.setVideoErrorMessage(null);

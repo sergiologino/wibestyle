@@ -5,6 +5,7 @@ import { createLandingApi } from "@/lib/api";
 import { pricing, siteConfig } from "@/lib/site";
 import { formatRub } from "@/lib/utils";
 import { YANDEX_METRIKA_ID } from "@/lib/metrika";
+import { buildAttributedAppUrl } from "@/lib/marketing/buildAppUrl";
 
 export type LeadInterest = "clothing" | "makeup" | "hairstyle" | "full-look";
 
@@ -57,7 +58,7 @@ export default function LeadForm({ interest = "clothing", variant = "full", clas
   function onClick(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
 
-    const target = resolveAppLaunchUrl(undefined, promoActive);
+    const target = buildAttributedAppUrl(resolveAppLaunchUrl(undefined, promoActive));
     if (typeof window !== "undefined" && window.ym) {
       window.ym(YANDEX_METRIKA_ID, "reachGoal", `app_open_${interest}`);
     }

@@ -156,6 +156,7 @@ export type UserProfile = {
   privacy?: ProfilePrivacy;
   plan: SubscriptionPlan;
   trialGenerationsLeft: number;
+  trialVideoGenerationsLeft?: number;
   planGenerationsLeft?: number;
   bonusGenerationsLeft?: number;
   billingPeriod?: "monthly" | "annual";
@@ -216,6 +217,7 @@ export type UserEntitlements = {
   eliteFrame: boolean;
   earlyAccess: boolean;
   videoTryOn: boolean;
+  trialVideoGenerationsLeft?: number;
   search: boolean;
   sizeAdvisory: boolean;
   favorites: boolean;
@@ -356,9 +358,11 @@ export type TryOnErrorCode =
   | "AVATAR_NOT_READY"
   | "AI_PROVIDER_TIMEOUT"
   | "AI_GENERATION_FAILED"
+  | "VTON_CONTENT_MODERATION"
   | "INSUFFICIENT_GENERATIONS"
   | "SESSION_NOT_FOUND"
   | "VIDEO_ELITE_REQUIRED"
+  | "VIDEO_TRIAL_EXHAUSTED"
   | "VIDEO_GENERATION_FAILED";
 
 export type SeasonHitVideoStatus = "none" | "generating" | "ready" | "failed";
@@ -562,6 +566,44 @@ export type PublishedReview = {
   body: string;
   displayName: string;
   publishedAt: string;
+};
+
+export type MarketingStatsRow = {
+  channelName?: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content?: string;
+  term?: string;
+  visits: number;
+  registrations: number;
+  registrationConversion: number;
+  payments: number;
+  paymentConversion: number;
+};
+
+export type MarketingChannel = {
+  id: string;
+  code: string;
+  displayName: string;
+  utmSource: string;
+  utmMedium: string;
+  description: string;
+  enabled: boolean;
+  updatedAt: string;
+};
+
+export type MarketingChannelPayload = Omit<MarketingChannel, "id" | "updatedAt">;
+
+export type MarketingRegistration = {
+  userId: string;
+  registeredAt: string;
+  firstSource: string;
+  firstMedium: string;
+  firstCampaign: string;
+  lastSource: string;
+  lastMedium: string;
+  lastCampaign: string;
 };
 
 export type ApiError = {

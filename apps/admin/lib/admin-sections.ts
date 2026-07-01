@@ -1,5 +1,12 @@
 export const adminSections = [
   {
+    id: "marketing",
+    title: "Маркетинг / Источники",
+    description: "UTM-визиты, регистрации, оплаты и редактируемый справочник рекламных каналов.",
+    status: "Ready",
+    href: "/marketing",
+  },
+  {
     id: "referrals",
     title: "Реферальная программа",
     description: "Отправители ссылок, регистрации, покупки подписок и начисления дополнительных примерок.",
@@ -54,6 +61,13 @@ export const adminSections = [
     description: "Редактирование базовой русской части запроса к Grok (JSON с товаром дописывает система).",
     status: "Ready",
     href: "/ai-prompts",
+  },
+  {
+    id: "ai-provider-errors",
+    title: "Ошибки нейросетей",
+    description: "Реестр ответов провайдеров: распознавание модерации и понятные сообщения пользователю.",
+    status: "Ready",
+    href: "/ai-provider-errors",
   },
   {
     id: "settings",

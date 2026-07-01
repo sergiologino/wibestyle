@@ -37,6 +37,7 @@ public class BillingService {
     private final YooKassaClient yooKassaClient;
     private final NotificationService notificationService;
     private final ReferralService referralService;
+    private final MarketingAttributionService marketingAttributionService;
 
     public BillingService(
             BillingProperties billingProperties,
@@ -46,7 +47,8 @@ public class BillingService {
             BillingSubscriptionRepository billingSubscriptionRepository,
             YooKassaClient yooKassaClient,
             NotificationService notificationService,
-            ReferralService referralService
+            ReferralService referralService,
+            MarketingAttributionService marketingAttributionService
     ) {
         this.billingProperties = billingProperties;
         this.userProfileRepository = userProfileRepository;
@@ -56,6 +58,7 @@ public class BillingService {
         this.yooKassaClient = yooKassaClient;
         this.notificationService = notificationService;
         this.referralService = referralService;
+        this.marketingAttributionService = marketingAttributionService;
     }
 
     public Map<String, Object> listPlans(UserProfileEntity profile) {
@@ -113,6 +116,12 @@ public class BillingService {
                 provider,
                 now
         );
+        try {
+            marketingAttributionService.recordSystemEvent(null, userId, "payment_started",
+                    Map.of("checkoutId", checkoutId.toString(), "plan", plan, "period", period));
+        } catch (RuntimeException ignored) {
+            // Analytics must not prevent checkout creation.
+        }
         checkout.setSavePaymentMethod(savePaymentMethod);
 
         String paymentUrl;
@@ -227,6 +236,13 @@ public class BillingService {
 
         updateRecurringSubscription(checkout, payment, renewal);
         referralService.rewardFirstPurchase(checkout);
+        try {
+            marketingAttributionService.recordSystemEvent(null, checkout.getUserId(), "payment_completed",
+                    Map.of("checkoutId", checkout.getId().toString(), "plan", checkout.getPlan(),
+                            "period", checkout.getBillingPeriod(), "priceRub", checkout.getPriceRub()));
+        } catch (RuntimeException ignored) {
+            // Analytics must not roll back a confirmed payment.
+        }
 
         UserProfileEntity profile = userProfileRepository.findById(checkout.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));

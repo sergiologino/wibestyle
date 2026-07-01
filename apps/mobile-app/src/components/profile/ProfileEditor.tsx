@@ -280,7 +280,10 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
             <View style={styles.subscriptionMeta}>
               <Text style={styles.planStrong}>{planLabel}</Text>
               {profile.plan === "trial" ? (
-                <BodyText>Бесплатных примерок: {profile.trialGenerationsLeft}</BodyText>
+                <>
+                  <BodyText>Бесплатных примерок: {profile.trialGenerationsLeft}</BodyText>
+                  <BodyText>Бесплатных видео: {profile.trialVideoGenerationsLeft ?? 0}</BodyText>
+                </>
               ) : profile.planGenerationsLeft != null ? (
                 <BodyText>Генераций в периоде: {profile.planGenerationsLeft}</BodyText>
               ) : (

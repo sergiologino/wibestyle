@@ -12,6 +12,7 @@ import { legalLinks } from "@/lib/legal-links";
 import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
 import { formatRussianPhone, isRussianPhoneComplete } from "@/lib/phone-mask";
 import { colors, spacing } from "@/theme/tokens";
+import { readVisitorId, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       const result = await api.startOtp(phone);
+      void trackMobileMarketingEvent("signup_started", { method: "sms" });
       setRequestId(result.requestId);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось отправить код");
@@ -50,6 +52,7 @@ export default function AuthScreen() {
         code,
         undefined,
         typeof searchParams.ref === "string" ? searchParams.ref : undefined,
+        await readVisitorId(),
       );
       const meClient = new WibeStyleApiClient({
         baseUrl: getApiBaseUrl(),

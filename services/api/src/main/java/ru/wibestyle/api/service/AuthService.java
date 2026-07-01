@@ -2,6 +2,8 @@ package ru.wibestyle.api.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.wibestyle.api.auth.JwtService;
 import ru.wibestyle.api.auth.RefreshTokenStore;
 import ru.wibestyle.api.config.AuthProperties;
@@ -18,6 +20,7 @@ import java.util.regex.Pattern;
 
 @Service
 public class AuthService {
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
@@ -25,6 +28,7 @@ public class AuthService {
     private final ProfileService profileService;
     private final PromoService promoService;
     private final ReferralService referralService;
+    private final MarketingAttributionService marketingAttributionService;
     private final JwtService jwtService;
     private final RefreshTokenStore refreshTokenStore;
     private final AuthProperties authProperties;
@@ -41,6 +45,7 @@ public class AuthService {
             ProfileService profileService,
             PromoService promoService,
             ReferralService referralService,
+            MarketingAttributionService marketingAttributionService,
             JwtService jwtService,
             RefreshTokenStore refreshTokenStore,
             AuthProperties authProperties,
@@ -52,6 +57,7 @@ public class AuthService {
         this.profileService = profileService;
         this.promoService = promoService;
         this.referralService = referralService;
+        this.marketingAttributionService = marketingAttributionService;
         this.jwtService = jwtService;
         this.refreshTokenStore = refreshTokenStore;
         this.authProperties = authProperties;
@@ -112,6 +118,11 @@ public class AuthService {
 
     @Transactional
     public AuthResult verifyOtp(String requestId, String code, String promoCode, String referralCode) {
+        return verifyOtp(requestId, code, promoCode, referralCode, null);
+    }
+
+    @Transactional
+    public AuthResult verifyOtp(String requestId, String code, String promoCode, String referralCode, String visitorId) {
         PhoneOtpChallenge challenge = phoneChallenges.get(requestId);
         if (challenge == null || challenge.expiresAt().isBefore(Instant.now())) {
             phoneChallenges.remove(requestId);
@@ -132,6 +143,11 @@ public class AuthService {
                 .orElseGet(() -> userRepository.saveAndFlush(new UserEntity(UUID.randomUUID(), challenge.phone(), Instant.now())));
         profileService.ensureProfile(user.getId());
         if (isNewUser) referralService.captureNewUser(user.getId(), referralCode);
+        try {
+            marketingAttributionService.attachUserToVisitor(user.getId(), visitorId, isNewUser);
+        } catch (RuntimeException ex) {
+            log.warn("Marketing attribution did not attach during SMS authentication", ex);
+        }
 
         Map<String, Object> promoResult = Map.of("redeemed", false);
         if (promoCode != null && !promoCode.isBlank()) {

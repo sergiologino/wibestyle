@@ -1,5 +1,15 @@
 # AI Changelog
 
+## 2026-07-01 (Three trial try-ons and one free video)
+- Restored the trial photo allowance from two to three; existing trial users receive one additional remaining try-on, capped at three.
+- Added one successful season-hit video to the whole trial. The quota is reserved atomically on start, consumed only after success and refunded after provider or storage failures.
+- Trial video availability is exposed in profile/entitlements and shown in web/mobile paywall, profile and result copy.
+
+## 2026-06-30 (Provider moderation error registry)
+- Added a database-backed registry that maps stable fragments of AI provider errors to user-facing explanations.
+- Seeded `Generated image rejected by content moderation.` as `VTON_CONTENT_MODERATION`; web and Android explain that intimate/erotic garment detection may have triggered automatic moderation and that the try-on was not deducted.
+- Added admin CRUD at `/ai-provider-errors`, parsing of top-level/nested `error` and `errorMessage` responses, and quota-refund regression coverage.
+
 ## 2026-06-28 (Reproducible npm dependency repair)
 - Added `npm run deps:repair` for the npm 11 `ENOENT` failure caused by a missing Tailwind platform optional package in a partially damaged `node_modules`.
 - The repair validates workspace boundaries, removes only monorepo dependency directories, and restores exact lockfile dependencies with optional packages included.

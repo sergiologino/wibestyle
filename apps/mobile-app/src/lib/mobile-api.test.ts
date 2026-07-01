@@ -64,4 +64,10 @@ describe("mobile-api helpers", () => {
   it("formats try-on quota error", () => {
     expect(formatTryOnError({ errorCode: "INSUFFICIENT_GENERATIONS" })).toContain("подписк");
   });
+
+  it("explains moderation rejection and preserved balance", () => {
+    const message = formatTryOnError({ errorCode: "VTON_CONTENT_MODERATION" });
+    expect(message).toContain("автоматической модерации");
+    expect(message).toContain("не списана");
+  });
 });

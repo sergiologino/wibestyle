@@ -7,10 +7,12 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import ru.wibestyle.api.config.AiIntegrationProperties;
 import ru.wibestyle.api.domain.AvatarSnapshotEntity;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.service.AiIntegrationLogService;
+import ru.wibestyle.api.service.AiProviderErrorMappingService;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -27,14 +29,17 @@ public class NoteappAiClient {
     private final RestClient restClient;
     private final AiIntegrationProperties properties;
     private final AiIntegrationLogService logService;
+    private final AiProviderErrorMappingService errorMappingService;
 
     public NoteappAiClient(
             RestClient.Builder restClientBuilder,
             AiIntegrationProperties properties,
-            AiIntegrationLogService logService
+            AiIntegrationLogService logService,
+            AiProviderErrorMappingService errorMappingService
     ) {
         this.properties = properties;
         this.logService = logService;
+        this.errorMappingService = errorMappingService;
         this.restClient = restClientBuilder
                 .baseUrl(properties.getBaseUrl())
                 .build();
@@ -218,10 +223,10 @@ public class NoteappAiClient {
                     executionTimeMs
             );
             if (!"success".equalsIgnoreCase(status)) {
-                String error = response.path("errorMessage").asText("AI request failed");
-                String errorCode = resolveTryOnErrorCode(error);
+                String error = extractErrorMessage(response, "AI request failed");
+                ProviderErrorResolution resolution = resolveProviderError(error);
                 logService.logInboundResponse(session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, error, responseSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
-                return ProcessResult.failure(errorCode, userFacingTryOnError(errorCode, error));
+                return ProcessResult.failure(resolution.errorCode(), resolution.userMessage());
             }
 
             ImageResult imageResult = extractImageResult(response.path("response"));
@@ -244,13 +249,14 @@ public class NoteappAiClient {
             logService.logInboundResponse(session, true, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, null, successSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
             return ProcessResult.success(requestId, networkUsed != null ? networkUsed : networkName, executionTimeMs, sourceUrl, imageBytes);
         } catch (RestClientException ex) {
-            log.warn("Noteapp AI call failed baseUrl={}: {}", properties.getBaseUrl(), ex.getMessage());
-            String errorCode = resolveTryOnErrorCode(ex.getMessage());
-            if ("AI_GENERATION_FAILED".equals(errorCode)) {
-                errorCode = "AI_PROVIDER_TIMEOUT";
+            String rawError = extractExceptionMessage(ex);
+            log.warn("Noteapp AI call failed baseUrl={}: {}", properties.getBaseUrl(), rawError);
+            ProviderErrorResolution resolution = resolveProviderError(rawError);
+            if ("AI_GENERATION_FAILED".equals(resolution.errorCode())) {
+                resolution = new ProviderErrorResolution("AI_PROVIDER_TIMEOUT", rawError);
             }
-            logService.logInboundResponse(session, false, null, networkName, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
-            return ProcessResult.failure(errorCode, ex.getMessage());
+            logService.logInboundResponse(session, false, null, networkName, null, 0, rawError, Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
+            return ProcessResult.failure(resolution.errorCode(), resolution.userMessage());
         }
     }
 
@@ -509,10 +515,10 @@ public class NoteappAiClient {
             String provider = response.path("response").path("provider").asText(null);
 
             if (!"success".equalsIgnoreCase(status)) {
-                String error = response.path("errorMessage").asText("AI video request failed");
-                String errorCode = resolveTryOnErrorCode(error);
+                String error = extractErrorMessage(response, "AI video request failed");
+                ProviderErrorResolution resolution = resolveProviderError(error);
                 logService.logInboundResponse(session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, error, Map.of(), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
-                return VideoProcessResult.failed(errorCode, userFacingTryOnError(errorCode, error));
+                return VideoProcessResult.failed(resolution.errorCode(), resolution.userMessage());
             }
 
             VideoResult videoResult = extractVideoResult(response.path("response"));
@@ -530,13 +536,14 @@ public class NoteappAiClient {
             logService.logInboundResponse(session, true, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, null, successSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
             return VideoProcessResult.success(requestId, networkUsed != null ? networkUsed : networkName, executionTimeMs, videoBytes);
         } catch (RestClientException ex) {
-            log.warn("Noteapp season video call failed: {}", ex.getMessage());
-            String errorCode = resolveTryOnErrorCode(ex.getMessage());
-            if ("AI_GENERATION_FAILED".equals(errorCode)) {
-                errorCode = "AI_PROVIDER_TIMEOUT";
+            String rawError = extractExceptionMessage(ex);
+            log.warn("Noteapp season video call failed: {}", rawError);
+            ProviderErrorResolution resolution = resolveProviderError(rawError);
+            if ("AI_GENERATION_FAILED".equals(resolution.errorCode())) {
+                resolution = new ProviderErrorResolution("AI_PROVIDER_TIMEOUT", rawError);
             }
-            logService.logInboundResponse(session, false, null, networkName, null, 0, ex.getMessage(), Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
-            return VideoProcessResult.failed(errorCode, ex.getMessage());
+            logService.logInboundResponse(session, false, null, networkName, null, 0, rawError, Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
+            return VideoProcessResult.failed(resolution.errorCode(), resolution.userMessage());
         }
     }
 
@@ -609,16 +616,16 @@ public class NoteappAiClient {
         return summary;
     }
 
-    private static String resolveTryOnErrorCode(String errorMessage) {
+    private ProviderErrorResolution resolveProviderError(String errorMessage) {
+        var configured = errorMappingService.match(errorMessage);
+        if (configured.isPresent()) {
+            var match = configured.get();
+            return new ProviderErrorResolution(match.errorCode(), match.userMessage());
+        }
         if (errorMessage == null) {
-            return "AI_GENERATION_FAILED";
+            return new ProviderErrorResolution("AI_GENERATION_FAILED", "AI request failed");
         }
         String lower = errorMessage.toLowerCase();
-        if (lower.contains("vton_content_moderation")
-                || lower.contains("content moderation")
-                || lower.contains("rejected by content moderation")) {
-            return "VTON_CONTENT_MODERATION";
-        }
         if (lower.contains("token")
                 || lower.contains("tokens")
                 || lower.contains("quota")
@@ -626,17 +633,45 @@ public class NoteappAiClient {
                 || lower.contains("insufficient balance")
                 || lower.contains("rate limit")
                 || lower.contains("429")) {
-            return "AI_PROVIDER_TOKENS_EXHAUSTED";
+            return new ProviderErrorResolution("AI_PROVIDER_TOKENS_EXHAUSTED", errorMessage);
         }
-        return "AI_GENERATION_FAILED";
+        return new ProviderErrorResolution("AI_GENERATION_FAILED", errorMessage);
     }
 
-    private static String userFacingTryOnError(String errorCode, String rawMessage) {
-        if ("VTON_CONTENT_MODERATION".equals(errorCode)) {
-            return "Сервис изображений временно отклонил примерку этого товара (модерация). "
-                    + "Это обычная домашняя одежда с маркетплейса, не эротика — попробуйте позже или другой ракурс фото товара.";
+    static String extractErrorMessage(JsonNode response, String fallback) {
+        if (response == null || response.isMissingNode()) {
+            return fallback;
         }
-        return rawMessage;
+        String[] fields = {"errorMessage", "error", "message", "detail"};
+        for (String field : fields) {
+            String value = response.path(field).asText(null);
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        JsonNode inner = response.path("response");
+        if (!inner.isMissingNode()) {
+            for (String field : fields) {
+                String value = inner.path(field).asText(null);
+                if (value != null && !value.isBlank()) {
+                    return value;
+                }
+            }
+        }
+        return fallback;
+    }
+
+    private static String extractExceptionMessage(RestClientException ex) {
+        if (ex instanceof RestClientResponseException responseException) {
+            String body = responseException.getResponseBodyAsString();
+            if (body != null && !body.isBlank()) {
+                return body;
+            }
+        }
+        return ex.getMessage() == null ? "AI request failed" : ex.getMessage();
+    }
+
+    private record ProviderErrorResolution(String errorCode, String userMessage) {
     }
 
     private static String promptPreview(String prompt) {

@@ -29,6 +29,10 @@ import type {
   UserNotification,
   ReferralOverview,
   AdminReferralReport,
+  MarketingChannel,
+  MarketingChannelPayload,
+  MarketingStatsRow,
+  MarketingRegistration,
 } from "@wibestyle/shared-types";
 import { extractMarketplaceUrl } from "@wibestyle/shared-types";
 
@@ -49,6 +53,19 @@ export type AiProviderPriorityRecord = {
 };
 
 export type AdminAiProviderSnapshot = Record<AiProviderOperation, AiProviderPriorityRecord[]>;
+
+export type AiProviderErrorMappingRecord = {
+  id: string;
+  errorText: string;
+  description: string;
+  enabled: boolean;
+  updatedAt: string;
+};
+
+export type AiProviderErrorMappingPayload = Pick<
+  AiProviderErrorMappingRecord,
+  "errorText" | "description" | "enabled"
+>;
 
 export class ApiError extends Error {
   status: number;
@@ -123,7 +140,7 @@ export class WibeStyleApiClient {
     });
   }
 
-  verifyOtp(requestId: string, code: string, promoCode?: string, referralCode?: string) {
+  verifyOtp(requestId: string, code: string, promoCode?: string, referralCode?: string, visitorId?: string) {
     return this.request<
       AuthTokens & {
         user: { id: string; phone?: string; email?: string; login?: string };
@@ -133,7 +150,13 @@ export class WibeStyleApiClient {
       }
     >("/api/v1/auth/otp/verify", {
       method: "POST",
-      body: JSON.stringify({ requestId, code, promoCode: promoCode || undefined, referralCode: referralCode || undefined }),
+      body: JSON.stringify({
+        requestId,
+        code,
+        promoCode: promoCode || undefined,
+        referralCode: referralCode || undefined,
+        visitorId: visitorId || undefined,
+      }),
     });
   }
 
@@ -166,13 +189,16 @@ export class WibeStyleApiClient {
     return this.request<{ yandex: { enabled: boolean }; google: { enabled: boolean } }>("/api/v1/auth/oauth/providers");
   }
 
-  startOAuth(provider: "yandex" | "google", options?: { returnUrl?: string; referralCode?: string }) {
+  startOAuth(provider: "yandex" | "google", options?: { returnUrl?: string; referralCode?: string; visitorId?: string }) {
     const params = new URLSearchParams();
     if (options?.returnUrl) {
       params.set("returnUrl", options.returnUrl);
     }
     if (options?.referralCode) {
       params.set("referralCode", options.referralCode);
+    }
+    if (options?.visitorId) {
+      params.set("visitorId", options.visitorId);
     }
     const query = params.toString();
     return this.request<{ provider: string; authorizationUrl: string; state: string }>(
@@ -701,6 +727,49 @@ export class WibeStyleApiClient {
     });
   }
 
+  getAdminMarketingStats(
+    adminKey: string,
+    filters: { from?: string; to?: string; source?: string; medium?: string; campaign?: string; detailed?: boolean } = {},
+  ) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== "" && value !== false) params.set(key, String(value));
+    });
+    const query = params.toString();
+    return this.request<{ items: MarketingStatsRow[] }>(
+      `/api/v1/admin/marketing/stats${query ? `?${query}` : ""}`,
+      { headers: { "X-Admin-Key": adminKey } },
+    );
+  }
+
+  listAdminMarketingChannels(adminKey: string) {
+    return this.request<{ items: MarketingChannel[] }>("/api/v1/admin/marketing/channels", {
+      headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  listAdminMarketingRegistrations(adminKey: string) {
+    return this.request<{ items: MarketingRegistration[] }>("/api/v1/admin/marketing/registrations", {
+      headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  createAdminMarketingChannel(adminKey: string, payload: MarketingChannelPayload) {
+    return this.request<MarketingChannel>("/api/v1/admin/marketing/channels", {
+      method: "POST",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  updateAdminMarketingChannel(adminKey: string, id: string, payload: MarketingChannelPayload) {
+    return this.request<MarketingChannel>(`/api/v1/admin/marketing/channels/${id}`, {
+      method: "PATCH",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
+  }
+
   getEntitlements() {
     return this.request<{ entitlements: UserEntitlements }>("/api/v1/billing/entitlements");
   }
@@ -1025,5 +1094,34 @@ export class WibeStyleApiClient {
         body: JSON.stringify({ items }),
       },
     );
+  }
+
+  listAdminAiProviderErrors(adminKey: string) {
+    return this.request<{ items: AiProviderErrorMappingRecord[] }>("/api/v1/admin/ai-provider-errors", {
+      headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  createAdminAiProviderError(adminKey: string, payload: AiProviderErrorMappingPayload) {
+    return this.request<AiProviderErrorMappingRecord>("/api/v1/admin/ai-provider-errors", {
+      method: "POST",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  updateAdminAiProviderError(adminKey: string, id: string, payload: AiProviderErrorMappingPayload) {
+    return this.request<AiProviderErrorMappingRecord>(`/api/v1/admin/ai-provider-errors/${id}`, {
+      method: "PUT",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  deleteAdminAiProviderError(adminKey: string, id: string) {
+    return this.request<void>(`/api/v1/admin/ai-provider-errors/${id}`, {
+      method: "DELETE",
+      headers: { "X-Admin-Key": adminKey },
+    });
   }
 }

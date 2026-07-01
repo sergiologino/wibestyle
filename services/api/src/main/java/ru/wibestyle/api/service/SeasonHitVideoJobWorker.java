@@ -38,6 +38,7 @@ public class SeasonHitVideoJobWorker {
     private final AiIntegrationProperties aiProperties;
     private final AiIntegrationLogService aiIntegrationLogService;
     private final AiProviderPriorityService aiProviderPriorityService;
+    private final TrialVideoQuotaService trialVideoQuotaService;
 
     public SeasonHitVideoJobWorker(
             TryOnJobRepository tryOnJobRepository,
@@ -47,7 +48,8 @@ public class SeasonHitVideoJobWorker {
             TryOnImageService tryOnImageService,
             AiIntegrationProperties aiProperties,
             AiIntegrationLogService aiIntegrationLogService,
-            AiProviderPriorityService aiProviderPriorityService
+            AiProviderPriorityService aiProviderPriorityService,
+            TrialVideoQuotaService trialVideoQuotaService
     ) {
         this.tryOnJobRepository = tryOnJobRepository;
         this.tryOnSessionRepository = tryOnSessionRepository;
@@ -57,6 +59,7 @@ public class SeasonHitVideoJobWorker {
         this.aiProperties = aiProperties;
         this.aiIntegrationLogService = aiIntegrationLogService;
         this.aiProviderPriorityService = aiProviderPriorityService;
+        this.trialVideoQuotaService = trialVideoQuotaService;
     }
 
     @Async("aiTaskExecutor")
@@ -79,6 +82,7 @@ public class SeasonHitVideoJobWorker {
         } catch (Exception ex) {
             log.error("Season hit video job {} failed unexpectedly", jobId, ex);
             markVideoFailed(session, job, TryOnErrorCodes.AI_GENERATION_FAILED, ex.getMessage());
+            trialVideoQuotaService.refund(session);
             tryOnSessionRepository.save(session);
         }
     }
@@ -99,6 +103,7 @@ public class SeasonHitVideoJobWorker {
         NoteappAiClient.VideoProcessResult aiResult = callAi(session);
         if (!aiResult.success()) {
             markVideoFailed(session, job, aiResult.errorCode(), aiResult.errorMessage());
+            trialVideoQuotaService.refund(session);
             tryOnSessionRepository.save(session);
             return;
         }
@@ -111,6 +116,7 @@ public class SeasonHitVideoJobWorker {
             }
         } catch (IOException ex) {
             markVideoFailed(session, job, TryOnErrorCodes.AI_GENERATION_FAILED, ex.getMessage());
+            trialVideoQuotaService.refund(session);
             tryOnSessionRepository.save(session);
             return;
         }
@@ -127,6 +133,7 @@ public class SeasonHitVideoJobWorker {
         job.setDurationMs((int) (System.currentTimeMillis() - started));
         job.setUpdatedAt(Instant.now());
 
+        trialVideoQuotaService.consume(session);
         tryOnJobRepository.save(job);
         tryOnSessionRepository.save(session);
     }

@@ -340,7 +340,7 @@ EXPO_PUBLIC_LANDING_URL=https://vibestyle.art
 
 ## Coolify deploy
 
-Ниже схема для деплоя из monorepo без Dockerfile. В Coolify создайте один Project, затем ресурсы в таком порядке: PostgreSQL, API, web-app, landing, admin. Redis можно добавить сразу, но сейчас refresh-token store использует JDBC, поэтому Redis не является обязательным для первого запуска.
+Ниже схема для деплоя из monorepo без Dockerfile. В Coolify создайте один Project, затем ресурсы в таком порядке: PostgreSQL, API, web-app, landing, admin. При обычном обновлении сначала разверните API и дождитесь успешных Flyway-миграций/health-check, затем web-app; landing и admin можно разворачивать параллельно после API. Android/RuStore-сборку публикуйте последней. Redis можно добавить сразу, но сейчас refresh-token store использует JDBC, поэтому Redis не является обязательным для первого запуска.
 
 ### 1. PostgreSQL resource
 

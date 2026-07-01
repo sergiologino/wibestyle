@@ -106,8 +106,8 @@ export default function PaywallScreen() {
               <Text style={styles.trialTitle}>Бесплатный trial</Text>
               <Text style={styles.trialText}>
                 {trialRemaining > 0
-                  ? `${TRIAL_TRY_ONS} бесплатные примерки · осталось ${trialRemaining}`
-                  : "Две бесплатные примерки уже использованы"}
+                  ? `${TRIAL_TRY_ONS} бесплатные примерки и 1 видео · осталось примерок: ${trialRemaining}`
+                  : "Три бесплатные примерки уже использованы"}
               </Text>
             </View>
             {trialRemaining > 0 ? (

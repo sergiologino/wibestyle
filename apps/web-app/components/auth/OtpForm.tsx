@@ -9,6 +9,7 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { capturePromoFromSearchParams, clearPendingPromo, readPendingPromo } from "@/lib/promo-storage";
 import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
 import { formatRussianPhone, isRussianPhoneComplete } from "@/lib/phone-mask";
+import { readVisitorId, trackAppMarketingEvent } from "@/lib/marketing/visitor";
 
 export default function OtpForm() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function OtpForm() {
     setLoading(true);
     try {
       const result = await api.startOtp(phone);
+      void trackAppMarketingEvent("signup_started", { method: "sms" });
       setRequestId(result.requestId);
     } catch (err) {
       setError(err instanceof ApiError && err.code === "OTP_RESEND_COOLDOWN"
@@ -70,7 +72,13 @@ export default function OtpForm() {
     }
 
     try {
-      const auth = await api.verifyOtp(requestId, code, normalizedPromo, searchParams.get("ref") ?? undefined);
+      const auth = await api.verifyOtp(
+        requestId,
+        code,
+        normalizedPromo,
+        searchParams.get("ref") ?? undefined,
+        readVisitorId(),
+      );
       const meClient = new WibeStyleApiClient({
         baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
         getAccessToken: () => auth.accessToken,
@@ -106,7 +114,7 @@ export default function OtpForm() {
 
   return (
     <Card>
-      <p className="text-eyebrow">2 бесплатные AI-примерки</p>
+      <p className="text-eyebrow">3 бесплатные AI-примерки и 1 видео</p>
       <h1 className="text-display-md mt-4 text-3xl">Вход по телефону</h1>
       <p className="text-body mt-3">
         Получи код, войди и создай avatar-профиль для первой примерки.

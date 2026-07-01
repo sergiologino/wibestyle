@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import YandexMetrika from "@/components/YandexMetrika";
 import JsonLd from "@/components/JsonLd";
+import MarketingAttributionCapture from "@/components/MarketingAttributionCapture";
 import { siteConfig } from "@/lib/site";
 import { organizationSchema, softwareApplicationSchema } from "@/lib/schema";
 import "./globals.css";
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body style={{ fontFamily: "var(--font-inter), var(--font-manrope), system-ui, sans-serif" }}>
         <JsonLd data={[organizationSchema(), softwareApplicationSchema()]} />
         <YandexMetrika />
+        <MarketingAttributionCapture />
         <HashScrollHandler />
         <Header />
         {children}

@@ -241,7 +241,10 @@ export default function ProfileSettingsClient() {
               {profile.billingPeriod ? ` · ${profile.billingPeriod === "annual" ? "год" : "месяц"}` : ""}
             </p>
             {profile.plan === "trial" ? (
-              <p>Бесплатных примерок осталось: {profile.trialGenerationsLeft}</p>
+              <>
+                <p>Бесплатных примерок осталось: {profile.trialGenerationsLeft}</p>
+                <p>Бесплатных видео осталось: {profile.trialVideoGenerationsLeft ?? 0}</p>
+              </>
             ) : profile.planGenerationsLeft != null ? (
               <p>Генераций в периоде: {profile.planGenerationsLeft}</p>
             ) : null}

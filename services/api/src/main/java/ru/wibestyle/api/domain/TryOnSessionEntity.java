@@ -121,6 +121,12 @@ public class TryOnSessionEntity {
     @Column(name = "video_error_message", length = 512)
     private String videoErrorMessage;
 
+    @Column(name = "video_quota_reserved", nullable = false)
+    private boolean videoQuotaReserved;
+
+    @Column(name = "video_quota_consumed", nullable = false)
+    private boolean videoQuotaConsumed;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -412,6 +418,22 @@ public class TryOnSessionEntity {
 
     public void setVideoErrorMessage(String videoErrorMessage) {
         this.videoErrorMessage = videoErrorMessage;
+    }
+
+    public boolean isVideoQuotaReserved() {
+        return videoQuotaReserved;
+    }
+
+    public void setVideoQuotaReserved(boolean videoQuotaReserved) {
+        this.videoQuotaReserved = videoQuotaReserved;
+    }
+
+    public boolean isVideoQuotaConsumed() {
+        return videoQuotaConsumed;
+    }
+
+    public void setVideoQuotaConsumed(boolean videoQuotaConsumed) {
+        this.videoQuotaConsumed = videoQuotaConsumed;
     }
 
     public Instant getCreatedAt() {

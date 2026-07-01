@@ -29,7 +29,10 @@ public class UserProfileEntity {
     private String plan = "trial";
 
     @Column(name = "trial_generations_left", nullable = false)
-    private int trialGenerationsLeft = 2;
+    private int trialGenerationsLeft = 3;
+
+    @Column(name = "trial_video_generations_left", nullable = false)
+    private int trialVideoGenerationsLeft = 1;
 
     @Column(name = "height_cm")
     private Integer heightCm;
@@ -138,6 +141,14 @@ public class UserProfileEntity {
 
     public void setTrialGenerationsLeft(int trialGenerationsLeft) {
         this.trialGenerationsLeft = trialGenerationsLeft;
+    }
+
+    public int getTrialVideoGenerationsLeft() {
+        return trialVideoGenerationsLeft;
+    }
+
+    public void setTrialVideoGenerationsLeft(int trialVideoGenerationsLeft) {
+        this.trialVideoGenerationsLeft = trialVideoGenerationsLeft;
     }
 
     public Integer getHeightCm() {

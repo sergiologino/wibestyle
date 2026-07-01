@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.wibestyle.api.config.OAuthProperties;
 import ru.wibestyle.api.domain.UserEntity;
@@ -21,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class OAuthService {
+    private static final Logger log = LoggerFactory.getLogger(OAuthService.class);
 
     private final OAuthProperties oauthProperties;
     private final UserRepository userRepository;
@@ -30,6 +33,7 @@ public class OAuthService {
     private final PlatformSettingsService platformSettingsService;
     private final GeoIpService geoIpService;
     private final ReferralService referralService;
+    private final MarketingAttributionService marketingAttributionService;
     private final Map<String, OAuthState> states = new ConcurrentHashMap<>();
 
     public OAuthService(
@@ -40,7 +44,8 @@ public class OAuthService {
             TokenIssuanceService tokenIssuanceService,
             PlatformSettingsService platformSettingsService,
             GeoIpService geoIpService,
-            ReferralService referralService
+            ReferralService referralService,
+            MarketingAttributionService marketingAttributionService
     ) {
         this.oauthProperties = oauthProperties;
         this.userRepository = userRepository;
@@ -50,6 +55,7 @@ public class OAuthService {
         this.platformSettingsService = platformSettingsService;
         this.geoIpService = geoIpService;
         this.referralService = referralService;
+        this.marketingAttributionService = marketingAttributionService;
     }
 
     public Map<String, Object> providerStatus(HttpServletRequest request) {
@@ -64,6 +70,11 @@ public class OAuthService {
     }
 
     public Map<String, Object> start(String provider, String returnUrl, String referralCode, HttpServletRequest request) {
+        return start(provider, returnUrl, referralCode, null, request);
+    }
+
+    public Map<String, Object> start(String provider, String returnUrl, String referralCode, String visitorId,
+                                     HttpServletRequest request) {
         if ("google".equalsIgnoreCase(provider) && !isGoogleVisible(request)) {
             throw new IllegalArgumentException("OAUTH_PROVIDER_DISABLED");
         }
@@ -73,7 +84,7 @@ public class OAuthService {
         }
         String state = UUID.randomUUID().toString();
         String redirectTarget = normalizeReturnUrl(returnUrl);
-        states.put(state, new OAuthState(Instant.now().plusSeconds(600), redirectTarget, referralCode));
+        states.put(state, new OAuthState(Instant.now().plusSeconds(600), redirectTarget, referralCode, visitorId));
         String redirectUri = callbackUri(provider);
         String authorizationUrl = switch (provider.toLowerCase()) {
             case "yandex" -> UriComponentsBuilder
@@ -151,6 +162,11 @@ public class OAuthService {
                         Instant.now()
                 ));
             }
+        }
+        try {
+            marketingAttributionService.attachUserToVisitor(user.getId(), oauthState.visitorId(), isNewUser);
+        } catch (RuntimeException ex) {
+            log.warn("Marketing attribution did not attach during OAuth authentication", ex);
         }
         Map<String, Object> tokens = tokenIssuanceService.issueUserTokens(user, isNewUser, Map.of("redeemed", false));
         return UriComponentsBuilder.fromUriString(oauthState.returnUrl())
@@ -287,7 +303,7 @@ public class OAuthService {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private record OAuthState(Instant expiresAt, String returnUrl, String referralCode) {
+    private record OAuthState(Instant expiresAt, String returnUrl, String referralCode, String visitorId) {
     }
 
     private record OAuthProfile(String providerUserId, String email, String displayName) {
