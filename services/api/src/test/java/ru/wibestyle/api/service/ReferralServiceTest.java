@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -76,6 +77,25 @@ class ReferralServiceTest {
         assertReward("annual", 15);
     }
 
+    @Test
+    void overviewAllowsTrialUserToShare() {
+        ReferralAccountRepository accounts = mock(ReferralAccountRepository.class);
+        ReferralRewardRepository rewards = mock(ReferralRewardRepository.class);
+        UserProfileRepository profiles = mock(UserProfileRepository.class);
+        UUID userId = UUID.randomUUID();
+        UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
+        profile.setPlan("trial");
+        when(accounts.findById(userId))
+                .thenReturn(Optional.of(new ReferralAccountEntity(userId, "VIBETRIAL123", Instant.now())));
+        when(profiles.findById(userId)).thenReturn(Optional.of(profile));
+        when(rewards.findAllByReferrerUserIdOrderByRewardedAtDesc(userId)).thenReturn(List.of());
+        ReferralService service = new ReferralService(
+                accounts, rewards, profiles, mock(UserRepository.class),
+                mock(NotificationService.class), mock(BillingCheckoutRepository.class));
+
+        assertTrue((Boolean) service.overview(userId).get("eligible"));
+    }
+
     private void assertReward(String period, int expected) {
         ReferralAccountRepository accounts = mock(ReferralAccountRepository.class);
         ReferralRewardRepository rewards = mock(ReferralRewardRepository.class);
@@ -91,8 +111,7 @@ class ReferralServiceTest {
         ReferralAccountEntity friendAccount = new ReferralAccountEntity(friendId, "VIBETEST1234", Instant.now());
         friendAccount.setReferredByUserId(referrerId);
         UserProfileEntity referrer = new UserProfileEntity(referrerId, Instant.now());
-        referrer.setPlan("wibe");
-        referrer.setSubscriptionExpiresAt(Instant.now().plusSeconds(3600));
+        referrer.setPlan("trial");
         BillingCheckoutEntity checkout = new BillingCheckoutEntity(
                 checkoutId, friendId, "wibe", period, 1000, "mock", Instant.now()
         );

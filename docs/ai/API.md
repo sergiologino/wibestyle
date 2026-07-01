@@ -112,7 +112,7 @@ Recurring: initial payment sends `save_payment_method=true` only after explicit 
 | GET | `/referrals` |
 | GET | `/admin/referrals` | `X-Admin-Key`; inviter → registration → first purchase → reward report and totals |
 
-The authenticated response contains the personal referral code, eligibility, remaining bonus try-ons and reward history. Links use `/welcome?ref=CODE`; OTP and OAuth bind the code only for a new user. The friend's first successful purchase awards 3 bonus try-ons for monthly billing or 15 for annual billing. Rewards require an active Wibe/Elite subscription and are idempotent across webhook retries, renewals and upgrades.
+The authenticated response contains the personal referral code, eligibility, remaining bonus try-ons and reward history. Links use `/welcome?ref=CODE`; OTP and OAuth bind the code only for a new user. The friend's first successful purchase awards 3 bonus try-ons for monthly billing or 15 for annual billing. Rewards are available to every user, including trial and expired subscribers, and are idempotent across webhook retries, renewals and upgrades.
 
 ## Notifications
 

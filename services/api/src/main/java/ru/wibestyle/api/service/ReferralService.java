@@ -62,7 +62,7 @@ public class ReferralService {
         invitee.setFirstPaidAt(Instant.now());
         accountRepository.save(invitee);
         UserProfileEntity referrer = profileRepository.findById(invitee.getReferredByUserId()).orElse(null);
-        if (!isActiveSubscriber(referrer)) return;
+        if (referrer == null) return;
 
         int reward = "annual".equals(checkout.getBillingPeriod()) ? 15 : 3;
         referrer.setBonusGenerationsLeft(referrer.getBonusGenerationsLeft() + reward);
@@ -94,7 +94,7 @@ public class ReferralService {
                         "rewardedAt", item.getRewardedAt().toString()
                 )).toList();
         return Map.of(
-                "eligible", isActiveSubscriber(profile),
+                "eligible", true,
                 "referralCode", account.getReferralCode(),
                 "bonusGenerationsLeft", profile.getBonusGenerationsLeft(),
                 "monthlyReward", 3,
@@ -168,13 +168,6 @@ public class ReferralService {
             code = value.toString();
         } while (accountRepository.existsByReferralCodeIgnoreCase(code));
         return code;
-    }
-
-    private boolean isActiveSubscriber(UserProfileEntity profile) {
-        return profile != null
-                && ("wibe".equals(profile.getPlan()) || "elite".equals(profile.getPlan()))
-                && profile.getSubscriptionExpiresAt() != null
-                && profile.getSubscriptionExpiresAt().isAfter(Instant.now());
     }
 
     private String friendLabel(UserEntity user) {

@@ -15,8 +15,9 @@
 - Summary counters show invitations, purchases, successful rewards and total generations awarded. A paid referral without a reward shows the inactive-sender-subscription reason.
 - API: `GET /api/v1/admin/referrals` protected by `X-Admin-Key`.
 
-## Paid-subscriber referral program (2026-06-28)
-- Active Wibe/Elite subscribers receive a personal `/welcome?ref=CODE` link on dedicated referral screens in web and Android.
+## Referral program for all users (updated 2026-07-01)
+- Every user receives a personal `/welcome?ref=CODE` link on dedicated referral screens in web and Android; an active subscription is not required.
+- Monthly/annual first purchases by an invited friend award 3/15 bonus try-ons. Trial users and expired subscribers can spend the bonus balance.
 - OTP and OAuth registration bind a new user to the inviter. The friend's first successful paid checkout awards 3 bonus try-ons for monthly billing or 15 for annual billing.
 - Rewards are unique by invited user and checkout; webhook retries, renewals and upgrades cannot duplicate them. Bonus quota is separate from plan quota and survives renewal.
 - Profiles link to referral details instead of embedding history. History shows masked friend identity, billing period, reward amount and timestamp.
@@ -99,8 +100,8 @@
 - Фото-примерка и season-hit video по-прежнему идут через единый сервис `noteapp-ai-integration`; backend меняет только `networkName` в `/api/ai/process`.
 - Добавлена таблица `ai_provider_priorities`: для `VIRTUAL_TRY_ON_PHOTO` и `VIRTUAL_TRY_ON_VIDEO` хранится порядок нейросетей, человекочитаемое имя и флаг `enabled`.
 - Default route:
-  - photo: `wibestyle-vton` → `fashn-try-on-photo` → `kling-try-on-photo`;
-  - video: `wibestyle-season-video` → `fashn-try-on-video` → `kling-try-on-video`.
+  - photo: `wibestyle-vton` → `fashn-tryon-max` → `kling-kolors-tryon`;
+  - video: `wibestyle-season-video` → `fashn-tryon-video` → `kling-tryon-video`.
 - Worker делает fallback на следующую нейросеть при ошибке генерации, timeout, пустом ответе, модерации контента или исчерпании токенов/квоты. Prompt и изображения готовятся один раз на job.
 - AI logs получили поля `operation`, `attemptNumber`, `fallbackReason`, чтобы в админке было видно, какая нейросеть обработала запрос и почему был переход на запасную.
 - Admin UI: новая страница `/ai-providers` управляет приоритетами фото и видео. Страница `/ai-logs` показывает операцию, попытку и причину fallback.

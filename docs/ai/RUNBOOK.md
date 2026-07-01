@@ -378,7 +378,7 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 
 1. Запустите noteapp: `cd noteapp-ai-integration && docker compose up -d` (или `gradlew bootRun`, порт **8091**)
 2. Создайте admin + client API key (см. `noteapp-ai-integration/docs/ai/EXTERNAL_SERVICES_INTEGRATION.md`)
-3. Выдайте клиенту доступ к сетям, включённым в WibeStyle admin → **Приоритеты нейросетей**: `wibestyle-vton`, `fashn-try-on-photo`, `kling-try-on-photo` и, если используется видео, соответствующим `*-video`. Имена должны точно совпадать с сетями noteapp.
+3. Выдайте клиенту доступ к сетям, включённым в WibeStyle admin → **Приоритеты нейросетей**: `wibestyle-vton`, `fashn-tryon-max`, `kling-kolors-tryon`; для видео — `wibestyle-season-video`, `fashn-tryon-video`, `kling-tryon-video`. Имена должны точно совпадать с сетями noteapp.
 4. **xAI ключ для Grok Imagine** (один из вариантов):
    - **Рекомендуется:** noteapp Admin → **Networks** → `wibestyle-vton` → **API Key** = ключ с [console.x.ai](https://console.x.ai) → **Сохранить** (поле не пустое).
    - **Или:** env на noteapp `XAI_API_KEY=xai-...` (после обновления кода noteapp).

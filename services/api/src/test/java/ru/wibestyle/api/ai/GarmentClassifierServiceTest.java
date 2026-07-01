@@ -40,7 +40,16 @@ class GarmentClassifierServiceTest {
         GarmentClassification result = service.fallbackFromText(null, null);
 
         assertEquals("other", result.category());
+        assertEquals("Предмет одежды", result.title());
         assertEquals(true, result.hasHumanModel());
+    }
+
+    @Test
+    void fallbackUsesRussianCategoryTitle() {
+        GarmentClassification result = service.fallbackFromText("summer-dress.jpg", null);
+
+        assertEquals("dress", result.category());
+        assertEquals("Платье", result.title());
     }
 
     @Test

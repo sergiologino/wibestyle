@@ -21,13 +21,13 @@ public class AiProviderPriorityService {
 
     private static final List<ProviderDefinition> PHOTO_DEFAULTS = List.of(
             new ProviderDefinition("wibestyle-vton", "Grok Imagine", 10),
-            new ProviderDefinition("fashn-try-on-photo", "FASHN Try-On Photo", 20),
-            new ProviderDefinition("kling-try-on-photo", "Kling Virtual Try-On", 30)
+            new ProviderDefinition("fashn-tryon-max", "FASHN Try-On Photo", 20),
+            new ProviderDefinition("kling-kolors-tryon", "Kling Virtual Try-On", 30)
     );
     private static final List<ProviderDefinition> VIDEO_DEFAULTS = List.of(
             new ProviderDefinition("wibestyle-season-video", "Grok Imagine Video", 10),
-            new ProviderDefinition("fashn-try-on-video", "FASHN Try-On Video", 20),
-            new ProviderDefinition("kling-try-on-video", "Kling Virtual Try-On Video", 30)
+            new ProviderDefinition("fashn-tryon-video", "FASHN Try-On Video", 20),
+            new ProviderDefinition("kling-tryon-video", "Kling Virtual Try-On Video", 30)
     );
 
     private final AiProviderPriorityRepository repository;
@@ -46,7 +46,7 @@ public class AiProviderPriorityService {
         List<AiProviderPriorityEntity> enabled = repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(operation);
         if (!enabled.isEmpty()) {
             return enabled.stream()
-                    .sorted(Comparator.comparingInt(AiProviderPriorityEntity::getPriorityOrder))
+                    .sorted(providerComparator())
                     .map(ProviderRoute::from)
                     .toList();
         }
@@ -109,7 +109,7 @@ public class AiProviderPriorityService {
                     .map(def -> toMap(def.networkName(), def.displayName(), def.priorityOrder(), true))
                     .toList();
         }
-        rows.sort(Comparator.comparingInt(AiProviderPriorityEntity::getPriorityOrder));
+        rows.sort(providerComparator());
         return rows.stream()
                 .map(row -> toMap(row.getNetworkName(), row.getDisplayName(), row.getPriorityOrder(), row.isEnabled()))
                 .toList();
@@ -122,6 +122,7 @@ public class AiProviderPriorityService {
         return switch (errorCode) {
             case "AI_NOT_CONFIGURED",
                  "AI_PROVIDER_TIMEOUT",
+                 "AI_PROVIDER_MISMATCH",
                  "AI_GENERATION_FAILED",
                  "VTON_CONTENT_MODERATION",
                  "AI_PROVIDER_TOKENS_EXHAUSTED",
@@ -159,6 +160,11 @@ public class AiProviderPriorityService {
         item.put("priorityOrder", priorityOrder);
         item.put("enabled", enabled);
         return item;
+    }
+
+    private static Comparator<AiProviderPriorityEntity> providerComparator() {
+        return Comparator.comparingInt(AiProviderPriorityEntity::getPriorityOrder)
+                .thenComparing(AiProviderPriorityEntity::getNetworkName);
     }
 
     private static void ensureKnownOperation(String operation) {

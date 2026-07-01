@@ -27,11 +27,11 @@ function AvatarThumb({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition ${
+      className={`relative w-28 overflow-hidden rounded-2xl border bg-white shadow-sm transition sm:w-32 ${
         active ? "border-[#ff1fa2] ring-2 ring-[#ff1fa2]/20" : "border-[#f0dce8]"
       }`}
     >
-      <div className="aspect-[3/4] bg-[#faf5f9]">
+      <div className="aspect-[4/5] bg-[#faf5f9]">
         {thumbUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img alt="" className="size-full object-cover" src={thumbUrl} />
@@ -39,16 +39,16 @@ function AvatarThumb({
           <div className="flex size-full items-center justify-center text-xs text-[#a89aad]">Нет фото</div>
         )}
       </div>
-      <div className="grid gap-1 p-2">
+      <div className="grid gap-1 p-1.5">
         {active ? <Pill tone="soft">По умолчанию</Pill> : null}
         <div className="flex flex-wrap gap-1">
           {!active ? (
-            <Button disabled={busy} size="md" type="button" variant="secondary" onClick={onSelect}>
+            <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onSelect}>
               Сделать основным
             </Button>
           ) : null}
           {!active && avatar.status !== "DELETED" ? (
-            <Button disabled={busy} size="md" type="button" variant="secondary" onClick={onDelete}>
+            <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onDelete}>
               Удалить
             </Button>
           ) : null}
@@ -81,7 +81,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       const { items } = await api.listAvatars();
       setAvatars(items.filter((item) => item.status !== "DELETED"));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось загрузить avatar");
+      setError(err instanceof ApiError ? err.message : "Не удалось загрузить аватары");
     } finally {
       setLoading(false);
     }
@@ -109,7 +109,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       await refreshProfile();
       await reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось активировать avatar");
+      setError(err instanceof ApiError ? err.message : "Не удалось активировать аватар");
     } finally {
       setBusy(false);
     }
@@ -123,7 +123,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       await refreshProfile();
       await reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось удалить avatar");
+      setError(err instanceof ApiError ? err.message : "Не удалось удалить аватар");
     } finally {
       setBusy(false);
     }
@@ -131,7 +131,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
 
   async function addAvatar() {
     if (!newPhoto) {
-      setError("Выберите фото для нового avatar");
+      setError("Выберите фото для нового аватара");
       return;
     }
     setBusy(true);
@@ -151,7 +151,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       await refreshProfile();
       await reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось добавить avatar");
+      setError(err instanceof ApiError ? err.message : "Не удалось добавить аватар");
     } finally {
       setBusy(false);
     }
@@ -161,12 +161,12 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const additionalAvatars = avatars.filter((avatar) => avatar.id !== activeAvatarId && !avatar.active);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-[#302637]">Мои avatar</h2>
-          <p className={mutedTextClassName}>
-            До {MAX_AVATARS_PER_USER} образов на аккаунт. Размеры задаются один раз в профиле ниже.
+          <h2 className="text-lg font-semibold text-[#302637]">Мои аватары</h2>
+          <p className={`mt-1 max-w-xl text-xs leading-5 ${mutedTextClassName}`}>
+            До {MAX_AVATARS_PER_USER} образов одного человека на аккаунт. Антропометрия общая для всех аватаров.
           </p>
         </div>
         <Button
@@ -176,13 +176,13 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
           variant="secondary"
           onClick={() => setAdding((value) => !value)}
         >
-          {adding ? "Отмена" : "+ Новый avatar"}
+          {adding ? "Отмена" : "+ Новый аватар"}
         </Button>
       </div>
 
       {atAvatarLimit ? (
         <p className="rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm font-normal text-[#6d6273]">
-          Достигнут лимит — {MAX_AVATARS_PER_USER} avatar. Удалите неиспользуемый, чтобы добавить новый.
+          Достигнут лимит — {MAX_AVATARS_PER_USER} аватара. Удалите неиспользуемый, чтобы добавить новый.
         </p>
       ) : null}
 
@@ -205,17 +205,17 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
             />
           </div>
           <Button className="mt-4" disabled={busy || !newPhoto} size="lg" type="button" onClick={() => void addAvatar()}>
-            {busy ? "Загружаем…" : "Сохранить новый avatar"}
+            {busy ? "Загружаем…" : "Сохранить новый аватар"}
           </Button>
         </div>
       ) : null}
 
-      {loading ? <p className={mutedTextClassName}>Загружаем avatar…</p> : null}
+      {loading ? <p className={mutedTextClassName}>Загружаем аватары…</p> : null}
 
       {!loading && additionalAvatars.length === 0 ? (
-        <p className={mutedTextClassName}>Дополнительных avatar пока нет. Основной образ показан выше.</p>
+        <p className={mutedTextClassName}>Дополнительных аватаров пока нет. Основной образ показан выше.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="flex flex-wrap gap-3">
           {additionalAvatars.map((avatar) => (
             <AvatarThumb
               key={avatar.id}

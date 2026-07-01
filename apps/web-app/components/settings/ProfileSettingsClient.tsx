@@ -271,14 +271,18 @@ export default function ProfileSettingsClient() {
             ) : null}
           </div>
         ) : null}
-        <Link href={isPaidSubscription(profile) ? "/paywall?reason=elite_perk" : "/paywall"}>
+        <Link className="inline-block" href={isPaidSubscription(profile) ? "/paywall?reason=elite_perk" : "/paywall"}>
           <Button className="mt-4" size="md" variant={isPaidSubscription(profile) ? "secondary" : "primary"}>
             {isPaidSubscription(profile) ? "Upgrade на Elite" : "Оформить подписку"}
           </Button>
         </Link>
-        <Link href="/referrals" className="mt-3 inline-flex font-medium text-[var(--pink)]">
-          Реферальная программа и история начислений →
+        <Link
+          href="/referrals"
+          className="mt-6 flex w-fit text-xs font-medium text-[var(--pink)] underline decoration-[var(--pink)]/50 underline-offset-4 transition hover:decoration-[var(--pink)]"
+        >
+          Приглашай друзей — получай бесплатные примерки →
         </Link>
+        <p className="mt-2 text-xs text-[var(--muted)]">Доступно всем пользователям, подписка не нужна.</p>
       </Card>
 
       <Card>
@@ -322,7 +326,7 @@ export default function ProfileSettingsClient() {
       <Card>
         <div className="grid gap-6">
           <div>
-            <p className={sectionTitleClassName}>Основной avatar</p>
+            <p className={sectionTitleClassName}>Основной аватар</p>
             <p className={`mt-1 ${mutedTextClassName}`}>Текущий образ для примерки и настройки приватности.</p>
           </div>
           <AvatarPrivacyPreview
@@ -336,7 +340,7 @@ export default function ProfileSettingsClient() {
         </div>
       </Card>
 
-      <Card>
+      <Card className="p-4 sm:p-5">
         <AvatarManager activeAvatarId={profile?.activeAvatarId} />
       </Card>
 
@@ -344,7 +348,7 @@ export default function ProfileSettingsClient() {
         <form className="grid gap-6" onSubmit={onSave}>
           <div>
             <p className={sectionTitleClassName}>Данные профиля</p>
-            <p className={`mt-1 ${mutedTextClassName}`}>Имя, пол и размеры для новых avatar.</p>
+            <p className={`mt-1 ${mutedTextClassName}`}>Имя, пол и размеры для новых аватаров.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -393,7 +397,7 @@ export default function ProfileSettingsClient() {
       <Card>
         <h2 className="text-xl font-semibold text-[#c01278]">Удалить аккаунт</h2>
         <p className={`mt-2 ${mutedTextClassName}`}>
-          Безвозвратно удалятся профиль, avatar, примерки, посты и медиа. Это действие нельзя отменить.
+          Безвозвратно удалятся профиль, аватары, примерки, посты и медиа. Это действие нельзя отменить.
         </p>
         <form className="mt-4 grid gap-3" onSubmit={onDeleteAccount}>
           <FieldInput

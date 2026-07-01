@@ -97,5 +97,5 @@
 ## ADR-0018: Referral rewards as durable bonus quota
 
 - Context: Subscribers should earn try-ons when an invited friend completes a first paid checkout, without webhook retries or recurring charges duplicating rewards.
-- Decision: Store referral ownership in `referral_accounts`, one first-purchase reward per invited user in `referral_rewards`, and bonus balance separately in `user_profiles.bonus_generations_left`. Award only while the referrer has an active Wibe/Elite subscription.
+- Decision: Store referral ownership in `referral_accounts`, one first-purchase reward per invited user in `referral_rewards`, and bonus balance separately in `user_profiles.bonus_generations_left`. Award every referrer regardless of plan; bonus generations remain spendable without an active subscription.
 - Consequences: Monthly/annual rewards are 3/15, bonus quota survives plan renewals, is unavailable while paid access is inactive, and history shows who triggered it and when.

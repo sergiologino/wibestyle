@@ -1198,13 +1198,13 @@ class ApiIntegrationTest {
                                       "enabled": true
                                     },
                                     {
-                                      "networkName": "fashn-try-on-photo",
+                                      "networkName": "fashn-tryon-max",
                                       "displayName": "FASHN Try-On Photo",
                                       "priorityOrder": 10,
                                       "enabled": true
                                     },
                                     {
-                                      "networkName": "kling-try-on-photo",
+                                      "networkName": "kling-kolors-tryon",
                                       "displayName": "Kling Try-On Photo",
                                       "priorityOrder": 30,
                                       "enabled": false
@@ -1214,7 +1214,7 @@ class ApiIntegrationTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.operation").value("VIRTUAL_TRY_ON_PHOTO"))
-                .andExpect(jsonPath("$.items[0].networkName").value("fashn-try-on-photo"))
+                .andExpect(jsonPath("$.items[0].networkName").value("fashn-tryon-max"))
                 .andExpect(jsonPath("$.items[0].priorityOrder").value(10));
     }
 

@@ -318,7 +318,8 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
             </View>
           ) : null}
           <Button label="Тарифы и подписка" variant="secondary" onPress={() => router.push("/paywall")} />
-          <Button label="Реферальная программа" variant="ghost" onPress={() => router.push("/referrals" as never)} />
+          <BodyText>Приглашай друзей и получай бесплатные примерки. Подписка не нужна.</BodyText>
+          <Button label="Пригласить друзей" variant="ghost" onPress={() => router.push("/referrals" as never)} />
         </Card>
 
         <Card>

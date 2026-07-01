@@ -69,7 +69,7 @@ public record GarmentClassification(
 
     public static String normalizeTitle(String raw) {
         if (raw == null || raw.isBlank()) {
-            return "Garment";
+            return "Предмет одежды";
         }
         String trimmed = raw.trim().replaceAll("\\s+", " ");
         if (trimmed.length() > 80) {

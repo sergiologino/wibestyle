@@ -67,4 +67,26 @@ describe("canStartGeneration", () => {
       canStartGeneration({ userId: "1", plan: "trial", trialGenerationsLeft: 2 }),
     ).toBe(true);
   });
+
+  it("allows generation from referral bonuses after trial quota ends", () => {
+    expect(
+      canStartGeneration({
+        userId: "1",
+        plan: "trial",
+        trialGenerationsLeft: 0,
+        bonusGenerationsLeft: 3,
+      }),
+    ).toBe(true);
+  });
+
+  it("does not show the exhausted-trial paywall while referral bonuses remain", () => {
+    expect(
+      shouldShowPaywall({
+        userId: "1",
+        plan: "trial",
+        trialGenerationsLeft: 0,
+        bonusGenerationsLeft: 1,
+      }, "trial_exhausted"),
+    ).toBe(false);
+  });
 });

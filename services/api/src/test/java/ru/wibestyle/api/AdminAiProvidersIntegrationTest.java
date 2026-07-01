@@ -29,8 +29,8 @@ class AdminAiProvidersIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.VIRTUAL_TRY_ON_PHOTO.length()").value(3))
                 .andExpect(jsonPath("$.VIRTUAL_TRY_ON_PHOTO[0].networkName").value("wibestyle-vton"))
-                .andExpect(jsonPath("$.VIRTUAL_TRY_ON_PHOTO[1].networkName").value("fashn-try-on-photo"))
-                .andExpect(jsonPath("$.VIRTUAL_TRY_ON_PHOTO[2].networkName").value("kling-try-on-photo"));
+                .andExpect(jsonPath("$.VIRTUAL_TRY_ON_PHOTO[1].networkName").value("fashn-tryon-max"))
+                .andExpect(jsonPath("$.VIRTUAL_TRY_ON_PHOTO[2].networkName").value("kling-kolors-tryon"));
     }
 
     @Test
@@ -42,12 +42,12 @@ class AdminAiProvidersIntegrationTest {
                         .content("""
                                 {"items":[
                                   {"networkName":"wibestyle-vton","displayName":"Grok Imagine","priorityOrder":20,"enabled":true},
-                                  {"networkName":"fashn-try-on-photo","displayName":"FASHN Try-On Photo","priorityOrder":10,"enabled":true},
-                                  {"networkName":"kling-try-on-photo","displayName":"Kling Virtual Try-On","priorityOrder":30,"enabled":false}
+                                  {"networkName":"fashn-tryon-max","displayName":"FASHN Try-On Photo","priorityOrder":10,"enabled":true},
+                                  {"networkName":"kling-kolors-tryon","displayName":"Kling Virtual Try-On","priorityOrder":30,"enabled":false}
                                 ]}
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items[0].networkName").value("fashn-try-on-photo"))
+                .andExpect(jsonPath("$.items[0].networkName").value("fashn-tryon-max"))
                 .andExpect(jsonPath("$.items[2].enabled").value(false));
     }
 }

@@ -82,4 +82,11 @@ class NoteappAiClientTest {
         assertThat(NoteappAiClient.extractErrorMessage(response, "fallback"))
                 .isEqualTo("provider moderation failure");
     }
+
+    @Test
+    void detectsWhenIntegrationSubstitutesAnotherNetwork() {
+        assertThat(NoteappAiClient.isUnexpectedNetwork("kling-kolors-tryon", "wibestyle-vton")).isTrue();
+        assertThat(NoteappAiClient.isUnexpectedNetwork("kling-kolors-tryon", "KLING-KOLORS-TRYON")).isFalse();
+        assertThat(NoteappAiClient.isUnexpectedNetwork("kling-kolors-tryon", null)).isFalse();
+    }
 }

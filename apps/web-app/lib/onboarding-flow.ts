@@ -61,7 +61,7 @@ export function shouldShowPaywall(profile: UserProfile, trigger: PaywallTrigger)
     return trigger === "elite_perk" && profile.plan !== "elite";
   }
   if (trigger === "trial_exhausted") {
-    return profile.trialGenerationsLeft <= 0;
+    return profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0) <= 0;
   }
   if (trigger === "multi_item") {
     return true;
@@ -71,5 +71,5 @@ export function shouldShowPaywall(profile: UserProfile, trigger: PaywallTrigger)
 
 export function canStartGeneration(profile: UserProfile): boolean {
   if (profile.plan === "wibe" || profile.plan === "elite") return true;
-  return profile.trialGenerationsLeft > 0;
+  return profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0) > 0;
 }

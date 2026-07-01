@@ -17,4 +17,11 @@ describe("application sharing in web navbar", () => {
     expect(source).toContain("navigator.clipboard.writeText");
     expect(source).toContain("Если он купит месячную подписку");
   });
+
+  it("opens the profile from the active avatar instead of a text button", () => {
+    expect(source).toContain('aria-label="Открыть профиль"');
+    expect(source).toContain("profile.activeAvatarId");
+    expect(source).toContain("<UserRound");
+    expect(source).not.toContain("<Button size=\"sm\" variant=\"ghost\">");
+  });
 });
