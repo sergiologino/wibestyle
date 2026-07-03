@@ -75,7 +75,7 @@ public class AdminUserManagementService {
         return response;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> impersonate(UUID userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));

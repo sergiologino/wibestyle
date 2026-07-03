@@ -64,6 +64,22 @@ class NoteappAiClientTest {
     }
 
     @Test
+    void seasonVideoPayloadIncludesFashnPersonAndGarmentAliases() {
+        Map<String, Object> payload = NoteappAiClient.buildSeasonHitVideoPayload(
+                "video prompt",
+                "person-base64",
+                "garment-base64"
+        );
+
+        assertThat(payload).containsEntry("sourceImageBase64", "person-base64");
+        assertThat(payload).containsEntry("personImageBase64", "person-base64");
+        assertThat(payload).containsEntry("modelImageBase64", "person-base64");
+        assertThat(payload).containsEntry("garmentImageBase64", "garment-base64");
+        assertThat(payload).containsEntry("productImageBase64", "garment-base64");
+        assertThat(payload).containsEntry("image2Base64", "garment-base64");
+    }
+
+    @Test
     void extractsProviderErrorFieldUsedByContentModerationResponses() throws Exception {
         var response = objectMapper.readTree("""
                 {"status":"error","error":"Generated image rejected by content moderation."}

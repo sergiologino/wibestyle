@@ -29,7 +29,7 @@ public class VirtualTryOnPromptBuilder {
     static final String DEFAULT_VTON_BASE_RU = """
             Virtual fitting of clothes for an online store.
             Input mapping: image1 = customer avatar/person photo (payload fields image1Base64/personImageBase64); image2 = product garment photo (payload fields image2Base64/garmentImageBase64).
-            image1 is the customer and is the only source for face, hair, skin tone, pose, body shape and proportions.
+            image1 is the customer and is the only source for face, hair, skin tone, body shape and proportions.
             image2 is the product photo and is only a reference for the garment.
             Transfer the garment from image2 onto the customer from image1.
             Never use any face, head, hair, body, pose, limbs or identity from image2.
@@ -50,6 +50,8 @@ public class VirtualTryOnPromptBuilder {
 
     private final AiPromptTemplateService promptTemplateService;
 
+    private final TryOnScenePromptBuilder scenePromptBuilder;
+
 
 
     public VirtualTryOnPromptBuilder(
@@ -60,7 +62,9 @@ public class VirtualTryOnPromptBuilder {
 
             ObjectMapper objectMapper,
 
-            AiPromptTemplateService promptTemplateService
+            AiPromptTemplateService promptTemplateService,
+
+            TryOnScenePromptBuilder scenePromptBuilder
 
     ) {
 
@@ -71,6 +75,8 @@ public class VirtualTryOnPromptBuilder {
         this.objectMapper = objectMapper;
 
         this.promptTemplateService = promptTemplateService;
+
+        this.scenePromptBuilder = scenePromptBuilder;
 
     }
 
@@ -90,6 +96,8 @@ public class VirtualTryOnPromptBuilder {
 
         String faceLock = FaceLockPromptBuilder.build();
         String promptProfile = profileInstructions(session);
+
+        String scenePrompt = scenePromptBuilder.build(session);
 
         String figureLock = FigureLockPromptBuilder.build(snapshot, session.getSelectedSize(), chart);
 
@@ -127,7 +135,7 @@ public class VirtualTryOnPromptBuilder {
 
         String core = base.trim() + VARIABLES_HEADER + variablesJson;
 
-        return (faceLock + "\n\n" + promptProfile + "\n\n" + core).trim();
+        return (faceLock + "\n\n" + promptProfile + "\n\n" + core + "\n\n" + scenePrompt).trim();
 
     }
 
@@ -159,13 +167,13 @@ public class VirtualTryOnPromptBuilder {
         String base = """
                 PROMPT PROFILE: %s. Garment category: %s. %s
                 Input mapping: image1 is the customer avatar/person photo; image2 is the product garment photo.
-                Identity priority: image1 is the only source for face, head, hair, skin tone, body proportions, height impression and pose.
+                Identity priority: image1 is the only source for face, head, hair, skin tone, body proportions and height impression.
                 Product priority: image2 is only a garment/material/color/detail reference. Never duplicate the seller model from image2.
                 If image1 and image2 conflict, preserve image1 identity and body and adapt only the clothing.
                 """.formatted(profile, category, modelLock);
         String profileSpecific = switch (profile) {
             case "dress" -> "For dresses: preserve the customer's waist, bust, hips, shoulder line and leg length from image1; fit the dress naturally without slimming or replacing the body.";
-            case "outerwear" -> "For outerwear: layer the garment over the customer's body from image1; keep the original head, neck, hands and stance.";
+            case "outerwear" -> "For outerwear: layer the garment over the customer's body from image1; keep the original head, neck, hands and body proportions.";
             case "bottom" -> "For bottoms: preserve torso, waist, hips and leg proportions from image1; only replace the lower garment.";
             case "shoes" -> "For shoes: preserve the customer's body and outfit from image1; replace only footwear, keeping foot orientation realistic.";
             case "accessory" -> "For accessories: preserve the customer's outfit and body from image1; add only the accessory from image2.";

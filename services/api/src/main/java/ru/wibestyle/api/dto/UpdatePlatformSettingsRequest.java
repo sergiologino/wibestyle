@@ -1,4 +1,11 @@
 package ru.wibestyle.api.dto;
 
-public record UpdatePlatformSettingsRequest(Boolean blockGoogleOAuth) {
+import java.util.Map;
+
+public record UpdatePlatformSettingsRequest(
+        Boolean blockGoogleOAuth,
+        Boolean tryOnScenesEnabled,
+        Boolean tryOnPoseChangeEnabled,
+        Map<String, String> tryOnScenePrompts
+) {
 }

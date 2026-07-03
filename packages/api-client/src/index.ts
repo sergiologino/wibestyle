@@ -1036,13 +1036,28 @@ export class WibeStyleApiClient {
   }
 
   getAdminSettings(adminKey: string) {
-    return this.request<{ blockGoogleOAuth: boolean }>("/api/v1/admin/settings", {
+    return this.request<{
+      blockGoogleOAuth: boolean;
+      tryOnScenesEnabled: boolean;
+      tryOnPoseChangeEnabled: boolean;
+      tryOnScenePrompts: Record<string, string>;
+    }>("/api/v1/admin/settings", {
       headers: { "X-Admin-Key": adminKey },
     });
   }
 
-  updateAdminSettings(adminKey: string, payload: { blockGoogleOAuth?: boolean }) {
-    return this.request<{ blockGoogleOAuth: boolean }>("/api/v1/admin/settings", {
+  updateAdminSettings(adminKey: string, payload: {
+    blockGoogleOAuth?: boolean;
+    tryOnScenesEnabled?: boolean;
+    tryOnPoseChangeEnabled?: boolean;
+    tryOnScenePrompts?: Record<string, string>;
+  }) {
+    return this.request<{
+      blockGoogleOAuth: boolean;
+      tryOnScenesEnabled: boolean;
+      tryOnPoseChangeEnabled: boolean;
+      tryOnScenePrompts: Record<string, string>;
+    }>("/api/v1/admin/settings", {
       method: "PATCH",
       headers: { "X-Admin-Key": adminKey },
       body: JSON.stringify(payload),

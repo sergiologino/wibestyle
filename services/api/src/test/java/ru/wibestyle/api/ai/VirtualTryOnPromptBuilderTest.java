@@ -33,6 +33,9 @@ class VirtualTryOnPromptBuilderTest {
     @Mock
     private AiPromptTemplateService promptTemplateService;
 
+    @Mock
+    private TryOnScenePromptBuilder scenePromptBuilder;
+
     private VirtualTryOnPromptBuilder promptBuilder;
 
     @BeforeEach
@@ -44,7 +47,8 @@ class VirtualTryOnPromptBuilderTest {
                 avatarSnapshotRepository,
                 garmentFitAnalyzer,
                 new ObjectMapper(),
-                promptTemplateService
+                promptTemplateService,
+                scenePromptBuilder
         );
     }
 
@@ -52,6 +56,7 @@ class VirtualTryOnPromptBuilderTest {
     void includesBaseJsonVariablesProfileAndFitHint() {
         UUID snapshotId = UUID.randomUUID();
         TryOnSessionEntity session = session(snapshotId);
+        when(scenePromptBuilder.build(session)).thenReturn("SCENE AND POSE DIRECTIVE: city street.");
         AvatarSnapshotEntity snapshot = snapshot(snapshotId);
         when(avatarSnapshotRepository.findById(snapshotId)).thenReturn(Optional.of(snapshot));
         when(garmentFitAnalyzer.analyze(eq(session), eq(snapshot), org.mockito.ArgumentMatchers.any())).thenReturn(
@@ -77,6 +82,7 @@ class VirtualTryOnPromptBuilderTest {
         assertThat(prompt).contains("\"sellerModelPolicy\"");
         assertThat(prompt).contains("Size S is too tight");
         assertThat(prompt).contains("Summer dress");
+        assertThat(prompt).contains("SCENE AND POSE DIRECTIVE: city street.");
         assertThat(countOccurrences(prompt, "FACE AND IDENTITY LOCK, HIGHEST PRIORITY")).isEqualTo(1);
         assertThat(countOccurrences(prompt, "PROMPT PROFILE:")).isEqualTo(1);
     }

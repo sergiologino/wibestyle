@@ -12,7 +12,7 @@ public final class FaceLockPromptBuilder {
         return """
                 FACE AND IDENTITY LOCK, HIGHEST PRIORITY:
                 image1 is the only identity source. Preserve the customer's face, head shape, hair, hairstyle,
-                hair color, skin tone, age impression, neck, hands, body proportions, height impression and pose from image1.
+                hair color, skin tone, age impression, neck, hands, body proportions and height impression from image1.
                 image2 is only a garment reference. If image2 contains a seller model, mannequin or person, completely ignore
                 that person's face, head, hair, skin, body, limbs, pose and identity.
                 FORBIDDEN: copying, blending, averaging or replacing the customer with the seller model from image2.
