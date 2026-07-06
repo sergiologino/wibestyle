@@ -421,12 +421,15 @@ WIBESTYLE_YOOKASSA_API_BASE=https://api.yookassa.ru
 WIBESTYLE_OAUTH_API_PUBLIC_BASE=https://api.vibestyle.art
 WIBESTYLE_OAUTH_WEB_CALLBACK=https://app.vibestyle.art/auth/oauth/callback
 WIBESTYLE_OAUTH_MOBILE_CALLBACK=wibestyle://auth/oauth/callback
+WIBESTYLE_SMS_AERO_MOBILE_ID_ENABLED=true
+WIBESTYLE_SMS_AERO_MOBILE_ID_CLIENT_ID=<mobile_id_client_id>
+WIBESTYLE_SMS_AERO_MOBILE_ID_API_SECRET=<mobile_id_api_secret>
+WIBESTYLE_SMS_AERO_MOBILE_ID_BASE_URL=https://midsdk.smsaero.ru
 ```
 
 Optional API env:
 
 ```env
-WIBESTYLE_SMS_RU_API_ID=
 WIBESTYLE_MAIL_ENABLED=false
 WIBESTYLE_MAIL_DEV_LOG_ONLY=true
 WIBESTYLE_AI_ENABLED=false
@@ -434,6 +437,10 @@ WIBESTYLE_AI_BASE_URL=https://<noteapp-host>
 WIBESTYLE_AI_API_KEY=
 WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 ```
+
+SMS Aero MobileID replaces the legacy application-generated phone OTP in web and mobile UI.
+`API_SECRET` is backend-only. CAPTCHA is intentionally not configured. The mobile browser
+flow returns a one-time handoff code; access and refresh tokens are never placed in its URL.
 
 ### 3. Web app service
 

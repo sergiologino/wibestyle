@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.wibestyle.api.service.SmsDeliveryException;
+import ru.wibestyle.api.service.MobileIdException;
 
 import java.util.Map;
 
@@ -62,6 +63,14 @@ public class ApiExceptionHandler {
                 .body(Map.of("error", humanMessage(code), "code", code));
     }
 
+    @ExceptionHandler(MobileIdException.class)
+    public ResponseEntity<Map<String, String>> handleMobileId(MobileIdException ex) {
+        String code = ex.getMessage() == null ? "MOBILE_ID_UNAVAILABLE" : ex.getMessage();
+        log.error("SMS Aero MobileID error: {}", code, ex);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(Map.of("error", humanMessage(code), "code", code));
+    }
+
     private static String humanMessage(String code) {
         return switch (code) {
             case "ANTHROPOMETRY_REQUIRED" -> "Укажите рост, грудь, талию и бёдра";
@@ -101,6 +110,11 @@ public class ApiExceptionHandler {
             case "OTP_MAX_ATTEMPTS" -> "Превышено число попыток ввода кода";
             case "SMS_NOT_CONFIGURED" -> "Сервис SMS временно не настроен";
             case "SMS_SEND_FAILED" -> "Не удалось отправить SMS-код. Попробуйте ещё раз";
+            case "MOBILE_ID_NOT_CONFIGURED" -> "Вход по телефону временно не настроен";
+            case "MOBILE_ID_UNAVAILABLE", "MOBILE_ID_INVALID_RESPONSE", "MOBILE_ID_SIGNATURE_FAILED" ->
+                    "Сервис входа по телефону временно недоступен";
+            case "MOBILE_ID_VERIFICATION_FAILED" -> "Не удалось подтвердить номер телефона";
+            case "MOBILE_ID_HANDOFF_INVALID" -> "Ссылка входа истекла. Попробуйте ещё раз";
             case "ADMIN_UNAUTHORIZED" -> "Неверный admin key или admin token";
             case "ADMIN_FORBIDDEN" -> "Недостаточно прав администратора";
             case "ADMIN_LOGIN_FAILED" -> "Неверный email или пароль администратора";

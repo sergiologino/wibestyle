@@ -133,6 +133,72 @@ export class WibeStyleApiClient {
     return this.request<{ status: string; service: string }>("/api/v1/health");
   }
 
+  getMobileIdStatus() {
+    return this.request<{ enabled: boolean }>("/api/v1/auth/mobile-id/status");
+  }
+
+  createMobileIdToken(fingerprintHash: string) {
+    return this.request<{ token: string }>("/api/v1/auth/mobile-id/token", {
+      method: "POST",
+      body: JSON.stringify({ fingerprint_hash: fingerprintHash }),
+    });
+  }
+
+  verifyMobileId(
+    sessionId: string,
+    verifyToken: string,
+    promoCode?: string,
+    referralCode?: string,
+    visitorId?: string,
+  ) {
+    return this.request<
+      AuthTokens & {
+        user: { id: string; phone?: string; email?: string; login?: string };
+        newUser?: boolean;
+        promo?: { redeemed: boolean; promo?: PromoCodeRecord };
+        tokenType?: string;
+      }
+    >("/api/v1/auth/mobile-id/siteverify", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: sessionId,
+        verify_token: verifyToken,
+        promoCode: promoCode || undefined,
+        referralCode: referralCode || undefined,
+        visitorId: visitorId || undefined,
+      }),
+    });
+  }
+
+  verifyMobileIdForMobile(
+    sessionId: string,
+    verifyToken: string,
+    referralCode?: string,
+    visitorId?: string,
+  ) {
+    return this.request<{ handoffCode: string }>("/api/v1/auth/mobile-id/siteverify/mobile", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: sessionId,
+        verify_token: verifyToken,
+        referralCode: referralCode || undefined,
+        visitorId: visitorId || undefined,
+      }),
+    });
+  }
+
+  exchangeMobileIdHandoff(handoffCode: string) {
+    return this.request<
+      AuthTokens & {
+        user: { id: string; phone?: string; email?: string; login?: string };
+        newUser?: boolean;
+      }
+    >("/api/v1/auth/mobile-id/exchange", {
+      method: "POST",
+      body: JSON.stringify({ handoffCode }),
+    });
+  }
+
   startOtp(phone: string) {
     return this.request<{ requestId: string; expiresIn: number }>("/api/v1/auth/otp/start", {
       method: "POST",

@@ -356,6 +356,10 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 | `WIBESTYLE_SMS_AERO_SIGN` | `SMS Aero` | Одобренная SMS Aero подпись отправителя |
 | `WIBESTYLE_SMS_AERO_CHANNEL` | `DIRECT` | Канал отправки SMS Aero |
 | `WIBESTYLE_SMS_AERO_BASE_URL` | `https://gate.smsaero.ru/v2` | API v2 base URL ([документация](https://smsaero.ru/integration/documentation/api/)) |
+| `WIBESTYLE_SMS_AERO_MOBILE_ID_ENABLED` | `false` | Включает основной телефонный вход через SMS Aero MobileID |
+| `WIBESTYLE_SMS_AERO_MOBILE_ID_CLIENT_ID` | пусто | Публичный client ID из раздела «Мобильная авторизация» |
+| `WIBESTYLE_SMS_AERO_MOBILE_ID_API_SECRET` | пусто | Серверный секрет MobileID; запрещено передавать во frontend |
+| `WIBESTYLE_SMS_AERO_MOBILE_ID_BASE_URL` | `https://midsdk.smsaero.ru` | MobileID API |
 | `WIBESTYLE_GEOIP_DEFAULT_COUNTRY` | пусто | Страна если IP локальный |
 | `WIBESTYLE_OAUTH_WEB_CALLBACK` | `http://localhost:3001/auth/oauth/callback` | OAuth → web |
 | `WIBESTYLE_OAUTH_MOBILE_CALLBACK` | `wibestyle://auth/oauth/callback` | OAuth → mobile deep link |
