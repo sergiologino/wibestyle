@@ -45,6 +45,12 @@ wibestyle:
     channel: ${WIBESTYLE_SMS_AERO_CHANNEL:DIRECT}
     base-url: ${WIBESTYLE_SMS_AERO_BASE_URL:https://gate.smsaero.ru/v2}
     dev-stub-code: "0000"
+  mobile-id:
+    enabled: ${WIBESTYLE_SMS_AERO_MOBILE_ID_ENABLED:false}
+    client-id: ${WIBESTYLE_SMS_AERO_MOBILE_ID_CLIENT_ID:}
+    api-secret: ${WIBESTYLE_SMS_AERO_MOBILE_ID_API_SECRET:}
+    base-url: ${WIBESTYLE_SMS_AERO_MOBILE_ID_BASE_URL:https://midsdk.smsaero.ru}
+    timeout-seconds: ${WIBESTYLE_SMS_AERO_MOBILE_ID_TIMEOUT_SECONDS:15}
   geoip:
     default-country: ${WIBESTYLE_GEOIP_DEFAULT_COUNTRY:}
   auth:

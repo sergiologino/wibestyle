@@ -34,7 +34,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return true;
         }
         String uri = request.getRequestURI();
-        return !uri.endsWith("/api/v1/auth/otp/start") && !uri.endsWith("/api/v1/auth/email-otp/start");
+        boolean protectedAuthEndpoint = uri.endsWith("/api/v1/auth/otp/start")
+                || uri.endsWith("/api/v1/auth/email-otp/start")
+                || uri.endsWith("/api/v1/auth/mobile-id/token")
+                || uri.endsWith("/api/v1/auth/mobile-id/siteverify")
+                || uri.endsWith("/api/v1/auth/mobile-id/siteverify/mobile");
+        return !protectedAuthEndpoint;
     }
 
     @Override

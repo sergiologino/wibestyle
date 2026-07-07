@@ -100,12 +100,26 @@ export default function AdminUsersPage() {
   async function impersonate(user: AdminUserItem) {
     setActionUserId(user.id);
     setLocalError(null);
+    setMessage(null);
+    const popup = window.open("about:blank", "_blank");
     try {
       const result = await api.impersonateAdminUser(adminKey, user.id);
-      const url = `${APP_BASE_URL}/auth/oauth/callback?accessToken=${encodeURIComponent(result.accessToken)}&refreshToken=${encodeURIComponent(result.refreshToken)}&newUser=false`;
-      window.open(url, "_blank", "noopener,noreferrer");
+      const params = new URLSearchParams({
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        expiresIn: String(result.expiresIn),
+        newUser: "false",
+      });
+      const url = `${APP_BASE_URL}/auth/oauth/callback?${params.toString()}`;
+      if (popup) {
+        popup.opener = null;
+        popup.location.replace(url);
+      } else {
+        window.location.assign(url);
+      }
       setMessage(`Открыта web-app под пользователем ${user.login ?? user.email ?? user.id.slice(0, 8)}`);
     } catch {
+      popup?.close();
       setLocalError("Не удалось войти как пользователь");
     } finally {
       setActionUserId(null);
@@ -183,9 +197,14 @@ export default function AdminUsersPage() {
                     </Button>
                   ))}
                 </div>
-                <Button disabled={actionUserId === user.id || !configured} onClick={() => void impersonate(user)}>
+                <button
+                  type="button"
+                  className="min-h-9 rounded-xl border-2 border-[#782cff] bg-white px-4 py-2 text-sm font-black text-[#782cff] underline decoration-2 underline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={actionUserId === user.id || !configured}
+                  onClick={() => void impersonate(user)}
+                >
                   Войти как пользователь
-                </Button>
+                </button>
                 <Button disabled={actionUserId === user.id || !configured} variant="secondary" onClick={() => void deleteUser(user)}>
                   Удалить полностью
                 </Button>

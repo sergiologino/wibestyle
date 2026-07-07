@@ -104,6 +104,32 @@ class AuthFeatureTest {
     }
 
     @Test
+    void adminCanConfigureTryOnScenes() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/settings")
+                        .header("X-Admin-Key", "test-admin-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tryOnScenesEnabled": true,
+                                  "tryOnPoseChangeEnabled": false,
+                                  "tryOnScenePrompts": {
+                                    "outerwear": "a custom winter city street"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tryOnScenesEnabled").value(true))
+                .andExpect(jsonPath("$.tryOnPoseChangeEnabled").value(false))
+                .andExpect(jsonPath("$.tryOnScenePrompts.outerwear").value("a custom winter city street"))
+                .andExpect(jsonPath("$.tryOnScenePrompts.sleepwear").isNotEmpty());
+
+        mockMvc.perform(get("/api/v1/admin/settings").header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tryOnPoseChangeEnabled").value(false))
+                .andExpect(jsonPath("$.tryOnScenePrompts.outerwear").value("a custom winter city street"));
+    }
+
+    @Test
     void googleOAuthStartRejectedWhenBlocked() throws Exception {
         jdbcTemplate.update("UPDATE platform_settings SET setting_value = 'true' WHERE setting_key = 'block_google_oauth'");
 

@@ -13,6 +13,7 @@ import ru.wibestyle.api.config.SecurityProperties;
 import ru.wibestyle.api.config.GeoIpProperties;
 import ru.wibestyle.api.config.MailProperties;
 import ru.wibestyle.api.config.MarketingProperties;
+import ru.wibestyle.api.config.MobileIdProperties;
 import ru.wibestyle.api.config.OAuthProperties;
 import ru.wibestyle.api.config.SmsProperties;
 import ru.wibestyle.api.config.StorageProperties;
@@ -33,6 +34,7 @@ import ru.wibestyle.api.config.PushProperties;
         MarketingProperties.class,
         GeoIpProperties.class,
         SmsProperties.class,
+        MobileIdProperties.class,
         PushProperties.class
 })
 public class WibestyleApiApplication {

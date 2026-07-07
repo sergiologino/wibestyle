@@ -480,12 +480,14 @@ public class NoteappAiClient {
             TryOnSessionEntity session,
             String prompt,
             String sourceImageBase64,
+            String garmentImageBase64,
             Map<String, String> metadata
     ) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("prompt", prompt);
-        payload.put("sourceImageBase64", sourceImageBase64);
-        payload.put("settings", Map.of("aspectRatio", "3:4", "durationSec", 6));
+        Map<String, Object> payload = buildSeasonHitVideoPayload(
+                prompt,
+                sourceImageBase64,
+                garmentImageBase64
+        );
 
         Map<String, Object> body = new HashMap<>();
         body.put("userId", session.getUserId().toString());
@@ -495,11 +497,12 @@ public class NoteappAiClient {
         body.put("metadata", metadata == null ? Map.of() : metadata);
 
         log.info(
-                "Noteapp season video call baseUrl={} network={} sessionId={} imageChars={} promptLen={}",
+                "Noteapp season video call baseUrl={} network={} sessionId={} imageChars={} garmentChars={} promptLen={}",
                 properties.getBaseUrl(),
                 networkName,
                 session.getId(),
                 sourceImageBase64 != null ? sourceImageBase64.length() : 0,
+                garmentImageBase64 != null ? garmentImageBase64.length() : 0,
                 prompt != null ? prompt.length() : 0
         );
         logService.logOutboundRequest(
@@ -562,6 +565,24 @@ public class NoteappAiClient {
             logService.logInboundResponse(session, false, null, networkName, null, 0, rawError, Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
             return VideoProcessResult.failed(resolution.errorCode(), resolution.userMessage());
         }
+    }
+
+    static Map<String, Object> buildSeasonHitVideoPayload(
+            String prompt,
+            String sourceImageBase64,
+            String garmentImageBase64
+    ) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("prompt", prompt);
+        payload.put("sourceImageBase64", sourceImageBase64);
+        payload.put("personImageBase64", sourceImageBase64);
+        payload.put("modelImageBase64", sourceImageBase64);
+        payload.put("image1Base64", sourceImageBase64);
+        payload.put("garmentImageBase64", garmentImageBase64);
+        payload.put("productImageBase64", garmentImageBase64);
+        payload.put("image2Base64", garmentImageBase64);
+        payload.put("settings", Map.of("aspectRatio", "3:4", "durationSec", 6));
+        return payload;
     }
 
     private VideoResult extractVideoResult(JsonNode responseBody) {

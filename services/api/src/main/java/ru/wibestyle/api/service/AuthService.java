@@ -138,9 +138,25 @@ public class AuthService {
         }
         phoneChallenges.remove(requestId);
 
-        boolean isNewUser = userRepository.findByPhone(challenge.phone()).isEmpty();
-        UserEntity user = userRepository.findByPhone(challenge.phone())
-                .orElseGet(() -> userRepository.saveAndFlush(new UserEntity(UUID.randomUUID(), challenge.phone(), Instant.now())));
+        return authenticateVerifiedPhone(challenge.phone(), promoCode, referralCode, visitorId);
+    }
+
+    @Transactional
+    public AuthResult authenticateVerifiedPhone(
+            String phone,
+            String promoCode,
+            String referralCode,
+            String visitorId
+    ) {
+        String normalizedPhone = normalizePhone(phone);
+        if (normalizedPhone.length() < 10 || normalizedPhone.length() > 15) {
+            throw new IllegalArgumentException("INVALID_PHONE");
+        }
+        boolean isNewUser = userRepository.findByPhone(normalizedPhone).isEmpty();
+        UserEntity user = userRepository.findByPhone(normalizedPhone)
+                .orElseGet(() -> userRepository.saveAndFlush(
+                        new UserEntity(UUID.randomUUID(), normalizedPhone, Instant.now())
+                ));
         profileService.ensureProfile(user.getId());
         if (isNewUser) referralService.captureNewUser(user.getId(), referralCode);
         try {

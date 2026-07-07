@@ -145,6 +145,7 @@ public class SeasonHitVideoJobWorker {
         }
 
         String sourceImageBase64 = tryOnImageService.encodeAfterImageBase64(session);
+        String garmentImageBase64 = tryOnImageService.encodeGarmentImageBase64(session);
         String prompt = promptBuilder.buildPrompt(session.getGarmentCategory(), session.getProductTitle());
 
         Map<String, String> metadata = new HashMap<>();
@@ -165,6 +166,7 @@ public class SeasonHitVideoJobWorker {
                     session,
                     prompt,
                     sourceImageBase64,
+                    garmentImageBase64,
                     metadata
             );
             if (lastResult.success()) {

@@ -41,6 +41,11 @@ public class AdminSettingsController {
         if (request.blockGoogleOAuth() != null) {
             platformSettingsService.setBlockGoogleOAuth(request.blockGoogleOAuth());
         }
+        platformSettingsService.updateTryOnSceneSettings(
+                request.tryOnScenesEnabled(),
+                request.tryOnPoseChangeEnabled(),
+                request.tryOnScenePrompts()
+        );
         return platformSettingsService.snapshot();
     }
 }

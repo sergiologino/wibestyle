@@ -1,154 +1,84 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
+import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import * as ExpoLinking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
+import { useLocalSearchParams } from "expo-router";
+import { ApiError } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
-import { TextField } from "@/components/ui/TextField";
-import { getApiBaseUrl } from "@/lib/config";
+import { getAppBaseUrl } from "@/lib/config";
 import { legalLinks } from "@/lib/legal-links";
-import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
-import { formatRussianPhone, isRussianPhoneComplete } from "@/lib/phone-mask";
 import { colors, spacing } from "@/theme/tokens";
 import { readVisitorId, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function AuthScreen() {
-  const router = useRouter();
-  const searchParams = useLocalSearchParams<{ next?: string; ref?: string }>();
-  const { api, setAuth } = useSession();
-  const [phone, setPhone] = useState("+7 ");
-  const [requestId, setRequestId] = useState<string | null>(null);
-  const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const searchParams = useLocalSearchParams<{ ref?: string }>();
+  const { api } = useSession();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function startPhoneOtp() {
-    setError(null);
-    if (!isRussianPhoneComplete(phone)) {
-      setError("Введите номер в формате +7 (ККК) ННН-НН-НН");
-      return;
-    }
+  async function startMobileId() {
     setLoading(true);
+    setError(null);
     try {
-      const result = await api.startOtp(phone);
-      void trackMobileMarketingEvent("signup_started", { method: "sms" });
-      setRequestId(result.requestId);
+      const status = await api.getMobileIdStatus();
+      if (!status.enabled) throw new Error("Вход по телефону временно не настроен");
+      const returnUrl = ExpoLinking.createURL("auth/mobile-id/callback");
+      const params = new URLSearchParams({ returnUrl });
+      if (typeof searchParams.ref === "string") params.set("ref", searchParams.ref);
+      const visitorId = await readVisitorId();
+      if (visitorId) params.set("visitorId", visitorId);
+      void trackMobileMarketingEvent("signup_started", { method: "mobile_id" });
+      const result = await WebBrowser.openAuthSessionAsync(
+        `${getAppBaseUrl()}/auth/mobile-id?${params.toString()}`,
+        returnUrl,
+      );
+      if (result.type === "cancel" || result.type === "dismiss") {
+        setError("Вход отменён");
+      }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось отправить код");
+      setError(err instanceof ApiError || err instanceof Error
+        ? err.message
+        : "Не удалось открыть вход по телефону");
     } finally {
       setLoading(false);
     }
-  }
-
-  async function verifyOtp() {
-    if (!requestId) return;
-    setError(null);
-    setLoading(true);
-    try {
-      const auth = await api.verifyOtp(
-        requestId,
-        code,
-        undefined,
-        typeof searchParams.ref === "string" ? searchParams.ref : undefined,
-        await readVisitorId(),
-      );
-      const meClient = new WibeStyleApiClient({
-        baseUrl: getApiBaseUrl(),
-        getAccessToken: () => auth.accessToken,
-      });
-      const me = await meClient.me();
-      setAuth(
-        auth.accessToken,
-        auth.user.phone ?? auth.user.email ?? me.user.login ?? me.user.email ?? "",
-        me.profile,
-        auth.refreshToken,
-        auth.expiresIn,
-      );
-      router.replace(
-        resolvePostAuthRoute({
-          newUser: Boolean(auth.newUser),
-          hasActiveAvatar: Boolean(me.profile.activeAvatarId),
-          nextParam: typeof searchParams.next === "string" ? searchParams.next : null,
-        }) as never,
-      );
-    } catch {
-      setError("Неверный код. Для dev используй 0000.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function resetChallenge() {
-    setRequestId(null);
-    setCode("");
-    setError(null);
   }
 
   return (
     <Screen>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <Eyebrow>Вход</Eyebrow>
-          <DisplayTitle>Добро пожаловать</DisplayTitle>
-          <BodyText>Войди по телефону или через Яндекс / Google.</BodyText>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Eyebrow>Вход</Eyebrow>
+        <DisplayTitle>Добро пожаловать</DisplayTitle>
+        <BodyText>Войдите по номеру телефона — аккаунт создастся автоматически.</BodyText>
 
-          <View style={styles.form}>
-            {!requestId ? (
-              <>
-                <TextField
-                  label="Телефон"
-                  placeholder="+7 900 000-00-00"
-                  keyboardType="phone-pad"
-                  maxLength={18}
-                  value={phone}
-                  onChangeText={(value) => setPhone(formatRussianPhone(value))}
-                />
-                <Button
-                  label="Получить код"
-                  loading={loading}
-                  onPress={startPhoneOtp}
-                />
-              </>
-            ) : (
-              <>
-                <TextField
-                  label="Код из SMS"
-                  placeholder="0000"
-                  keyboardType="number-pad"
-                  value={code}
-                  onChangeText={setCode}
-                />
-                <Button label="Подтвердить" loading={loading} onPress={verifyOtp} />
-                <Button label="Изменить" variant="ghost" onPress={resetChallenge} />
-              </>
-            )}
-          </View>
+        <View style={styles.form}>
+          <Button label="Войти по номеру телефона" loading={loading} onPress={startMobileId} />
+        </View>
 
-          <OAuthButtons referralCode={typeof searchParams.ref === "string" ? searchParams.ref : undefined} />
+        <OAuthButtons referralCode={typeof searchParams.ref === "string" ? searchParams.ref : undefined} />
 
-          <Text style={styles.legalText}>
-            Продолжая, вы принимаете{" "}
-            <Text style={styles.legalLink} onPress={() => void Linking.openURL(legalLinks.terms)}>
-              пользовательское соглашение
-            </Text>{" "}
-            и{" "}
-            <Text style={styles.legalLink} onPress={() => void Linking.openURL(legalLinks.privacy)}>
-              политику конфиденциальности
-            </Text>
-            .
-          </Text>
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <Text style={styles.legalText}>
+          Продолжая, вы принимаете{" "}
+          <Text style={styles.legalLink} onPress={() => void Linking.openURL(legalLinks.terms)}>
+            пользовательское соглашение
+          </Text>{" "}
+          и{" "}
+          <Text style={styles.legalLink} onPress={() => void Linking.openURL(legalLinks.privacy)}>
+            политику конфиденциальности
+          </Text>.
+        </Text>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   scroll: {
     padding: spacing.lg,
     gap: spacing.md,
