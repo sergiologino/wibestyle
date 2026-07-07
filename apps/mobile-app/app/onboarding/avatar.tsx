@@ -20,6 +20,8 @@ import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import type { RNFile } from "@/lib/mobile-api";
 
+const defaultAvatarSample = require("../../assets/avatar/default-avatar-sample.webp");
+
 export default function AvatarOnboardingScreen() {
   const router = useRouter();
   const { api, uploads, refreshProfile, completeOnboardingStep, ensureSession } = useSession();
@@ -72,6 +74,8 @@ export default function AvatarOnboardingScreen() {
     }
     setLoading(true);
     setError(null);
+    let createdAvatarId: string | null = null;
+    let avatarActivated = false;
     try {
       await api.updateProfile({
         gender,
@@ -83,14 +87,19 @@ export default function AvatarOnboardingScreen() {
         shoeSizeEu: shoeSizeEu ? Number(shoeSizeEu) : undefined,
       });
       const created = await api.createAvatar({});
+      createdAvatarId = created.avatar.id;
       await uploads.uploadAvatarPhoto(api, created.avatar.id, photo);
       await api.validateAvatar(created.avatar.id);
       await api.preprocessAvatar(created.avatar.id);
       await api.activateAvatar(created.avatar.id);
+      avatarActivated = true;
       await refreshProfile();
       completeOnboardingStep("avatar");
       router.replace("/(main)/home");
     } catch (err) {
+      if (createdAvatarId && !avatarActivated) {
+        await api.deleteAvatar(createdAvatarId).catch(() => undefined);
+      }
       setError(err instanceof ApiError ? err.message : "Не удалось создать аватар");
     } finally {
       setLoading(false);
@@ -109,7 +118,7 @@ export default function AvatarOnboardingScreen() {
             {previewUri ? (
               <Image source={{ uri: previewUri }} style={styles.photo} contentFit="cover" />
             ) : (
-              <Text style={styles.photoHint}>Нажми, чтобы выбрать фото</Text>
+              <Image source={defaultAvatarSample} style={styles.photo} contentFit="cover" />
             )}
           </Pressable>
 
@@ -174,11 +183,6 @@ const styles = StyleSheet.create({
   photo: {
     width: "100%",
     height: "100%",
-  },
-  photoHint: {
-    fontFamily: "Manrope_400Regular",
-    color: colors.muted,
-    fontSize: 15,
   },
   genderRow: {
     flexDirection: "row",

@@ -14,6 +14,8 @@ public interface AvatarRepository extends JpaRepository<AvatarEntity, UUID> {
 
     long countByUserIdAndStatusNot(UUID userId, AvatarStatus status);
 
+    long countByUserIdAndStatus(UUID userId, AvatarStatus status);
+
     Optional<AvatarEntity> findByIdAndUserId(UUID id, UUID userId);
 
     Optional<AvatarEntity> findByUserIdAndActiveTrue(UUID userId);

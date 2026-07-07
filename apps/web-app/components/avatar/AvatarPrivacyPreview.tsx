@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchAuthenticatedBlobUrl, resolveApiPath } from "@/lib/api-media";
 import { FieldCheckbox } from "@/components/ui/fields";
 
+const DEFAULT_AVATAR_SAMPLE_SRC = "/assets/avatar/default-avatar-sample.webp";
+
 type PrivacyState = {
   hideFace: boolean;
   hideBackground: boolean;
@@ -82,12 +84,12 @@ export default function AvatarPrivacyPreview({
             {privacy.hideFace ? <div aria-hidden className="avatar-preview-face-mask" /> : null}
           </>
         ) : (
-          <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 text-center">
-            <div className="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-[#ff1fa2]/20 to-[#782cff]/20 text-2xl">
-              ✨
-            </div>
-            <p className="text-sm font-normal text-[#6d6273]">Загрузите фото в полный рост — превью появится здесь</p>
-          </div>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            alt="Образец фото для аватара"
+            className="avatar-preview-image mx-auto block max-h-[520px] min-h-[320px] w-full object-cover"
+            src={DEFAULT_AVATAR_SAMPLE_SRC}
+          />
         )}
       </div>
 

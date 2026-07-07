@@ -68,7 +68,7 @@ public class AvatarService {
 
     @Transactional
     public Map<String, Object> createAvatar(UUID userId, CreateAvatarRequest request) {
-        long existing = avatarRepository.countByUserIdAndStatusNot(userId, AvatarStatus.DELETED);
+        long existing = avatarRepository.countByUserIdAndStatus(userId, AvatarStatus.READY);
         if (existing >= MAX_AVATARS_PER_USER) {
             throw new IllegalArgumentException(AVATAR_LIMIT_REACHED);
         }
