@@ -1,8 +1,9 @@
 import { Alert, ScrollView, Share, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
-import type { TryOnHistoryItem, UserNotification } from "@wibestyle/shared-types";
+import type { PublishedReview, TryOnHistoryItem, UserNotification } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
@@ -16,12 +17,13 @@ import { useAppTheme } from "@/theme/palettes";
 export default function HomeScreen() {
   const router = useRouter();
   const theme = useAppTheme();
-  const { api, profile, phone, accessToken, ensureSession } = useSession();
+  const { api, profile, accessToken, ensureSession } = useSession();
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<UserNotification | null>(null);
+  const [reviews, setReviews] = useState<PublishedReview[]>([]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let active = true;
     (async () => {
       const ok = await ensureSession();
@@ -32,8 +34,12 @@ export default function HomeScreen() {
       try {
         const payload = await api.listMyTryOnSessions();
         if (active) setHistory(payload.items);
-        const notifications = await api.getNotifications();
+        const [notifications, publishedReviews] = await Promise.all([
+          api.getNotifications(),
+          api.listPublishedReviews().catch(() => ({ items: [] as PublishedReview[] })),
+        ]);
         if (active) setNotification(notifications.items.find((item) => !item.read) ?? null);
+        if (active) setReviews(publishedReviews.items.slice(0, 3));
       } finally {
         if (active) setLoading(false);
       }
@@ -41,13 +47,14 @@ export default function HomeScreen() {
     return () => {
       active = false;
     };
-  }, [api, ensureSession, router]);
+  }, [api, ensureSession, router]));
 
   const gensLeft =
     profile?.plan === "trial"
       ? profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0)
       : profile?.planGenerationsLeft ?? null;
   const publishedVerb = profile?.gender === "male" ? "публиковал" : "публиковала";
+  const greetingName = profile?.displayName?.trim() || "пользователь";
 
   async function shareApplication() {
     try {
@@ -100,7 +107,7 @@ export default function HomeScreen() {
         ) : null}
         <Card>
           <View style={styles.homeHeader}>
-            <Eyebrow>{phone ? `Привет, ${phone}` : "Привет"}</Eyebrow>
+            <Eyebrow>{`Привет, ${greetingName}`}</Eyebrow>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Поделиться приложением"
@@ -189,6 +196,21 @@ export default function HomeScreen() {
             ))}
           </View>
         )}
+
+        {reviews.length > 0 ? (
+          <View style={styles.section}>
+            <SectionTitle>Отзывы</SectionTitle>
+            <View style={styles.reviews}>
+              {reviews.map((review) => (
+                <Card key={review.id} style={styles.reviewCard}>
+                  <Text style={styles.reviewStars}>{"★".repeat(review.rating)}</Text>
+                  <Text style={styles.reviewBody}>{review.body}</Text>
+                  <Text style={styles.reviewAuthor}>{review.displayName}</Text>
+                </Card>
+              ))}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </Screen>
   );
@@ -295,5 +317,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.black,
     lineHeight: 18,
+  },
+  reviews: {
+    gap: spacing.sm,
+  },
+  reviewCard: {
+    gap: spacing.xs,
+  },
+  reviewStars: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 13,
+    color: colors.pink,
+  },
+  reviewBody: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.black,
+  },
+  reviewAuthor: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 12,
+    color: colors.muted,
   },
 });

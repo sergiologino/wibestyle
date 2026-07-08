@@ -233,46 +233,21 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
           </View>
         </Card>
 
-        <Card>
-          <SectionTitle>Палитра интерфейса</SectionTitle>
-          <BodyText>Выбери цветовую гамму приложения. Можно оставить фирменную розовую или переключиться на более спокойный вариант.</BodyText>
-          <View style={styles.paletteGrid}>
-            {(Object.keys(interfacePalettes) as InterfacePalette[]).map((paletteId) => {
-              const option = interfacePalettes[paletteId];
-              const active = interfacePalette === paletteId;
-              return (
-                <Pressable
-                  key={paletteId}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Выбрать палитру ${option.label}`}
-                  disabled={paletteSaving}
-                  onPress={() => void saveInterfacePalette(paletteId)}
-                  style={[
-                    styles.paletteCard,
-                    {
-                      borderColor: active ? option.colors.primary : option.colors.borderLight,
-                      backgroundColor: option.colors.primaryBg,
-                      opacity: paletteSaving ? 0.7 : 1,
-                    },
-                  ]}
-                >
-                  <View style={styles.paletteSwatches}>
-                    <View style={[styles.paletteSwatch, { backgroundColor: option.colors.primary }]} />
-                    <View style={[styles.paletteSwatch, { backgroundColor: option.colors.secondary }]} />
-                    <View style={[styles.paletteSwatch, { backgroundColor: option.colors.primarySoft }]} />
-                  </View>
-                  <Text style={[styles.paletteTitle, { color: option.colors.black }]}>{option.label}</Text>
-                  <Text style={[styles.paletteDescription, { color: option.colors.muted }]}>{option.description}</Text>
-                  {active ? (
-                    <Text style={[styles.paletteActive, { color: option.colors.primary }]}>
-                      {paletteSaving ? "Сохраняем..." : "Выбрано"}
-                    </Text>
-                  ) : null}
-                </Pressable>
-              );
-            })}
+        {showQuickLinks ? (
+          <View style={styles.links}>
+            {LINKS.map((link) => (
+              <Pressable
+                key={link.href}
+                style={({ pressed }) => [styles.linkRow, pressed && styles.linkPressed]}
+                onPress={() => router.push(link.href as never)}
+              >
+                <Feather name={link.icon} size={18} color={colors.pink} />
+                <Text style={styles.linkLabel}>{link.label}</Text>
+                <Feather name="chevron-right" size={18} color={colors.eyebrow} />
+              </Pressable>
+            ))}
           </View>
-        </Card>
+        ) : null}
 
         <Card>
           <SectionTitle>Подписка</SectionTitle>
@@ -409,6 +384,47 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
           {message ? <Text style={styles.success}>{message}</Text> : null}
         </Card>
 
+        <Card>
+          <SectionTitle>Палитра интерфейса</SectionTitle>
+          <BodyText>Выбери цветовую гамму приложения. Можно оставить фирменную розовую или переключиться на более спокойный вариант.</BodyText>
+          <View style={styles.paletteGrid}>
+            {(Object.keys(interfacePalettes) as InterfacePalette[]).map((paletteId) => {
+              const option = interfacePalettes[paletteId];
+              const active = interfacePalette === paletteId;
+              return (
+                <Pressable
+                  key={paletteId}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Выбрать палитру ${option.label}`}
+                  disabled={paletteSaving}
+                  onPress={() => void saveInterfacePalette(paletteId)}
+                  style={[
+                    styles.paletteCard,
+                    {
+                      borderColor: active ? option.colors.primary : option.colors.borderLight,
+                      backgroundColor: option.colors.primaryBg,
+                      opacity: paletteSaving ? 0.7 : 1,
+                    },
+                  ]}
+                >
+                  <View style={styles.paletteSwatches}>
+                    <View style={[styles.paletteSwatch, { backgroundColor: option.colors.primary }]} />
+                    <View style={[styles.paletteSwatch, { backgroundColor: option.colors.secondary }]} />
+                    <View style={[styles.paletteSwatch, { backgroundColor: option.colors.primarySoft }]} />
+                  </View>
+                  <Text style={[styles.paletteTitle, { color: option.colors.black }]}>{option.label}</Text>
+                  <Text style={[styles.paletteDescription, { color: option.colors.muted }]}>{option.description}</Text>
+                  {active ? (
+                    <Text style={[styles.paletteActive, { color: option.colors.primary }]}>
+                      {paletteSaving ? "Сохраняем..." : "Выбрано"}
+                    </Text>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        </Card>
+
         <Card style={styles.dangerCard}>
           <SectionTitle>Удалить аккаунт</SectionTitle>
           <BodyText>
@@ -427,22 +443,6 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
             onPress={deleteAccount}
           />
         </Card>
-
-        {showQuickLinks ? (
-          <View style={styles.links}>
-            {LINKS.map((link) => (
-              <Pressable
-                key={link.href}
-                style={({ pressed }) => [styles.linkRow, pressed && styles.linkPressed]}
-                onPress={() => router.push(link.href as never)}
-              >
-                <Feather name={link.icon} size={18} color={colors.pink} />
-                <Text style={styles.linkLabel}>{link.label}</Text>
-                <Feather name="chevron-right" size={18} color={colors.eyebrow} />
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 

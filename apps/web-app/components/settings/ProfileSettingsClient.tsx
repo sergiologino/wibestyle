@@ -233,6 +233,16 @@ export default function ProfileSettingsClient() {
       </section>
 
       <Card>
+        <p className={sectionTitleClassName}>Избранное</p>
+        <p className={`mt-1 ${mutedTextClassName}`}>Сохранённые вещи и быстрый возврат к понравившимся примеркам.</p>
+        <Link className="mt-4 inline-block" href="/favorites">
+          <Button size="md" variant="secondary">
+            Открыть избранное
+          </Button>
+        </Link>
+      </Card>
+
+      <Card>
         <p className={sectionTitleClassName}>Подписка</p>
         {profile ? (
           <div className="mt-3 space-y-2 text-sm text-[#6d6273]">
@@ -283,44 +293,6 @@ export default function ProfileSettingsClient() {
           Приглашай друзей — получай бесплатные примерки →
         </Link>
         <p className="mt-2 text-xs text-[var(--muted)]">Доступно всем пользователям, подписка не нужна.</p>
-      </Card>
-
-      <Card>
-        <p className={sectionTitleClassName}>Палитра интерфейса</p>
-        <p className={`mt-1 ${mutedTextClassName}`}>
-          Выбери цветовую гамму приложения. Текущая розово-фиолетовая остается доступной.
-        </p>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {interfacePaletteOptions.map((option) => {
-            const active = interfacePalette === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                disabled={paletteSaving}
-                onClick={() => void saveInterfacePalette(option.value)}
-                className={`rounded-3xl border p-4 text-left transition ${
-                  active
-                    ? "border-[var(--pink)] bg-[var(--pink-bg)] shadow-[0_10px_28px_var(--pink-glow)]"
-                    : "border-[var(--pink-soft)] bg-white hover:border-[var(--pink)]"
-                } disabled:cursor-wait disabled:opacity-70`}
-              >
-                <span className="flex gap-2">
-                  {option.swatches.map((swatch) => (
-                    <span key={swatch} className="h-6 w-9 rounded-full" style={{ backgroundColor: swatch }} />
-                  ))}
-                </span>
-                <span className="mt-3 block font-medium text-[var(--black)]">{option.label}</span>
-                <span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{option.description}</span>
-                {active ? (
-                  <span className="mt-3 block text-xs font-medium text-[var(--pink)]">
-                    {paletteSaving ? "Сохраняем..." : "Выбрано"}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
       </Card>
 
       <Card>
@@ -392,6 +364,44 @@ export default function ProfileSettingsClient() {
           </Button>
         </form>
         {message ? <p className="mt-3 text-sm font-normal text-[#782cff]">{message}</p> : null}
+      </Card>
+
+      <Card>
+        <p className={sectionTitleClassName}>Палитра интерфейса</p>
+        <p className={`mt-1 ${mutedTextClassName}`}>
+          Выбери цветовую гамму приложения. Текущая розово-фиолетовая остается доступной.
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {interfacePaletteOptions.map((option) => {
+            const active = interfacePalette === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                disabled={paletteSaving}
+                onClick={() => void saveInterfacePalette(option.value)}
+                className={`rounded-3xl border p-4 text-left transition ${
+                  active
+                    ? "border-[var(--pink)] bg-[var(--pink-bg)] shadow-[0_10px_28px_var(--pink-glow)]"
+                    : "border-[var(--pink-soft)] bg-white hover:border-[var(--pink)]"
+                } disabled:cursor-wait disabled:opacity-70`}
+              >
+                <span className="flex gap-2">
+                  {option.swatches.map((swatch) => (
+                    <span key={swatch} className="h-6 w-9 rounded-full" style={{ backgroundColor: swatch }} />
+                  ))}
+                </span>
+                <span className="mt-3 block font-medium text-[var(--black)]">{option.label}</span>
+                <span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{option.description}</span>
+                {active ? (
+                  <span className="mt-3 block text-xs font-medium text-[var(--pink)]">
+                    {paletteSaving ? "Сохраняем..." : "Выбрано"}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
       </Card>
 
       <Card>

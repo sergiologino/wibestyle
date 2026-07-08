@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type ErrorBoundaryProps } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { ApiError } from "@wibestyle/api-client";
@@ -224,7 +224,7 @@ export default function TryOnResultScreen() {
       });
       await Share.share({
         title: "Моя примерка в VibeStyle",
-        message: `Посмотри, как выглядит мой образ в VibeStyle: ${postUrl}`,
+        message: postUrl,
         url: postUrl,
       });
     } catch (err) {
@@ -301,6 +301,16 @@ export default function TryOnResultScreen() {
     }
   }
 
+  async function openProductCard() {
+    const productUrl = result?.product?.productUrl;
+    if (!productUrl) return;
+    try {
+      await Linking.openURL(productUrl);
+    } catch {
+      setShareError("Не удалось открыть карточку товара");
+    }
+  }
+
   if (loading) {
     return (
       <Screen>
@@ -333,10 +343,15 @@ export default function TryOnResultScreen() {
         </Pressable>
 
         {result.product ? (
-          <View style={styles.banner}>
+          <Pressable
+            accessibilityRole={result.product.productUrl ? "link" : "button"}
+            accessibilityLabel="Открыть карточку товара"
+            style={({ pressed }) => [styles.banner, pressed && result.product?.productUrl ? styles.bannerPressed : null]}
+            onPress={openProductCard}
+          >
             <Text style={styles.bannerTitle} numberOfLines={2}>{result.product.title || "Мой look"}</Text>
             {productMeta ? <Text style={styles.bannerMeta}>{productMeta}</Text> : null}
-          </View>
+          </Pressable>
         ) : null}
 
         <BeforeAfterSlider beforeSource={imageUris.before} afterSource={imageUris.after} height={480} />
@@ -371,29 +386,39 @@ export default function TryOnResultScreen() {
         {result.sizeFitMessage ? <Text style={styles.fit}>{result.sizeFitMessage}</Text> : null}
 
         <View style={styles.actions}>
-          {result.product ? (
-            <Button
-              label={isFavorite ? "В избранном" : "Понравилось"}
-              variant="secondary"
-              loading={favoriteLoading}
-              onPress={toggleFavorite}
-            />
-          ) : null}
           {videoStatus !== "ready" && videoStatus !== "generating" ? (
-            <>
+            <View style={styles.primaryActionRow}>
+              {result.product ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+                  disabled={favoriteLoading}
+                  style={({ pressed }) => [
+                    styles.heartButton,
+                    pressed && styles.heartButtonPressed,
+                    favoriteLoading && styles.disabledAction,
+                  ]}
+                  onPress={toggleFavorite}
+                >
+                  <Text style={styles.heartIcon}>{isFavorite ? "♥" : "♡"}</Text>
+                </Pressable>
+              ) : null}
               <Button
                 label="Создать видео"
                 icon={<Feather name="video" size={18} color={colors.white} />}
                 loading={videoGenerating}
                 onPress={makeVideo}
+                style={styles.videoButton}
               />
-              <BodyText>В trial доступно одно бесплатное видео. В Elite — видео к каждой примерке.</BodyText>
-            </>
+            </View>
+          ) : null}
+          {videoStatus !== "ready" && videoStatus !== "generating" ? (
+            <BodyText>В trial доступно одно бесплатное видео. В Elite — видео к каждой примерке.</BodyText>
           ) : null}
           {videoStatus === "ready" && afterVideoUrl ? (
             <Button label="Видео в галерею" loading={saving} onPress={() => saveToGallery("video")} />
           ) : null}
-          <Button label="Фото в галерею" variant="secondary" loading={saving} onPress={() => saveToGallery("image")} />
+          <Button label="Поделиться в галерее" variant="secondary" loading={saving} onPress={() => saveToGallery("image")} />
           <Button label="Поделиться" variant="secondary" loading={sharing} onPress={shareResult} />
           <Button label="Ещё примерка" onPress={() => router.push("/(main)/try-on")} />
         </View>
@@ -433,6 +458,9 @@ const styles = StyleSheet.create({
     borderWidth: hairline,
     borderColor: colors.borderLight,
     backgroundColor: colors.white,
+  },
+  bannerPressed: {
+    opacity: 0.82,
   },
   bannerTitle: {
     fontFamily: "Manrope_500Medium",
@@ -502,5 +530,36 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.sm,
+  },
+  primaryActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  heartButton: {
+    width: 54,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.danger,
+    backgroundColor: colors.white,
+  },
+  heartButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  heartIcon: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 28,
+    lineHeight: 30,
+    color: colors.danger,
+  },
+  disabledAction: {
+    opacity: 0.55,
+  },
+  videoButton: {
+    flex: 1,
   },
 });

@@ -198,7 +198,7 @@ export default function PhotoTryOnClient() {
         <Card>
           <h2 className="text-display-md text-2xl">Загрузи фото одежды</h2>
           <p className="text-body mt-3">
-            Снимок из галереи или скрин карточки товара. Тип вещи определится автоматически.
+            Снимок из галереи или скрин карточки товара. Максимальный размер файла — 10 MB.
           </p>
           <form className="mt-6 grid gap-4" onSubmit={(event) => void continueToPreview(event)}>
             <label className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-[#ffb8e4] bg-[#fff8fd] px-5 py-3 text-sm font-medium text-[#ff1fa2] transition hover:border-[#ff1fa2] hover:bg-[#fff0f8]">

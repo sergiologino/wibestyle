@@ -979,6 +979,7 @@ export class WibeStyleApiClient {
         planGenerationsLeft?: number;
         displayName?: string;
         primaryAuth?: string;
+        activeAvatarPhotoUrl?: string;
         createdAt: string;
       }[];
     }>("/api/v1/admin/users", { headers: { "X-Admin-Key": adminKey } });

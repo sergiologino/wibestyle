@@ -23,6 +23,18 @@ import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
 const STEPS = ["Ссылка", "Размер", "Генерация"];
 
+const SIZE_WARNING_LABELS: Record<string, string> = {
+  SIZE_MAY_BE_TIGHT: "Выбранный размер может быть маловат. Проверь размерную сетку или попробуй размер больше.",
+  SIZE_NOT_AVAILABLE: "Выбранного размера нет в карточке товара.",
+  RUNS_SMALL: "По отзывам вещь может маломерить. Проверь размерную сетку перед покупкой.",
+};
+
+function formatSizeAdvice(advice: SizeAdvice) {
+  const readableReasons = advice.reasons.filter((reason) => !/^[A-Z0-9_]+$/.test(reason));
+  if (readableReasons.length > 0) return readableReasons.join(" ");
+  return advice.warnings.map((warning) => SIZE_WARNING_LABELS[warning] ?? warning).join(" ");
+}
+
 export default function TryOnLinkScreen() {
   const router = useRouter();
   const { api, profile, accessToken, ensureSession, refreshProfile } = useSession();
@@ -156,7 +168,7 @@ export default function TryOnLinkScreen() {
                 ))}
               </View>
               {sizeAdvice?.warnings.length ? (
-                <Text style={styles.advice}>{sizeAdvice.warnings.join(" ")}</Text>
+                <Text style={styles.advice}>{formatSizeAdvice(sizeAdvice)}</Text>
               ) : null}
               <Button label="Запустить AI-примерку" loading={loading} onPress={() => setStep(2)} />
               <Button label="Назад" variant="ghost" onPress={() => setStep(0)} />

@@ -88,8 +88,8 @@ export default function AppTopBar() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-[#ffd1ed]/80 bg-white/94 shadow-[0_10px_34px_rgba(58,12,82,0.04)] backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 md:px-8">
-          <Link href={logoHref} aria-label="Я на стиле">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2 md:h-16 md:flex-nowrap md:px-8 md:py-0">
+          <Link href={logoHref} aria-label="Я на стиле" className="min-w-0 shrink">
             <BrandLogo markClassName="translate-y-1" />
           </Link>
           <nav className="hidden items-center rounded-full border border-[#ffd1ed]/80 bg-white/80 p-1 text-sm font-normal text-[#6d6273] shadow-[0_8px_24px_rgba(58,12,82,0.04)] md:flex">
@@ -107,7 +107,7 @@ export default function AppTopBar() {
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1.5 md:flex-none md:flex-nowrap">
             {sessionReady && isAuthenticated ? (
               <button
                 type="button"
