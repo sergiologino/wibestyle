@@ -39,6 +39,7 @@ import { extractMarketplaceUrl } from "@wibestyle/shared-types";
 export type ApiClientOptions = {
   baseUrl: string;
   getAccessToken?: () => string | null;
+  getDeviceId?: () => string | null;
   /** Called on 401; return true if tokens were refreshed and the request may be retried once. */
   onUnauthorized?: () => Promise<boolean>;
 };
@@ -67,6 +68,13 @@ export type AiProviderErrorMappingPayload = Pick<
   "errorText" | "description" | "enabled"
 >;
 
+export type DeviceAuthInfo = {
+  hash: string;
+  previousRegistrationOnDevice: boolean;
+  registrationCount: number;
+  deletedAccountCount: number;
+};
+
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -82,11 +90,13 @@ export class ApiError extends Error {
 export class WibeStyleApiClient {
   private readonly baseUrl: string;
   private readonly getAccessToken?: () => string | null;
+  private readonly getDeviceId?: () => string | null;
   private readonly onUnauthorized?: () => Promise<boolean>;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.getAccessToken = options.getAccessToken;
+    this.getDeviceId = options.getDeviceId;
     this.onUnauthorized = options.onUnauthorized;
   }
 
@@ -98,6 +108,10 @@ export class WibeStyleApiClient {
     const token = this.getAccessToken?.();
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
+    }
+    const deviceId = this.getDeviceId?.();
+    if (deviceId) {
+      headers.set("X-Device-Id", deviceId);
     }
     return headers;
   }
@@ -150,6 +164,7 @@ export class WibeStyleApiClient {
     promoCode?: string,
     referralCode?: string,
     visitorId?: string,
+    deviceId?: string,
   ) {
     return this.request<
       AuthTokens & {
@@ -157,6 +172,7 @@ export class WibeStyleApiClient {
         newUser?: boolean;
         promo?: { redeemed: boolean; promo?: PromoCodeRecord };
         tokenType?: string;
+        device?: DeviceAuthInfo;
       }
     >("/api/v1/auth/mobile-id/siteverify", {
       method: "POST",
@@ -166,6 +182,7 @@ export class WibeStyleApiClient {
         promoCode: promoCode || undefined,
         referralCode: referralCode || undefined,
         visitorId: visitorId || undefined,
+        deviceId: deviceId || this.getDeviceId?.() || undefined,
       }),
     });
   }
@@ -175,6 +192,7 @@ export class WibeStyleApiClient {
     verifyToken: string,
     referralCode?: string,
     visitorId?: string,
+    deviceId?: string,
   ) {
     return this.request<{ handoffCode: string }>("/api/v1/auth/mobile-id/siteverify/mobile", {
       method: "POST",
@@ -183,6 +201,7 @@ export class WibeStyleApiClient {
         verify_token: verifyToken,
         referralCode: referralCode || undefined,
         visitorId: visitorId || undefined,
+        deviceId: deviceId || this.getDeviceId?.() || undefined,
       }),
     });
   }
@@ -192,6 +211,7 @@ export class WibeStyleApiClient {
       AuthTokens & {
         user: { id: string; phone?: string; email?: string; login?: string };
         newUser?: boolean;
+        device?: DeviceAuthInfo;
       }
     >("/api/v1/auth/mobile-id/exchange", {
       method: "POST",
@@ -206,13 +226,14 @@ export class WibeStyleApiClient {
     });
   }
 
-  verifyOtp(requestId: string, code: string, promoCode?: string, referralCode?: string, visitorId?: string) {
+  verifyOtp(requestId: string, code: string, promoCode?: string, referralCode?: string, visitorId?: string, deviceId?: string) {
     return this.request<
       AuthTokens & {
         user: { id: string; phone?: string; email?: string; login?: string };
         newUser?: boolean;
         promo?: { redeemed: boolean; promo?: PromoCodeRecord };
         tokenType?: string;
+        device?: DeviceAuthInfo;
       }
     >("/api/v1/auth/otp/verify", {
       method: "POST",
@@ -222,6 +243,7 @@ export class WibeStyleApiClient {
         promoCode: promoCode || undefined,
         referralCode: referralCode || undefined,
         visitorId: visitorId || undefined,
+        deviceId: deviceId || this.getDeviceId?.() || undefined,
       }),
     });
   }
@@ -240,6 +262,7 @@ export class WibeStyleApiClient {
         newUser?: boolean;
         promo?: { redeemed: boolean; promo?: PromoCodeRecord };
         tokenType?: string;
+        device?: DeviceAuthInfo;
       }
     >("/api/v1/auth/email-otp/verify", {
       method: "POST",
@@ -980,6 +1003,15 @@ export class WibeStyleApiClient {
         displayName?: string;
         primaryAuth?: string;
         activeAvatarPhotoUrl?: string;
+        devices?: Array<{
+          deviceHash: string;
+          deviceHashShort: string;
+          registrationCount: number;
+          deletedAccountCount: number;
+          lastAccountDeletedAt?: string;
+          trialGenerationsUsed: number;
+          trialGenerationsLeft: number;
+        }>;
         createdAt: string;
       }[];
     }>("/api/v1/admin/users", { headers: { "X-Admin-Key": adminKey } });

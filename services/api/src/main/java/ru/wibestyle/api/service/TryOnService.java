@@ -183,7 +183,7 @@ public class TryOnService {
     }
 
     @Transactional
-    public Map<String, Object> generate(UUID userId, UUID sessionId) {
+    public Map<String, Object> generate(UUID userId, UUID sessionId, String deviceId) {
         requireTryOnProfileReady(userId);
         TryOnSessionEntity session = requireSession(userId, sessionId);
         if (session.getStatus() == TryOnSessionStatus.READY) {
@@ -201,13 +201,13 @@ public class TryOnService {
 
         UserProfileEntity profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
-        if (!quotaService.canStartGeneration(profile)) {
+        if (!quotaService.canStartGeneration(profile, deviceId)) {
             throw new IllegalArgumentException(TryOnErrorCodes.INSUFFICIENT_GENERATIONS);
         }
 
         aiTryOnService.ensureProductImageOrFail(session);
 
-        quotaService.reserve(session, profile);
+        quotaService.reserve(session, profile, deviceId);
         session.setStatus(TryOnSessionStatus.GENERATING);
         session.setUpdatedAt(Instant.now());
         TryOnJobEntity job = aiTryOnService.enqueuePhotoTryOn(session);
@@ -218,6 +218,11 @@ public class TryOnService {
 
         session = requireSession(userId, sessionId);
         return buildGenerateResponse(session, profile);
+    }
+
+    @Transactional
+    public Map<String, Object> generate(UUID userId, UUID sessionId) {
+        return generate(userId, sessionId, null);
     }
 
     private Map<String, Object> buildGenerateResponse(TryOnSessionEntity session, UserProfileEntity profile) {

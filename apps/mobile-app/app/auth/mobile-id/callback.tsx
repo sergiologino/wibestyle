@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { WibeStyleApiClient } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
@@ -35,6 +35,12 @@ export default function MobileIdCallbackScreen() {
           auth.refreshToken,
           auth.expiresIn,
         );
+        if (auth.device?.previousRegistrationOnDevice) {
+          Alert.alert(
+            "Устройство уже использовалось",
+            "На этом устройстве уже была регистрация. Бесплатные примерки ограничены общим лимитом устройства.",
+          );
+        }
         router.replace(resolvePostAuthRoute({
           newUser: Boolean(auth.newUser),
           hasActiveAvatar: Boolean(me.profile.activeAvatarId),

@@ -16,15 +16,18 @@ public class AccountDeletionService {
     private final UserRepository userRepository;
     private final BlobStorage blobStorage;
     private final RefreshTokenStore refreshTokenStore;
+    private final DeviceTrustService deviceTrustService;
 
     public AccountDeletionService(
             UserRepository userRepository,
             BlobStorage blobStorage,
-            RefreshTokenStore refreshTokenStore
+            RefreshTokenStore refreshTokenStore,
+            DeviceTrustService deviceTrustService
     ) {
         this.userRepository = userRepository;
         this.blobStorage = blobStorage;
         this.refreshTokenStore = refreshTokenStore;
+        this.deviceTrustService = deviceTrustService;
     }
 
     @Transactional
@@ -42,6 +45,7 @@ public class AccountDeletionService {
             throw new IllegalArgumentException("ACCOUNT_DELETE_FAILED");
         }
 
+        deviceTrustService.recordAccountDeletion(userId);
         refreshTokenStore.revokeAllForUser(userId);
         userRepository.deleteById(userId);
         return Map.of("deleted", true, "userId", userId.toString());

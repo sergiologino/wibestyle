@@ -24,7 +24,8 @@ class QuotaServiceTest {
     void trialUserCanSpendReferralBonusAfterFreeUnitsEnd() {
         UserProfileRepository profileRepository = mock(UserProfileRepository.class);
         TryOnSessionRepository sessionRepository = mock(TryOnSessionRepository.class);
-        QuotaService service = new QuotaService(profileRepository, sessionRepository, new BillingProperties());
+        DeviceTrustService deviceTrustService = mock(DeviceTrustService.class);
+        QuotaService service = new QuotaService(profileRepository, sessionRepository, new BillingProperties(), deviceTrustService);
         UUID userId = UUID.randomUUID();
         UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
         profile.setPlan("trial");
@@ -32,6 +33,7 @@ class QuotaServiceTest {
         profile.setBonusGenerationsLeft(3);
         when(sessionRepository.countByUserIdAndStatusAndQuotaReservedTrueAndQuotaConsumedFalse(
                 userId, TryOnSessionStatus.GENERATING)).thenReturn(0L);
+        when(deviceTrustService.availableTrialGenerations(userId, null)).thenReturn(0);
         when(profileRepository.findById(userId)).thenReturn(java.util.Optional.of(profile));
         TryOnSessionEntity session = session(userId);
 
@@ -46,7 +48,12 @@ class QuotaServiceTest {
     void expiredSubscriberCanSpendReferralBonusButNotExpiredPlanUnits() {
         UserProfileRepository profileRepository = mock(UserProfileRepository.class);
         TryOnSessionRepository sessionRepository = mock(TryOnSessionRepository.class);
-        QuotaService service = new QuotaService(profileRepository, sessionRepository, new BillingProperties());
+        QuotaService service = new QuotaService(
+                profileRepository,
+                sessionRepository,
+                new BillingProperties(),
+                mock(DeviceTrustService.class)
+        );
         UUID userId = UUID.randomUUID();
         UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
         profile.setPlan("wibe");
@@ -72,7 +79,8 @@ class QuotaServiceTest {
         QuotaService service = new QuotaService(
                 profileRepository,
                 sessionRepository,
-                new BillingProperties()
+                new BillingProperties(),
+                mock(DeviceTrustService.class)
         );
         TryOnSessionEntity session = new TryOnSessionEntity(
                 UUID.randomUUID(),
@@ -91,6 +99,24 @@ class QuotaServiceTest {
         assertThat(session.isQuotaConsumed()).isFalse();
         verify(profileRepository, never()).save(org.mockito.ArgumentMatchers.any());
         verify(sessionRepository).save(session);
+    }
+
+    @Test
+    void trialUserCannotStartWhenDeviceTrialIsExhausted() {
+        UserProfileRepository profileRepository = mock(UserProfileRepository.class);
+        TryOnSessionRepository sessionRepository = mock(TryOnSessionRepository.class);
+        DeviceTrustService deviceTrustService = mock(DeviceTrustService.class);
+        QuotaService service = new QuotaService(profileRepository, sessionRepository, new BillingProperties(), deviceTrustService);
+        UUID userId = UUID.randomUUID();
+        UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
+        profile.setPlan("trial");
+        profile.setTrialGenerationsLeft(3);
+        profile.setBonusGenerationsLeft(0);
+        when(sessionRepository.countByUserIdAndStatusAndQuotaReservedTrueAndQuotaConsumedFalse(
+                userId, TryOnSessionStatus.GENERATING)).thenReturn(0L);
+        when(deviceTrustService.availableTrialGenerations(userId, "device-1")).thenReturn(0);
+
+        assertThat(service.canStartGeneration(profile, "device-1")).isFalse();
     }
 
     private static TryOnSessionEntity session(UUID userId) {

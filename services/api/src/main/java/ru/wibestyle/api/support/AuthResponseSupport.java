@@ -20,6 +20,14 @@ public final class AuthResponseSupport {
         response.put("user", userMap(result.user()));
         response.put("newUser", result.newUser());
         response.put("promo", result.promo());
+        if (result.device().deviceHash() != null) {
+            response.put("device", Map.of(
+                    "hash", result.device().deviceHash(),
+                    "previousRegistrationOnDevice", result.device().previousRegistrationOnDevice(),
+                    "registrationCount", result.device().registrationCount(),
+                    "deletedAccountCount", result.device().deletedAccountCount()
+            ));
+        }
         return response;
     }
 

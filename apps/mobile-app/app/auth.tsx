@@ -12,6 +12,7 @@ import { getAppBaseUrl } from "@/lib/config";
 import { legalLinks } from "@/lib/legal-links";
 import { colors, spacing } from "@/theme/tokens";
 import { readVisitorId, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
+import { getOrCreateDeviceId } from "@/lib/device-id";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -32,6 +33,7 @@ export default function AuthScreen() {
       if (typeof searchParams.ref === "string") params.set("ref", searchParams.ref);
       const visitorId = await readVisitorId();
       if (visitorId) params.set("visitorId", visitorId);
+      params.set("deviceId", await getOrCreateDeviceId());
       void trackMobileMarketingEvent("signup_started", { method: "mobile_id" });
       const result = await WebBrowser.openAuthSessionAsync(
         `${getAppBaseUrl()}/auth/mobile-id?${params.toString()}`,

@@ -13,6 +13,7 @@ import { syncOnboardingFromProfile } from "@/lib/session-onboarding";
 import { fetchAuthenticatedBlobUrl } from "@/lib/api-media";
 
 import { resolveApiPath } from "@/lib/api-media";
+import { getOrCreateDeviceId } from "@/lib/device-id";
 
 import {
   computeAccessTokenExpiresAt,
@@ -858,6 +859,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
         baseUrl,
 
         getAccessToken: () => sessionRef.current.accessToken,
+        getDeviceId: getOrCreateDeviceId,
 
         onUnauthorized: refreshAccessToken,
 

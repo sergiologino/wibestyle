@@ -19,6 +19,15 @@ type AdminUserItem = {
   displayName?: string;
   primaryAuth?: string;
   activeAvatarPhotoUrl?: string;
+  devices?: Array<{
+    deviceHash: string;
+    deviceHashShort: string;
+    registrationCount: number;
+    deletedAccountCount: number;
+    lastAccountDeletedAt?: string;
+    trialGenerationsUsed: number;
+    trialGenerationsLeft: number;
+  }>;
   createdAt: string;
 };
 
@@ -196,6 +205,27 @@ export default function AdminUsersPage() {
                     Тариф: {user.plan ?? "—"}
                     {user.plan === "trial" ? ` · trial ${user.trialGenerationsLeft ?? 0}` : ` · gen ${user.planGenerationsLeft ?? 0}`}
                   </p>
+                  <p className="mt-1 text-xs font-bold text-[#6d6273]">
+                    Создан: {new Date(user.createdAt).toLocaleString("ru-RU")}
+                  </p>
+                  {user.devices?.length ? (
+                    <div className="mt-2 grid gap-1 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] p-3 text-xs font-bold text-[#6d6273]">
+                      {user.devices.map((device) => (
+                        <div key={device.deviceHash} className="break-words">
+                          <span className="text-[#782cff]">device {device.deviceHashShort}</span>
+                          <span className="block break-all font-mono font-normal text-[#9a8f99]">{device.deviceHash}</span>
+                          {" · "}регистраций: {device.registrationCount}
+                          {" · "}удалений: {device.deletedAccountCount}
+                          {" · "}trial: {device.trialGenerationsUsed} использ. / {device.trialGenerationsLeft} осталось
+                          {device.lastAccountDeletedAt ? (
+                            <>{" · "}последнее удаление: {new Date(device.lastAccountDeletedAt).toLocaleString("ru-RU")}</>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-xs font-bold text-[#9a8f99]">Device ID: нет данных</p>
+                  )}
                   <p className="mt-1 break-all text-xs font-bold text-[#6d6273]">ID: {user.id}</p>
                 </div>
               </div>

@@ -72,9 +72,10 @@ public class TryOnController {
     @PostMapping("/{sessionId}/generate")
     public Map<String, Object> generate(
             @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable UUID sessionId
     ) {
-        return tryOnService.generate(requireUserId(authorization), sessionId);
+        return tryOnService.generate(requireUserId(authorization), sessionId, deviceId);
     }
 
     @GetMapping("/mine")

@@ -42,6 +42,7 @@ export default function MobileIdBridge() {
               verify_token,
               searchParams.get("ref") ?? undefined,
               searchParams.get("visitorId") ?? undefined,
+              searchParams.get("deviceId") ?? undefined,
             );
             const callback = new URL(returnUrl);
             callback.searchParams.set("handoffCode", handoff.handoffCode);

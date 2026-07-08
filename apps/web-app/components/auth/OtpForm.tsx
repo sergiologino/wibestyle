@@ -79,6 +79,9 @@ export default function OtpForm() {
               auth.expiresIn,
             );
             clearPendingPromo();
+            if (auth.device?.previousRegistrationOnDevice) {
+              window.alert("На этом устройстве уже была регистрация. Бесплатные примерки ограничены общим лимитом устройства.");
+            }
             router.push(resolvePostAuthRoute({
               newUser: Boolean(auth.newUser),
               hasActiveAvatar: Boolean(me.profile.activeAvatarId),

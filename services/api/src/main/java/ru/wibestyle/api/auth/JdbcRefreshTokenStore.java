@@ -38,9 +38,6 @@ public class JdbcRefreshTokenStore implements RefreshTokenStore {
                 )
                 .stream()
                 .findFirst();
-        if (userId.isPresent()) {
-            jdbcTemplate.update("DELETE FROM auth_refresh_tokens WHERE token = ?", refreshToken);
-        }
         return userId;
     }
 
