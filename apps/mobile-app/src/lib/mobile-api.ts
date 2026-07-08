@@ -32,7 +32,15 @@ async function uploadMultipart<T>(
   }
 
   const response = await fetch(`${baseUrl}${path}`, { method: "POST", headers, body });
-  const json = (await response.json().catch(() => ({}))) as T & { error?: string; code?: string };
+  const responseText = await response.text().catch(() => "");
+  let json = {} as T & { error?: string; code?: string };
+  if (responseText) {
+    try {
+      json = JSON.parse(responseText) as T & { error?: string; code?: string };
+    } catch {
+      json = {} as T & { error?: string; code?: string };
+    }
+  }
 
   if (!response.ok) {
     if (allowRetry && response.status === 401 && onUnauthorized) {
@@ -41,7 +49,11 @@ async function uploadMultipart<T>(
         return uploadMultipart(baseUrl, path, getAccessToken, onUnauthorized, fieldName, file, extraFields, false);
       }
     }
-    throw new ApiError(json.error ?? "Upload failed", response.status, json.code);
+    const fallbackMessage =
+      response.status === 413
+        ? "Фото слишком большое. Выберите или сделайте фото поменьше."
+        : `Не удалось загрузить фото (HTTP ${response.status})`;
+    throw new ApiError(json.error ?? fallbackMessage, response.status, json.code);
   }
 
   return json as T;

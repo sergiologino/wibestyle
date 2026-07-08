@@ -121,6 +121,8 @@ export default function AvatarOnboardingForm() {
     }
 
     setLoading(true);
+    let createdAvatarId: string | null = null;
+    let avatarActivated = false;
     try {
       const profilePayload: Parameters<typeof api.updateProfile>[0] = {
         displayName: displayName.trim() || undefined,
@@ -148,8 +150,8 @@ export default function AvatarOnboardingForm() {
       await api.updateProfile(profilePayload);
 
       const { items: existingAvatars } = await api.listAvatars();
-      const activeAvatars = existingAvatars.filter((item) => item.status !== "DELETED");
-      if (activeAvatars.length >= MAX_AVATARS_PER_USER) {
+      const readyAvatars = existingAvatars.filter((item) => item.status === "READY");
+      if (readyAvatars.length >= MAX_AVATARS_PER_USER) {
         setError(`Можно хранить не больше ${MAX_AVATARS_PER_USER} avatar. Удалите один в настройках.`);
         return;
       }
@@ -159,6 +161,7 @@ export default function AvatarOnboardingForm() {
         privacyBackgroundHidden: hideBackground,
         privacyFeaturesHidden: false,
       });
+      createdAvatarId = avatar.id;
 
       await api.uploadAvatarPhoto(avatar.id, photoFile);
       const validation = await api.validateAvatar(avatar.id);
@@ -167,15 +170,20 @@ export default function AvatarOnboardingForm() {
       }
       if (validation.avatar.status === "REJECTED") {
         setError("Фото не прошло проверку. Обнажённые фото не нужны и не принимаются.");
+        await api.deleteAvatar(avatar.id).catch(() => undefined);
         return;
       }
 
       await api.preprocessAvatar(avatar.id);
       await api.activateAvatar(avatar.id);
+      avatarActivated = true;
       await refreshProfile();
       completeOnboardingStep("avatar");
       router.push("/home");
     } catch (err) {
+      if (createdAvatarId && !avatarActivated) {
+        await api.deleteAvatar(createdAvatarId).catch(() => undefined);
+      }
       const message = err instanceof ApiError ? err.message : "Не удалось сохранить avatar";
       setError(message);
     } finally {

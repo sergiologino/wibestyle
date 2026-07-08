@@ -53,7 +53,7 @@ public class AvatarService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> listAvatars(UUID userId) {
-        List<AvatarEntity> avatars = avatarRepository.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, AvatarStatus.DELETED);
+        List<AvatarEntity> avatars = avatarRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, AvatarStatus.READY);
         return Map.of(
                 "items", avatars.stream().map(this::toAvatarMap).toList(),
                 "limit", MAX_AVATARS_PER_USER,

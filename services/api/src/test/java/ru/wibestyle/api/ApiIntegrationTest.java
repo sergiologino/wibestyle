@@ -410,6 +410,12 @@ class ApiIntegrationTest {
         createDraftAvatar(accessToken);
         createDraftAvatar(accessToken);
 
+        mockMvc.perform(get("/api/v1/avatars")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0))
+                .andExpect(jsonPath("$.count").value(0));
+
         mockMvc.perform(post("/api/v1/avatars")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)

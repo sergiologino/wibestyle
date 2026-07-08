@@ -18,6 +18,7 @@ import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
+import { preparePickedImageForUpload } from "@/lib/image-upload";
 import type { RNFile } from "@/lib/mobile-api";
 
 const defaultAvatarSample = require("../../assets/avatar/default-avatar-sample.webp");
@@ -55,12 +56,9 @@ export default function AvatarOnboardingScreen() {
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    setPreviewUri(asset.uri);
-    setPhoto({
-      uri: asset.uri,
-      type: asset.mimeType ?? "image/jpeg",
-      name: "avatar.jpg",
-    });
+    const prepared = await preparePickedImageForUpload(asset, "avatar.jpg");
+    setPreviewUri(prepared.uri);
+    setPhoto(prepared);
   }
 
   async function submit() {
@@ -118,7 +116,7 @@ export default function AvatarOnboardingScreen() {
             {previewUri ? (
               <Image source={{ uri: previewUri }} style={styles.photo} contentFit="cover" />
             ) : (
-              <Image source={defaultAvatarSample} style={styles.photo} contentFit="cover" />
+              <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
           </Pressable>
 

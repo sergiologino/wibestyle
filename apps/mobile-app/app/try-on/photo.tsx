@@ -9,6 +9,7 @@ import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { canStartGeneration } from "@/lib/onboarding-flow";
+import { preparePickedImageForUpload } from "@/lib/image-upload";
 import type { RNFile } from "@/lib/mobile-api";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
@@ -46,12 +47,8 @@ export default function TryOnPhotoScreen() {
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.9, allowsEditing: true, aspect: [3, 4] });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    setPreviewUri(asset.uri);
-    const file: RNFile = {
-      uri: asset.uri,
-      type: asset.mimeType ?? "image/jpeg",
-      name: "garment.jpg",
-    };
+    const file: RNFile = await preparePickedImageForUpload(asset, "garment.jpg");
+    setPreviewUri(file.uri);
     setPhoto(file);
     try {
       const classified = await uploads.classifyGarmentPhoto(file);

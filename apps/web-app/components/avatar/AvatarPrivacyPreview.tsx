@@ -87,7 +87,7 @@ export default function AvatarPrivacyPreview({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             alt="Образец фото для аватара"
-            className="avatar-preview-image mx-auto block max-h-[520px] min-h-[320px] w-full object-cover"
+            className="avatar-preview-image mx-auto block max-h-[520px] min-h-[320px] w-full object-contain"
             src={DEFAULT_AVATAR_SAMPLE_SRC}
           />
         )}

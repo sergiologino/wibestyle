@@ -16,6 +16,7 @@ import { useSession } from "@/context/SessionProvider";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { BodyText, Button, SectionTitle } from "@/components/ui/Button";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
+import { preparePickedImageForUpload } from "@/lib/image-upload";
 import type { RNFile } from "@/lib/mobile-api";
 
 const defaultAvatarSample = require("../../../assets/avatar/default-avatar-sample.webp");
@@ -102,12 +103,9 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    setPreviewUri(asset.uri);
-    setNewPhoto({
-      uri: asset.uri,
-      type: asset.mimeType ?? "image/jpeg",
-      name: "avatar.jpg",
-    });
+    const prepared = await preparePickedImageForUpload(asset, "avatar.jpg");
+    setPreviewUri(prepared.uri);
+    setNewPhoto(prepared);
   }
 
   async function activateAvatar(avatarId: string) {
@@ -223,7 +221,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
             {previewUri ? (
               <Image source={{ uri: previewUri }} style={styles.photo} contentFit="cover" />
             ) : (
-              <Image source={defaultAvatarSample} style={styles.photo} contentFit="cover" />
+              <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
           </Pressable>
           <Button label={busy ? "Загружаем…" : "Сохранить новый аватар"} loading={busy} disabled={!newPhoto} onPress={addAvatar} />
