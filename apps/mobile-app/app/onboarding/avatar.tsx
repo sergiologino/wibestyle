@@ -18,7 +18,10 @@ import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
+import { preparePickedImageForUpload } from "@/lib/image-upload";
 import type { RNFile } from "@/lib/mobile-api";
+
+const defaultAvatarSample = require("../../assets/avatar/default-avatar-sample.webp");
 
 export default function AvatarOnboardingScreen() {
   const router = useRouter();
@@ -53,12 +56,9 @@ export default function AvatarOnboardingScreen() {
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    setPreviewUri(asset.uri);
-    setPhoto({
-      uri: asset.uri,
-      type: asset.mimeType ?? "image/jpeg",
-      name: "avatar.jpg",
-    });
+    const prepared = await preparePickedImageForUpload(asset, "avatar.jpg");
+    setPreviewUri(prepared.uri);
+    setPhoto(prepared);
   }
 
   async function submit() {
@@ -72,6 +72,8 @@ export default function AvatarOnboardingScreen() {
     }
     setLoading(true);
     setError(null);
+    let createdAvatarId: string | null = null;
+    let avatarActivated = false;
     try {
       await api.updateProfile({
         gender,
@@ -83,14 +85,19 @@ export default function AvatarOnboardingScreen() {
         shoeSizeEu: shoeSizeEu ? Number(shoeSizeEu) : undefined,
       });
       const created = await api.createAvatar({});
+      createdAvatarId = created.avatar.id;
       await uploads.uploadAvatarPhoto(api, created.avatar.id, photo);
       await api.validateAvatar(created.avatar.id);
       await api.preprocessAvatar(created.avatar.id);
       await api.activateAvatar(created.avatar.id);
+      avatarActivated = true;
       await refreshProfile();
       completeOnboardingStep("avatar");
       router.replace("/(main)/home");
     } catch (err) {
+      if (createdAvatarId && !avatarActivated) {
+        await api.deleteAvatar(createdAvatarId).catch(() => undefined);
+      }
       setError(err instanceof ApiError ? err.message : "Не удалось создать аватар");
     } finally {
       setLoading(false);
@@ -109,7 +116,7 @@ export default function AvatarOnboardingScreen() {
             {previewUri ? (
               <Image source={{ uri: previewUri }} style={styles.photo} contentFit="cover" />
             ) : (
-              <Text style={styles.photoHint}>Нажми, чтобы выбрать фото</Text>
+              <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
           </Pressable>
 
@@ -174,11 +181,6 @@ const styles = StyleSheet.create({
   photo: {
     width: "100%",
     height: "100%",
-  },
-  photoHint: {
-    fontFamily: "Manrope_400Regular",
-    color: colors.muted,
-    fontSize: 15,
   },
   genderRow: {
     flexDirection: "row",

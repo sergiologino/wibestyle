@@ -391,9 +391,9 @@ class ApiIntegrationTest {
     @Test
     void avatarLimitIsThree() throws Exception {
         String accessToken = authenticate("+79996667789");
-        createDraftAvatar(accessToken);
-        createDraftAvatar(accessToken);
-        createDraftAvatar(accessToken);
+        activateAvatar(accessToken);
+        activateAvatar(accessToken);
+        activateAvatar(accessToken);
 
         mockMvc.perform(post("/api/v1/avatars")
                         .header("Authorization", "Bearer " + accessToken)
@@ -401,6 +401,27 @@ class ApiIntegrationTest {
                         .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("AVATAR_LIMIT_REACHED"));
+    }
+
+    @Test
+    void draftAvatarsDoNotConsumeLimit() throws Exception {
+        String accessToken = authenticate("+79996667790");
+        createDraftAvatar(accessToken);
+        createDraftAvatar(accessToken);
+        createDraftAvatar(accessToken);
+
+        mockMvc.perform(get("/api/v1/avatars")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0))
+                .andExpect(jsonPath("$.count").value(0));
+
+        mockMvc.perform(post("/api/v1/avatars")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.avatar.status").value("DRAFT"));
     }
 
     @Test

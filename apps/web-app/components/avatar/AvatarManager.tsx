@@ -79,7 +79,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     setLoading(true);
     try {
       const { items } = await api.listAvatars();
-      setAvatars(items.filter((item) => item.status !== "DELETED"));
+      setAvatars(items.filter((item) => item.status === "READY"));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось загрузить аватары");
     } finally {
@@ -136,28 +136,36 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     }
     setBusy(true);
     setError(null);
+    let createdAvatarId: string | null = null;
+    let avatarActivated = false;
     try {
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
         privacyBackgroundHidden: hideBackground,
         privacyFeaturesHidden: false,
       });
+      createdAvatarId = avatar.id;
       await api.uploadAvatarPhoto(avatar.id, newPhoto);
       await api.validateAvatar(avatar.id);
       await api.preprocessAvatar(avatar.id);
       await api.activateAvatar(avatar.id);
+      avatarActivated = true;
       setNewPhoto(null);
       setAdding(false);
       await refreshProfile();
       await reload();
     } catch (err) {
+      if (createdAvatarId && !avatarActivated) {
+        await api.deleteAvatar(createdAvatarId).catch(() => undefined);
+      }
       setError(err instanceof ApiError ? err.message : "Не удалось добавить аватар");
     } finally {
       setBusy(false);
     }
   }
 
-  const atAvatarLimit = avatars.length >= MAX_AVATARS_PER_USER;
+  const readyAvatarCount = avatars.filter((avatar) => avatar.status === "READY").length;
+  const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
   const additionalAvatars = avatars.filter((avatar) => avatar.id !== activeAvatarId && !avatar.active);
 
   return (

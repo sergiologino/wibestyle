@@ -16,7 +16,10 @@ import { useSession } from "@/context/SessionProvider";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { BodyText, Button, SectionTitle } from "@/components/ui/Button";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
+import { preparePickedImageForUpload } from "@/lib/image-upload";
 import type { RNFile } from "@/lib/mobile-api";
+
+const defaultAvatarSample = require("../../../assets/avatar/default-avatar-sample.webp");
 
 type AvatarThumbProps = {
   avatar: AvatarRecord;
@@ -100,12 +103,9 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    setPreviewUri(asset.uri);
-    setNewPhoto({
-      uri: asset.uri,
-      type: asset.mimeType ?? "image/jpeg",
-      name: "avatar.jpg",
-    });
+    const prepared = await preparePickedImageForUpload(asset, "avatar.jpg");
+    setPreviewUri(prepared.uri);
+    setNewPhoto(prepared);
   }
 
   async function activateAvatar(avatarId: string) {
@@ -154,29 +154,37 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
     }
     setBusy(true);
     setError(null);
+    let createdAvatarId: string | null = null;
+    let avatarActivated = false;
     try {
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
         privacyBackgroundHidden: hideBackground,
         privacyFeaturesHidden: false,
       });
+      createdAvatarId = avatar.id;
       await uploads.uploadAvatarPhoto(api, avatar.id, newPhoto);
       await api.validateAvatar(avatar.id);
       await api.preprocessAvatar(avatar.id);
       await api.activateAvatar(avatar.id);
+      avatarActivated = true;
       setNewPhoto(null);
       setPreviewUri(null);
       setAdding(false);
       await refreshProfile();
       await reload();
     } catch (err) {
+      if (createdAvatarId && !avatarActivated) {
+        await api.deleteAvatar(createdAvatarId).catch(() => undefined);
+      }
       setError(err instanceof ApiError ? err.message : "Не удалось добавить аватар");
     } finally {
       setBusy(false);
     }
   }
 
-  const atAvatarLimit = avatars.length >= MAX_AVATARS_PER_USER;
+  const readyAvatarCount = avatars.filter((avatar) => avatar.status === "READY").length;
+  const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
   const additionalAvatars = avatars.filter((avatar) => avatar.id !== activeAvatarId && !avatar.active);
 
   return (
@@ -213,7 +221,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
             {previewUri ? (
               <Image source={{ uri: previewUri }} style={styles.photo} contentFit="cover" />
             ) : (
-              <Text style={styles.photoHint}>Нажми, чтобы выбрать фото в полный рост</Text>
+              <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
           </Pressable>
           <Button label={busy ? "Загружаем…" : "Сохранить новый аватар"} loading={busy} disabled={!newPhoto} onPress={addAvatar} />
@@ -290,13 +298,6 @@ const styles = StyleSheet.create({
   photo: {
     width: "100%",
     height: "100%",
-  },
-  photoHint: {
-    fontFamily: "Manrope_400Regular",
-    color: colors.muted,
-    fontSize: 15,
-    textAlign: "center",
-    paddingHorizontal: spacing.lg,
   },
   thumbRow: {
     gap: spacing.md,

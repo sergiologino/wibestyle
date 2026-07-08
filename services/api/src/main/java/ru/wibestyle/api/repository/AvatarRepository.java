@@ -12,7 +12,11 @@ public interface AvatarRepository extends JpaRepository<AvatarEntity, UUID> {
 
     List<AvatarEntity> findByUserIdAndStatusNotOrderByCreatedAtDesc(UUID userId, AvatarStatus status);
 
+    List<AvatarEntity> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, AvatarStatus status);
+
     long countByUserIdAndStatusNot(UUID userId, AvatarStatus status);
+
+    long countByUserIdAndStatus(UUID userId, AvatarStatus status);
 
     Optional<AvatarEntity> findByIdAndUserId(UUID id, UUID userId);
 

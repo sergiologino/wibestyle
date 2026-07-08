@@ -53,7 +53,7 @@ public class AvatarService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> listAvatars(UUID userId) {
-        List<AvatarEntity> avatars = avatarRepository.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, AvatarStatus.DELETED);
+        List<AvatarEntity> avatars = avatarRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, AvatarStatus.READY);
         return Map.of(
                 "items", avatars.stream().map(this::toAvatarMap).toList(),
                 "limit", MAX_AVATARS_PER_USER,
@@ -68,7 +68,7 @@ public class AvatarService {
 
     @Transactional
     public Map<String, Object> createAvatar(UUID userId, CreateAvatarRequest request) {
-        long existing = avatarRepository.countByUserIdAndStatusNot(userId, AvatarStatus.DELETED);
+        long existing = avatarRepository.countByUserIdAndStatus(userId, AvatarStatus.READY);
         if (existing >= MAX_AVATARS_PER_USER) {
             throw new IllegalArgumentException(AVATAR_LIMIT_REACHED);
         }
