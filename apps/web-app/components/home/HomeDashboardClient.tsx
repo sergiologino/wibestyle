@@ -14,7 +14,7 @@ import { ImageIcon, Link2 } from "lucide-react";
 
 export default function HomeDashboardClient() {
   const searchParams = useSearchParams();
-  const { api, profile, phone } = useAppSession();
+  const { api, profile } = useAppSession();
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [celebration, setCelebration] = useState<string | null>(null);
@@ -41,6 +41,7 @@ export default function HomeDashboardClient() {
   }, [api]);
 
   const nudgeLevel = subscriptionNudgeLevel(profile);
+  const greetingName = profile?.displayName?.trim() || "пользователь";
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 md:px-8">
@@ -64,7 +65,7 @@ export default function HomeDashboardClient() {
       ) : null}
 
       <section className="rounded-[28px] border border-[#ffd1ed] bg-white p-8 shadow-[0_16px_48px_rgba(58,12,82,0.06)]">
-        <p className="text-eyebrow">Привет{phone ? `, ${phone}` : ""}</p>
+        <p className="text-eyebrow">Привет, {greetingName}</p>
         <h1 className="text-display mt-3 text-4xl">Готова примерить новый look?</h1>
         <p className="text-body mt-3">
           {profile?.plan === "trial"

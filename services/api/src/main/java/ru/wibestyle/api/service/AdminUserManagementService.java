@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.wibestyle.api.domain.UserEntity;
 import ru.wibestyle.api.domain.UserProfileEntity;
+import ru.wibestyle.api.repository.AvatarRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
 import ru.wibestyle.api.repository.UserRepository;
 
@@ -19,6 +20,7 @@ public class AdminUserManagementService {
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final AvatarRepository avatarRepository;
     private final ProfileService profileService;
     private final TokenIssuanceService tokenIssuanceService;
     private final AccountDeletionService accountDeletionService;
@@ -26,12 +28,14 @@ public class AdminUserManagementService {
     public AdminUserManagementService(
             UserRepository userRepository,
             UserProfileRepository userProfileRepository,
+            AvatarRepository avatarRepository,
             ProfileService profileService,
             TokenIssuanceService tokenIssuanceService,
             AccountDeletionService accountDeletionService
     ) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
+        this.avatarRepository = avatarRepository;
         this.profileService = profileService;
         this.tokenIssuanceService = tokenIssuanceService;
         this.accountDeletionService = accountDeletionService;
@@ -101,6 +105,15 @@ public class AdminUserManagementService {
             map.put("trialGenerationsLeft", profile.getTrialGenerationsLeft());
             map.put("planGenerationsLeft", profile.getPlanGenerationsLeft());
             map.put("displayName", profile.getDisplayName());
+            avatarRepository.findByUserIdAndActiveTrue(user.getId()).ifPresent(avatar -> {
+                if (avatar.getPhotoProcessedPath() != null) {
+                    map.put("activeAvatarPhotoUrl", "/api/v1/admin/users/" + user.getId()
+                            + "/avatars/" + avatar.getId() + "/photo?variant=processed");
+                } else if (avatar.getPhotoOriginalPath() != null) {
+                    map.put("activeAvatarPhotoUrl", "/api/v1/admin/users/" + user.getId()
+                            + "/avatars/" + avatar.getId() + "/photo?variant=original");
+                }
+            });
         });
         return map;
     }

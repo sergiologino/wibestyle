@@ -28,6 +28,18 @@ const PARSE_PHASE_LABEL: Record<ParseLinkPhase, string> = {
 /** After this delay we assume marketplace page is reached and parsing started. */
 const PARSE_FETCHING_MS = 900;
 
+const SIZE_WARNING_LABELS: Record<string, string> = {
+  SIZE_MAY_BE_TIGHT: "Выбранный размер может быть маловат. Проверьте размерную сетку или попробуйте размер больше.",
+  SIZE_NOT_AVAILABLE: "Выбранного размера нет в карточке товара.",
+  RUNS_SMALL: "По отзывам вещь может маломерить. Проверьте размерную сетку перед покупкой.",
+};
+
+function formatSizeAdvice(advice: SizeAdvice) {
+  const readableReasons = advice.reasons.filter((reason) => !/^[A-Z0-9_]+$/.test(reason));
+  if (readableReasons.length > 0) return readableReasons.join(" ");
+  return advice.warnings.map((warning) => SIZE_WARNING_LABELS[warning] ?? warning).join(" ");
+}
+
 export default function LinkTryOnClient() {
   const router = useRouter();
   const pathname = usePathname();
@@ -264,7 +276,7 @@ export default function LinkTryOnClient() {
                   </div>
                   {sizeAdvice && sizeAdvice.status === "warning" ? (
                     <div className="mt-4 rounded-2xl border border-[#ffb347] bg-[#fffaf3] px-4 py-3">
-                      <p className="text-sm font-normal text-[#302637]">{sizeAdvice.reasons.join(" ")}</p>
+                      <p className="text-sm font-normal text-[#302637]">{formatSizeAdvice(sizeAdvice)}</p>
                       {sizeAdvice.recommendedSize && sizeAdvice.recommendedSize !== size ? (
                         <button
                           type="button"

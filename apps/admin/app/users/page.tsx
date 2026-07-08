@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Button, Card } from "@wibestyle/ui";
 import { AdminPageShell } from "@/components/admin-page-shell";
+import { AdminMediaImage } from "@/components/admin-media-image";
 import { useAdminKey } from "@/components/admin-key-provider";
 import { createAdminApi, APP_BASE_URL } from "@/lib/api";
 
@@ -17,6 +18,7 @@ type AdminUserItem = {
   planGenerationsLeft?: number;
   displayName?: string;
   primaryAuth?: string;
+  activeAvatarPhotoUrl?: string;
   createdAt: string;
 };
 
@@ -35,6 +37,7 @@ export default function AdminUsersPage() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [actionUserId, setActionUserId] = useState<string | null>(null);
+  const [previewUser, setPreviewUser] = useState<AdminUserItem | null>(null);
 
   const api = createAdminApi();
 
@@ -166,19 +169,35 @@ export default function AdminUsersPage() {
         {filteredItems.map((user) => (
           <Card key={user.id}>
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.12em] text-[#782cff]">{user.primaryAuth ?? "user"}</p>
-                <h2 className="text-xl font-black">{user.displayName ?? user.login ?? user.email ?? user.phone ?? "Без имени"}</h2>
-                <p className="mt-1 text-sm font-bold text-[#6d6273]">
-                  {user.login ? `@${user.login}` : null}
-                  {user.email ? ` · ${user.email}` : null}
-                  {user.phone ? ` · ${user.phone}` : null}
-                </p>
-                <p className="mt-1 text-sm font-bold text-[#6d6273]">
-                  Тариф: {user.plan ?? "—"}
-                  {user.plan === "trial" ? ` · trial ${user.trialGenerationsLeft ?? 0}` : ` · gen ${user.planGenerationsLeft ?? 0}`}
-                </p>
-                <p className="mt-1 text-xs font-bold text-[#6d6273]">ID: {user.id}</p>
+              <div className="flex min-w-0 flex-1 gap-4">
+                <button
+                  type="button"
+                  className="h-28 w-20 shrink-0 overflow-hidden rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] disabled:cursor-default"
+                  disabled={!user.activeAvatarPhotoUrl}
+                  title={user.activeAvatarPhotoUrl ? "Открыть аватар" : "У пользователя нет активного аватара"}
+                  onClick={() => setPreviewUser(user)}
+                >
+                  <AdminMediaImage
+                    adminKey={adminKey}
+                    alt={`Аватар ${user.displayName ?? user.login ?? user.phone ?? user.id}`}
+                    className="h-full w-full object-cover"
+                    path={user.activeAvatarPhotoUrl}
+                  />
+                </button>
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-[#782cff]">{user.primaryAuth ?? "user"}</p>
+                  <h2 className="break-words text-xl font-black">{user.displayName ?? user.login ?? user.email ?? user.phone ?? "Без имени"}</h2>
+                  <p className="mt-1 break-words text-sm font-bold text-[#6d6273]">
+                    {user.login ? `@${user.login}` : null}
+                    {user.email ? ` · ${user.email}` : null}
+                    {user.phone ? ` · ${user.phone}` : null}
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-[#6d6273]">
+                    Тариф: {user.plan ?? "—"}
+                    {user.plan === "trial" ? ` · trial ${user.trialGenerationsLeft ?? 0}` : ` · gen ${user.planGenerationsLeft ?? 0}`}
+                  </p>
+                  <p className="mt-1 break-all text-xs font-bold text-[#6d6273]">ID: {user.id}</p>
+                </div>
               </div>
               <div className="flex flex-col gap-2">
                 <Link href={`/users/${user.id}`}>
@@ -213,6 +232,30 @@ export default function AdminUsersPage() {
           </Card>
         ))}
       </div>
+
+      {previewUser ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Аватар пользователя"
+          onClick={() => setPreviewUser(null)}
+        >
+          <div className="max-h-[92vh] max-w-3xl overflow-hidden rounded-3xl bg-white p-3" onClick={(event) => event.stopPropagation()}>
+            <AdminMediaImage
+              adminKey={adminKey}
+              alt={`Аватар ${previewUser.displayName ?? previewUser.login ?? previewUser.phone ?? previewUser.id}`}
+              className="max-h-[82vh] w-full rounded-2xl object-contain"
+              path={previewUser.activeAvatarPhotoUrl}
+            />
+            <div className="mt-3 flex justify-end">
+              <Button size="md" variant="secondary" onClick={() => setPreviewUser(null)}>
+                Закрыть
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AdminPageShell>
   );
 }

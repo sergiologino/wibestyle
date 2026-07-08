@@ -102,7 +102,7 @@ export default function TryOnPhotoScreen() {
 
         <Eyebrow>Фото вещи</Eyebrow>
         <DisplayTitle>Примерить по фото</DisplayTitle>
-        <BodyText>Сфотографируй вещь или выбери из галереи — как на карточке маркетплейса.</BodyText>
+        <BodyText>Сфотографируй вещь или выбери из галереи — как на карточке маркетплейса. Максимальный размер файла — 10 MB.</BodyText>
 
         <Pressable style={styles.photoBox} onPress={() => pickPhoto("library")}>
           {previewUri ? (
