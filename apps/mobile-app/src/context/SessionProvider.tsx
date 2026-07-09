@@ -33,6 +33,7 @@ import {
   withRefreshLock,
 } from "@/lib/session-auth";
 import { createMobileUploadHelpers } from "@/lib/mobile-api";
+import { getOrCreateDeviceId } from "@/lib/device-id";
 import { obtainExpoPushToken } from "@/lib/push-notifications";
 import { InterfaceThemeProvider } from "@/theme/palettes";
 
@@ -61,6 +62,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [sessionReady, setSessionReady] = useState(false);
   const sessionRef = useRef(session);
   const pushTokenRef = useRef<string | null>(null);
+  const deviceIdRef = useRef<string | null>(null);
   sessionRef.current = session;
 
   const refreshAccessToken = useCallback(async (): Promise<boolean> => {
@@ -110,6 +112,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       new WibeStyleApiClient({
         baseUrl: getApiBaseUrl(),
         getAccessToken: () => sessionRef.current.accessToken,
+        getDeviceId: () => deviceIdRef.current,
         onUnauthorized: () => withRefreshLock(refreshAccessToken),
       }),
     [refreshAccessToken],
@@ -120,6 +123,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       createMobileUploadHelpers(
         getApiBaseUrl(),
         () => sessionRef.current.accessToken,
+        () => deviceIdRef.current,
         () => withRefreshLock(refreshAccessToken),
       ),
     [refreshAccessToken],
@@ -128,6 +132,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     (async () => {
+      deviceIdRef.current = await getOrCreateDeviceId();
       const stored = await readStoredSession();
       if (!active) return;
       sessionRef.current = stored;

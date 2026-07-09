@@ -23,7 +23,7 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
 
     @Override
     public Optional<UUID> consume(String refreshToken) {
-        String userId = redisTemplate.opsForValue().getAndDelete(key(refreshToken));
+        String userId = redisTemplate.opsForValue().get(key(refreshToken));
         if (userId == null || userId.isBlank()) {
             return Optional.empty();
         }

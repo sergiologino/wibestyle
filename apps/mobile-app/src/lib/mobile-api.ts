@@ -11,6 +11,7 @@ async function uploadMultipart<T>(
   baseUrl: string,
   path: string,
   getAccessToken: () => string | null,
+  getDeviceId: (() => string | null) | undefined,
   onUnauthorized: (() => Promise<boolean>) | undefined,
   fieldName: string,
   file: RNFile,
@@ -21,6 +22,10 @@ async function uploadMultipart<T>(
   const token = getAccessToken();
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
+  }
+  const deviceId = getDeviceId?.();
+  if (deviceId) {
+    headers.set("X-Device-Id", deviceId);
   }
 
   const body = new FormData();
@@ -46,7 +51,7 @@ async function uploadMultipart<T>(
     if (allowRetry && response.status === 401 && onUnauthorized) {
       const refreshed = await onUnauthorized();
       if (refreshed) {
-        return uploadMultipart(baseUrl, path, getAccessToken, onUnauthorized, fieldName, file, extraFields, false);
+        return uploadMultipart(baseUrl, path, getAccessToken, getDeviceId, onUnauthorized, fieldName, file, extraFields, false);
       }
     }
     const fallbackMessage =
@@ -62,6 +67,7 @@ async function uploadMultipart<T>(
 export function createMobileUploadHelpers(
   baseUrl: string,
   getAccessToken: () => string | null,
+  getDeviceId?: () => string | null,
   onUnauthorized?: () => Promise<boolean>,
 ) {
   return {
@@ -71,6 +77,7 @@ export function createMobileUploadHelpers(
         baseUrl,
         `/api/v1/avatars/${avatarId}/photo`,
         getAccessToken,
+        getDeviceId,
         onUnauthorized,
         "photo",
         file,
@@ -90,6 +97,7 @@ export function createMobileUploadHelpers(
         baseUrl,
         "/api/v1/try-on/sessions/photo",
         getAccessToken,
+        getDeviceId,
         onUnauthorized,
         "photo",
         file,
@@ -101,6 +109,7 @@ export function createMobileUploadHelpers(
         baseUrl,
         "/api/v1/try-on/classify-garment",
         getAccessToken,
+        getDeviceId,
         onUnauthorized,
         "photo",
         file,

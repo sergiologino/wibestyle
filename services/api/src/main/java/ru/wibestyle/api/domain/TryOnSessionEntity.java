@@ -23,6 +23,9 @@ public class TryOnSessionEntity {
     @Column(name = "avatar_snapshot_id")
     private UUID avatarSnapshotId;
 
+    @Column(name = "device_hash", length = 64)
+    private String deviceHash;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "source_type", nullable = false, length = 32)
     private TryOnSourceType sourceType;
@@ -170,6 +173,14 @@ public class TryOnSessionEntity {
 
     public UUID getAvatarSnapshotId() {
         return avatarSnapshotId;
+    }
+
+    public String getDeviceHash() {
+        return deviceHash;
+    }
+
+    public void setDeviceHash(String deviceHash) {
+        this.deviceHash = deviceHash;
     }
 
     public TryOnSourceType getSourceType() {

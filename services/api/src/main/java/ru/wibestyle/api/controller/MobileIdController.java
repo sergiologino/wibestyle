@@ -61,7 +61,7 @@ public class MobileIdController {
     private AuthService.AuthResult verifyAndAuthenticate(MobileIdVerifyRequest request) {
         MobileIdClient.VerifiedPhone verified = mobileIdClient.verify(request.sessionId(), request.verifyToken());
         return authService.authenticateVerifiedPhone(
-                verified.phone(), request.promoCode(), request.referralCode(), request.visitorId()
+                verified.phone(), request.promoCode(), request.referralCode(), request.visitorId(), request.deviceId()
         );
     }
 }

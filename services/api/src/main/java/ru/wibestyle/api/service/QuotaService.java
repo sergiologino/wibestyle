@@ -18,28 +18,47 @@ public class QuotaService {
     private final UserProfileRepository userProfileRepository;
     private final TryOnSessionRepository tryOnSessionRepository;
     private final BillingProperties billingProperties;
+    private final DeviceTrustService deviceTrustService;
 
     public QuotaService(
             UserProfileRepository userProfileRepository,
             TryOnSessionRepository tryOnSessionRepository,
-            BillingProperties billingProperties
+            BillingProperties billingProperties,
+            DeviceTrustService deviceTrustService
     ) {
         this.userProfileRepository = userProfileRepository;
         this.tryOnSessionRepository = tryOnSessionRepository;
         this.billingProperties = billingProperties;
+        this.deviceTrustService = deviceTrustService;
     }
 
     public boolean canStartGeneration(UserProfileEntity profile) {
-        return availableUnits(profile) > activeReservations(profile.getUserId());
+        return canStartGeneration(profile, null);
+    }
+
+    public boolean canStartGeneration(UserProfileEntity profile, String deviceId) {
+        long active = activeReservations(profile.getUserId());
+        if (hasActivePaidPlan(profile) || profile.getBonusGenerationsLeft() > 0) {
+            return availableUnits(profile) > active;
+        }
+        int accountTrialUnits = "trial".equals(profile.getPlan()) ? profile.getTrialGenerationsLeft() : 0;
+        int deviceTrialUnits = deviceTrustService.availableTrialGenerations(profile.getUserId(), deviceId);
+        return Math.min(accountTrialUnits, deviceTrialUnits) > active;
+    }
+
+    @Transactional
+    public void reserve(TryOnSessionEntity session, UserProfileEntity profile, String deviceId) {
+        if (!canStartGeneration(profile, deviceId)) {
+            throw new IllegalArgumentException("INSUFFICIENT_GENERATIONS");
+        }
+        deviceTrustService.resolveDeviceHash(profile.getUserId(), deviceId).ifPresent(session::setDeviceHash);
+        session.setQuotaReserved(true);
+        session.setUpdatedAt(Instant.now());
     }
 
     @Transactional
     public void reserve(TryOnSessionEntity session, UserProfileEntity profile) {
-        if (!canStartGeneration(profile)) {
-            throw new IllegalArgumentException("INSUFFICIENT_GENERATIONS");
-        }
-        session.setQuotaReserved(true);
-        session.setUpdatedAt(Instant.now());
+        reserve(session, profile, null);
     }
 
     @Transactional
@@ -52,6 +71,7 @@ public class QuotaService {
                 profile.setPlanGenerationsLeft(profile.getPlanGenerationsLeft() - 1);
             } else if ("trial".equals(profile.getPlan()) && profile.getTrialGenerationsLeft() > 0) {
                 profile.setTrialGenerationsLeft(profile.getTrialGenerationsLeft() - 1);
+                deviceTrustService.consumeTrialGenerationByHash(session.getDeviceHash());
             } else if (profile.getBonusGenerationsLeft() > 0) {
                 profile.setBonusGenerationsLeft(profile.getBonusGenerationsLeft() - 1);
             }

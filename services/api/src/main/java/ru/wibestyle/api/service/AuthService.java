@@ -29,6 +29,7 @@ public class AuthService {
     private final PromoService promoService;
     private final ReferralService referralService;
     private final MarketingAttributionService marketingAttributionService;
+    private final DeviceTrustService deviceTrustService;
     private final JwtService jwtService;
     private final RefreshTokenStore refreshTokenStore;
     private final AuthProperties authProperties;
@@ -46,6 +47,7 @@ public class AuthService {
             PromoService promoService,
             ReferralService referralService,
             MarketingAttributionService marketingAttributionService,
+            DeviceTrustService deviceTrustService,
             JwtService jwtService,
             RefreshTokenStore refreshTokenStore,
             AuthProperties authProperties,
@@ -58,6 +60,7 @@ public class AuthService {
         this.promoService = promoService;
         this.referralService = referralService;
         this.marketingAttributionService = marketingAttributionService;
+        this.deviceTrustService = deviceTrustService;
         this.jwtService = jwtService;
         this.refreshTokenStore = refreshTokenStore;
         this.authProperties = authProperties;
@@ -123,6 +126,18 @@ public class AuthService {
 
     @Transactional
     public AuthResult verifyOtp(String requestId, String code, String promoCode, String referralCode, String visitorId) {
+        return verifyOtp(requestId, code, promoCode, referralCode, visitorId, null);
+    }
+
+    @Transactional
+    public AuthResult verifyOtp(
+            String requestId,
+            String code,
+            String promoCode,
+            String referralCode,
+            String visitorId,
+            String deviceId
+    ) {
         PhoneOtpChallenge challenge = phoneChallenges.get(requestId);
         if (challenge == null || challenge.expiresAt().isBefore(Instant.now())) {
             phoneChallenges.remove(requestId);
@@ -138,7 +153,7 @@ public class AuthService {
         }
         phoneChallenges.remove(requestId);
 
-        return authenticateVerifiedPhone(challenge.phone(), promoCode, referralCode, visitorId);
+        return authenticateVerifiedPhone(challenge.phone(), promoCode, referralCode, visitorId, deviceId);
     }
 
     @Transactional
@@ -146,7 +161,8 @@ public class AuthService {
             String phone,
             String promoCode,
             String referralCode,
-            String visitorId
+            String visitorId,
+            String deviceId
     ) {
         String normalizedPhone = normalizePhone(phone);
         if (normalizedPhone.length() < 10 || normalizedPhone.length() > 15) {
@@ -164,13 +180,15 @@ public class AuthService {
         } catch (RuntimeException ex) {
             log.warn("Marketing attribution did not attach during SMS authentication", ex);
         }
+        DeviceTrustService.DeviceRegistrationResult deviceResult =
+                deviceTrustService.recordAuthentication(user.getId(), deviceId, isNewUser);
 
         Map<String, Object> promoResult = Map.of("redeemed", false);
         if (promoCode != null && !promoCode.isBlank()) {
             promoResult = promoService.redeemForUser(user.getId(), promoCode);
         }
 
-        return issueTokens(user, isNewUser, promoResult);
+        return issueTokens(user, isNewUser, promoResult, deviceResult);
     }
 
     @Transactional
@@ -200,7 +218,7 @@ public class AuthService {
             promoResult = promoService.redeemForUser(user.getId(), promoCode);
         }
 
-        return issueTokens(user, isNewUser, promoResult);
+        return issueTokens(user, isNewUser, promoResult, DeviceTrustService.DeviceRegistrationResult.empty());
     }
 
     public AuthResult refresh(String refreshToken) {
@@ -208,7 +226,7 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("REFRESH_TOKEN_INVALID"));
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
-        return issueTokens(user, false, Map.of("redeemed", false));
+        return issueTokens(user, false, Map.of("redeemed", false), DeviceTrustService.DeviceRegistrationResult.empty());
     }
 
     public void logout(String refreshToken) {
@@ -217,7 +235,12 @@ public class AuthService {
         }
     }
 
-    private AuthResult issueTokens(UserEntity user, boolean newUser, Map<String, Object> promoResult) {
+    private AuthResult issueTokens(
+            UserEntity user,
+            boolean newUser,
+            Map<String, Object> promoResult,
+            DeviceTrustService.DeviceRegistrationResult deviceResult
+    ) {
         String accessToken = jwtService.createAccessToken(user.getId());
         String refreshToken = UUID.randomUUID().toString();
         refreshTokenStore.save(refreshToken, user.getId(), authProperties.getRefreshTokenTtlSeconds());
@@ -227,7 +250,8 @@ public class AuthService {
                 jwtService.accessTokenTtlSeconds(),
                 user,
                 newUser,
-                promoResult
+                promoResult,
+                deviceResult
         );
     }
 
@@ -267,7 +291,8 @@ public class AuthService {
             int expiresIn,
             UserEntity user,
             boolean newUser,
-            Map<String, Object> promo
+            Map<String, Object> promo,
+            DeviceTrustService.DeviceRegistrationResult device
     ) {
     }
 }
