@@ -2,6 +2,7 @@ import { Linking } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Button } from "@/components/ui/Button";
 import { getTelegramChannelName, getTelegramChannelUrl } from "@/lib/community";
+import { trackMobileMarketingEvent } from "@/lib/marketing-visitor";
 import { colors } from "@/theme/tokens";
 
 type TelegramChannelButtonProps = {
@@ -22,6 +23,7 @@ export function TelegramChannelButton({ variant = "secondary" }: TelegramChannel
       label={label}
       variant={variant}
       onPress={() => {
+        void trackMobileMarketingEvent("telegram_channel_click", { platform: "mobile" });
         void Linking.openURL(url);
       }}
     />

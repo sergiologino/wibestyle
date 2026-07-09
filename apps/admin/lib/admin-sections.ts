@@ -1,5 +1,12 @@
 export const adminSections = [
   {
+    id: "statistics",
+    title: "Статистика",
+    description: "Регистрации, подписки, активные пользователи, экраны, Telegram и реферальная аналитика.",
+    status: "Ready",
+    href: "/statistics",
+  },
+  {
     id: "marketing",
     title: "Маркетинг / Источники",
     description: "UTM-визиты, регистрации, оплаты и редактируемый справочник рекламных каналов.",

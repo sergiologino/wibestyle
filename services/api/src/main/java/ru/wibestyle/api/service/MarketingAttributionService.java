@@ -37,7 +37,8 @@ import java.util.UUID;
 public class MarketingAttributionService {
     private static final Set<String> EVENT_TYPES = Set.of(
             "landing_visit", "cta_click", "app_opened", "signup_started",
-            "signup_completed", "login_completed", "payment_started", "payment_completed"
+            "signup_completed", "login_completed", "payment_started", "payment_completed",
+            "screen_view", "telegram_channel_click"
     );
 
     private final MarketingVisitRepository visitRepository;
