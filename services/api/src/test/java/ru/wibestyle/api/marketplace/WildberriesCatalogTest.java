@@ -55,6 +55,14 @@ class WildberriesCatalogTest {
     }
 
     @Test
+    void aiInputCandidatesPreferCompactImageBeforeBigImage() {
+        WildberriesMediaRules rules = new WildberriesMediaRules();
+        var candidates = rules.aiInputPhotoDownloadCandidates(153241988L, "https://basket-10.wbbasket.ru", 1);
+        assertTrue(candidates.get(0).contains("/images/c516x688/1.webp"));
+        assertTrue(candidates.stream().anyMatch(candidate -> candidate.contains("/images/big/1.webp")));
+    }
+
+    @Test
     @EnabledIfEnvironmentVariable(named = "WB_LIVE_TEST", matches = "1")
     void downloadsPhotoForVideoFirstProduct745716141Live() {
         byte[] image = newCatalog().downloadProductImage("745716141");

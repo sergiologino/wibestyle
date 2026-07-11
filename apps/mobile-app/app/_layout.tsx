@@ -1,4 +1,4 @@
-import { Stack, useRouter } from "expo-router";
+import { Stack, usePathname, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -25,16 +25,24 @@ function PushNotificationObserver() {
 }
 
 function MarketingVisitorObserver() {
+  const pathname = usePathname();
+
   useEffect(() => {
     void Linking.getInitialURL().then(async (url) => {
-      const visitorId = await captureVisitorIdFromUrl(url);
-      if (visitorId) void trackMobileMarketingEvent("app_opened");
+      await captureVisitorIdFromUrl(url);
+      void trackMobileMarketingEvent("app_opened");
     });
     const subscription = Linking.addEventListener("url", ({ url }) => {
       void captureVisitorIdFromUrl(url);
     });
     return () => subscription.remove();
   }, []);
+
+  useEffect(() => {
+    if (!pathname) return;
+    void trackMobileMarketingEvent("screen_view", { platform: "mobile", screen: pathname });
+  }, [pathname]);
+
   return null;
 }
 

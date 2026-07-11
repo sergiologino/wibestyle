@@ -75,6 +75,83 @@ export type DeviceAuthInfo = {
   deletedAccountCount: number;
 };
 
+export type AdminStatisticsDashboard = {
+  summary: {
+    totalRegistrations: number;
+    registrationsToday: number;
+    registrations7d: number;
+    registrations30d: number;
+    activeUsers24h: number;
+    activeUsers7d: number;
+    trialExhaustedNoPurchase: number;
+    paidUsers: number;
+    completedPayments: number;
+    revenueRub: number;
+    telegramClicks: number;
+  };
+  subscriptions: Array<{
+    plan: string;
+    period: string;
+    checkoutType: string;
+    purchases: number;
+    buyers: number;
+    revenueRub: number;
+  }>;
+  trialExhaustedUsers: Array<{
+    userId: string;
+    label: string;
+    phone?: string;
+    email?: string;
+    createdAt: string;
+    trialGenerationsLeft: number;
+    bonusGenerationsLeft: number;
+    lastActivityAt: string;
+  }>;
+  activeUsers: Array<{
+    userId: string;
+    label: string;
+    phone?: string;
+    email?: string;
+    plan: string;
+    trialGenerationsLeft: number;
+    lastActivityAt: string;
+    events24h: number;
+  }>;
+  screens: Array<{
+    key: string;
+    label: string;
+    views: number;
+    users: number;
+    visited: boolean;
+  }>;
+  telegramClicks: Array<{
+    userId: string;
+    label: string;
+    phone?: string;
+    email?: string;
+    clicks: number;
+    lastClickedAt: string;
+  }>;
+  referrals: {
+    summary: {
+      invites: number;
+      purchases: number;
+      rewarded: number;
+      generationsAwarded: number;
+    };
+    leaders: Array<{
+      userId: string;
+      label: string;
+      referralCode: string;
+      invites: number;
+      purchases: number;
+      rewards: number;
+      rewardGenerations: number;
+      lastReferredAt?: string;
+    }>;
+  };
+};
+
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -976,6 +1053,12 @@ export class WibeStyleApiClient {
       "/api/v1/admin/audit",
       { headers: { "X-Admin-Key": adminKey } },
     );
+  }
+
+  getAdminStatistics(adminKey: string) {
+    return this.request<AdminStatisticsDashboard>("/api/v1/admin/statistics", {
+      headers: { "X-Admin-Key": adminKey },
+    });
   }
 
   adminLogin(payload: { email: string; password: string; captchaId: string; captchaAnswer: string }) {

@@ -2,6 +2,7 @@
 
 import { Send } from "lucide-react";
 import { telegramChannelName, telegramChannelUrl } from "@/lib/community";
+import { trackAppMarketingEvent } from "@/lib/marketing/visitor";
 
 type TelegramChannelButtonProps = {
   compact?: boolean;
@@ -25,6 +26,7 @@ export default function TelegramChannelButton({ compact = false, className = "" 
         className,
       ].join(" ")}
       href={href}
+      onClick={() => void trackAppMarketingEvent("telegram_channel_click", { platform: "web" })}
       rel="noopener noreferrer"
       target="_blank"
     >

@@ -20,6 +20,9 @@ public class WildberriesMediaRules implements MarketplaceMediaRules {
     /** Primary garment photo size for AI try-on. */
     public static final String PRIMARY_IMAGE_SIZE = "big";
 
+    /** Compact enough for AI input, much smaller than {@code big/}. */
+    public static final String AI_INPUT_IMAGE_SIZE = "c516x688";
+
     /** Fallback sizes if {@code big/} is missing on a shard. */
     public static final String[] FALLBACK_IMAGE_SIZES = {"c516x688", "c246x328"};
 
@@ -45,6 +48,14 @@ public class WildberriesMediaRules implements MarketplaceMediaRules {
         return normalized.replace(WBCONTENT_HOST_SUFFIX, WBBASKET_HOST_SUFFIX);
     }
 
+    public static String normalizeAiInputPhotoUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return url;
+        }
+        String normalized = url.replaceAll("/images/(?:big|tm|c\\d+x\\d+)/", "/images/" + AI_INPUT_IMAGE_SIZE + "/");
+        return normalized.replace(WBCONTENT_HOST_SUFFIX, WBBASKET_HOST_SUFFIX);
+    }
+
     public static String mirrorToWbContent(String wbbasketUrl) {
         if (wbbasketUrl == null) {
             return null;
@@ -60,6 +71,17 @@ public class WildberriesMediaRules implements MarketplaceMediaRules {
             for (String sizeFolder : FALLBACK_IMAGE_SIZES) {
                 addSizeCandidates(candidates, buildImageUrl(article, host, sizeFolder, index));
             }
+        }
+        return candidates;
+    }
+
+    public List<String> aiInputPhotoDownloadCandidates(long article, String host, int photoCount) {
+        List<String> candidates = new ArrayList<>();
+        int lastIndex = Math.max(1, Math.min(photoCount > 0 ? photoCount : MAX_PRODUCT_IMAGE_INDEX, MAX_PRODUCT_IMAGE_INDEX));
+        for (int index = 1; index <= lastIndex; index++) {
+            addSizeCandidates(candidates, buildImageUrl(article, host, AI_INPUT_IMAGE_SIZE, index));
+            addSizeCandidates(candidates, buildImageUrl(article, host, "c246x328", index));
+            addSizeCandidates(candidates, buildImageUrl(article, host, PRIMARY_IMAGE_SIZE, index));
         }
         return candidates;
     }

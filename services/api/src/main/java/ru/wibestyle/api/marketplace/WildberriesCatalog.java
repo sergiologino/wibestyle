@@ -231,18 +231,28 @@ public class WildberriesCatalog {
         String pageUrl = productPageUrl == null || productPageUrl.isBlank()
                 ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
                 : productPageUrl;
-        candidates.addAll(fetchGalleryPhotoUrls(pageUrl, article));
+        for (String photoUrl : fetchGalleryPhotoUrls(pageUrl, article)) {
+            String aiUrl = WildberriesMediaRules.normalizeAiInputPhotoUrl(photoUrl);
+            if (aiUrl != null && !aiUrl.isBlank()) {
+                candidates.add(aiUrl);
+                String mirror = WildberriesMediaRules.mirrorToWbContent(aiUrl);
+                if (mirror != null) {
+                    candidates.add(mirror);
+                }
+            }
+            candidates.add(photoUrl);
+        }
 
         Optional<WildberriesBasketResolver.ResolvedBasketCard> resolved = basketResolver.resolveCard(article);
         if (resolved.isPresent()) {
             int photoCount = resolvePhotoCount(null, resolved.get().card());
-            candidates.addAll(mediaRules.photoDownloadCandidates(article, resolved.get().host(), photoCount));
+            candidates.addAll(mediaRules.aiInputPhotoDownloadCandidates(article, resolved.get().host(), photoCount));
         }
 
         if (resolved.isEmpty()) {
             long vol = article / 100_000;
             for (String host : WildberriesBasketResolver.orderedBasketHosts(vol)) {
-                candidates.addAll(mediaRules.photoDownloadCandidates(article, host, 3));
+                candidates.addAll(mediaRules.aiInputPhotoDownloadCandidates(article, host, 3));
             }
         }
 

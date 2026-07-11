@@ -331,13 +331,13 @@ public class NoteappAiClient {
                                     "label", "image1",
                                     "field", "personImageBase64",
                                     "role", "customer avatar; preserve face, hair, skin tone, body proportions and pose",
-                                    "base64", personImageBase64
+                                    "base64Field", "personImageBase64"
                             ),
                             Map.of(
                                     "label", "image2",
                                     "field", "garmentImageBase64",
                                     "role", "product garment reference only; ignore any face, body, hair, pose or identity",
-                                    "base64", garmentImageBase64
+                                    "base64Field", "garmentImageBase64"
                             )
                     )
             );

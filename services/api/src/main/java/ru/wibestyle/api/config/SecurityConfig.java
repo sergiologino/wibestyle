@@ -51,7 +51,8 @@ public class SecurityConfig {
                 "Origin",
                 "X-Requested-With",
                 "X-Request-Id",
-                "X-Admin-Key"
+                "X-Admin-Key",
+                "X-Device-Id"
         ));
         configuration.setExposedHeaders(List.of("X-Request-Id"));
         configuration.setAllowCredentials(false);
