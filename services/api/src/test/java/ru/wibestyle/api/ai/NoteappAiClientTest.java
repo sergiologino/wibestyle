@@ -58,9 +58,11 @@ class NoteappAiClientTest {
         Map<?, ?> image1 = (Map<?, ?>) list.get(0);
         Map<?, ?> image2 = (Map<?, ?>) list.get(1);
         assertThat(image1.get("label")).isEqualTo("image1");
-        assertThat(image1.get("base64")).isEqualTo("person-base64");
+        assertThat(image1.get("base64Field")).isEqualTo("personImageBase64");
+        assertThat(image1.containsKey("base64")).isFalse();
         assertThat(image2.get("label")).isEqualTo("image2");
-        assertThat(image2.get("base64")).isEqualTo("garment-base64");
+        assertThat(image2.get("base64Field")).isEqualTo("garmentImageBase64");
+        assertThat(image2.containsKey("base64")).isFalse();
     }
 
     @Test
