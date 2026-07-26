@@ -17,6 +17,9 @@ export default function HomeDashboardClient() {
   const { api, profile } = useAppSession();
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
+  const [historyCursor, setHistoryCursor] = useState<string | null>(null);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
   const [celebration, setCelebration] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,9 +31,13 @@ export default function HomeDashboardClient() {
 
   useEffect(() => {
     let active = true;
-    api.listMyTryOnSessions()
+    api.listMyTryOnSessions({ limit: 24 })
       .then((payload) => {
-        if (active) setHistory(payload.items);
+        if (active) {
+          setHistory(payload.items);
+          setHistoryCursor(payload.nextCursor ?? null);
+          setHistoryHasMore(payload.hasMore);
+        }
       })
       .finally(() => {
         if (active) setHistoryLoading(false);
@@ -39,6 +46,19 @@ export default function HomeDashboardClient() {
       active = false;
     };
   }, [api]);
+
+  async function loadMoreHistory() {
+    if (!historyCursor || historyLoadingMore) return;
+    setHistoryLoadingMore(true);
+    try {
+      const payload = await api.listMyTryOnSessions({ limit: 24, cursor: historyCursor });
+      setHistory((prev) => [...prev, ...payload.items]);
+      setHistoryCursor(payload.nextCursor ?? null);
+      setHistoryHasMore(payload.hasMore);
+    } finally {
+      setHistoryLoadingMore(false);
+    }
+  }
 
   const nudgeLevel = subscriptionNudgeLevel(profile);
   const greetingName = profile?.displayName?.trim() || "пользователь";
@@ -108,6 +128,13 @@ export default function HomeDashboardClient() {
           </p>
         </div>
         <TryOnHistoryGrid items={history} loading={historyLoading} />
+        {!historyLoading && historyHasMore ? (
+          <div className="flex justify-center">
+            <Button size="md" variant="ghost" disabled={historyLoadingMore} onClick={() => void loadMoreHistory()}>
+              {historyLoadingMore ? "Р—Р°РіСЂСѓР¶Р°РµРј..." : "РџРѕРєР°Р·Р°С‚СЊ РµС‰С‘"}
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       <div className="grid gap-4 md:grid-cols-2">

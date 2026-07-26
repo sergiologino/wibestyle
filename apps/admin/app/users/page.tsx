@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, Card } from "@wibestyle/ui";
 import { AdminPageShell } from "@/components/admin-page-shell";
@@ -42,6 +42,10 @@ export default function AdminUsersPage() {
   const { adminKey, configured } = useAdminKey();
   const [items, setItems] = useState<AdminUserItem[]>([]);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -50,41 +54,30 @@ export default function AdminUsersPage() {
 
   const api = createAdminApi();
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (nextPage = 0, nextQuery = query) => {
     if (!configured || !adminKey) return;
     setLoading(true);
     setLocalError(null);
     try {
-      const data = await api.listAdminUsers(adminKey);
+      const data = await api.listAdminUsers(adminKey, { page: nextPage, limit: 30, search: nextQuery.trim() });
       setItems(data.items);
+      setPage(data.page);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+      setHasMore(data.hasMore);
     } catch {
       setLocalError("Не удалось загрузить пользователей");
     } finally {
       setLoading(false);
     }
-  }, [adminKey, configured, api]);
-
-  const filteredItems = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((user) => {
-      const haystack = [
-        user.id,
-        user.phone,
-        user.email,
-        user.login,
-        user.displayName,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [items, query]);
+  }, [adminKey, configured, api, query]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    const timeout = window.setTimeout(() => {
+      void load(0, query);
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [load, query]);
 
   async function applyPlan(user: AdminUserItem, plan: string) {
     setActionUserId(user.id);
@@ -101,7 +94,7 @@ export default function AdminUsersPage() {
               : { plan: "trial" as const, trialGenerationsLeft: 0, planGenerationsLeft: 0 };
       await api.updateAdminUserSubscription(adminKey, user.id, payload);
       setMessage(`Тариф ${plan} применён для ${user.login ?? user.email ?? user.phone ?? user.id.slice(0, 8)}`);
-      await load();
+      await load(page, query);
     } catch {
       setLocalError("Не удалось изменить тариф");
     } finally {
@@ -146,7 +139,7 @@ export default function AdminUsersPage() {
     try {
       await api.deleteAdminUser(adminKey, user.id);
       setMessage(`Пользователь ${label} удалён`);
-      await load();
+      await load(page, query);
     } catch {
       setLocalError("Не удалось удалить пользователя");
     } finally {
@@ -173,9 +166,35 @@ export default function AdminUsersPage() {
         />
       </label>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm font-bold text-[#6d6273]">
+        <span>
+          Found: {total}
+          {totalPages > 0 ? ` · page ${page + 1} of ${totalPages}` : ""}
+        </span>
+        <div className="flex gap-2">
+          <Button
+            size="md"
+            variant="secondary"
+            disabled={loading || page <= 0}
+            onClick={() => void load(page - 1, query)}
+          >
+            Back
+          </Button>
+          <Button
+            size="md"
+            variant="secondary"
+            disabled={loading || !hasMore}
+            onClick={() => void load(page + 1, query)}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+
       <div className="grid gap-4">
         {loading ? <p className="font-bold text-[#6d6273]">Загружаем…</p> : null}
-        {filteredItems.map((user) => (
+        {!loading && items.length === 0 ? <p className="font-bold text-[#6d6273]">No users found.</p> : null}
+        {items.map((user) => (
           <Card key={user.id}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex min-w-0 flex-1 gap-4">

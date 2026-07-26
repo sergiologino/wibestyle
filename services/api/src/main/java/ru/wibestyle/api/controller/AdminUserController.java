@@ -74,10 +74,13 @@ public class AdminUserController {
     @GetMapping
     public Map<String, Object> list(
             @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
-            @RequestHeader(value = "Authorization", required = false) String authorization
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int limit,
+            @RequestParam(required = false) String search
     ) {
         requireManageUsers(adminKey, authorization);
-        return adminUserManagementService.listUsers();
+        return adminUserManagementService.listUsers(page, limit, search);
     }
 
     @GetMapping("/{userId}")

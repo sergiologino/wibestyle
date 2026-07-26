@@ -80,9 +80,11 @@ public class TryOnController {
 
     @GetMapping("/mine")
     public Map<String, Object> listMine(
-            @RequestHeader(value = "Authorization", required = false) String authorization
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(defaultValue = "24") int limit,
+            @RequestParam(required = false) String cursor
     ) {
-        return tryOnService.listMine(requireUserId(authorization));
+        return tryOnService.listMine(requireUserId(authorization), limit, cursor);
     }
 
     @GetMapping("/{sessionId}")

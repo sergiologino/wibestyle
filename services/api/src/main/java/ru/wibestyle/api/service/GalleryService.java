@@ -2,6 +2,7 @@ package ru.wibestyle.api.service;
 
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -46,6 +47,7 @@ public class GalleryService {
     private final TryOnSessionRepository tryOnSessionRepository;
     private final UserProfileRepository userProfileRepository;
     private final BlobStorage blobStorage;
+    private final UserActivityService userActivityService;
 
     public GalleryService(
             GalleryPostRepository galleryPostRepository,
@@ -53,7 +55,8 @@ public class GalleryService {
             GalleryCommentRepository galleryCommentRepository,
             TryOnSessionRepository tryOnSessionRepository,
             UserProfileRepository userProfileRepository,
-            BlobStorage blobStorage
+            BlobStorage blobStorage,
+            UserActivityService userActivityService
     ) {
         this.galleryPostRepository = galleryPostRepository;
         this.galleryLikeRepository = galleryLikeRepository;
@@ -61,13 +64,32 @@ public class GalleryService {
         this.tryOnSessionRepository = tryOnSessionRepository;
         this.userProfileRepository = userProfileRepository;
         this.blobStorage = blobStorage;
+        this.userActivityService = userActivityService;
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> listPublic() {
+        return listPublic(24, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> listPublic(int limit, String cursor) {
+        int offset = parseCursor(cursor);
+        int pageSize = clampLimit(limit);
         List<GalleryPostEntity> posts = galleryPostRepository
-                .findByVisibilityAndModerationStatusOrderByCreatedAtDesc("public", "PUBLIC");
-        return Map.of("items", mapPosts(posts, false));
+                .findByVisibilityAndModerationStatusOrderByCreatedAtDesc(
+                        "public",
+                        "PUBLIC",
+                        PageRequest.of(offset / pageSize, pageSize)
+                );
+        boolean hasMore = posts.size() == pageSize;
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", mapPosts(posts, false));
+        response.put("hasMore", hasMore);
+        if (hasMore) {
+            response.put("nextCursor", String.valueOf(offset + pageSize));
+        }
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -195,6 +217,7 @@ public class GalleryService {
         }
 
         galleryPostRepository.save(post);
+        userActivityService.recordGallery(userId);
         return Map.of("post", toMap(post, false, resolveAuthorName(userId)));
     }
 
@@ -243,6 +266,24 @@ public class GalleryService {
         return posts.stream()
                 .map(post -> toMap(post, likedByViewer, authors.getOrDefault(post.getUserId(), DEFAULT_AUTHOR)))
                 .toList();
+    }
+
+    private static int clampLimit(int limit) {
+        if (limit < 1) {
+            return 24;
+        }
+        return Math.min(limit, 60);
+    }
+
+    private static int parseCursor(String cursor) {
+        if (cursor == null || cursor.isBlank()) {
+            return 0;
+        }
+        try {
+            return Math.max(0, Integer.parseInt(cursor));
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
     }
 
     private Map<UUID, String> loadAuthorNames(List<GalleryPostEntity> posts) {

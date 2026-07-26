@@ -1,6 +1,7 @@
 package ru.wibestyle.api.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Pageable;
 import ru.wibestyle.api.domain.GalleryPostEntity;
 
 import java.util.List;
@@ -14,6 +15,8 @@ public interface GalleryPostRepository extends JpaRepository<GalleryPostEntity, 
     List<GalleryPostEntity> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
     List<GalleryPostEntity> findByVisibilityAndModerationStatusOrderByCreatedAtDesc(String visibility, String moderationStatus);
+
+    List<GalleryPostEntity> findByVisibilityAndModerationStatusOrderByCreatedAtDesc(String visibility, String moderationStatus, Pageable pageable);
 
     Optional<GalleryPostEntity> findBySlug(String slug);
 

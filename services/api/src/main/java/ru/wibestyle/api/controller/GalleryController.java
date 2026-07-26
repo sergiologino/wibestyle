@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import ru.wibestyle.api.dto.CreateCommentRequest;
@@ -36,8 +37,11 @@ public class GalleryController {
     }
 
     @GetMapping("/posts")
-    public Map<String, Object> listPublic() {
-        return galleryService.listPublic();
+    public Map<String, Object> listPublic(
+            @RequestParam(defaultValue = "24") int limit,
+            @RequestParam(required = false) String cursor
+    ) {
+        return galleryService.listPublic(limit, cursor);
     }
 
     @GetMapping("/posts/mine")

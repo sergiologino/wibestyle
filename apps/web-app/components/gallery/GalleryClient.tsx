@@ -14,13 +14,20 @@ export default function GalleryClient() {
   const { api, accessToken } = useAppSession();
   const [posts, setPosts] = useState<GalleryPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [view, setView] = useState<ViewMode>("grid");
 
   useEffect(() => {
     let active = true;
-    api.listGalleryPosts()
+    api.listGalleryPosts({ limit: 24 })
       .then((payload) => {
-        if (active) setPosts(payload.items);
+        if (active) {
+          setPosts(payload.items);
+          setCursor(payload.nextCursor ?? null);
+          setHasMore(payload.hasMore);
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -29,6 +36,19 @@ export default function GalleryClient() {
       active = false;
     };
   }, [api]);
+
+  async function loadMore() {
+    if (!cursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const payload = await api.listGalleryPosts({ limit: 24, cursor });
+      setPosts((prev) => [...prev, ...payload.items]);
+      setCursor(payload.nextCursor ?? null);
+      setHasMore(payload.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function toggleLike(post: GalleryPost, event: React.MouseEvent) {
     event.preventDefault();
@@ -162,6 +182,19 @@ export default function GalleryClient() {
             Пока нет public-постов. Поделись результатом примерки — он появится здесь.
           </p>
         </Card>
+      ) : null}
+
+      {!loading && hasMore ? (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            className="rounded-full border border-[#ffd1ed] bg-white px-5 py-2.5 text-sm font-medium text-[#ff1fa2] transition hover:bg-[#fff4fb] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={loadingMore}
+            onClick={() => void loadMore()}
+          >
+            {loadingMore ? "Р—Р°РіСЂСѓР¶Р°РµРј..." : "РџРѕРєР°Р·Р°С‚СЊ РµС‰С‘"}
+          </button>
+        </div>
       ) : null}
     </div>
   );

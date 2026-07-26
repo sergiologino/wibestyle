@@ -1,4 +1,4 @@
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import type { GalleryPost } from "@wibestyle/shared-types";
@@ -17,11 +17,16 @@ export default function GalleryScreen() {
   const [posts, setPosts] = useState<GalleryPost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const apiBaseUrl = getApiBaseUrl();
 
   const load = useCallback(async () => {
-    const payload = await api.listGalleryPosts();
+    const payload = await api.listGalleryPosts({ limit: 20 });
     setPosts(payload.items);
+    setCursor(payload.nextCursor ?? null);
+    setHasMore(payload.hasMore);
   }, [api]);
 
   useEffect(() => {
@@ -32,6 +37,19 @@ export default function GalleryScreen() {
     setRefreshing(true);
     await load();
     setRefreshing(false);
+  }
+
+  async function loadMore() {
+    if (!cursor || !hasMore || loadingMore || loading) return;
+    setLoadingMore(true);
+    try {
+      const payload = await api.listGalleryPosts({ limit: 20, cursor });
+      setPosts((prev) => [...prev, ...payload.items]);
+      setCursor(payload.nextCursor ?? null);
+      setHasMore(payload.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
   return (
@@ -49,6 +67,9 @@ export default function GalleryScreen() {
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.pink} />}
         ListEmptyComponent={<BodyText style={styles.empty}>Пока нет публичных постов.</BodyText>}
+        ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.pink} style={styles.footerLoader} /> : null}
+        onEndReachedThreshold={0.4}
+        onEndReached={() => void loadMore()}
         renderItem={({ item }) => (
           <Pressable
             accessibilityRole="button"
@@ -130,5 +151,8 @@ const styles = StyleSheet.create({
   },
   empty: {
     paddingHorizontal: spacing.lg,
+  },
+  footerLoader: {
+    paddingVertical: spacing.lg,
   },
 });

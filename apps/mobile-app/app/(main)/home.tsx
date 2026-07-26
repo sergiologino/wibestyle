@@ -20,6 +20,9 @@ export default function HomeScreen() {
   const { api, profile, accessToken, ensureSession } = useSession();
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [historyCursor, setHistoryCursor] = useState<string | null>(null);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
+  const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
   const [notification, setNotification] = useState<UserNotification | null>(null);
   const [reviews, setReviews] = useState<PublishedReview[]>([]);
 
@@ -32,8 +35,12 @@ export default function HomeScreen() {
         return;
       }
       try {
-        const payload = await api.listMyTryOnSessions();
-        if (active) setHistory(payload.items);
+        const payload = await api.listMyTryOnSessions({ limit: 20 });
+        if (active) {
+          setHistory(payload.items);
+          setHistoryCursor(payload.nextCursor ?? null);
+          setHistoryHasMore(payload.hasMore);
+        }
         const [notifications, publishedReviews] = await Promise.all([
           api.getNotifications(),
           api.listPublishedReviews().catch(() => ({ items: [] as PublishedReview[] })),
@@ -48,6 +55,19 @@ export default function HomeScreen() {
       active = false;
     };
   }, [api, ensureSession, router]));
+
+  async function loadMoreHistory() {
+    if (!historyCursor || historyLoadingMore) return;
+    setHistoryLoadingMore(true);
+    try {
+      const payload = await api.listMyTryOnSessions({ limit: 20, cursor: historyCursor });
+      setHistory((prev) => [...prev, ...payload.items]);
+      setHistoryCursor(payload.nextCursor ?? null);
+      setHistoryHasMore(payload.hasMore);
+    } finally {
+      setHistoryLoadingMore(false);
+    }
+  }
 
   const gensLeft =
     profile?.plan === "trial"
@@ -196,6 +216,15 @@ export default function HomeScreen() {
             ))}
           </View>
         )}
+
+        {!loading && historyHasMore ? (
+          <Button
+            label={historyLoadingMore ? "Р—Р°РіСЂСѓР·РєР°..." : "РџРѕРєР°Р·Р°С‚СЊ РµС‰С‘"}
+            variant="secondary"
+            loading={historyLoadingMore}
+            onPress={() => void loadMoreHistory()}
+          />
+        ) : null}
 
         {reviews.length > 0 ? (
           <View style={styles.section}>
