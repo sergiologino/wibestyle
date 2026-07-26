@@ -581,7 +581,8 @@ public class NoteappAiClient {
         payload.put("garmentImageBase64", garmentImageBase64);
         payload.put("productImageBase64", garmentImageBase64);
         payload.put("image2Base64", garmentImageBase64);
-        payload.put("settings", Map.of("aspectRatio", "3:4", "durationSec", 6));
+        payload.put("resolution", "1k");
+        payload.put("settings", Map.of("aspectRatio", "3:4", "resolution", "1k"));
         return payload;
     }
 

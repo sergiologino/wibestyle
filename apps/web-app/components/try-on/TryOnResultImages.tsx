@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import clsx from "clsx";
+import { Download, Maximize2 } from "lucide-react";
 import ApiImage from "@/components/media/ApiImage";
 import AuthenticatedVideo from "@/components/media/AuthenticatedVideo";
 
-const tryOnImageClass =
-  "absolute inset-0 m-auto h-full w-full object-contain object-center";
+const tryOnImageClass = "absolute inset-0 m-auto h-full w-full object-contain object-center";
 
 const mediaFrameClass =
   "relative aspect-[3/4] w-full overflow-hidden rounded-[28px] border border-[#f0dce8] bg-[#f5eef3] shadow-[0_20px_60px_rgba(58,12,82,0.12)]";
@@ -15,10 +15,19 @@ type TryOnBeforeAfterProps = {
   beforeSrc: string;
   afterSrc: string;
   onExpandClick?: () => void;
+  onDownloadClick?: () => void;
+  downloadBusy?: boolean;
   className?: string;
 };
 
-export function TryOnBeforeAfter({ beforeSrc, afterSrc, onExpandClick, className }: TryOnBeforeAfterProps) {
+export function TryOnBeforeAfter({
+  beforeSrc,
+  afterSrc,
+  onExpandClick,
+  onDownloadClick,
+  downloadBusy = false,
+  className,
+}: TryOnBeforeAfterProps) {
   const [position, setPosition] = useState(52);
 
   return (
@@ -49,14 +58,29 @@ export function TryOnBeforeAfter({ beforeSrc, afterSrc, onExpandClick, className
         </span>
       </div>
 
+      {onDownloadClick ? (
+        <button
+          aria-label="Скачать результат примерки"
+          className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-full bg-white/95 text-[#302637] shadow-md transition hover:bg-white hover:text-[#ff1fa2] disabled:cursor-wait disabled:opacity-70"
+          disabled={downloadBusy}
+          type="button"
+          onClick={onDownloadClick}
+        >
+          <Download size={18} aria-hidden />
+        </button>
+      ) : null}
+
       {onExpandClick ? (
         <button
           aria-label="Увеличить"
-          className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-full bg-white/95 text-base text-[#302637] shadow-md transition hover:bg-white hover:text-[#ff1fa2]"
+          className={clsx(
+            "absolute top-3 z-20 flex size-9 items-center justify-center rounded-full bg-white/95 text-[#302637] shadow-md transition hover:bg-white hover:text-[#ff1fa2]",
+            onDownloadClick ? "right-14" : "right-3",
+          )}
           type="button"
           onClick={onExpandClick}
         >
-          ⤢
+          <Maximize2 size={18} aria-hidden />
         </button>
       ) : null}
     </div>
@@ -72,12 +96,7 @@ type TryOnResultVideoProps = {
 export function TryOnResultVideo({ src, eliteFrame = false, className }: TryOnResultVideoProps) {
   return (
     <div className={clsx("relative w-full", className)}>
-      <div
-        className={clsx(
-          mediaFrameClass,
-          eliteFrame ? "border-[#ffb347]" : "border-[#f0dce8]",
-        )}
-      >
+      <div className={clsx(mediaFrameClass, eliteFrame ? "border-[#ffb347]" : "border-[#f0dce8]")}>
         <AuthenticatedVideo autoPlay className="h-full w-full object-cover" loop muted src={src} />
         <span className="absolute left-2 top-2 rounded-full bg-white/92 px-2 py-0.5 text-[10px] font-medium leading-4 text-[#782cff] shadow-sm sm:left-4 sm:top-4 sm:px-3 sm:py-1 sm:text-xs sm:leading-normal">
           Видео

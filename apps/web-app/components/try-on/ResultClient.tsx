@@ -17,6 +17,7 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { formatTryOnError } from "@/lib/try-on-error-message";
 import { appBaseUrl, brandDomain, landingSiteUrl } from "@/lib/api-media";
 import { shareGalleryPost, buildSharePayloadFromPost } from "@/lib/share-post";
+import { downloadWatermarkedTryOnImage } from "@/lib/try-on-download";
 import {
   canFavoriteTryOnProduct,
   favoriteProductKey,
@@ -34,7 +35,7 @@ type FeedbackState = "idle" | "loading" | "success";
 
 export default function ResultClient({ sessionId }: { sessionId: string }) {
   const router = useRouter();
-  const { api } = useAppSession();
+  const { api, accessToken, getAccessTokenForMedia } = useAppSession();
   const [result, setResult] = useState<TryOnResult | null>(null);
   const [session, setSession] = useState<TryOnSessionRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,6 +55,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   const [shareError, setShareError] = useState<string | null>(null);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [downloadBusy, setDownloadBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -346,6 +348,26 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     }
   }
 
+  async function onDownloadResult() {
+    if (!result?.afterImageUrl || downloadBusy) {
+      return;
+    }
+    setDownloadBusy(true);
+    setShareError(null);
+    try {
+      await downloadWatermarkedTryOnImage({
+        imageUrl: result.afterImageUrl,
+        accessToken,
+        getAccessTokenForMedia,
+        filename: `vibestyle-try-on-${sessionId.slice(0, 8)}.png`,
+      });
+    } catch {
+      setShareError("Не удалось скачать фото. Попробуй ещё раз.");
+    } finally {
+      setDownloadBusy(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
@@ -416,6 +438,8 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         <TryOnBeforeAfter
           afterSrc={result.afterImageUrl}
           beforeSrc={result.beforeImageUrl}
+          downloadBusy={downloadBusy}
+          onDownloadClick={() => void onDownloadResult()}
           onExpandClick={() => setShowImageModal(true)}
         />
 
