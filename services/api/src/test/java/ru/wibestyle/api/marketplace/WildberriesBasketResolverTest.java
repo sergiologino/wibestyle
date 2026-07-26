@@ -14,7 +14,17 @@ class WildberriesBasketResolverTest {
         List<String> hosts = WildberriesBasketResolver.orderedBasketHosts(7457);
         assertEquals("https://basket-39.wbbasket.ru", hosts.get(0));
         assertTrue(hosts.indexOf("https://basket-35.wbbasket.ru") < 10);
-        assertEquals(40, hosts.size());
+        assertEquals(WildberriesBasketResolver.DEFAULT_MAX_BASKET_NUMBER, hosts.size());
+    }
+
+    @Test
+    void orderedBasketHostsIncludesNewHighBasketShards() {
+        List<String> hosts = WildberriesBasketResolver.orderedBasketHosts(10214);
+
+        assertTrue(hosts.indexOf("https://basket-41.wbbasket.ru") > 0);
+        assertTrue(hosts.indexOf("https://basket-42.wbbasket.ru") > 0);
+        assertTrue(hosts.indexOf("https://basket-41.wbbasket.ru") < 5);
+        assertTrue(hosts.indexOf("https://basket-42.wbbasket.ru") < 7);
     }
 
     @Test

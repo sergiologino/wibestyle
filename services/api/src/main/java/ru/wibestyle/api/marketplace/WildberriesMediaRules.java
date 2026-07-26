@@ -30,12 +30,14 @@ public class WildberriesMediaRules implements MarketplaceMediaRules {
 
     public static final String BASKET_HOST_TEMPLATE = "https://basket-%02d.wbbasket.ru";
 
+    public static final int MIN_BASKET_NUMBER = 1;
+
     public static final String WBCONTENT_HOST_SUFFIX = "wbcontent.net";
 
     public static final String WBBASKET_HOST_SUFFIX = "wbbasket.ru";
 
     public static String basketHost(int basketNumber) {
-        return BASKET_HOST_TEMPLATE.formatted(Math.max(1, Math.min(basketNumber, 40)));
+        return BASKET_HOST_TEMPLATE.formatted(Math.max(MIN_BASKET_NUMBER, basketNumber));
     }
 
     /** Prefer {@code big/} for try-on; page thumbnails often use {@code c246x328/}. */

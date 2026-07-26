@@ -1,6 +1,7 @@
 package ru.wibestyle.api.marketplace;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,11 +12,19 @@ import org.springframework.web.client.RestClientException;
 @Component
 public class WildberriesBasketResolver {
 
+    static final int DEFAULT_MAX_BASKET_NUMBER = 80;
+    static final int DEFAULT_RESOLVE_BUDGET_MILLIS = 6_000;
+    private static final String MAX_BASKET_NUMBER_PROPERTY = "wibestyle.wb.maxBasket";
+    private static final String RESOLVE_BUDGET_MILLIS_PROPERTY = "wibestyle.wb.resolveBudgetMillis";
+    private static final int REQUEST_CONNECT_TIMEOUT_MILLIS = 800;
+    private static final int REQUEST_READ_TIMEOUT_MILLIS = 1_200;
+
     private final RestClient restClient;
     private final WildberriesMediaRules mediaRules;
 
     public WildberriesBasketResolver(RestClient.Builder restClientBuilder, WildberriesMediaRules mediaRules) {
-        this.restClient = restClientBuilder
+        this.restClient = restClientBuilder.clone()
+                .requestFactory(shortRequestFactory())
                 .defaultHeader("User-Agent",
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
                 .defaultHeader("Accept", "application/json")
@@ -25,7 +34,11 @@ public class WildberriesBasketResolver {
 
     public Optional<ResolvedBasketCard> resolveCard(long article) {
         long vol = article / 100_000;
+        long deadlineNanos = System.nanoTime() + configuredResolveBudgetMillis() * 1_000_000L;
         for (String host : orderedBasketHosts(vol)) {
+            if (System.nanoTime() >= deadlineNanos) {
+                return Optional.empty();
+            }
             Optional<ResolvedBasketCard> resolved = fetchCardJson(article, host);
             if (resolved.isPresent()) {
                 return resolved;
@@ -56,15 +69,16 @@ public class WildberriesBasketResolver {
      */
     static List<String> orderedBasketHosts(long vol) {
         int heuristic = heuristicBasketNumber(vol);
+        int maxBasketNumber = Math.max(configuredMaxBasketNumber(), heuristic);
         List<Integer> order = new ArrayList<>();
         order.add(heuristic);
-        for (int delta = 1; delta <= 40; delta++) {
+        for (int delta = 1; delta <= maxBasketNumber; delta++) {
             int lower = heuristic - delta;
-            if (lower >= 1) {
+            if (lower >= WildberriesMediaRules.MIN_BASKET_NUMBER) {
                 order.add(lower);
             }
             int upper = heuristic + delta;
-            if (upper <= 40) {
+            if (upper <= maxBasketNumber) {
                 order.add(upper);
             }
         }
@@ -86,6 +100,21 @@ public class WildberriesBasketResolver {
             return 1;
         }
         return Integer.parseInt(host.substring(dash + 1, dot));
+    }
+
+    private static int configuredMaxBasketNumber() {
+        return Integer.getInteger(MAX_BASKET_NUMBER_PROPERTY, DEFAULT_MAX_BASKET_NUMBER);
+    }
+
+    private static int configuredResolveBudgetMillis() {
+        return Integer.getInteger(RESOLVE_BUDGET_MILLIS_PROPERTY, DEFAULT_RESOLVE_BUDGET_MILLIS);
+    }
+
+    private static SimpleClientHttpRequestFactory shortRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(REQUEST_CONNECT_TIMEOUT_MILLIS);
+        factory.setReadTimeout(REQUEST_READ_TIMEOUT_MILLIS);
+        return factory;
     }
 
     public record ResolvedBasketCard(String host, JsonNode card) {
