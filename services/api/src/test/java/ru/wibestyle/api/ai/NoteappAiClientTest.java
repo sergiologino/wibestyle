@@ -79,6 +79,15 @@ class NoteappAiClientTest {
         assertThat(payload).containsEntry("garmentImageBase64", "garment-base64");
         assertThat(payload).containsEntry("productImageBase64", "garment-base64");
         assertThat(payload).containsEntry("image2Base64", "garment-base64");
+        assertThat(payload).containsEntry("resolution", "1k");
+        assertThat(payload).doesNotContainKey("duration");
+        assertThat(payload).doesNotContainKey("durationSec");
+        assertThat(payload.get("settings")).isInstanceOf(Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> settings = (Map<String, Object>) payload.get("settings");
+        assertThat(settings).containsEntry("resolution", "1k");
+        assertThat(settings).doesNotContainKey("duration");
+        assertThat(settings).doesNotContainKey("durationSec");
     }
 
     @Test

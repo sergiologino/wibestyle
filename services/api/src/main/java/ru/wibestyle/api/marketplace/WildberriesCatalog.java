@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -14,9 +15,17 @@ import org.springframework.web.client.RestClientException;
 public class WildberriesCatalog {
 
     static final int MAX_PRODUCT_IMAGE_INDEX = WildberriesMediaRules.MAX_PRODUCT_IMAGE_INDEX;
+    static final int DEFAULT_UNRESOLVED_IMAGE_HOST_LIMIT = 8;
+    static final int DEFAULT_IMAGE_PROBE_BUDGET_MILLIS = 5_000;
+    static final int DEFAULT_IMAGE_DOWNLOAD_BUDGET_MILLIS = 8_000;
 
     private static final String WB_USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+    private static final String UNRESOLVED_IMAGE_HOST_LIMIT_PROPERTY = "wibestyle.wb.unresolvedImageHostLimit";
+    private static final String IMAGE_PROBE_BUDGET_MILLIS_PROPERTY = "wibestyle.wb.imageProbeBudgetMillis";
+    private static final String IMAGE_DOWNLOAD_BUDGET_MILLIS_PROPERTY = "wibestyle.wb.imageDownloadBudgetMillis";
+    private static final int REQUEST_CONNECT_TIMEOUT_MILLIS = 800;
+    private static final int REQUEST_READ_TIMEOUT_MILLIS = 1_500;
 
     private final RestClient restClient;
     private final RestClient imageRestClient;
@@ -31,15 +40,18 @@ public class WildberriesCatalog {
             WildberriesBasketResolver basketResolver,
             WildberriesMediaRules mediaRules
     ) {
-        this.restClient = restClientBuilder
+        this.restClient = restClientBuilder.clone()
+                .requestFactory(shortRequestFactory())
                 .defaultHeader("User-Agent", WB_USER_AGENT)
                 .defaultHeader("Accept", "application/json")
                 .build();
-        this.imageRestClient = restClientBuilder
+        this.imageRestClient = restClientBuilder.clone()
+                .requestFactory(shortRequestFactory())
                 .defaultHeader("User-Agent", WB_USER_AGENT)
                 .defaultHeader("Accept", "image/avif,image/webp,image/apng,image/*,*/*;q=0.8")
                 .build();
-        this.pageRestClient = restClientBuilder
+        this.pageRestClient = restClientBuilder.clone()
+                .requestFactory(shortRequestFactory())
                 .defaultHeader("User-Agent", WB_USER_AGENT)
                 .defaultHeader("Accept-Language", "ru-RU,ru;q=0.9")
                 .defaultHeader("Accept", "text/html,application/xhtml+xml")
@@ -61,27 +73,27 @@ public class WildberriesCatalog {
             return Optional.empty();
         }
 
+        String productUrl = productPageUrl == null || productPageUrl.isBlank()
+                ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
+                : productPageUrl;
+        List<String> galleryUrls = fetchGalleryPhotoUrls(productUrl, article);
+
         Optional<WildberriesBasketResolver.ResolvedBasketCard> resolved = basketResolver.resolveCard(article);
         if (resolved.isPresent()) {
             WildberriesBasketResolver.ResolvedBasketCard basketCard = resolved.get();
-            String productUrl = productPageUrl == null || productPageUrl.isBlank()
-                    ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
-                    : productPageUrl;
             long vol = article / 100_000;
             long part = article / 1_000;
             String productJson = fetchProductJsonText(basketCard.host(), vol, part, article);
             ProductSizeChart chart = sizeChartExtractor.extract(productUrl, basketCard.card(), productJson);
             WbProductCard card = parseCard(article, basketCard.host(), basketCard.card(), chart);
-            List<String> galleryUrls = fetchGalleryPhotoUrls(productUrl, article);
             if (!galleryUrls.isEmpty()) {
                 return Optional.of(withImageUrl(card, galleryUrls.get(0), galleryUrls.size()));
             }
             return Optional.of(card);
         }
 
-        Optional<WbProductCard> fromPageGallery = fetchFromPageGallery(article, productPageUrl);
-        if (fromPageGallery.isPresent()) {
-            return fromPageGallery;
+        if (!galleryUrls.isEmpty()) {
+            return Optional.of(fromPageGallery(article, galleryUrls));
         }
 
         return fetchFromCardApi(article);
@@ -105,6 +117,19 @@ public class WildberriesCatalog {
                 ProductSizeChart.empty(),
                 galleryUrls.size()
         ));
+    }
+
+    private WbProductCard fromPageGallery(long article, List<String> galleryUrls) {
+        return new WbProductCard(
+                Long.toString(article),
+                "РўРѕРІР°СЂ Wildberries",
+                "Brand Look",
+                4290,
+                galleryUrls.get(0),
+                List.of("XS", "S", "M", "L", "XL"),
+                ProductSizeChart.empty(),
+                galleryUrls.size()
+        );
     }
 
     Optional<WbProductCard> fetchFromCardApi(long article) {
@@ -195,7 +220,11 @@ public class WildberriesCatalog {
 
     /** Fast check for parse-link: HEAD/GET first photo candidate without full card re-download loop. */
     public boolean probeProductImage(String productId, String productPageUrl) {
+        long deadlineNanos = System.nanoTime() + configuredImageProbeBudgetMillis() * 1_000_000L;
         for (String candidate : listPhotoCandidates(productId, productPageUrl)) {
+            if (System.nanoTime() >= deadlineNanos) {
+                return false;
+            }
             if (probeImageUrl(candidate)) {
                 return true;
             }
@@ -209,7 +238,11 @@ public class WildberriesCatalog {
 
     /** Downloads first gallery photo; skips video slots by URL rules and response bytes. */
     public byte[] downloadProductImage(String productId, String productPageUrl) {
+        long deadlineNanos = System.nanoTime() + configuredImageDownloadBudgetMillis() * 1_000_000L;
         for (String candidate : listPhotoCandidates(productId, productPageUrl)) {
+            if (System.nanoTime() >= deadlineNanos) {
+                return null;
+            }
             byte[] image = downloadImage(candidate);
             if (image != null) {
                 return image;
@@ -251,7 +284,7 @@ public class WildberriesCatalog {
 
         if (resolved.isEmpty()) {
             long vol = article / 100_000;
-            for (String host : WildberriesBasketResolver.orderedBasketHosts(vol)) {
+            for (String host : limitedUnresolvedImageHosts(vol)) {
                 candidates.addAll(mediaRules.aiInputPhotoDownloadCandidates(article, host, 3));
             }
         }
@@ -269,6 +302,40 @@ public class WildberriesCatalog {
         } catch (RestClientException ignored) {
             return List.of();
         }
+    }
+
+    private static List<String> limitedUnresolvedImageHosts(long vol) {
+        List<String> hosts = WildberriesBasketResolver.orderedBasketHosts(vol);
+        int limit = Math.max(1, configuredUnresolvedImageHostLimit());
+        return hosts.subList(0, Math.min(limit, hosts.size()));
+    }
+
+    private static int configuredUnresolvedImageHostLimit() {
+        return Integer.getInteger(
+                UNRESOLVED_IMAGE_HOST_LIMIT_PROPERTY,
+                DEFAULT_UNRESOLVED_IMAGE_HOST_LIMIT
+        );
+    }
+
+    private static int configuredImageProbeBudgetMillis() {
+        return Integer.getInteger(
+                IMAGE_PROBE_BUDGET_MILLIS_PROPERTY,
+                DEFAULT_IMAGE_PROBE_BUDGET_MILLIS
+        );
+    }
+
+    private static int configuredImageDownloadBudgetMillis() {
+        return Integer.getInteger(
+                IMAGE_DOWNLOAD_BUDGET_MILLIS_PROPERTY,
+                DEFAULT_IMAGE_DOWNLOAD_BUDGET_MILLIS
+        );
+    }
+
+    private static SimpleClientHttpRequestFactory shortRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(REQUEST_CONNECT_TIMEOUT_MILLIS);
+        factory.setReadTimeout(REQUEST_READ_TIMEOUT_MILLIS);
+        return factory;
     }
 
     private boolean probeImageUrl(String imageUrl) {

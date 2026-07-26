@@ -55,4 +55,52 @@ class WildberriesGalleryExtractorTest {
                 WildberriesGalleryExtractor.extractBasketHost(
                         "https://basket-35.wbcontent.net/vol7457/part745716/745716141/images/c246x328/1.webp"));
     }
+
+    @Test
+    void extractsCurrentWildberriesMiniatureAndLargeImageMarkup() {
+        String html = """
+                <div class="swiper-slide miniatureSlide--acvJc activeBorder--lsOTy swiper-slide-active" style="margin-bottom: 12px;">
+                  <img data-src-pb="https://basket-41.wbbasket.ru/vol10214/part1021495/1021495555/images/c246x328/1.webp"
+                       alt="Product image 1" width="84" height="112" class=""
+                       src="https://basket-41.wbcontent.net/vol10214/part1021495/1021495555/images/c246x328/1.webp">
+                </div>
+                <div class="imgContainer--N9WXW">
+                  <img alt="Product image 1" loading="eager" fetchpriority="high" width="900" height="1200"
+                       src="https://basket-41.wbcontent.net/vol10214/part1021495/1021495555/images/big/1.webp"
+                       style="opacity: 1;">
+                </div>
+                """;
+
+        List<String> photos = WildberriesGalleryExtractor.extractPhotoUrls(html, 1021495555L);
+
+        assertEquals(1, photos.size());
+        assertEquals(
+                "https://basket-41.wbbasket.ru/vol10214/part1021495/1021495555/images/big/1.webp",
+                photos.get(0)
+        );
+    }
+
+    @Test
+    void extractsCurrentWildberriesMarkupFromOlderShard() {
+        String html = """
+                <div class="swiper-slide miniatureSlide--acvJc activeBorder--lsOTy swiper-slide-active" style="margin-bottom: 12px;">
+                  <img data-src-pb="https://basket-10.wbbasket.ru/vol1532/part153241/153241989/images/c246x328/1.webp"
+                       alt="Product image 1" width="84" height="112" class=""
+                       src="https://basket-10.wbcontent.net/vol1532/part153241/153241989/images/c246x328/1.webp">
+                </div>
+                <div class="imgContainer--N9WXW">
+                  <img alt="Product image 1" loading="eager" fetchpriority="high" width="900" height="1200"
+                       src="https://basket-10.wbcontent.net/vol1532/part153241/153241989/images/big/1.webp"
+                       style="opacity: 1;">
+                </div>
+                """;
+
+        List<String> photos = WildberriesGalleryExtractor.extractPhotoUrls(html, 153241989L);
+
+        assertEquals(1, photos.size());
+        assertEquals(
+                "https://basket-10.wbbasket.ru/vol1532/part153241/153241989/images/big/1.webp",
+                photos.get(0)
+        );
+    }
 }

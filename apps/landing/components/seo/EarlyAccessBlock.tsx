@@ -15,7 +15,7 @@ export default function EarlyAccessBlock({ interest = "clothing" }: Props) {
           </h2>
           <div className="early-access-motivation glass-panel">
             <p className="motivation-kicker">Хватит гадать у зеркала в пункте выдачи.</p>
-            <p className="motivation-text">Сначала посмотри вещь на себе в AI.</p>
+            <p className="motivation-text">Сначала посмотри вещь на себе в приложении VibeStyle.</p>
             <p className="motivation-text">Покупай только то, что уже выглядит твоим.</p>
           </div>
           <LeadForm interest={interest} variant="full" />

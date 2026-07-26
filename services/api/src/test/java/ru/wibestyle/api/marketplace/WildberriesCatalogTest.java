@@ -55,6 +55,20 @@ class WildberriesCatalogTest {
     }
 
     @Test
+    void buildImageUrlForNewHighBasketShards() {
+        WildberriesMediaRules rules = new WildberriesMediaRules();
+
+        assertEquals(
+                "https://basket-41.wbbasket.ru/vol10214/part1021495/1021495555/images/big/1.webp",
+                rules.buildImageUrl(1021495555L, WildberriesMediaRules.basketHost(41), 1)
+        );
+        assertEquals(
+                "https://basket-42.wbbasket.ru/vol11023/part1102334/1102334647/images/big/1.webp",
+                rules.buildImageUrl(1102334647L, WildberriesMediaRules.basketHost(42), 1)
+        );
+    }
+
+    @Test
     void aiInputCandidatesPreferCompactImageBeforeBigImage() {
         WildberriesMediaRules rules = new WildberriesMediaRules();
         var candidates = rules.aiInputPhotoDownloadCandidates(153241988L, "https://basket-10.wbbasket.ru", 1);
@@ -69,6 +83,28 @@ class WildberriesCatalogTest {
         org.junit.jupiter.api.Assertions.assertNotNull(image);
         assertTrue(image.length > 1000);
         assertTrue(WildberriesMediaUtils.isProductImageBytes(image));
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "WB_LIVE_TEST", matches = "1")
+    void parsesPhotosFromNewHighBasketShardsLive() {
+        WildberriesCatalog catalog = newCatalog();
+
+        byte[] basket41Image = catalog.downloadProductImage(
+                "1021495555",
+                "https://www.wildberries.ru/catalog/1021495555/detail.aspx"
+        );
+        byte[] basket42Image = catalog.downloadProductImage(
+                "1102334647",
+                "https://www.wildberries.ru/catalog/1102334647/detail.aspx"
+        );
+
+        org.junit.jupiter.api.Assertions.assertNotNull(basket41Image);
+        org.junit.jupiter.api.Assertions.assertNotNull(basket42Image);
+        assertTrue(basket41Image.length > 1000);
+        assertTrue(basket42Image.length > 1000);
+        assertTrue(WildberriesMediaUtils.isProductImageBytes(basket41Image));
+        assertTrue(WildberriesMediaUtils.isProductImageBytes(basket42Image));
     }
 
     @Test
