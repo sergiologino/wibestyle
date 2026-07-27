@@ -7,12 +7,6 @@ CREATE INDEX IF NOT EXISTS idx_gallery_posts_public_created
 CREATE INDEX IF NOT EXISTS idx_users_created_at_desc
     ON users(created_at DESC);
 
-ALTER TABLE push_devices
-    ADD COLUMN provider VARCHAR(16) NOT NULL DEFAULT 'expo';
-
-CREATE INDEX idx_push_devices_provider_user_enabled
-    ON push_devices(provider, user_id, enabled);
-
 CREATE TABLE user_activity (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     last_seen_at TIMESTAMP NOT NULL,
