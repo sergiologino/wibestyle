@@ -715,17 +715,17 @@ export class WibeStyleApiClient {
     return this.request<UserNotification>(`/api/v1/notifications/${encodeURIComponent(notificationId)}/read`, { method: "POST" });
   }
 
-  registerPushDevice(token: string, platform: "android" | "ios") {
+  registerPushDevice(token: string, platform: "android" | "ios", provider: "expo" | "rustore" = "expo") {
     return this.request<{ status: string }>("/api/v1/notifications/push-devices", {
       method: "POST",
-      body: JSON.stringify({ token, platform }),
+      body: JSON.stringify({ token, platform, provider }),
     });
   }
 
-  unregisterPushDevice(token: string, platform: "android" | "ios") {
+  unregisterPushDevice(token: string, platform: "android" | "ios", provider: "expo" | "rustore" = "expo") {
     return this.request<{ status: string }>("/api/v1/notifications/push-devices", {
       method: "DELETE",
-      body: JSON.stringify({ token, platform }),
+      body: JSON.stringify({ token, platform, provider }),
     });
   }
 

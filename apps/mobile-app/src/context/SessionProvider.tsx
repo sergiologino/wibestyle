@@ -34,7 +34,7 @@ import {
 } from "@/lib/session-auth";
 import { createMobileUploadHelpers } from "@/lib/mobile-api";
 import { getOrCreateDeviceId } from "@/lib/device-id";
-import { obtainExpoPushToken } from "@/lib/push-notifications";
+import { obtainExpoPushToken, obtainRuStorePushToken } from "@/lib/push-notifications";
 import { InterfaceThemeProvider } from "@/theme/palettes";
 
 type SessionContextValue = StoredSession & {
@@ -62,6 +62,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [sessionReady, setSessionReady] = useState(false);
   const sessionRef = useRef(session);
   const pushTokenRef = useRef<string | null>(null);
+  const ruStorePushTokenRef = useRef<string | null>(null);
   const deviceIdRef = useRef<string | null>(null);
   sessionRef.current = session;
 
@@ -182,7 +183,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     void obtainExpoPushToken().then(async (token) => {
       if (!active || !token) return;
       pushTokenRef.current = token;
-      await api.registerPushDevice(token, Platform.OS === "ios" ? "ios" : "android");
+      await api.registerPushDevice(token, Platform.OS === "ios" ? "ios" : "android", "expo");
+    }).catch(() => undefined);
+    void obtainRuStorePushToken().then(async (token) => {
+      if (!active || !token) return;
+      ruStorePushTokenRef.current = token;
+      await api.registerPushDevice(token, "android", "rustore");
     }).catch(() => undefined);
     return () => { active = false; };
   }, [api, session.accessToken, session.profile?.userId]);
@@ -218,11 +224,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const pushToken = pushTokenRef.current;
     if (pushToken) {
       try {
-        await api.unregisterPushDevice(pushToken, Platform.OS === "ios" ? "ios" : "android");
+        await api.unregisterPushDevice(pushToken, Platform.OS === "ios" ? "ios" : "android", "expo");
       } catch {
         /* ignore */
       }
       pushTokenRef.current = null;
+    }
+    const ruStorePushToken = ruStorePushTokenRef.current;
+    if (ruStorePushToken) {
+      try {
+        await api.unregisterPushDevice(ruStorePushToken, "android", "rustore");
+      } catch {
+        /* ignore */
+      }
+      ruStorePushTokenRef.current = null;
     }
     if (refreshToken) {
       try {

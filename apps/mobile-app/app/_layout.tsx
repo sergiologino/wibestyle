@@ -11,7 +11,7 @@ import {
 } from "@expo-google-fonts/manrope";
 import { SessionProvider } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
-import { addPushResponseListener } from "@/lib/push-notifications";
+import { addPushResponseListener, addRuStorePushResponseListener } from "@/lib/push-notifications";
 import * as Linking from "expo-linking";
 import { captureVisitorIdFromUrl, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
 
@@ -19,7 +19,11 @@ function PushNotificationObserver() {
   const router = useRouter();
   useEffect(() => {
     const subscription = addPushResponseListener((url) => router.push(url as never));
-    return () => subscription.remove();
+    const rustoreSubscription = addRuStorePushResponseListener((url) => router.push(url as never));
+    return () => {
+      subscription.remove();
+      rustoreSubscription.remove();
+    };
   }, [router]);
   return null;
 }

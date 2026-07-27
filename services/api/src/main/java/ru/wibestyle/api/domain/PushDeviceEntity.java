@@ -10,6 +10,7 @@ public class PushDeviceEntity {
     @Id private UUID id;
     @Column(name = "user_id", nullable = false) private UUID userId;
     @Column(name = "expo_push_token", nullable = false, unique = true, length = 255) private String expoPushToken;
+    @Column(nullable = false, length = 16) private String provider = "expo";
     @Column(nullable = false, length = 16) private String platform;
     @Column(nullable = false) private boolean enabled = true;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
@@ -24,6 +25,8 @@ public class PushDeviceEntity {
     public UUID getUserId() { return userId; }
     public void setUserId(UUID userId) { this.userId = userId; }
     public String getExpoPushToken() { return expoPushToken; }
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
     public String getPlatform() { return platform; }
     public void setPlatform(String platform) { this.platform = platform; }
     public boolean isEnabled() { return enabled; }

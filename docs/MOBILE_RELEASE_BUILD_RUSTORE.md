@@ -1,8 +1,33 @@
 # Сборка Android release для RuStore
 
-Документ описывает ручную production-сборку мобильного приложения Vibestyle для публикации в RuStore.
+Документ описывает ручную production-сборку мобильного приложения VibeStyle для публикации в RuStore.
 
-## 1. Что получается на выходе
+## 1. Идентификаторы приложения
+
+Актуальный Android package name:
+
+```text
+ru.vibestyle.app
+```
+
+Именно его нужно указывать в RuStore при создании приложения и проекта RuStore Push.
+
+Где задано:
+
+- `apps/mobile-app/app.config.ts` -> `android.package`
+- `apps/mobile-app/android/app/build.gradle` -> `namespace` и `applicationId`
+
+После первой публикации менять `applicationId` нельзя, если это обновление существующего приложения. Для магазинов новый `applicationId` будет считаться другим приложением.
+
+Deep link scheme пока остается:
+
+```text
+wibestyle://
+```
+
+Его не надо указывать как Android package name. Он используется для внутренних переходов из OAuth, оплаты и push-уведомлений.
+
+## 2. Что получается на выходе
 
 Для RuStore обычно загружается Android App Bundle:
 
@@ -16,7 +41,7 @@ apps/mobile-app/android/app/build/outputs/bundle/release/app-release.aab
 apps/mobile-app/android/app/build/outputs/apk/release/app-release.apk
 ```
 
-## 2. Проверить версию приложения
+## 3. Проверить версию приложения
 
 Файл:
 
@@ -28,7 +53,7 @@ apps/mobile-app/android/app/build.gradle
 
 ```gradle
 defaultConfig {
-    applicationId 'ru.wibestyle.app'
+    applicationId 'ru.vibestyle.app'
     minSdkVersion rootProject.ext.minSdkVersion
     targetSdkVersion rootProject.ext.targetSdkVersion
     versionCode 1
@@ -38,9 +63,9 @@ defaultConfig {
 
 Правила:
 
-- `applicationId` менять нельзя после публикации, если это обновление существующего приложения.
-- `versionCode` — внутренний номер сборки. Для каждого нового релиза должен увеличиваться: `1`, `2`, `3`.
-- `versionName` — версия, видимая пользователю: `1.0.0`, `1.0.1`, `1.1.0`.
+- `applicationId` должен оставаться `ru.vibestyle.app`.
+- `versionCode` - внутренний номер сборки. Для каждого нового релиза должен увеличиваться: `1`, `2`, `3`.
+- `versionName` - версия, видимая пользователю: `1.0.0`, `1.0.1`, `1.1.0`.
 
 Для первой публикации можно оставить:
 
@@ -49,16 +74,9 @@ versionCode 1
 versionName "1.0.0"
 ```
 
-Для следующего обновления, например:
+## 4. Создать release-ключ
 
-```gradle
-versionCode 2
-versionName "1.0.1"
-```
-
-## 3. Создать release-ключ
-
-Это делается один раз. Ключ и пароли нужно сохранить в надёжном месте.
+Это делается один раз. Ключ и пароли нужно сохранить в надежном месте. Потеря release-ключа означает, что обновлять опубликованное приложение тем же пакетом может стать невозможно.
 
 Создать папку для ключей:
 
@@ -72,21 +90,6 @@ New-Item -ItemType Directory -Force "E:\Keys"
 keytool -genkeypair -v -keystore "E:\Keys\vibestyle-release.jks" -alias vibestyle -keyalg RSA -keysize 4096 -validity 10000
 ```
 
-Команда запросит:
-
-- пароль хранилища `keystore`;
-- повтор пароля;
-- имя/фамилию или название проекта;
-- подразделение;
-- организацию;
-- город;
-- регион;
-- код страны, например `RU`;
-- подтверждение введённых данных;
-- пароль ключа/alias.
-
-Это не пароль от Windows и не PIN-код. Пароль придумывается отдельно.
-
 Практичный вариант для полей владельца:
 
 ```text
@@ -98,15 +101,67 @@ ST: Moscow
 C: RU
 ```
 
-Если команда спросит отдельный пароль для ключа, можно нажать Enter и использовать тот же пароль, что и для keystore.
+Если команда спросит отдельный пароль для ключа/alias, можно нажать Enter и использовать тот же пароль, что и для keystore.
 
-## 4. Где задавать переменные окружения
+## 5. Получить SHA-256 для RuStore
 
-Переменные подписи задаются в PowerShell перед сборкой.
+RuStore при создании Push-проекта просит:
 
-В `.env` их добавлять не нужно. Причина: это секреты Android-подписи, они не должны попадать в JS/Expo env и не должны храниться в репозитории.
+```text
+Android package name: ru.vibestyle.app
+Отпечаток подписи SHA-256: SHA-256 release-ключа
+```
 
-В текущем окне PowerShell:
+Получить SHA-256 release-ключа:
+
+```powershell
+keytool -list -v -keystore "E:\Keys\vibestyle-release.jks" -alias vibestyle
+```
+
+Ввести пароль keystore и найти строку:
+
+```text
+SHA256: ...
+```
+
+Для публикации и RuStore Push нужен SHA-256 именно release-ключа. Debug SHA-256 подходит только для локального debug APK и не должен использоваться как основной отпечаток опубликованного приложения.
+
+## 6. Создать RuStore Push-проект
+
+В RuStore Console создать/открыть приложение и перейти в раздел Push-уведомлений.
+
+Для проекта указать:
+
+```text
+Android package name: ru.vibestyle.app
+SHA-256: отпечаток release-ключа из предыдущего шага
+```
+
+После создания проекта понадобятся:
+
+- `project_id`
+- `service token`
+
+`project_id` нужен и backend'у, и Android-сборке. `service token` нужен только backend'у.
+
+## 7. Переменные backend для push
+
+На backend добавить переменные окружения:
+
+```env
+WIBESTYLE_PUSH_ENABLED=true
+WIBESTYLE_PUSH_PRIMARY_PROVIDER=rustore
+WIBESTYLE_RUSTORE_PUSH_PROJECT_ID=...
+WIBESTYLE_RUSTORE_PUSH_SERVICE_TOKEN=...
+```
+
+Expo Push можно оставить настроенным как fallback для будущей Google Play / международной версии.
+
+Backend нужно редеплоить после этих изменений, потому что добавлены миграции БД и новый RuStore Push provider.
+
+## 8. Переменные сборки мобильного приложения
+
+Переменные подписи задаются в PowerShell перед сборкой. В `.env` их добавлять не нужно: это секреты Android-подписи.
 
 ```powershell
 $env:VIBESTYLE_STORE_FILE="E:\Keys\vibestyle-release.jks"
@@ -115,17 +170,13 @@ $env:VIBESTYLE_KEY_ALIAS="vibestyle"
 $env:VIBESTYLE_KEY_PASSWORD="пароль-ключа"
 ```
 
-Если при создании ключа для alias был выбран тот же пароль, что и для keystore, то:
+Если при создании alias был выбран тот же пароль, что и для keystore:
 
 ```powershell
 $env:VIBESTYLE_KEY_PASSWORD="тот-же-пароль-что-и-у-хранилища"
 ```
 
-Эти переменные живут только в текущем окне PowerShell. Если закрыть окно, перед следующей сборкой их нужно задать заново.
-
-## 5. Production URL API
-
-Для production-сборки мобильное приложение должно смотреть на production API:
+Production URL:
 
 ```powershell
 $env:EXPO_PUBLIC_API_URL="https://api.vibestyle.art"
@@ -133,11 +184,15 @@ $env:EXPO_PUBLIC_APP_URL="https://app.vibestyle.art"
 $env:EXPO_PUBLIC_LANDING_URL="https://vibestyle.art"
 ```
 
-Эти значения не являются секретами. Их можно задавать через PowerShell перед сборкой или через локальный `.env` мобильного приложения.
+RuStore Push project id для Android SDK:
 
-Для релизной сборки лучше явно задать их в том же PowerShell-окне, чтобы исключить случайную сборку на локальный API.
+```powershell
+$env:EXPO_PUBLIC_RUSTORE_PUSH_PROJECT_ID="project_id_из_RuStore"
+```
 
-## 6. Сборка AAB для RuStore
+Эту переменную можно также держать в `apps/mobile-app/.env`, потому что это не секрет. Но для release-сборки надежнее явно задать ее в том же PowerShell-окне, где запускается Gradle.
+
+## 9. Сборка AAB для RuStore
 
 Перейти в Android-проект:
 
@@ -151,6 +206,7 @@ cd E:\1_MyProjects\Look\wibestyle\apps\mobile-app\android
 $env:EXPO_PUBLIC_API_URL="https://api.vibestyle.art"
 $env:EXPO_PUBLIC_APP_URL="https://app.vibestyle.art"
 $env:EXPO_PUBLIC_LANDING_URL="https://vibestyle.art"
+$env:EXPO_PUBLIC_RUSTORE_PUSH_PROJECT_ID="project_id_из_RuStore"
 ```
 
 Задать подпись:
@@ -174,7 +230,7 @@ $env:VIBESTYLE_KEY_PASSWORD="пароль-ключа"
 E:\1_MyProjects\Look\wibestyle\apps\mobile-app\android\app\build\outputs\bundle\release\app-release.aab
 ```
 
-## 7. Сборка APK для ручной проверки
+## 10. Сборка APK для ручной проверки
 
 Если нужен APK:
 
@@ -188,7 +244,7 @@ E:\1_MyProjects\Look\wibestyle\apps\mobile-app\android\app\build\outputs\bundle\
 E:\1_MyProjects\Look\wibestyle\apps\mobile-app\android\app\build\outputs\apk\release\app-release.apk
 ```
 
-## 8. Проверка подписи
+## 11. Проверка подписи
 
 Проверить APK:
 
@@ -208,9 +264,9 @@ apksigner verify --verbose "E:\1_MyProjects\Look\wibestyle\apps\mobile-app\andro
 Get-Item "E:\1_MyProjects\Look\wibestyle\apps\mobile-app\android\app\build\outputs\bundle\release\app-release.aab"
 ```
 
-## 9. Если сборка падает из-за подписи
+## 12. Если сборка падает из-за подписи
 
-Если не заданы переменные подписи, release-сборка упадёт с понятной ошибкой:
+Если не заданы переменные подписи, release-сборка упадет с понятной ошибкой:
 
 ```text
 Missing VIBESTYLE_STORE_FILE
@@ -223,20 +279,22 @@ Missing VIBESTYLE_KEY_PASSWORD
 
 Если ошибка связана с паролем:
 
-- проверьте `VIBESTYLE_STORE_PASSWORD`;
-- проверьте `VIBESTYLE_KEY_PASSWORD`;
+- проверить `VIBESTYLE_STORE_PASSWORD`;
+- проверить `VIBESTYLE_KEY_PASSWORD`;
 - если при создании alias нажимали Enter, пароль ключа такой же, как пароль хранилища.
 
-## 10. Порядок перед публикацией
+## 13. Порядок перед публикацией
 
 Перед загрузкой в RuStore:
 
-1. Убедиться, что production API уже задеплоен и работает.
-2. Убедиться, что web-app/landing/admin задеплоены, если релиз зависит от их изменений.
-3. Проверить `versionCode` и `versionName`.
-4. Собрать `.aab` командой `bundleRelease`.
-5. Загрузить `.aab` в RuStore.
-6. Сохранить release notes и номер опубликованной версии.
+1. Убедиться, что production API задеплоен и работает.
+2. Убедиться, что backend env для RuStore Push заданы.
+3. Убедиться, что RuStore Push-проект создан для `ru.vibestyle.app` и SHA-256 release-ключа.
+4. Убедиться, что web-app/landing/admin задеплоены, если релиз зависит от их изменений.
+5. Проверить `versionCode` и `versionName`.
+6. Собрать `.aab` командой `bundleRelease`.
+7. Загрузить `.aab` в RuStore.
+8. Сохранить release notes и номер опубликованной версии.
 
 Общий порядок деплоя сервисов:
 
@@ -244,4 +302,3 @@ Missing VIBESTYLE_KEY_PASSWORD
 2. Web-app.
 3. Landing и admin в любом порядке или параллельно.
 4. Android/RuStore последним.
-

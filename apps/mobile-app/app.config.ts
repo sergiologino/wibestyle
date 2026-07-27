@@ -1,4 +1,27 @@
 import type { ExpoConfig } from "expo/config";
+import { withAndroidManifest, type ConfigPlugin } from "expo/config-plugins";
+
+const withRuStorePushProjectId: ConfigPlugin = (config) =>
+  withAndroidManifest(config, (manifestConfig) => {
+    const application = manifestConfig.modResults.manifest.application?.[0];
+    if (!application) return manifestConfig;
+    const metaData = application["meta-data"] ?? [];
+    const name = "ru.rustore.sdk.pushclient.project_id";
+    const existing = metaData.find((item) => item.$?.["android:name"] === name);
+    const value = process.env.EXPO_PUBLIC_RUSTORE_PUSH_PROJECT_ID ?? "";
+    if (existing) {
+      existing.$["android:value"] = value;
+    } else {
+      metaData.push({
+        $: {
+          "android:name": name,
+          "android:value": value,
+        },
+      });
+    }
+    application["meta-data"] = metaData;
+    return manifestConfig;
+  });
 
 const config: ExpoConfig = {
   name: "Я на стиле",
@@ -16,20 +39,21 @@ const config: ExpoConfig = {
   },
   ios: {
     supportsTablet: false,
-    bundleIdentifier: "ru.wibestyle.app",
+    bundleIdentifier: "ru.vibestyle.app",
   },
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#fff4fb",
     },
-    package: "ru.wibestyle.app",
+    package: "ru.vibestyle.app",
   },
   plugins: [
     "expo-router",
     "expo-secure-store",
     "expo-video",
     "expo-notifications",
+    withRuStorePushProjectId as any,
     [
       "expo-build-properties",
       {

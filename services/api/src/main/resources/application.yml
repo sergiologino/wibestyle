@@ -104,8 +104,12 @@ wibestyle:
     discounted-annual-rub: 3495
   push:
     enabled: ${WIBESTYLE_PUSH_ENABLED:true}
+    primary-provider: ${WIBESTYLE_PUSH_PRIMARY_PROVIDER:rustore}
     expo-api-url: ${WIBESTYLE_EXPO_PUSH_API_URL:https://exp.host/--/api/v2/push/send}
     access-token: ${WIBESTYLE_EXPO_PUSH_ACCESS_TOKEN:}
+    rustore-api-base-url: ${WIBESTYLE_RUSTORE_PUSH_API_BASE_URL:https://vkpns.rustore.ru}
+    rustore-project-id: ${WIBESTYLE_RUSTORE_PUSH_PROJECT_ID:}
+    rustore-service-token: ${WIBESTYLE_RUSTORE_PUSH_SERVICE_TOKEN:}
   storage:
     backend: ${WIBESTYLE_STORAGE_BACKEND:local}
     # Persistent volume root (local/Coolify). Override: WIBESTYLE_STORAGE_ROOT=/data/wibestyle-media

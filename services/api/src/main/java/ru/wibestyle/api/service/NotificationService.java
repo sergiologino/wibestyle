@@ -17,13 +17,16 @@ public class NotificationService {
     private final UserNotificationRepository notificationRepository;
     private final PushDeviceRepository pushDeviceRepository;
     private final ExpoPushService expoPushService;
+    private final RuStorePushService ruStorePushService;
 
     public NotificationService(UserNotificationRepository notificationRepository,
                                PushDeviceRepository pushDeviceRepository,
-                               ExpoPushService expoPushService) {
+                               ExpoPushService expoPushService,
+                               RuStorePushService ruStorePushService) {
         this.notificationRepository = notificationRepository;
         this.pushDeviceRepository = pushDeviceRepository;
         this.expoPushService = expoPushService;
+        this.ruStorePushService = ruStorePushService;
     }
 
     @Transactional
@@ -31,7 +34,10 @@ public class NotificationService {
         if (notificationRepository.existsByUserIdAndDedupeKey(userId, dedupeKey)) return false;
         notificationRepository.saveAndFlush(new UserNotificationEntity(
                 UUID.randomUUID(), userId, type, title, body, actionUrl, dedupeKey, Instant.now()));
-        expoPushService.send(userId, title, body, actionUrl);
+        int rustoreSent = ruStorePushService.send(userId, title, body, actionUrl);
+        if (rustoreSent == 0) {
+            expoPushService.send(userId, title, body, actionUrl);
+        }
         return true;
     }
 
@@ -53,8 +59,9 @@ public class NotificationService {
     }
 
     @Transactional
-    public void registerPushDevice(UUID userId, String token, String platform) {
-        if (!token.startsWith("ExponentPushToken[") && !token.startsWith("ExpoPushToken[")) {
+    public void registerPushDevice(UUID userId, String token, String platform, String provider) {
+        String normalizedProvider = normalizeProvider(provider);
+        if ("expo".equals(normalizedProvider) && !token.startsWith("ExponentPushToken[") && !token.startsWith("ExpoPushToken[")) {
             throw new IllegalArgumentException("INVALID_EXPO_PUSH_TOKEN");
         }
         Instant now = Instant.now();
@@ -62,9 +69,15 @@ public class NotificationService {
                 .orElseGet(() -> new PushDeviceEntity(UUID.randomUUID(), userId, token, platform, now));
         device.setUserId(userId);
         device.setPlatform(platform);
+        device.setProvider(normalizedProvider);
         device.setEnabled(true);
         device.setUpdatedAt(now);
         pushDeviceRepository.save(device);
+    }
+
+    @Transactional
+    public void registerPushDevice(UUID userId, String token, String platform) {
+        registerPushDevice(userId, token, platform, "expo");
     }
 
     @Transactional
@@ -74,6 +87,13 @@ public class NotificationService {
             device.setUpdatedAt(Instant.now());
             pushDeviceRepository.save(device);
         });
+    }
+
+    private static String normalizeProvider(String provider) {
+        if (provider == null || provider.isBlank()) {
+            return "expo";
+        }
+        return "rustore".equals(provider) ? "rustore" : "expo";
     }
 
     private static Map<String, Object> toMap(UserNotificationEntity entity) {

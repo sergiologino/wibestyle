@@ -28,7 +28,7 @@ public class ExpoPushService {
 
     public void send(UUID userId, String title, String body, String actionUrl) {
         if (!properties.isEnabled()) return;
-        for (PushDeviceEntity device : deviceRepository.findByUserIdAndEnabledTrue(userId)) {
+        for (PushDeviceEntity device : deviceRepository.findByUserIdAndProviderAndEnabledTrue(userId, "expo")) {
             try {
                 Map<String, Object> payload = new LinkedHashMap<>();
                 payload.put("to", device.getExpoPushToken());
