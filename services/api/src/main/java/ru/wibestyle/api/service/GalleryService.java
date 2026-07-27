@@ -76,12 +76,10 @@ public class GalleryService {
     public Map<String, Object> listPublic(int limit, String cursor) {
         int offset = parseCursor(cursor);
         int pageSize = clampLimit(limit);
-        List<GalleryPostEntity> posts = galleryPostRepository
-                .findByVisibilityAndModerationStatusOrderByCreatedAtDesc(
-                        "public",
-                        "PUBLIC",
-                        PageRequest.of(offset / pageSize, pageSize)
-                );
+        List<GalleryPostEntity> posts = galleryPostRepository.findPublicVisible(
+                "public",
+                PageRequest.of(offset / pageSize, pageSize)
+        );
         boolean hasMore = posts.size() == pageSize;
         Map<String, Object> response = new HashMap<>();
         response.put("items", mapPosts(posts, false));

@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button, Card } from "@wibestyle/ui";
-import type { TryOnHistoryItem } from "@wibestyle/shared-types";
+import type { GalleryPost, TryOnHistoryItem } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import TryOnHistoryGrid from "@/components/home/TryOnHistoryGrid";
 import SubscriptionNudgeBanner from "@/components/billing/SubscriptionNudgeBanner";
 import { isPaidSubscription, subscriptionNudgeLevel } from "@/lib/billing-plan";
 import NotificationInboxBanner from "@/components/notifications/NotificationInboxBanner";
+import { resolveGalleryImageUrl, resolveGalleryVideoUrl } from "@/lib/api-media";
 import { ImageIcon, Link2 } from "lucide-react";
 
 export default function HomeDashboardClient() {
@@ -20,6 +21,11 @@ export default function HomeDashboardClient() {
   const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
   const [historyHasMore, setHistoryHasMore] = useState(false);
+  const [galleryPosts, setGalleryPosts] = useState<GalleryPost[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+  const [galleryLoadingMore, setGalleryLoadingMore] = useState(false);
+  const [galleryCursor, setGalleryCursor] = useState<string | null>(null);
+  const [galleryHasMore, setGalleryHasMore] = useState(false);
   const [celebration, setCelebration] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,21 +37,43 @@ export default function HomeDashboardClient() {
 
   useEffect(() => {
     let active = true;
-    api.listMyTryOnSessions({ limit: 24 })
-      .then((payload) => {
+    Promise.all([
+      api.listGalleryPosts({ limit: 24 }),
+      api.listMyTryOnSessions({ limit: 24 }),
+    ])
+      .then(([galleryPayload, historyPayload]) => {
         if (active) {
-          setHistory(payload.items);
-          setHistoryCursor(payload.nextCursor ?? null);
-          setHistoryHasMore(payload.hasMore);
+          setGalleryPosts(galleryPayload.items);
+          setGalleryCursor(galleryPayload.nextCursor ?? null);
+          setGalleryHasMore(galleryPayload.hasMore);
+          setHistory(historyPayload.items);
+          setHistoryCursor(historyPayload.nextCursor ?? null);
+          setHistoryHasMore(historyPayload.hasMore);
         }
       })
       .finally(() => {
-        if (active) setHistoryLoading(false);
+        if (active) {
+          setGalleryLoading(false);
+          setHistoryLoading(false);
+        }
       });
     return () => {
       active = false;
     };
   }, [api]);
+
+  async function loadMoreGallery() {
+    if (!galleryCursor || galleryLoadingMore) return;
+    setGalleryLoadingMore(true);
+    try {
+      const payload = await api.listGalleryPosts({ limit: 24, cursor: galleryCursor });
+      setGalleryPosts((prev) => [...prev, ...payload.items]);
+      setGalleryCursor(payload.nextCursor ?? null);
+      setGalleryHasMore(payload.hasMore);
+    } finally {
+      setGalleryLoadingMore(false);
+    }
+  }
 
   async function loadMoreHistory() {
     if (!historyCursor || historyLoadingMore) return;
@@ -62,6 +90,29 @@ export default function HomeDashboardClient() {
 
   const nudgeLevel = subscriptionNudgeLevel(profile);
   const greetingName = profile?.displayName?.trim() || "пользователь";
+
+  function renderGalleryMedia(post: GalleryPost) {
+    const imageSrc = resolveGalleryImageUrl(post);
+    const videoSrc = resolveGalleryVideoUrl(post);
+    if (post.mediaType === "video" && videoSrc) {
+      return (
+        <video
+          src={videoSrc}
+          poster={imageSrc || undefined}
+          className="h-full w-full object-cover transition group-hover:scale-[1.01]"
+          muted
+          loop
+          playsInline
+          autoPlay
+          preload="metadata"
+        />
+      );
+    }
+    if (imageSrc) {
+      return <img src={imageSrc} alt={post.title} className="h-full w-full object-cover transition group-hover:scale-[1.01]" />;
+    }
+    return <div className="flex h-full items-center justify-center text-sm font-normal text-[#6d6273]">Нет фото</div>;
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 md:px-8">
@@ -122,6 +173,52 @@ export default function HomeDashboardClient() {
 
       <section className="flex flex-col gap-4">
         <div>
+          <h2 className="text-display-md text-3xl">Галерея сообщества</h2>
+          <p className="text-body mt-2">
+            Публичные образы всех пользователей, которые поделились результатами примерки.
+          </p>
+        </div>
+        {galleryLoading ? (
+          <Card>
+            <p className="text-body">Загружаем галерею…</p>
+          </Card>
+        ) : galleryPosts.length === 0 ? (
+          <Card>
+            <p className="text-body">Пока нет публичных образов.</p>
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {galleryPosts.map((post) => {
+              const href = post.publicUrl ?? `/p/${post.slug}`;
+              return (
+                <Link
+                  key={post.id}
+                  href={href}
+                  className="group overflow-hidden rounded-[24px] border border-[#ffd1ed] bg-white shadow-[0_8px_28px_rgba(58,12,82,0.05)] transition hover:border-[#ff1fa2]/40"
+                >
+                  <div className="aspect-[4/5] overflow-hidden bg-[#fff4fb]">
+                    {renderGalleryMedia(post)}
+                  </div>
+                  <div className="space-y-1 px-4 py-3">
+                    <p className="line-clamp-2 font-normal text-[#302637]">{post.title}</p>
+                    <p className="text-sm font-normal text-[#9a8f99]">{post.authorDisplayName ?? "Участник WibeStyle"}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+        {!galleryLoading && galleryHasMore ? (
+          <div className="flex justify-center">
+            <Button size="md" variant="ghost" disabled={galleryLoadingMore} onClick={() => void loadMoreGallery()}>
+              {galleryLoadingMore ? "Загружаем..." : "Показать ещё"}
+            </Button>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <div>
           <h2 className="text-display-md text-3xl">Твои примерки</h2>
           <p className="text-body mt-2">
             Все образы, которые ты примеряла — даже если не публиковала в общей галерее.
@@ -131,7 +228,7 @@ export default function HomeDashboardClient() {
         {!historyLoading && historyHasMore ? (
           <div className="flex justify-center">
             <Button size="md" variant="ghost" disabled={historyLoadingMore} onClick={() => void loadMoreHistory()}>
-              {historyLoadingMore ? "Р—Р°РіСЂСѓР¶Р°РµРј..." : "РџРѕРєР°Р·Р°С‚СЊ РµС‰С‘"}
+              {historyLoadingMore ? "Загружаем..." : "Показать ещё"}
             </Button>
           </div>
         ) : null}

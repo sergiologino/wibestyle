@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
-import type { PublishedReview, TryOnHistoryItem, UserNotification } from "@wibestyle/shared-types";
+import type { GalleryPost, PublishedReview, TryOnHistoryItem, UserNotification } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
@@ -11,8 +11,10 @@ import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { Pressable, Text } from "react-native";
-import { getAppBaseUrl } from "@/lib/config";
+import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
+import { resolveApiPath } from "@/lib/mobile-api";
 import { useAppTheme } from "@/theme/palettes";
+import { Image } from "expo-image";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -23,8 +25,13 @@ export default function HomeScreen() {
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
   const [historyHasMore, setHistoryHasMore] = useState(false);
   const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
+  const [galleryPosts, setGalleryPosts] = useState<GalleryPost[]>([]);
+  const [galleryCursor, setGalleryCursor] = useState<string | null>(null);
+  const [galleryHasMore, setGalleryHasMore] = useState(false);
+  const [galleryLoadingMore, setGalleryLoadingMore] = useState(false);
   const [notification, setNotification] = useState<UserNotification | null>(null);
   const [reviews, setReviews] = useState<PublishedReview[]>([]);
+  const apiBaseUrl = getApiBaseUrl();
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -35,11 +42,17 @@ export default function HomeScreen() {
         return;
       }
       try {
-        const payload = await api.listMyTryOnSessions({ limit: 20 });
+        const [galleryPayload, historyPayload] = await Promise.all([
+          api.listGalleryPosts({ limit: 20 }),
+          api.listMyTryOnSessions({ limit: 20 }),
+        ]);
         if (active) {
-          setHistory(payload.items);
-          setHistoryCursor(payload.nextCursor ?? null);
-          setHistoryHasMore(payload.hasMore);
+          setGalleryPosts(galleryPayload.items);
+          setGalleryCursor(galleryPayload.nextCursor ?? null);
+          setGalleryHasMore(galleryPayload.hasMore);
+          setHistory(historyPayload.items);
+          setHistoryCursor(historyPayload.nextCursor ?? null);
+          setHistoryHasMore(historyPayload.hasMore);
         }
         const [notifications, publishedReviews] = await Promise.all([
           api.getNotifications(),
@@ -55,6 +68,19 @@ export default function HomeScreen() {
       active = false;
     };
   }, [api, ensureSession, router]));
+
+  async function loadMoreGallery() {
+    if (!galleryCursor || galleryLoadingMore) return;
+    setGalleryLoadingMore(true);
+    try {
+      const payload = await api.listGalleryPosts({ limit: 20, cursor: galleryCursor });
+      setGalleryPosts((prev) => [...prev, ...payload.items]);
+      setGalleryCursor(payload.nextCursor ?? null);
+      setGalleryHasMore(payload.hasMore);
+    } finally {
+      setGalleryLoadingMore(false);
+    }
+  }
 
   async function loadMoreHistory() {
     if (!historyCursor || historyLoadingMore) return;
@@ -182,6 +208,48 @@ export default function HomeScreen() {
         </Card>
 
         <View style={styles.section}>
+          <SectionTitle>Галерея сообщества</SectionTitle>
+          <BodyText>Публичные образы всех пользователей, которые поделились результатами примерки.</BodyText>
+        </View>
+
+        {loading ? (
+          <BodyText>Загрузка галереи…</BodyText>
+        ) : galleryPosts.length === 0 ? (
+          <Card>
+            <BodyText>Пока нет публичных образов.</BodyText>
+          </Card>
+        ) : (
+          <View style={styles.grid}>
+            {galleryPosts.map((post) => (
+              <Pressable
+                key={post.id}
+                style={styles.tile}
+                onPress={() => router.push(`/gallery/${post.slug}` as never)}
+              >
+                <Image
+                  source={{ uri: resolveApiPath(apiBaseUrl, post.publicImageUrl ?? post.imageUrl) }}
+                  style={styles.tileImage}
+                  contentFit="cover"
+                  transition={200}
+                />
+                <Text style={styles.tileTitle} numberOfLines={2}>
+                  {post.title}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {!loading && galleryHasMore ? (
+          <Button
+            label={galleryLoadingMore ? "Загрузка..." : "Показать ещё"}
+            variant="secondary"
+            loading={galleryLoadingMore}
+            onPress={() => void loadMoreGallery()}
+          />
+        ) : null}
+
+        <View style={styles.section}>
           <SectionTitle>{`Твои примерки (${history.length})`}</SectionTitle>
           <BodyText>Все образы — даже если не {publishedVerb} в галерее.</BodyText>
         </View>
@@ -219,7 +287,7 @@ export default function HomeScreen() {
 
         {!loading && historyHasMore ? (
           <Button
-            label={historyLoadingMore ? "Р—Р°РіСЂСѓР·РєР°..." : "РџРѕРєР°Р·Р°С‚СЊ РµС‰С‘"}
+            label={historyLoadingMore ? "Загрузка..." : "Показать ещё"}
             variant="secondary"
             loading={historyLoadingMore}
             onPress={() => void loadMoreHistory()}
