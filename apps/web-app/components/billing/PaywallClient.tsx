@@ -29,6 +29,16 @@ const PLAN_PERKS = {
   ],
 } satisfies Record<"wibe" | "elite", string[]>;
 
+const PLAN_RANK: Record<SubscriptionPlan, number> = {
+  trial: 0,
+  wibe: 1,
+  elite: 2,
+};
+
+function planLabel(plan: SubscriptionPlan) {
+  return plan === "elite" ? "Elite" : plan === "wibe" ? "Wibe" : "trial";
+}
+
 export default function PaywallClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -58,12 +68,21 @@ export default function PaywallClient() {
       setAnnualDiscountPercent(data.annualDiscountPercent);
       setPromoDiscountPercent(data.promoDiscountPercent);
       setPaymentProvider(data.paymentProvider ?? "mock");
+      const activeSubscriber = data.subscriber?.subscriptionActive && data.subscriber.plan !== "trial"
+        ? data.subscriber
+        : null;
       if (isElitePerk) {
         setSelectedPlan("elite");
-        setPeriod(data.subscriber?.billingPeriod ?? "annual");
+        setPeriod(activeSubscriber?.billingPeriod ?? "annual");
       } else if (planParam === "wibe" || planParam === "elite") {
         setSelectedPlan(planParam);
         setPeriod(periodParam === "monthly" || periodParam === "annual" ? periodParam : data.defaultSelection.period);
+      } else if (activeSubscriber?.plan === "wibe") {
+        setSelectedPlan("elite");
+        setPeriod(activeSubscriber.billingPeriod);
+      } else if (activeSubscriber?.plan === "elite") {
+        setSelectedPlan("elite");
+        setPeriod(activeSubscriber.billingPeriod);
       } else {
         setSelectedPlan(data.defaultSelection.plan);
         setPeriod(data.defaultSelection.period);
@@ -94,9 +113,30 @@ export default function PaywallClient() {
   const displayPrice = currentOffer?.upgradeFromWibe && currentOffer.upgradePriceRub != null
     ? currentOffer.upgradePriceRub
     : currentOffer?.priceRub;
+  const hasActivePaidSubscription = subscriptionActive && subscriberPlan !== "trial";
+  const isCurrentSelection = hasActivePaidSubscription
+    && selectedPlan === subscriberPlan
+    && period === subscriberPeriod;
+  const selectedPlanBlocked = hasActivePaidSubscription
+    && (PLAN_RANK[selectedPlan] <= PLAN_RANK[subscriberPlan] || period !== subscriberPeriod);
+  const checkoutDisabled = loading || submitting || !currentOffer || selectedPlanBlocked;
+  const checkoutLabel = selectedPlanBlocked
+    ? isCurrentSelection
+      ? "Это текущий тариф"
+      : `Доступен только апгрейд до более высокого тарифа ${subscriberPeriod === "annual" ? "на год" : "на месяц"}`
+    : submitting
+      ? "Открываем оплату…"
+      : isElitePerk || selectedPlan === "elite"
+        ? "Подключить Elite"
+        : "Подключить Wibe";
+
+  function isOfferBlocked(plan: Exclude<SubscriptionPlan, "trial">) {
+    return hasActivePaidSubscription
+      && (PLAN_RANK[plan] <= PLAN_RANK[subscriberPlan] || period !== subscriberPeriod);
+  }
 
   async function onCheckout() {
-    if (selectedPlan === "trial") return;
+    if (selectedPlan === "trial" || selectedPlanBlocked) return;
     setError(null);
     setSubmitting(true);
     try {
@@ -153,14 +193,16 @@ export default function PaywallClient() {
         <div className="inline-flex rounded-full border border-[#ffd1ed] bg-white p-1">
           <button
             type="button"
-            className={`rounded-full px-4 py-1.5 text-sm font-medium ${period === "monthly" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
+            disabled={hasActivePaidSubscription && subscriberPeriod !== "monthly"}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45 ${period === "monthly" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
             onClick={() => setPeriod("monthly")}
           >
             Месяц
           </button>
           <button
             type="button"
-            className={`rounded-full px-4 py-1.5 text-sm font-medium ${period === "annual" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
+            disabled={hasActivePaidSubscription && subscriberPeriod !== "annual"}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45 ${period === "annual" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
             onClick={() => setPeriod("annual")}
           >
             Год −{annualDiscountPercent}%
@@ -177,6 +219,8 @@ export default function PaywallClient() {
               price={wibeOffer ? formatRub(wibeOffer.priceRub) : "…"}
               monthly={wibeOffer?.monthlyEquivalentRub ? `~${formatRub(wibeOffer.monthlyEquivalentRub)}/мес` : undefined}
               perks={PLAN_PERKS.wibe}
+              current={hasActivePaidSubscription && subscriberPlan === "wibe" && subscriberPeriod === period}
+              disabled={isOfferBlocked("wibe")}
               onSelect={() => setSelectedPlan("wibe")}
             />
             <PlanCard
@@ -186,6 +230,8 @@ export default function PaywallClient() {
               price={eliteOffer ? formatRub(eliteOffer.priceRub) : "…"}
               monthly={eliteOffer?.monthlyEquivalentRub ? `~${formatRub(eliteOffer.monthlyEquivalentRub)}/мес` : undefined}
               perks={PLAN_PERKS.elite}
+              current={hasActivePaidSubscription && subscriberPlan === "elite" && subscriberPeriod === period}
+              disabled={isOfferBlocked("elite")}
               onSelect={() => setSelectedPlan("elite")}
             />
           </div>
@@ -225,12 +271,15 @@ export default function PaywallClient() {
           </label>
         ) : null}
 
-        <Button className="mt-6 w-full md:w-auto" disabled={loading || submitting || !currentOffer} onClick={() => void onCheckout()} size="lg">
-          {submitting
-            ? "Открываем оплату…"
-            : isElitePerk
-              ? "Подключить Elite"
-              : "Подключить trial"}
+        {hasActivePaidSubscription ? (
+          <p className="mt-5 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm text-[#302637]">
+            Текущий тариф: <strong>{planLabel(subscriberPlan)}</strong>, {subscriberPeriod === "annual" ? "год" : "месяц"}.
+            Оплатить можно только более высокий тариф в том же периоде.
+          </p>
+        ) : null}
+
+        <Button className="mt-6 w-full md:w-auto" disabled={checkoutDisabled} onClick={() => void onCheckout()} size="lg">
+          {checkoutLabel}
         </Button>
 
         {error ? <p className="mt-3 text-[#e5484d]">{error}</p> : null}
@@ -253,20 +302,24 @@ function PlanCard(props: {
   price: string;
   monthly?: string;
   perks: string[];
+  current?: boolean;
+  disabled?: boolean;
   onSelect: () => void;
 }) {
   return (
     <button
       type="button"
+      disabled={props.disabled}
       className={`rounded-[28px] border-2 p-6 text-left transition-shadow ${
         props.selected ? "shadow-[0_12px_40px_rgba(58,12,82,0.08)]" : ""
-      }`}
+      } ${props.disabled ? "cursor-not-allowed opacity-65" : "hover:shadow-[0_12px_40px_rgba(58,12,82,0.08)]"}`}
       style={{
         borderColor: props.selected ? props.accent : "#ffd1ed",
         background: props.selected ? "#fff8fd" : "white",
       }}
       onClick={props.onSelect}
     >
+      {props.current ? <p className="text-eyebrow" style={{ color: props.accent }}>Текущий тариф</p> : null}
       {props.recommended ? <p className="text-eyebrow" style={{ color: props.accent }}>Рекомендуем</p> : null}
       <h2 className="text-display-md mt-2 text-3xl">{props.title}</h2>
       <p className="mt-2 text-3xl">{props.price}</p>

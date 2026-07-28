@@ -316,7 +316,7 @@ export default function TryOnResultScreen() {
       <Screen>
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.pink} />
-          <Text style={styles.loadingText}>Нейростилист примеряет образ…</Text>
+          <Text style={styles.loadingText}>Нейростилист собирает ваш образ…</Text>
           <BodyText>Обычно это занимает до минуты.</BodyText>
         </View>
       </Screen>

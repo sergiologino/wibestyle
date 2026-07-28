@@ -594,6 +594,10 @@ public class BillingService {
 
         UserProfileEntity profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
+        if (subscriptionActive(profile)
+                && (planRank(plan) <= planRank(profile.getPlan()) || !period.equals(profile.getBillingPeriod()))) {
+            throw new IllegalArgumentException("ONLY_UPGRADE_ALLOWED");
+        }
         int basePrice = basePrice(plan, period);
         int chargeBase = basePrice;
         boolean upgradeFromWibe = qualifiesForUpgradeDiff(profile, plan, period);
@@ -655,6 +659,15 @@ public class BillingService {
             case "wibe:annual" -> billingProperties.getWibeAnnualRub();
             case "elite:monthly" -> billingProperties.getEliteMonthlyRub();
             case "elite:annual" -> billingProperties.getEliteAnnualRub();
+            default -> throw new IllegalArgumentException("INVALID_PLAN");
+        };
+    }
+
+    private int planRank(String plan) {
+        return switch (plan) {
+            case "trial" -> 0;
+            case "wibe" -> 1;
+            case "elite" -> 2;
             default -> throw new IllegalArgumentException("INVALID_PLAN");
         };
     }

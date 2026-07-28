@@ -373,7 +373,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
         <p className="text-eyebrow">{session?.status === "generating" ? "Генерируем look…" : "Загружаем результат…"}</p>
         <Card>
-          <p className="text-body">Нейростилист надевает вещь на твой образ…</p>
+          <p className="text-body">Нейростилист собирает ваш образ…</p>
           <div className="mt-6 h-2 overflow-hidden rounded-full bg-[#ffe4f5]">
             <div className="h-full w-2/3 animate-pulse rounded-full bg-[#ff1fa2]" />
           </div>

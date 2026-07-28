@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -97,6 +98,19 @@ class BillingServiceYooKassaTest {
         assertThat(result.get("paymentUrl")).isEqualTo("https://yoomoney.ru/pay/test");
         assertThat(captor.getValue().getExternalPaymentId()).isEqualTo("pay-1");
         assertThat(captor.getValue().isSavePaymentMethod()).isTrue();
+    }
+
+    @Test
+    void createCheckoutRejectsCurrentActivePlan() {
+        UserProfileEntity profile = profile(userId);
+        profile.setPlan("wibe");
+        profile.setBillingPeriod("annual");
+        profile.setSubscriptionExpiresAt(Instant.now().plusSeconds(30 * 24 * 60 * 60L));
+        when(userProfileRepository.findById(userId)).thenReturn(Optional.of(profile));
+
+        assertThatThrownBy(() -> billingService.createCheckout(userId, "wibe", "annual", false, false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("ONLY_UPGRADE_ALLOWED");
     }
 
     @Test
