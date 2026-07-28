@@ -9,11 +9,13 @@ import ru.wibestyle.api.billing.yookassa.YooKassaPaymentResult;
 import ru.wibestyle.api.config.BillingProperties;
 import ru.wibestyle.api.domain.BillingCheckoutEntity;
 import ru.wibestyle.api.domain.BillingSubscriptionEntity;
+import ru.wibestyle.api.domain.UserEntity;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.dto.BillingWebhookRequest;
 import ru.wibestyle.api.repository.BillingCheckoutRepository;
 import ru.wibestyle.api.repository.BillingSubscriptionRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
+import ru.wibestyle.api.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -31,6 +33,7 @@ public class BillingService {
 
     private final BillingProperties billingProperties;
     private final UserProfileRepository userProfileRepository;
+    private final UserRepository userRepository;
     private final QuotaService quotaService;
     private final BillingCheckoutRepository billingCheckoutRepository;
     private final BillingSubscriptionRepository billingSubscriptionRepository;
@@ -42,6 +45,7 @@ public class BillingService {
     public BillingService(
             BillingProperties billingProperties,
             UserProfileRepository userProfileRepository,
+            UserRepository userRepository,
             QuotaService quotaService,
             BillingCheckoutRepository billingCheckoutRepository,
             BillingSubscriptionRepository billingSubscriptionRepository,
@@ -52,6 +56,7 @@ public class BillingService {
     ) {
         this.billingProperties = billingProperties;
         this.userProfileRepository = userProfileRepository;
+        this.userRepository = userRepository;
         this.quotaService = quotaService;
         this.billingCheckoutRepository = billingCheckoutRepository;
         this.billingSubscriptionRepository = billingSubscriptionRepository;
@@ -126,11 +131,13 @@ public class BillingService {
 
         String paymentUrl;
         if ("yookassa".equals(provider)) {
+            UserEntity user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
             YooKassaPaymentResult payment = yooKassaClient.createRedirectPayment(
                     checkoutId,
                     pricing.finalPrice(),
                     checkoutDescription(plan, period),
-                    userId,
+                    user,
                     savePaymentMethod,
                     mobileClient ? billingProperties.getMobileReturnUrl() : billingProperties.getReturnUrl()
             );
@@ -491,9 +498,11 @@ public class BillingService {
             if ("yookassa".equals(subscription.getProvider())) {
                 String status;
                 if (checkout.getExternalPaymentId() == null || checkout.getExternalPaymentId().isBlank()) {
+                    UserEntity user = userRepository.findById(subscription.getUserId())
+                            .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
                     YooKassaChargeResult payment = yooKassaClient.createSavedPayment(checkout.getId(), checkout.getPriceRub(),
                             checkoutDescription(subscription.getPlan(), subscription.getBillingPeriod()),
-                            subscription.getUserId(), subscription.getProviderPaymentMethodId());
+                            user, subscription.getProviderPaymentMethodId());
                     checkout.setExternalPaymentId(payment.paymentId());
                     billingCheckoutRepository.save(checkout);
                     status = payment.status();

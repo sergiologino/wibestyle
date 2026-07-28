@@ -155,6 +155,7 @@ public class ApiExceptionHandler {
             case "CHECKOUT_NOT_FOUND" -> "Оплата не найдена";
             case "CHECKOUT_ALREADY_PROCESSED" -> "Оплата уже обработана";
             case "CHECKOUT_ID_REQUIRED" -> "Укажите checkoutId";
+            case "BILLING_CUSTOMER_CONTACT_REQUIRED" -> "Для оплаты нужен email или номер телефона в аккаунте";
             case "PROVIDER_UNSUPPORTED" -> "Платёжный провайдер не поддерживается";
             case "WEBHOOK_EVENT_UNSUPPORTED" -> "Событие webhook не поддерживается";
             case "LEAD_NOT_FOUND" -> "Заявка не найдена";
