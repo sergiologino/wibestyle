@@ -126,7 +126,128 @@ SHA256: ...
 
 Для публикации и RuStore Push нужен SHA-256 именно release-ключа. Debug SHA-256 подходит только для локального debug APK и не должен использоваться как основной отпечаток опубликованного приложения.
 
-## 6. Создать RuStore Push-проект
+## 6. Подготовить подпись AAB для RuStore через PEPK
+
+Этот раздел нужен только для публикации в формате AAB.
+
+RuStore перед загрузкой `.aab` просит отдельно загрузить подпись приложения. Для этого в окне RuStore Console нужно скачать `pepk.jar` и взять команду с `--encryptionkey=...`.
+
+В репозиторий и документацию не нужно сохранять реальный `encryptionkey` из RuStore. В командах ниже используется placeholder:
+
+```text
+ENCRYPTION_KEY_ИЗ_RUSTORE
+```
+
+### 6.1. Где находится Java/keytool
+
+На текущем рабочем компьютере `keytool.exe` найден здесь:
+
+```text
+C:\Program Files\Java\jdk-17\bin\keytool.exe
+```
+
+Рядом обычно находится `java.exe`:
+
+```text
+C:\Program Files\Java\jdk-17\bin\java.exe
+```
+
+В PowerShell путь с пробелами запускается через `&`:
+
+```powershell
+& "C:\Program Files\Java\jdk-17\bin\keytool.exe" -help
+```
+
+### 6.2. Подготовить ZIP с подписью приложения
+
+Положить скачанный из RuStore файл `pepk.jar`, например, сюда:
+
+```text
+E:\Keys\pepk.jar
+```
+
+Если release-keystore создан как:
+
+```text
+E:\Keys\vibestyle-release.jks
+```
+
+и alias:
+
+```text
+vibestyle
+```
+
+то команда PEPK для RuStore:
+
+```powershell
+& "C:\Program Files\Java\jdk-17\bin\java.exe" -jar "E:\Keys\pepk.jar" --keystore "E:\Keys\vibestyle-release.jks" --alias vibestyle --output "E:\Keys\pepk_out.zip" --encryptionkey=ENCRYPTION_KEY_ИЗ_RUSTORE --include-cert
+```
+
+После запуска PEPK спросит пароль хранилища и пароль ключа:
+
+```text
+Enter store password:
+Enter key password:
+```
+
+Это те же пароли, которые используются для Gradle-переменных:
+
+```powershell
+$env:VIBESTYLE_STORE_PASSWORD="..."
+$env:VIBESTYLE_KEY_PASSWORD="..."
+```
+
+Если при создании alias был выбран тот же пароль, что и для keystore, вводить нужно один и тот же пароль.
+
+На выходе должен появиться файл:
+
+```text
+E:\Keys\pepk_out.zip
+```
+
+Его нужно загрузить в RuStore как ZIP-архив с подписью приложения.
+
+### 6.3. Подготовить PEM-сертификат ключа загрузки
+
+RuStore для AAB также просит сертификат ключа загрузки в формате PEM.
+
+Если AAB подписывается тем же ключом `vibestyle`, создать PEM можно так:
+
+```powershell
+& "C:\Program Files\Java\jdk-17\bin\keytool.exe" -exportcert -alias vibestyle -keystore "E:\Keys\vibestyle-release.jks" -rfc -file "E:\Keys\vibestyle-upload-cert.pem"
+```
+
+Команда спросит пароль keystore.
+
+На выходе должен появиться файл:
+
+```text
+E:\Keys\vibestyle-upload-cert.pem
+```
+
+В RuStore для AAB нужно загрузить два файла:
+
+```text
+E:\Keys\pepk_out.zip
+E:\Keys\vibestyle-upload-cert.pem
+```
+
+После этого можно загружать `.aab`.
+
+Если RuStore или PEPK ругается на формат `.jks`, можно сначала сконвертировать keystore в `.keystore`:
+
+```powershell
+& "C:\Program Files\Java\jdk-17\bin\keytool.exe" -importkeystore -srckeystore "E:\Keys\vibestyle-release.jks" -destkeystore "E:\Keys\vibestyle-release.keystore" -srcstorepass "пароль-хранилища" -deststorepass "пароль-хранилища"
+```
+
+После конвертации PEPK запускать с новым файлом:
+
+```powershell
+& "C:\Program Files\Java\jdk-17\bin\java.exe" -jar "E:\Keys\pepk.jar" --keystore "E:\Keys\vibestyle-release.keystore" --alias vibestyle --output "E:\Keys\pepk_out.zip" --encryptionkey=ENCRYPTION_KEY_ИЗ_RUSTORE --include-cert
+```
+
+## 7. Создать RuStore Push-проект
 
 В RuStore Console создать/открыть приложение и перейти в раздел Push-уведомлений.
 
@@ -144,7 +265,7 @@ SHA-256: отпечаток release-ключа из предыдущего ша�
 
 `project_id` нужен и backend'у, и Android-сборке. `service token` нужен только backend'у.
 
-## 7. Переменные backend для push
+## 8. Переменные backend для push
 
 На backend добавить переменные окружения:
 
@@ -159,7 +280,7 @@ Expo Push можно оставить настроенным как fallback д�
 
 Backend нужно редеплоить после этих изменений, потому что добавлены миграции БД и новый RuStore Push provider.
 
-## 8. Переменные сборки мобильного приложения
+## 9. Переменные сборки мобильного приложения
 
 Переменные подписи задаются в PowerShell перед сборкой. В `.env` их добавлять не нужно: это секреты Android-подписи.
 
@@ -192,7 +313,7 @@ $env:EXPO_PUBLIC_RUSTORE_PUSH_PROJECT_ID="project_id_из_RuStore"
 
 Эту переменную можно также держать в `apps/mobile-app/.env`, потому что это не секрет. Но для release-сборки надежнее явно задать ее в том же PowerShell-окне, где запускается Gradle.
 
-## 9. Сборка AAB для RuStore
+## 10. Сборка AAB для RuStore
 
 Перейти в Android-проект:
 
@@ -230,7 +351,7 @@ $env:VIBESTYLE_KEY_PASSWORD="пароль-ключа"
 E:\1_MyProjects\Look\wibestyle\apps\mobile-app\android\app\build\outputs\bundle\release\app-release.aab
 ```
 
-## 10. Сборка APK для ручной проверки
+## 11. Сборка APK для ручной проверки
 
 Если нужен APK:
 
@@ -244,7 +365,7 @@ E:\1_MyProjects\Look\wibestyle\apps\mobile-app\android\app\build\outputs\bundle\
 E:\1_MyProjects\Look\wibestyle\apps\mobile-app\android\app\build\outputs\apk\release\app-release.apk
 ```
 
-## 11. Проверка подписи
+## 12. Проверка подписи
 
 Проверить APK:
 
@@ -264,7 +385,7 @@ apksigner verify --verbose "E:\1_MyProjects\Look\wibestyle\apps\mobile-app\andro
 Get-Item "E:\1_MyProjects\Look\wibestyle\apps\mobile-app\android\app\build\outputs\bundle\release\app-release.aab"
 ```
 
-## 12. Если сборка падает из-за подписи
+## 13. Если сборка падает из-за подписи
 
 Если не заданы переменные подписи, release-сборка упадет с понятной ошибкой:
 
@@ -283,7 +404,7 @@ Missing VIBESTYLE_KEY_PASSWORD
 - проверить `VIBESTYLE_KEY_PASSWORD`;
 - если при создании alias нажимали Enter, пароль ключа такой же, как пароль хранилища.
 
-## 13. Порядок перед публикацией
+## 14. Порядок перед публикацией
 
 Перед загрузкой в RuStore:
 
@@ -302,3 +423,68 @@ Missing VIBESTYLE_KEY_PASSWORD
 2. Web-app.
 3. Landing и admin в любом порядке или параллельно.
 4. Android/RuStore последним.
+
+## 15. Анкета безопасности RuStore
+
+### 15.1. Чувствительные разрешения
+
+После очистки лишних разрешений приложение не должно запрашивать:
+
+```text
+RECORD_AUDIO
+SYSTEM_ALERT_WINDOW
+WRITE_EXTERNAL_STORAGE
+```
+
+Если RuStore продолжает показывать эти разрешения, нужно пересобрать AAB после изменений в:
+
+```text
+apps/mobile-app/app.config.ts
+apps/mobile-app/android/app/src/main/AndroidManifest.xml
+```
+
+Актуальные объяснения для разрешений:
+
+```text
+CAMERA — съемка фото вещи для запуска AI-примерки.
+POST_NOTIFICATIONS — push-уведомления о статусе примерок, видео, подписки и сервисных событиях.
+READ_EXTERNAL_STORAGE — выбор фото из галереи пользователя для загрузки аватара или фото вещи.
+VIBRATE — вибрация при получении уведомлений и системных действиях приложения.
+INTERNET — подключение к API VibeStyle для авторизации, загрузки фото, генерации примерок и получения результатов.
+```
+
+### 15.2. Запрашиваемые данные
+
+В разделе RuStore "Запрашиваемые данные" отметить:
+
+```text
+ID устройства или другие идентификаторы
+Взаимодействие с приложением
+Фотографии
+Видео
+Номер телефона
+Другие данные в личной информации
+Платежная информация / История покупок, если RuStore показывает такие варианты
+```
+
+Что это покрывает:
+
+- `ID устройства или другие идентификаторы` — локальный device id и push-токены для авторизации, защиты от повторных триалов и push-уведомлений.
+- `Взаимодействие с приложением` — история примерок, действия в галерее, уведомления, статусы подписки, события использования сервиса.
+- `Фотографии` — аватар пользователя, фото вещи, фото результата примерки.
+- `Видео` — сгенерированные видео к примеркам.
+- `Номер телефона` — вход через Mobile ID / телефонную авторизацию.
+- `Другие данные в личной информации` — пол, рост, параметры фигуры и размер одежды из профиля/аватара.
+- `Платежная информация / История покупок` — оформление и учет подписки через платежного провайдера; полные реквизиты карты приложение не хранит.
+
+Не отмечать, если нет отдельной причины в RuStore:
+
+```text
+Контакты
+Геолокация
+Аудио
+Файлы и документы
+Сообщения
+Календарь
+Данные о здоровье
+```
