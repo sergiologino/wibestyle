@@ -29,7 +29,7 @@ public class NotificationController {
     @PostMapping("/push-devices")
     public Map<String, Object> register(@RequestHeader(value = "Authorization", required = false) String authorization,
                                         @Valid @RequestBody PushDeviceRequest request) {
-        notificationService.registerPushDevice(AuthSupport.requireUserId(authorization), request.token(), request.platform());
+        notificationService.registerPushDevice(AuthSupport.requireUserId(authorization), request.token(), request.platform(), request.provider());
         return Map.of("status", "registered");
     }
 

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import ru.wibestyle.api.config.BillingProperties;
+import ru.wibestyle.api.domain.UserEntity;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -37,7 +38,7 @@ public class YooKassaClient {
             UUID checkoutId,
             int priceRub,
             String description,
-            UUID userId,
+            UserEntity user,
             boolean savePaymentMethod,
             String returnUrl
     ) {
@@ -55,8 +56,9 @@ public class YooKassaClient {
         ));
         body.put("metadata", Map.of(
                 "checkout_id", checkoutId.toString(),
-                "user_id", userId.toString()
+                "user_id", user.getId().toString()
         ));
+        body.put("receipt", receipt(user, priceRub, description));
 
         JsonNode response = post("/v3/payments", checkoutId.toString(), body);
         String paymentId = requiredText(response, "id");
@@ -72,7 +74,7 @@ public class YooKassaClient {
             UUID checkoutId,
             int priceRub,
             String description,
-            UUID userId,
+            UserEntity user,
             String paymentMethodId
     ) {
         Map<String, Object> body = new LinkedHashMap<>();
@@ -82,9 +84,10 @@ public class YooKassaClient {
         body.put("payment_method_id", paymentMethodId);
         body.put("metadata", Map.of(
                 "checkout_id", checkoutId.toString(),
-                "user_id", userId.toString(),
+                "user_id", user.getId().toString(),
                 "checkout_type", "renewal"
         ));
+        body.put("receipt", receipt(user, priceRub, description));
         JsonNode response = post("/v3/payments", checkoutId.toString(), body);
         return new YooKassaChargeResult(requiredText(response, "id"), requiredText(response, "status"));
     }
@@ -126,6 +129,57 @@ public class YooKassaClient {
         BillingProperties.YooKassa config = billingProperties.getYookassa();
         String token = config.getShopId() + ":" + config.getSecretKey();
         return "Basic " + Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static Map<String, Object> receipt(UserEntity user, int priceRub, String description) {
+        Map<String, Object> customer = new LinkedHashMap<>();
+        String email = clean(user.getEmail());
+        String phone = normalizePhone(user.getPhone());
+        if (email != null) {
+            customer.put("email", email);
+        } else if (phone != null) {
+            customer.put("phone", phone);
+        } else {
+            throw new IllegalArgumentException("BILLING_CUSTOMER_CONTACT_REQUIRED");
+        }
+
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("description", truncate(description, 128));
+        item.put("quantity", "1.00");
+        item.put("amount", Map.of(
+                "value", formatRub(priceRub),
+                "currency", "RUB"
+        ));
+        item.put("vat_code", 1);
+        item.put("payment_subject", "service");
+        item.put("payment_mode", "full_payment");
+
+        return Map.of(
+                "customer", customer,
+                "items", java.util.List.of(item)
+        );
+    }
+
+    private static String clean(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private static String normalizePhone(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String digits = value.replaceAll("[^0-9]", "");
+        return digits.length() >= 10 ? digits : null;
+    }
+
+    private static String truncate(String value, int maxLength) {
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
     }
 
     private static String formatRub(int priceRub) {

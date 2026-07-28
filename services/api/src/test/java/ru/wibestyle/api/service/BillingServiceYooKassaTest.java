@@ -14,10 +14,12 @@ import ru.wibestyle.api.billing.yookassa.YooKassaPaymentResult;
 import ru.wibestyle.api.config.BillingProperties;
 import ru.wibestyle.api.domain.BillingCheckoutEntity;
 import ru.wibestyle.api.domain.BillingSubscriptionEntity;
+import ru.wibestyle.api.domain.UserEntity;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.repository.BillingCheckoutRepository;
 import ru.wibestyle.api.repository.BillingSubscriptionRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
+import ru.wibestyle.api.repository.UserRepository;
 
 import java.time.Instant;
 import java.util.Map;
@@ -38,6 +40,8 @@ class BillingServiceYooKassaTest {
 
     @Mock
     private UserProfileRepository userProfileRepository;
+    @Mock
+    private UserRepository userRepository;
     @Mock
     private QuotaService quotaService;
     @Mock
@@ -63,6 +67,7 @@ class BillingServiceYooKassaTest {
         billingService = new BillingService(
                 properties,
                 userProfileRepository,
+                userRepository,
                 quotaService,
                 billingCheckoutRepository,
                 billingSubscriptionRepository,
@@ -77,8 +82,10 @@ class BillingServiceYooKassaTest {
     @Test
     void createCheckoutUsesYooKassaRedirect() {
         UserProfileEntity profile = profile(userId);
+        UserEntity user = new UserEntity(userId, "+79990000000", Instant.now());
         when(userProfileRepository.findById(userId)).thenReturn(Optional.of(profile));
-        when(yooKassaClient.createRedirectPayment(any(), anyInt(), anyString(), eq(userId), anyBoolean(), anyString()))
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(yooKassaClient.createRedirectPayment(any(), anyInt(), anyString(), eq(user), anyBoolean(), anyString()))
                 .thenReturn(new YooKassaPaymentResult("pay-1", "pending", "https://yoomoney.ru/pay/test"));
 
         ArgumentCaptor<BillingCheckoutEntity> captor = ArgumentCaptor.forClass(BillingCheckoutEntity.class);
@@ -153,12 +160,14 @@ class BillingServiceYooKassaTest {
                 userId, "wibe", "monthly", now.minusSeconds(1), "yookassa", now.minusSeconds(100));
         subscription.setAutoRenewEnabled(true);
         subscription.setProviderPaymentMethodId("pm-1");
+        UserEntity user = new UserEntity(userId, "+79990000000", Instant.now());
         when(billingSubscriptionRepository.findByAutoRenewEnabledTrueAndCurrentPeriodEndLessThanEqual(now))
                 .thenReturn(java.util.List.of(subscription));
         when(billingSubscriptionRepository.findLockedByUserId(userId)).thenReturn(Optional.of(subscription));
         when(billingCheckoutRepository.findByRenewalKey(anyString())).thenReturn(Optional.empty());
         when(billingCheckoutRepository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(yooKassaClient.createSavedPayment(any(), eq(400), anyString(), eq(userId), eq("pm-1")))
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(yooKassaClient.createSavedPayment(any(), eq(400), anyString(), eq(user), eq("pm-1")))
                 .thenReturn(new YooKassaChargeResult("pay-rejected", "canceled"));
         when(billingSubscriptionRepository.findById(userId)).thenReturn(Optional.of(subscription));
 

@@ -268,6 +268,21 @@ export type UserNotification = {
   createdAt: string;
 };
 
+export type PaginatedResponse<T> = {
+  items: T[];
+  nextCursor?: string;
+  hasMore: boolean;
+};
+
+export type PagedResponse<T> = {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+};
+
 export type PromoCodeRecord = {
   id: string;
   code: string;

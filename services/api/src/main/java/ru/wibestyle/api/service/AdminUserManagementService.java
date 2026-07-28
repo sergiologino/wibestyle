@@ -2,6 +2,8 @@ package ru.wibestyle.api.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import ru.wibestyle.api.domain.UserEntity;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.repository.AvatarRepository;
@@ -9,7 +11,6 @@ import ru.wibestyle.api.repository.UserProfileRepository;
 import ru.wibestyle.api.repository.UserRepository;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,11 +47,23 @@ public class AdminUserManagementService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> listUsers() {
-        List<Map<String, Object>> items = new ArrayList<>();
-        for (UserEntity user : userRepository.findAll()) {
-            items.add(toUserSummary(user));
-        }
-        return Map.of("items", items);
+        return listUsers(0, 30, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> listUsers(int page, int limit, String query) {
+        int safePage = Math.max(0, page);
+        int safeLimit = Math.min(Math.max(1, limit), 100);
+        String normalizedQuery = query == null || query.isBlank() ? "" : query.trim();
+        Page<UserEntity> users = userRepository.searchAdminUsers(normalizedQuery, PageRequest.of(safePage, safeLimit));
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", users.getContent().stream().map(this::toUserSummary).toList());
+        response.put("page", safePage);
+        response.put("limit", safeLimit);
+        response.put("total", users.getTotalElements());
+        response.put("totalPages", users.getTotalPages());
+        response.put("hasMore", users.hasNext());
+        return response;
     }
 
     @Transactional

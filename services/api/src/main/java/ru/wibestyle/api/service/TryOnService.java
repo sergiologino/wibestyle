@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.PageRequest;
 import ru.wibestyle.api.ai.GarmentClassification;
 import ru.wibestyle.api.ai.GarmentClassifierService;
 import ru.wibestyle.api.domain.AvatarSnapshotEntity;
@@ -47,6 +48,7 @@ public class TryOnService {
     private final SeasonHitVideoService seasonHitVideoService;
     private final ProfileService profileService;
     private final GarmentClassifierService garmentClassifierService;
+    private final UserActivityService userActivityService;
 
     public TryOnService(
             TryOnSessionRepository tryOnSessionRepository,
@@ -60,7 +62,8 @@ public class TryOnService {
             GarmentImageService garmentImageService,
             SeasonHitVideoService seasonHitVideoService,
             ProfileService profileService,
-            GarmentClassifierService garmentClassifierService
+            GarmentClassifierService garmentClassifierService,
+            UserActivityService userActivityService
     ) {
         this.tryOnSessionRepository = tryOnSessionRepository;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
@@ -74,6 +77,7 @@ public class TryOnService {
         this.seasonHitVideoService = seasonHitVideoService;
         this.profileService = profileService;
         this.garmentClassifierService = garmentClassifierService;
+        this.userActivityService = userActivityService;
     }
 
     @Transactional
@@ -107,6 +111,7 @@ public class TryOnService {
         );
         applyProduct(session, product, selectedSize);
         tryOnSessionRepository.save(session);
+        userActivityService.recordTryOn(userId);
         try {
             garmentImageService.ensureLocalGarmentPhoto(userId, session);
             classifyStoredGarment(session);
@@ -175,6 +180,7 @@ public class TryOnService {
         session.setProductSizes(serializeSizes(DEFAULT_PHOTO_SIZES));
         session.setSelectedSize(resolveSelectedSize(selectedSize, DEFAULT_PHOTO_SIZES));
         tryOnSessionRepository.save(session);
+        userActivityService.recordTryOn(userId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("session", toSessionMap(session));
@@ -246,12 +252,30 @@ public class TryOnService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> listMine(UUID userId) {
+        return listMine(userId, 24, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> listMine(UUID userId, int limit, String cursor) {
+        int offset = parseCursor(cursor);
+        int pageSize = clampLimit(limit);
         List<TryOnSessionEntity> sessions = tryOnSessionRepository
-                .findByUserIdAndStatusOrderByCreatedAtDesc(userId, TryOnSessionStatus.READY);
+                .findByUserIdAndStatusOrderByCreatedAtDesc(
+                        userId,
+                        TryOnSessionStatus.READY,
+                        PageRequest.of(offset / pageSize, pageSize)
+                );
+        boolean hasMore = sessions.size() == pageSize;
         List<Map<String, Object>> items = sessions.stream()
                 .map(this::toHistoryMap)
                 .toList();
-        return Map.of("items", items);
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", items);
+        response.put("hasMore", hasMore);
+        if (hasMore) {
+            response.put("nextCursor", String.valueOf(offset + pageSize));
+        }
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -409,6 +433,24 @@ public class TryOnService {
         map.put("sourceType", sourceTypeJson(session.getSourceType()));
         map.put("createdAt", session.getCreatedAt().toString());
         return map;
+    }
+
+    private static int clampLimit(int limit) {
+        if (limit < 1) {
+            return 24;
+        }
+        return Math.min(limit, 60);
+    }
+
+    private static int parseCursor(String cursor) {
+        if (cursor == null || cursor.isBlank()) {
+            return 0;
+        }
+        try {
+            return Math.max(0, Integer.parseInt(cursor));
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
     }
 
     private Map<String, Object> toSessionMap(TryOnSessionEntity session) {

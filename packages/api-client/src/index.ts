@@ -27,6 +27,8 @@ import type {
   UserProfile,
   BillingSubscription,
   UserNotification,
+  PaginatedResponse,
+  PagedResponse,
   ReferralOverview,
   AdminReferralReport,
   MarketingChannel,
@@ -532,8 +534,14 @@ export class WibeStyleApiClient {
     }>(`/api/v1/try-on/sessions/${sessionId}/generate-video`, { method: "POST" });
   }
 
-  listMyTryOnSessions() {
-    return this.request<{ items: TryOnHistoryItem[] }>("/api/v1/try-on/sessions/mine");
+  listMyTryOnSessions(options?: { limit?: number; cursor?: string | null }) {
+    const params = new URLSearchParams();
+    if (options?.limit) params.set("limit", String(options.limit));
+    if (options?.cursor) params.set("cursor", options.cursor);
+    const query = params.toString();
+    return this.request<PaginatedResponse<TryOnHistoryItem>>(
+      `/api/v1/try-on/sessions/mine${query ? `?${query}` : ""}`,
+    );
   }
 
   getAiJob(jobId: string) {
@@ -587,8 +595,12 @@ export class WibeStyleApiClient {
     });
   }
 
-  listGalleryPosts() {
-    return this.request<{ items: GalleryPost[] }>("/api/v1/gallery/posts");
+  listGalleryPosts(options?: { limit?: number; cursor?: string | null }) {
+    const params = new URLSearchParams();
+    if (options?.limit) params.set("limit", String(options.limit));
+    if (options?.cursor) params.set("cursor", options.cursor);
+    const query = params.toString();
+    return this.request<PaginatedResponse<GalleryPost>>(`/api/v1/gallery/posts${query ? `?${query}` : ""}`);
   }
 
   getGalleryPostBySlug(slug: string) {
@@ -703,17 +715,17 @@ export class WibeStyleApiClient {
     return this.request<UserNotification>(`/api/v1/notifications/${encodeURIComponent(notificationId)}/read`, { method: "POST" });
   }
 
-  registerPushDevice(token: string, platform: "android" | "ios") {
+  registerPushDevice(token: string, platform: "android" | "ios", provider: "expo" | "rustore" = "expo") {
     return this.request<{ status: string }>("/api/v1/notifications/push-devices", {
       method: "POST",
-      body: JSON.stringify({ token, platform }),
+      body: JSON.stringify({ token, platform, provider }),
     });
   }
 
-  unregisterPushDevice(token: string, platform: "android" | "ios") {
+  unregisterPushDevice(token: string, platform: "android" | "ios", provider: "expo" | "rustore" = "expo") {
     return this.request<{ status: string }>("/api/v1/notifications/push-devices", {
       method: "DELETE",
-      body: JSON.stringify({ token, platform }),
+      body: JSON.stringify({ token, platform, provider }),
     });
   }
 
@@ -1073,9 +1085,13 @@ export class WibeStyleApiClient {
     });
   }
 
-  listAdminUsers(adminKey: string) {
-    return this.request<{
-      items: {
+  listAdminUsers(adminKey: string, options?: { page?: number; limit?: number; search?: string }) {
+    const params = new URLSearchParams();
+    if (options?.page != null) params.set("page", String(options.page));
+    if (options?.limit != null) params.set("limit", String(options.limit));
+    if (options?.search) params.set("search", options.search);
+    const query = params.toString();
+    return this.request<PagedResponse<{
         id: string;
         phone?: string;
         email?: string;
@@ -1096,8 +1112,7 @@ export class WibeStyleApiClient {
           trialGenerationsLeft: number;
         }>;
         createdAt: string;
-      }[];
-    }>("/api/v1/admin/users", { headers: { "X-Admin-Key": adminKey } });
+      }>>(`/api/v1/admin/users${query ? `?${query}` : ""}`, { headers: { "X-Admin-Key": adminKey } });
   }
 
   updateAdminUserSubscription(

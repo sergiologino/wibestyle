@@ -1,6 +1,7 @@
 package ru.wibestyle.api.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Pageable;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.domain.TryOnSessionStatus;
 
@@ -16,5 +17,9 @@ public interface TryOnSessionRepository extends JpaRepository<TryOnSessionEntity
 
     List<TryOnSessionEntity> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, TryOnSessionStatus status);
 
+    List<TryOnSessionEntity> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, TryOnSessionStatus status, Pageable pageable);
+
     List<TryOnSessionEntity> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    Optional<TryOnSessionEntity> findTopByUserIdOrderByCreatedAtDesc(UUID userId);
 }

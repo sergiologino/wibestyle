@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface PushDeviceRepository extends JpaRepository<PushDeviceEntity, UUID> {
     Optional<PushDeviceEntity> findByExpoPushToken(String expoPushToken);
     List<PushDeviceEntity> findByUserIdAndEnabledTrue(UUID userId);
+    List<PushDeviceEntity> findByUserIdAndProviderAndEnabledTrue(UUID userId, String provider);
 }

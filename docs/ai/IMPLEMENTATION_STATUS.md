@@ -90,6 +90,7 @@
 ### Этап 3+ roadmap
 - Multi-item, video, new marketplaces
 - Mobile: iOS release/testing
+- Reactivation push copy: add optional noteapp `gpt-4o-mini` generation for per-user motivational push text, using profile + try-on history metadata only, with DB cache/logging and template fallback.
 
 ---
 

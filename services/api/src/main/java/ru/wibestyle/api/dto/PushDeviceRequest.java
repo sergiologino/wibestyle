@@ -5,5 +5,6 @@ import jakarta.validation.constraints.Pattern;
 
 public record PushDeviceRequest(
         @NotBlank String token,
-        @NotBlank @Pattern(regexp = "android|ios") String platform
+        @NotBlank @Pattern(regexp = "android|ios") String platform,
+        @Pattern(regexp = "expo|rustore") String provider
 ) {}
