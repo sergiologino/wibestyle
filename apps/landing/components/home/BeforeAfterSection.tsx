@@ -36,6 +36,9 @@ function BeforeAfterCard({ item }: { item: BeforeAfterItem }) {
 
     const start = () => {
       timerRef.current = window.setTimeout(() => {
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          setShowVideo(true);
+        }
         video.play()
           .then(() => setShowVideo(true))
           .catch(() => setShowVideo(false));
@@ -97,12 +100,15 @@ function BeforeAfterCard({ item }: { item: BeforeAfterItem }) {
           <video
             ref={videoRef}
             className={`before-after-card__video${showVideo ? " before-after-card__video--visible" : ""}`}
+            autoPlay
             muted
             playsInline
             loop
-            preload="metadata"
+            preload="auto"
             poster={item.afterPosterImage}
             aria-label={item.afterAlt}
+            onCanPlay={() => setShowVideo(true)}
+            onLoadedData={() => setShowVideo(true)}
           >
             <source src={item.afterVideo} type="video/mp4" />
           </video>

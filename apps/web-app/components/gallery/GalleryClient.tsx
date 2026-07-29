@@ -192,7 +192,7 @@ export default function GalleryClient() {
             disabled={loadingMore}
             onClick={() => void loadMore()}
           >
-            {loadingMore ? "Р—Р°РіСЂСѓР¶Р°РµРј..." : "РџРѕРєР°Р·Р°С‚СЊ РµС‰С‘"}
+            {loadingMore ? "Загружаем..." : "Показать ещё"}
           </button>
         </div>
       ) : null}

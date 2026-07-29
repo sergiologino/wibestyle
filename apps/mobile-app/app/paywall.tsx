@@ -17,6 +17,16 @@ import {
 } from "@/lib/paywall-logic";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
+const PLAN_RANK: Record<SubscriptionPlan, number> = {
+  trial: 0,
+  wibe: 1,
+  elite: 2,
+};
+
+function planLabel(plan: SubscriptionPlan) {
+  return plan === "elite" ? "Elite" : plan === "wibe" ? "Wibe" : "trial";
+}
+
 export default function PaywallScreen() {
   const router = useRouter();
   const { api, profile, refreshProfile } = useSession();
@@ -31,14 +41,31 @@ export default function PaywallScreen() {
   const [annualDiscountPercent, setAnnualDiscountPercent] = useState(20);
   const [promoDiscountPercent, setPromoDiscountPercent] = useState(0);
   const [savePaymentMethod, setSavePaymentMethod] = useState(false);
+  const [subscriberPlan, setSubscriberPlan] = useState<SubscriptionPlan>("trial");
+  const [subscriberPeriod, setSubscriberPeriod] = useState<BillingPeriod>("monthly");
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
 
   useEffect(() => {
     void api.getBillingPlans().then((payload) => {
       setPlans(payload.items);
-      setSelected({ plan: "elite", period: "annual" });
+      const activeSubscriber = payload.subscriber?.subscriptionActive && payload.subscriber.plan !== "trial"
+        ? payload.subscriber
+        : null;
+      if (activeSubscriber?.plan === "wibe") {
+        setSelected({ plan: "elite", period: activeSubscriber.billingPeriod });
+      } else if (activeSubscriber?.plan === "elite") {
+        setSelected({ plan: "elite", period: activeSubscriber.billingPeriod });
+      } else {
+        setSelected({ plan: "elite", period: "annual" });
+      }
       setPaymentProvider(payload.paymentProvider ?? "mock");
       setAnnualDiscountPercent(payload.annualDiscountPercent);
       setPromoDiscountPercent(payload.promoDiscountPercent);
+      if (payload.subscriber) {
+        setSubscriberPlan(payload.subscriber.plan);
+        setSubscriberPeriod(payload.subscriber.billingPeriod);
+        setSubscriptionActive(payload.subscriber.subscriptionActive);
+      }
     });
   }, [api]);
 
@@ -46,6 +73,17 @@ export default function PaywallScreen() {
   const promoMessage = promoAppliedText(promoDiscountPercent);
   const showTrial = !profile || profile.plan === "trial";
   const trialRemaining = profile?.plan === "trial" ? profile.trialGenerationsLeft : TRIAL_TRY_ONS;
+  const hasActivePaidSubscription = subscriptionActive && subscriberPlan !== "trial";
+  const selectedPlanBlocked = hasActivePaidSubscription
+    && (PLAN_RANK[selected.plan] <= PLAN_RANK[subscriberPlan] || selected.period !== subscriberPeriod);
+  const isCurrentSelection = hasActivePaidSubscription
+    && selected.plan === subscriberPlan
+    && selected.period === subscriberPeriod;
+  const checkoutLabel = selectedPlanBlocked
+    ? isCurrentSelection
+      ? "Это текущий тариф"
+      : "Доступен только апгрейд"
+    : "Перейти к оплате";
 
   function startTrial() {
     if (!profile) {
@@ -60,6 +98,7 @@ export default function PaywallScreen() {
       router.replace("/auth");
       return;
     }
+    if (selectedPlanBlocked) return;
     setLoading(true);
     setError(null);
     try {
@@ -122,7 +161,12 @@ export default function PaywallScreen() {
           {(["monthly", "annual"] as BillingPeriod[]).map((period) => (
             <Pressable
               key={period}
-              style={[styles.toggleItem, selected.period === period && styles.toggleItemActive]}
+              disabled={hasActivePaidSubscription && subscriberPeriod !== period}
+              style={[
+                styles.toggleItem,
+                selected.period === period && styles.toggleItemActive,
+                hasActivePaidSubscription && subscriberPeriod !== period && styles.disabledChoice,
+              ]}
               onPress={() => setSelected((s) => ({ ...s, period }))}
             >
               <Text style={[styles.toggleText, selected.period === period && styles.toggleTextActive]}>
@@ -138,6 +182,9 @@ export default function PaywallScreen() {
           const active = selected.plan === plan;
           const savings = selected.period === "annual" ? annualSavingsRub(plans, plan) : 0;
           const featured = plan === "elite" && selected.period === "annual";
+          const currentPlan = hasActivePaidSubscription && subscriberPlan === plan && subscriberPeriod === selected.period;
+          const blocked = hasActivePaidSubscription
+            && (PLAN_RANK[plan] <= PLAN_RANK[subscriberPlan] || selected.period !== subscriberPeriod);
           return (
             <LinearGradient
               key={plan}
@@ -153,13 +200,16 @@ export default function PaywallScreen() {
                 selected.period === "annual" && styles.annualPlanCard,
                 active && styles.planCardActive,
                 featured && styles.featuredPlanCard,
+                blocked && styles.disabledChoice,
               ]}
             >
               <Pressable
                 style={styles.planCardContent}
+                disabled={blocked}
                 onPress={() => setSelected((s) => ({ ...s, plan }))}
                 accessibilityRole="button"
               >
+                {currentPlan ? <Text style={styles.currentBadge}>Текущий тариф</Text> : null}
                 {featured ? <Text style={styles.badge}>Рекомендуем годовой Elite</Text> : null}
                 <Text style={styles.planName}>{plan === "elite" ? "Elite" : "Wibe"}</Text>
                 <Text style={styles.planPrice}>{offer.priceRub.toLocaleString("ru-RU")} ₽</Text>
@@ -193,6 +243,12 @@ export default function PaywallScreen() {
           </Text>
         ) : null}
 
+        {hasActivePaidSubscription ? (
+          <Text style={styles.currentSubscription}>
+            Текущий тариф: {planLabel(subscriberPlan)}, {subscriberPeriod === "annual" ? "год" : "месяц"}. Оплатить можно только более высокий тариф.
+          </Text>
+        ) : null}
+
         {paymentProvider === "yookassa" ? (
           <View style={styles.autoRenewRow}>
             <View style={styles.autoRenewCopy}>
@@ -204,7 +260,7 @@ export default function PaywallScreen() {
         ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button label="Перейти к оплате" loading={loading} onPress={checkout} />
+        <Button label={checkoutLabel} disabled={selectedPlanBlocked || !current} loading={loading} onPress={checkout} />
         <BodyText>
           AI может ошибаться в посадке, слоях одежды и обработке белья. Мы улучшаем качество и исправляем такие случаи.
         </BodyText>
@@ -299,6 +355,21 @@ const styles = StyleSheet.create({
   featuredPlanCard: {
     borderColor: colors.violet,
   },
+  disabledChoice: {
+    opacity: 0.55,
+  },
+  currentBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    backgroundColor: colors.pinkBg,
+    color: colors.pink,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 11,
+    textTransform: "uppercase",
+  },
   planName: {
     fontFamily: "Manrope_500Medium",
     fontSize: 18,
@@ -359,6 +430,18 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_500Medium",
     fontSize: 14,
     color: colors.black,
+  },
+  currentSubscription: {
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+    borderWidth: hairline,
+    borderColor: colors.pinkSoft,
+    backgroundColor: colors.pinkBg,
+    color: colors.black,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 13,
+    lineHeight: 19,
   },
   error: {
     color: colors.danger,

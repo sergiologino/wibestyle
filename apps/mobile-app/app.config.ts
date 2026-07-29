@@ -47,6 +47,11 @@ const config: ExpoConfig = {
       backgroundColor: "#fff4fb",
     },
     package: "ru.vibestyle.app",
+    blockedPermissions: [
+      "android.permission.RECORD_AUDIO",
+      "android.permission.SYSTEM_ALERT_WINDOW",
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+    ],
   },
   plugins: [
     "expo-router",
