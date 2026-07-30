@@ -334,6 +334,17 @@ export type AvatarRecord = {
   updatedAt?: string;
 };
 
+export type AvatarValidationAction = "continue" | "continue_with_warning" | "replace_photo";
+
+export type AvatarValidationResponse = {
+  avatar: AvatarRecord;
+  qualityScore: number;
+  warnings: string[];
+  guidanceTitle?: string;
+  guidanceMessage?: string;
+  recommendedAction?: AvatarValidationAction;
+};
+
 /** Maximum non-deleted avatars per account. Anthropometry stays on profile only. */
 export const MAX_AVATARS_PER_USER = 3;
 

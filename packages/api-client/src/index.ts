@@ -1,6 +1,7 @@
 import type {
   AuthTokens,
   AvatarRecord,
+  AvatarValidationResponse,
   BillingPlanOffer,
   BillingPeriod,
   CreateAvatarPayload,
@@ -431,7 +432,7 @@ export class WibeStyleApiClient {
   }
 
   validateAvatar(avatarId: string) {
-    return this.request<{ avatar: AvatarRecord; qualityScore: number; warnings: string[] }>(
+    return this.request<AvatarValidationResponse>(
       `/api/v1/avatars/${avatarId}/validate`,
       { method: "POST" },
     );

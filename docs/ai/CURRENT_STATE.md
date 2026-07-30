@@ -1,5 +1,10 @@
 # Current State
 
+## Avatar quality gate and privacy copy (2026-07-30)
+- Avatar upload now has a quality gate: backend local checks and optional noteapp vision chat (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, e.g. `gpt-4o-mini`) detect portraits, tiny full-body photos, multiple/no people, rotation and low detail.
+- Weak avatars stay in `VALIDATION_FAILED`; web/mobile show a supportive replacement prompt instead of activating them.
+- New-user profile/avatar screens explicitly state that the avatar is private and never visible to other users.
+
 ## Mobile gallery video autoplay and web onboarding entry (2026-07-30)
 - Android gallery feed autoplays video posts inline using the shared `AppVideoPlayer` with hidden controls and `cover` fit; tapping still opens the detail screen with native controls.
 - Web onboarding slides already match mobile copy/media. New web users are now routed to `/welcome` after auth instead of skipping directly to avatar setup.

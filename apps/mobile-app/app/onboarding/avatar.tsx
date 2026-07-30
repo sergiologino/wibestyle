@@ -37,6 +37,7 @@ export default function AvatarOnboardingScreen() {
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
 
   useEffect(() => {
     void ensureSession();
@@ -59,6 +60,7 @@ export default function AvatarOnboardingScreen() {
     const prepared = await preparePickedImageForUpload(asset, "avatar.jpg");
     setPreviewUri(prepared.uri);
     setPhoto(prepared);
+    setAvatarGuidance(null);
   }
 
   async function submit() {
@@ -72,6 +74,7 @@ export default function AvatarOnboardingScreen() {
     }
     setLoading(true);
     setError(null);
+    setAvatarGuidance(null);
     let createdAvatarId: string | null = null;
     let avatarActivated = false;
     try {
@@ -87,7 +90,15 @@ export default function AvatarOnboardingScreen() {
       const created = await api.createAvatar({});
       createdAvatarId = created.avatar.id;
       await uploads.uploadAvatarPhoto(api, created.avatar.id, photo);
-      await api.validateAvatar(created.avatar.id);
+      const validation = await api.validateAvatar(created.avatar.id);
+      if (validation.recommendedAction === "replace_photo" || validation.avatar.status === "VALIDATION_FAILED") {
+        setAvatarGuidance({
+          title: validation.guidanceTitle,
+          message: validation.guidanceMessage,
+        });
+        await api.deleteAvatar(created.avatar.id).catch(() => undefined);
+        return;
+      }
       await api.preprocessAvatar(created.avatar.id);
       await api.activateAvatar(created.avatar.id);
       avatarActivated = true;
@@ -111,6 +122,14 @@ export default function AvatarOnboardingScreen() {
           <Eyebrow>Шаг 1</Eyebrow>
           <DisplayTitle>Твоё фото для примерки</DisplayTitle>
           <BodyText>Фото в полный рост, облегающая одежда, нейтральный фон — так AI точнее «наденет» вещь.</BodyText>
+
+          <View style={styles.privacyNote}>
+            <Text style={styles.privacyTitle}>Аватар — это приватная зона</Text>
+            <Text style={styles.privacyText}>
+              Ваше фото никогда не видно другим пользователям. Оно используется только в вашем аккаунте,
+              чтобы примерка точнее сохраняла фигуру и посадку одежды.
+            </Text>
+          </View>
 
           <Pressable style={styles.photoBox} onPress={pickPhoto}>
             {previewUri ? (
@@ -152,6 +171,15 @@ export default function AvatarOnboardingScreen() {
             }}
           />
 
+          {avatarGuidance?.message ? (
+            <View style={styles.guidanceBox}>
+              <Text style={styles.guidanceTitle}>
+                {avatarGuidance.title ?? "Подберём кадр, на котором примерка получится точнее"}
+              </Text>
+              <Text style={styles.guidanceText}>{avatarGuidance.message}</Text>
+            </View>
+          ) : null}
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <Button label="Сохранить и продолжить" loading={loading} onPress={submit} />
         </ScrollView>
@@ -182,6 +210,25 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  privacyNote: {
+    borderRadius: radius.xl,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    backgroundColor: "#f6fbef",
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  privacyTitle: {
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.black,
+    fontSize: 15,
+  },
+  privacyText: {
+    fontFamily: "Manrope_400Regular",
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+  },
   genderRow: {
     flexDirection: "row",
     gap: spacing.sm,
@@ -204,6 +251,25 @@ const styles = StyleSheet.create({
   },
   genderTextActive: {
     color: colors.pink,
+  },
+  guidanceBox: {
+    borderRadius: radius.xl,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.pinkBg,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  guidanceTitle: {
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.pink,
+    fontSize: 14,
+  },
+  guidanceText: {
+    fontFamily: "Manrope_400Regular",
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
   },
   error: {
     color: colors.danger,

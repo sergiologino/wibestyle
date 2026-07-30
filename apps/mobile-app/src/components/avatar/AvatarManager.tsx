@@ -72,6 +72,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
   const [adding, setAdding] = useState(false);
   const [newPhoto, setNewPhoto] = useState<RNFile | null>(null);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -106,6 +107,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
     const prepared = await preparePickedImageForUpload(asset, "avatar.jpg");
     setPreviewUri(prepared.uri);
     setNewPhoto(prepared);
+    setAvatarGuidance(null);
   }
 
   async function activateAvatar(avatarId: string) {
@@ -154,6 +156,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
     }
     setBusy(true);
     setError(null);
+    setAvatarGuidance(null);
     let createdAvatarId: string | null = null;
     let avatarActivated = false;
     try {
@@ -164,7 +167,15 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
       });
       createdAvatarId = avatar.id;
       await uploads.uploadAvatarPhoto(api, avatar.id, newPhoto);
-      await api.validateAvatar(avatar.id);
+      const validation = await api.validateAvatar(avatar.id);
+      if (validation.recommendedAction === "replace_photo" || validation.avatar.status === "VALIDATION_FAILED") {
+        setAvatarGuidance({
+          title: validation.guidanceTitle,
+          message: validation.guidanceMessage,
+        });
+        await api.deleteAvatar(avatar.id).catch(() => undefined);
+        return;
+      }
       await api.preprocessAvatar(avatar.id);
       await api.activateAvatar(avatar.id);
       avatarActivated = true;
@@ -204,6 +215,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
             if (adding) {
               setNewPhoto(null);
               setPreviewUri(null);
+              setAvatarGuidance(null);
             }
           }}
         />
@@ -224,6 +236,14 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
               <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
           </Pressable>
+          {avatarGuidance?.message ? (
+            <View style={styles.guidanceBox}>
+              <Text style={styles.guidanceTitle}>
+                {avatarGuidance.title ?? "Подберём кадр, на котором примерка получится точнее"}
+              </Text>
+              <Text style={styles.guidanceText}>{avatarGuidance.message}</Text>
+            </View>
+          ) : null}
           <Button label={busy ? "Загружаем…" : "Сохранить новый аватар"} loading={busy} disabled={!newPhoto} onPress={addAvatar} />
         </View>
       ) : null}
@@ -298,6 +318,25 @@ const styles = StyleSheet.create({
   photo: {
     width: "100%",
     height: "100%",
+  },
+  guidanceBox: {
+    borderRadius: radius.xl,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.pinkBg,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  guidanceTitle: {
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.pink,
+    fontSize: 14,
+  },
+  guidanceText: {
+    fontFamily: "Manrope_400Regular",
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
   },
   thumbRow: {
     gap: spacing.md,

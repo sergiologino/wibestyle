@@ -39,6 +39,7 @@ export default function AvatarOnboardingForm() {
   const [sizesHint, setSizesHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -93,6 +94,8 @@ export default function AvatarOnboardingForm() {
   function onPhotoSelected(file: File | null) {
     setPhotoFile(file);
     setSizesHint(null);
+    setAvatarGuidance(null);
+    setWarnings([]);
     if (file && !anthropometryComplete) applyEstimatedSizes(file, gender);
   }
 
@@ -100,6 +103,7 @@ export default function AvatarOnboardingForm() {
     event.preventDefault();
     setError(null);
     setWarnings([]);
+    setAvatarGuidance(null);
 
     if (!anthropometryComplete) {
       const anthropometry = {
@@ -167,6 +171,14 @@ export default function AvatarOnboardingForm() {
       const validation = await api.validateAvatar(avatar.id);
       if (validation.warnings.length > 0) {
         setWarnings(validation.warnings);
+      }
+      if (validation.recommendedAction === "replace_photo" || validation.avatar.status === "VALIDATION_FAILED") {
+        setAvatarGuidance({
+          title: validation.guidanceTitle,
+          message: validation.guidanceMessage,
+        });
+        await api.deleteAvatar(avatar.id).catch(() => undefined);
+        return;
       }
       if (validation.avatar.status === "REJECTED") {
         setError("Фото не прошло проверку. Обнажённые фото не нужны и не принимаются.");
@@ -238,6 +250,13 @@ export default function AvatarOnboardingForm() {
           <section className="grid gap-4">
             <div>
               <p className={sectionTitleClassName}>Фото avatar</p>
+              <div className="mt-3 rounded-3xl border border-[#dcefc8] bg-[#f6fbef] px-4 py-3 text-sm text-[#4f6f2d]">
+                <p className="font-semibold text-[#36551c]">Аватар — это приватная зона</p>
+                <p className="mt-1">
+                  Ваше фото никогда не видно другим пользователям. Оно используется только внутри вашего аккаунта,
+                  чтобы примерка точнее сохраняла фигуру и посадку одежды.
+                </p>
+              </div>
               <p className={`mt-1 ${mutedTextClassName}`}>Полный рост, облегающая одежда, хорошее освещение.</p>
             </div>
             <label className="inline-flex cursor-pointer items-center justify-center rounded-full border border-[#ffb8e4]/80 bg-white px-5 py-3 text-sm font-medium text-[#ff1fa2] shadow-sm transition hover:border-[#ff1fa2]">
@@ -302,6 +321,15 @@ export default function AvatarOnboardingForm() {
             <p className="rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm font-normal text-[#6d6273]">
               Предупреждения по качеству: {warnings.join(", ")}
             </p>
+          ) : null}
+
+          {avatarGuidance?.message ? (
+            <div className="rounded-3xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-4 text-sm text-[#6d3757]">
+              <p className="font-semibold text-[#c01278]">
+                {avatarGuidance.title ?? "Подберём кадр, на котором примерка получится точнее"}
+              </p>
+              <p className="mt-1">{avatarGuidance.message}</p>
+            </div>
           ) : null}
 
           {error ? (
