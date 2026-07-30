@@ -1,5 +1,11 @@
 # AI Changelog
 
+## 2026-07-30 (Mobile RuStore review prompt and gallery comments)
+- Added an Android-only RuStore review prompt behind an internal satisfaction gate after successful try-ons: trial users are eligible after 3 unique successful sessions, paid users after 5.
+- Negative answers open internal feedback reasons instead of sending the user to RuStore; "later" applies a 30-day cooldown, and "never" disables the prompt locally.
+- The RuStore prompt asks for an honest review without try-on bonuses, 5-star wording or screenshot verification; events are sent through the existing mobile marketing analytics endpoint.
+- Fixed mobile gallery comments: the comment counter is now pressable, opens a comment sheet, shows loaded comments and submits new comments via the existing gallery API.
+
 ## 2026-07-01 (Three trial try-ons and one free video)
 - Restored the trial photo allowance from two to three; existing trial users receive one additional remaining try-on, capped at three.
 - Added one successful season-hit video to the whole trial. The quota is reserved atomically on start, consumed only after success and refunded after provider or storage failures.

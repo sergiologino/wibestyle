@@ -1,5 +1,11 @@
 # Current State
 
+## Mobile RuStore review prompt and gallery comments (2026-07-30)
+- Android result screen records unique successful try-on sessions in local storage and shows a RuStore review gate after 3 trial or 5 paid successful sessions.
+- The flow filters dissatisfaction first: positive users see a voluntary honest RuStore review prompt; negative users submit internal feedback reasons and are not routed to RuStore.
+- Prompt state is local: completed, never-show, last shown, 30-day postpone and negative-feedback cooldown.
+- Mobile gallery post details now support comments: tapping the comment counter opens a sheet with loaded comments and an input backed by the existing gallery comment API.
+
 ## Trial allowance: 3 photos + 1 video (2026-07-01)
 - New trial profiles receive three photo try-ons and one successful season-hit video across the whole trial.
 - Flyway V32 adds one remaining photo try-on to existing trial accounts (up to three) and initializes one trial video.
