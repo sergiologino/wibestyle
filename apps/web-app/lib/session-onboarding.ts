@@ -12,7 +12,6 @@ export function syncOnboardingFromProfile(
   if (!profile.activeAvatarId) {
     return {
       ...onboarding,
-      welcomeSeen: true,
       authComplete: true,
       step: "avatar",
     };

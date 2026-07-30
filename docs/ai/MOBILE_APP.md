@@ -16,6 +16,8 @@ RuStore review prompt есть только в Android-приложении. П�
 
 Галерея: на детальном экране поста счетчик комментариев кликабельный. Он открывает нижнюю модалку со списком комментариев и формой добавления; отправка использует существующий `POST /api/v1/gallery/posts/{postId}/comments`.
 
+Видео в мобильной галерее воспроизводятся прямо в ленте: карточки с `mediaType=video` используют `publicVideoUrl`/`videoUrl`, включают autoplay+loop через `AppVideoPlayer`, скрывают native controls в сетке и сохраняют controls на детальном экране.
+
 Mobile onboarding uses replaceable media from `apps/mobile-app/assets/onboarding/slides/`. The result slide is video-first and expects `result-photo.mp4`; static slots use `.webp` where it exists and fall back to PNG assets.
 
 **Платформа:** Android 12+ (`minSdkVersion` 31), оптимизировано под экраны ≥ 1080×2400.

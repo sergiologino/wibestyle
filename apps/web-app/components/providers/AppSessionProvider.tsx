@@ -1068,9 +1068,13 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
           {
 
-            ...advanceOnboarding(sessionRef.current.onboarding, "auth"),
+            ...sessionRef.current.onboarding,
 
-            welcomeSeen: true,
+            authComplete: true,
+
+            avatarComplete: Boolean(profile.activeAvatarId),
+
+            step: profile.activeAvatarId ? "complete" : "avatar",
 
           },
 

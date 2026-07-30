@@ -45,10 +45,11 @@ public class AiProviderPriorityService {
                 repository.findByOperationOrderByPriorityOrderAsc(operation);
         List<AiProviderPriorityEntity> enabled = repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(operation);
         if (!enabled.isEmpty()) {
-            return enabled.stream()
+            List<ProviderRoute> route = enabled.stream()
                     .sorted(providerComparator())
                     .map(ProviderRoute::from)
                     .toList();
+            return normalizeRoutesForOperation(operation, route);
         }
 
         // Once an operation has persisted rows, disabling every row is an explicit
@@ -61,11 +62,12 @@ public class AiProviderPriorityService {
                 ? aiProperties.getSeasonVideoNetwork()
                 : aiProperties.getVirtualTryOnNetwork();
         if (configured != null && !configured.isBlank()) {
-            return List.of(new ProviderRoute(configured, labelFor(operation, configured), 10));
+            return normalizeRoutesForOperation(operation, List.of(new ProviderRoute(configured, labelFor(operation, configured), 10)));
         }
-        return defaultsFor(operation).stream()
+        List<ProviderRoute> route = defaultsFor(operation).stream()
                 .map(def -> new ProviderRoute(def.networkName(), def.displayName(), def.priorityOrder()))
                 .toList();
+        return normalizeRoutesForOperation(operation, route);
     }
 
     @Transactional(readOnly = true)
@@ -143,6 +145,27 @@ public class AiProviderPriorityService {
 
     private List<ProviderDefinition> defaultsFor(String operation) {
         return AiOperations.VIRTUAL_TRY_ON_VIDEO.equals(operation) ? VIDEO_DEFAULTS : PHOTO_DEFAULTS;
+    }
+
+    private List<ProviderRoute> normalizeRoutesForOperation(String operation, List<ProviderRoute> routes) {
+        if (!AiOperations.VIRTUAL_TRY_ON_VIDEO.equals(operation)) {
+            return routes;
+        }
+        Map<String, ProviderRoute> normalized = new LinkedHashMap<>();
+        for (ProviderRoute route : routes) {
+            ProviderRoute next = normalizeVideoRoute(route);
+            normalized.putIfAbsent(next.networkName(), next);
+        }
+        return List.copyOf(normalized.values());
+    }
+
+    private ProviderRoute normalizeVideoRoute(ProviderRoute route) {
+        return switch (route.networkName()) {
+            case "wibestyle-vton" -> new ProviderRoute("wibestyle-season-video", "Grok Imagine Video", route.priorityOrder());
+            case "fashn-tryon-max" -> new ProviderRoute("fashn-tryon-video", "FASHN Try-On Video", route.priorityOrder());
+            case "kling-kolors-tryon" -> new ProviderRoute("kling-tryon-video", "Kling Virtual Try-On Video", route.priorityOrder());
+            default -> route;
+        };
     }
 
     private String labelFor(String operation, String networkName) {

@@ -1,5 +1,14 @@
 # Current State
 
+## Mobile gallery video autoplay and web onboarding entry (2026-07-30)
+- Android gallery feed autoplays video posts inline using the shared `AppVideoPlayer` with hidden controls and `cover` fit; tapping still opens the detail screen with native controls.
+- Web onboarding slides already match mobile copy/media. New web users are now routed to `/welcome` after auth instead of skipping directly to avatar setup.
+- Web session sync preserves `welcomeSeen=false` for authenticated profiles without avatars, so the welcome flow can run once and then route to `/onboarding/avatar`.
+
+## FASHN video route guard (2026-07-30)
+- `VIRTUAL_TRY_ON_VIDEO` routes defensively normalize photo-only provider names before calling Noteapp, so a bad env/admin value cannot send video jobs to FASHN `tryon-max`.
+- Flyway V37 updates existing bad video provider rows in `ai_provider_priorities` to the canonical video routes.
+
 ## Mobile RuStore review prompt and gallery comments (2026-07-30)
 - Android result screen records unique successful try-on sessions in local storage and shows a RuStore review gate after 3 trial or 5 paid successful sessions.
 - The flow filters dissatisfaction first: positive users see a voluntary honest RuStore review prompt; negative users submit internal feedback reasons and are not routed to RuStore.

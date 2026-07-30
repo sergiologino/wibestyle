@@ -74,6 +74,39 @@ class AiProviderPriorityServiceTest {
     }
 
     @Test
+    void routeForVideoNormalizesLegacyPhotoNetworkFromEnvironment() {
+        properties.setSeasonVideoNetwork("fashn-tryon-max");
+        when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_VIDEO))
+                .thenReturn(List.of());
+        when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_VIDEO))
+                .thenReturn(List.of());
+
+        List<AiProviderPriorityService.ProviderRoute> route =
+                service.routeFor(AiOperations.VIRTUAL_TRY_ON_VIDEO);
+
+        assertThat(route).hasSize(1);
+        assertThat(route.get(0).networkName()).isEqualTo("fashn-tryon-video");
+    }
+
+    @Test
+    void routeForVideoNormalizesPersistedPhotoNetworksBeforeCallingAi() {
+        when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_VIDEO))
+                .thenReturn(List.of(
+                        entity(AiOperations.VIRTUAL_TRY_ON_VIDEO, "fashn-tryon-max", "FASHN photo", 10, true),
+                        entity(AiOperations.VIRTUAL_TRY_ON_VIDEO, "kling-kolors-tryon", "Kling photo", 20, true)
+                ));
+        when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_VIDEO))
+                .thenReturn(List.of(
+                        entity(AiOperations.VIRTUAL_TRY_ON_VIDEO, "fashn-tryon-max", "FASHN photo", 10, true),
+                        entity(AiOperations.VIRTUAL_TRY_ON_VIDEO, "kling-kolors-tryon", "Kling photo", 20, true)
+                ));
+
+        assertThat(service.routeFor(AiOperations.VIRTUAL_TRY_ON_VIDEO))
+                .extracting(AiProviderPriorityService.ProviderRoute::networkName)
+                .containsExactly("fashn-tryon-video", "kling-tryon-video");
+    }
+
+    @Test
     void routeForKeepsOperationDisabledWhenAllPersistedProvidersAreDisabled() {
         properties.setVirtualTryOnNetwork("legacy-env-network");
         when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
@@ -95,9 +128,13 @@ class AiProviderPriorityServiceTest {
     }
 
     private static AiProviderPriorityEntity entity(String network, String label, int priority, boolean enabled) {
+        return entity(AiOperations.VIRTUAL_TRY_ON_PHOTO, network, label, priority, enabled);
+    }
+
+    private static AiProviderPriorityEntity entity(String operation, String network, String label, int priority, boolean enabled) {
         return new AiProviderPriorityEntity(
                 UUID.randomUUID(),
-                AiOperations.VIRTUAL_TRY_ON_PHOTO,
+                operation,
                 network,
                 label,
                 priority,
