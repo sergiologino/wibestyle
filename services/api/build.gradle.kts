@@ -69,7 +69,10 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("wibestyle-api.jar")
 }
 
-val monorepoRoot = rootDir.parentFile.parentFile
+// Coolify/Nixpacks builds the API with Base directory `services/api`, so the
+// project root can be `/app` without monorepo parents. Local bootRun still uses
+// the monorepo-level storage directory when the parent folders are available.
+val monorepoRoot = rootDir.parentFile?.parentFile ?: rootDir
 val storageRoot = monorepoRoot.resolve("data/storage")
 
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
