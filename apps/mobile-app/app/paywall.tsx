@@ -40,7 +40,7 @@ export default function PaywallScreen() {
   const [paymentProvider, setPaymentProvider] = useState("mock");
   const [annualDiscountPercent, setAnnualDiscountPercent] = useState(20);
   const [promoDiscountPercent, setPromoDiscountPercent] = useState(0);
-  const [savePaymentMethod, setSavePaymentMethod] = useState(false);
+  const [savePaymentMethod, setSavePaymentMethod] = useState(true);
   const [subscriberPlan, setSubscriberPlan] = useState<SubscriptionPlan>("trial");
   const [subscriberPeriod, setSubscriberPeriod] = useState<BillingPeriod>("monthly");
   const [subscriptionActive, setSubscriptionActive] = useState(false);
