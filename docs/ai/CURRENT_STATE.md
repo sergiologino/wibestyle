@@ -1,5 +1,12 @@
 # Current State
 
+## Native SMS authentication for RuStore moderation (2026-08-02)
+- Android's primary sign-in flow is now fully native: the user enters a Russian phone number and SMS code directly in the Expo React Native UI, using the existing `/auth/otp/start` and `/auth/otp/verify` API contract.
+- The app creates its local secure session after OTP verification and continues to the native avatar onboarding or home screen. Referral, marketing visitor and device identifiers remain bound to the registration.
+- Mobile ID/OAuth remain optional flows only; the default entry no longer opens `app.vibestyle.art` in an in-app browser. YooKassa checkout, marketplace cards and legal pages retain their narrowly scoped external-browser behavior.
+- This addresses the RuStore self-contained-app finding: the product already has native try-on, camera/gallery, push, gallery, favorites, sharing and profile functionality; native authentication removes the web handoff from the first essential user journey.
+- Verified: 59 mobile tests, mobile TypeScript, dependency/Metro release preflight and Android debug assembly. A signed release assembly remains an operator step because this workspace has no `VIBESTYLE_STORE_FILE` signing secret.
+
 ## Avatar quality gate and privacy copy (2026-07-30)
 - Avatar upload now has a quality gate: backend local checks and optional noteapp vision chat (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, e.g. `gpt-4o-mini`) detect portraits, tiny full-body photos, multiple/no people, rotation and low detail.
 - Weak avatars stay in `VALIDATION_FAILED`; web/mobile show a supportive replacement prompt instead of activating them.

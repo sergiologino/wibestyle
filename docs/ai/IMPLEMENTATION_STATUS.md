@@ -3,7 +3,7 @@
 > Живой чеклист: что сделано и что осталось. Обновляется по мере реализации.
 > Оплата: YooKassa checkout/webhook и recurring готовы; для production нужны env, webhook, чеки 54-ФЗ и Expo/FCM credentials.
 
-**Последнее обновление:** 2026-06-23
+**Последнее обновление:** 2026-08-02
 
 ## План работ
 
@@ -33,6 +33,7 @@
 | In-app + Android Expo push notifications | ✅ нужны Expo project/FCM credentials |
 | Paywall UX + trial nudges | ✅ |
 | Mobile app | ✅ Android (Expo RN) |
+| RuStore self-contained entry | ✅ native SMS OTP; Mobile ID/OAuth optional |
 | Auth persistence | ✅ refresh 365 дней + web/mobile hardening |
 | Local blob storage | ✅ `data/storage` object keys + legacy read |
 | Web/mobile UI polish | ✅ responsive nav, mobile tabs/home/try-on |
