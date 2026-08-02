@@ -1,5 +1,21 @@
 # AI Changelog
 
+## 2026-07-30 (Mobile gallery video autoplay and web onboarding entry)
+- Mobile gallery feed now renders video posts with `AppVideoPlayer` autoplay, looping and hidden native controls while keeping detail-screen video controls unchanged.
+- Web post-auth routing sends new users to `/welcome` first, so they see the same onboarding story before avatar setup.
+- Web session sync no longer marks `welcomeSeen` automatically for authenticated profiles without an avatar; after completing welcome slides, users continue to `/onboarding/avatar`.
+
+## 2026-07-30 (FASHN video route guard)
+- Fixed a production video-generation failure where `VIRTUAL_TRY_ON_VIDEO` could route to the photo-only `fashn-tryon-max` network, causing FASHN to reject `duration` in `inputs`.
+- Runtime routing now normalizes legacy photo networks to their video equivalents for video jobs: `wibestyle-vton` → `wibestyle-season-video`, `fashn-tryon-max` → `fashn-tryon-video`, `kling-kolors-tryon` → `kling-tryon-video`.
+- Flyway V37 cleans persisted `ai_provider_priorities` rows with the same incorrect video/photo mapping.
+
+## 2026-07-30 (Mobile RuStore review prompt and gallery comments)
+- Added an Android-only RuStore review prompt behind an internal satisfaction gate after successful try-ons: trial users are eligible after 3 unique successful sessions, paid users after 5.
+- Negative answers open internal feedback reasons instead of sending the user to RuStore; "later" applies a 30-day cooldown, and "never" disables the prompt locally.
+- The RuStore prompt asks for an honest review without try-on bonuses, 5-star wording or screenshot verification; events are sent through the existing mobile marketing analytics endpoint.
+- Fixed mobile gallery comments: the comment counter is now pressable, opens a comment sheet, shows loaded comments and submits new comments via the existing gallery API.
+
 ## 2026-07-01 (Three trial try-ons and one free video)
 - Restored the trial photo allowance from two to three; existing trial users receive one additional remaining try-on, capped at three.
 - Added one successful season-hit video to the whole trial. The quota is reserved atomically on start, consumed only after success and refunded after provider or storage failures.

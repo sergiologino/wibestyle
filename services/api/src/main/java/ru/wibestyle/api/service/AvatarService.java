@@ -132,7 +132,7 @@ public class AvatarService {
         String filename = storedPhoto.getFileName().toString();
         long sizeBytes = Files.size(storedPhoto);
         String contentType = contentTypeFromFilename(filename);
-        AvatarValidationService.ValidationOutcome outcome = avatarValidationService.validate(filename, sizeBytes, contentType);
+        AvatarValidationService.ValidationOutcome outcome = avatarValidationService.validate(filename, sizeBytes, contentType, storedPhoto);
         if (outcome.rejected()) {
             avatar.setStatus(AvatarStatus.REJECTED);
             avatar.setQualityScore(0.0);
@@ -151,6 +151,9 @@ public class AvatarService {
         response.put("avatar", toAvatarMap(avatar));
         response.put("qualityScore", outcome.qualityScore());
         response.put("warnings", outcome.warnings());
+        response.put("guidanceTitle", outcome.guidanceTitle());
+        response.put("guidanceMessage", outcome.guidanceMessage());
+        response.put("recommendedAction", outcome.recommendedAction());
         return response;
     }
 

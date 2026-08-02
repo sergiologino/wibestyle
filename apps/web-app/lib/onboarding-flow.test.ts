@@ -25,10 +25,10 @@ describe("getNextOnboardingRoute", () => {
 });
 
 describe("resolvePostAuthRoute", () => {
-  it("sends new users to onboarding even with next param", () => {
+  it("sends new users to welcome onboarding even with next param", () => {
     expect(
       resolvePostAuthRoute({ newUser: true, hasActiveAvatar: false, nextParam: "/favorites" }),
-    ).toBe("/onboarding/avatar");
+    ).toBe("/welcome");
   });
 
   it("allows the onboarding trial path to continue to paywall after registration", () => {

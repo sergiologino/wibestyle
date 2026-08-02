@@ -7,6 +7,7 @@ import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { Image } from "expo-image";
+import { AppVideoPlayer } from "@/components/media/VideoPlayer";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { getApiBaseUrl } from "@/lib/config";
 import { resolveApiPath } from "@/lib/mobile-api";
@@ -70,30 +71,43 @@ export default function GalleryScreen() {
         ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.pink} style={styles.footerLoader} /> : null}
         onEndReachedThreshold={0.4}
         onEndReached={() => void loadMore()}
-        renderItem={({ item }) => (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Открыть образ ${item.title}`}
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-            onPress={() => router.push(`/gallery/${item.slug}` as never)}
-          >
-            <Image
-              source={{ uri: resolveApiPath(apiBaseUrl, item.publicImageUrl ?? item.imageUrl) }}
-              style={styles.image}
-              contentFit="cover"
-              transition={200}
-            />
-            <View style={styles.meta}>
-              <Text style={styles.title} numberOfLines={2}>
-                {item.title}
-              </Text>
-              <View style={styles.stats}>
-                <Feather name="heart" size={12} color={colors.muted} />
-                <Text style={styles.statText}>{item.likeCount}</Text>
+        renderItem={({ item }) => {
+          const videoPath = item.mediaType === "video" ? item.publicVideoUrl ?? item.videoUrl : null;
+          return (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Открыть образ ${item.title}`}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+              onPress={() => router.push(`/gallery/${item.slug}` as never)}
+            >
+              {videoPath ? (
+                <AppVideoPlayer
+                  path={videoPath}
+                  autoPlay
+                  nativeControls={false}
+                  contentFit="cover"
+                  style={styles.image}
+                />
+              ) : (
+                <Image
+                  source={{ uri: resolveApiPath(apiBaseUrl, item.publicImageUrl ?? item.imageUrl) }}
+                  style={styles.image}
+                  contentFit="cover"
+                  transition={200}
+                />
+              )}
+              <View style={styles.meta}>
+                <Text style={styles.title} numberOfLines={2}>
+                  {item.title}
+                </Text>
+                <View style={styles.stats}>
+                  <Feather name={videoPath ? "video" : "heart"} size={12} color={colors.muted} />
+                  <Text style={styles.statText}>{videoPath ? "Видео" : item.likeCount}</Text>
+                </View>
               </View>
-            </View>
-          </Pressable>
-        )}
+            </Pressable>
+          );
+        }}
       />
     </Screen>
   );

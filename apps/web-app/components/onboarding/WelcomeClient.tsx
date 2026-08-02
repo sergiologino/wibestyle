@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, Heart, Sparkles } from "lucide-react";
 import { Button } from "@wibestyle/ui";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
-import { getNextOnboardingRoute } from "@/lib/onboarding-flow";
+import { advanceOnboarding, getNextOnboardingRoute } from "@/lib/onboarding-flow";
 import { FIRST_100_PROMO_CODE, onboardingSlides } from "@/lib/onboarding-copy";
 import { capturePromoFromSearchParams, savePendingPromo } from "@/lib/promo-storage";
 import { OnboardingMedia } from "@/components/onboarding/OnboardingMedia";
@@ -46,13 +46,17 @@ export default function WelcomeClient() {
   }, [promoCode, searchParams]);
 
   useEffect(() => {
-    if (onboarding.authComplete || onboarding.welcomeSeen) {
+    if (onboarding.welcomeSeen || onboarding.avatarComplete) {
       router.replace(getNextOnboardingRoute(onboarding));
     }
   }, [onboarding, router]);
 
   function goAuth(next = "/auth") {
     completeOnboardingStep("welcome");
+    if (onboarding.authComplete) {
+      router.push(getNextOnboardingRoute(advanceOnboarding(onboarding, "welcome")));
+      return;
+    }
     const url = new URL(next, window.location.origin);
     if (promoCode) {
       url.searchParams.set("promo", promoCode);

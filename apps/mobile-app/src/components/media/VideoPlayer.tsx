@@ -10,9 +10,18 @@ type VideoPlayerProps = {
   accessToken?: string | null;
   style?: StyleProp<ViewStyle>;
   autoPlay?: boolean;
+  nativeControls?: boolean;
+  contentFit?: "contain" | "cover";
 };
 
-export function AppVideoPlayer({ path, accessToken, style, autoPlay = false }: VideoPlayerProps) {
+export function AppVideoPlayer({
+  path,
+  accessToken,
+  style,
+  autoPlay = false,
+  nativeControls = true,
+  contentFit = "contain",
+}: VideoPlayerProps) {
   const source = useMemo<VideoSource>(() => {
     if (!path) return null;
     return {
@@ -38,8 +47,8 @@ export function AppVideoPlayer({ path, accessToken, style, autoPlay = false }: V
     <VideoView
       player={player}
       style={[styles.video, style] as any}
-      nativeControls
-      contentFit="contain"
+      nativeControls={nativeControls}
+      contentFit={contentFit}
       allowsFullscreen
     />
   );
