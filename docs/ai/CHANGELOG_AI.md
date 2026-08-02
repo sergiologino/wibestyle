@@ -1,5 +1,12 @@
 # AI Changelog
 
+## 2026-08-02 (Native SMS sign-in for RuStore review)
+- Replaced the Android app's primary web-based Mobile ID handoff with a native Russian phone and SMS OTP screen backed by the existing auth API.
+- OTP verification now creates the mobile secure session, preserves referral/visitor/device attribution and routes directly to native onboarding or home.
+- Mobile ID/OAuth remain optional; payment, marketplace and legal links remain the only task-specific browser handoffs.
+- Added a regression test that prevents the primary auth screen from reintroducing `WebBrowser.openAuthSessionAsync` or the `/auth/mobile-id` route.
+- Verified: 59 mobile tests, TypeScript, dependency/Metro release preflight and Android debug assembly. Signed release assembly is pending the operator-provided `VIBESTYLE_STORE_FILE` signing secret.
+
 ## 2026-07-30 (Mobile gallery video autoplay and web onboarding entry)
 - Mobile gallery feed now renders video posts with `AppVideoPlayer` autoplay, looping and hidden native controls while keeping detail-screen video controls unchanged.
 - Web post-auth routing sends new users to `/welcome` first, so they see the same onboarding story before avatar setup.
