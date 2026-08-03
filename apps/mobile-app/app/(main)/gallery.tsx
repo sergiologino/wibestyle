@@ -1,6 +1,7 @@
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, AppState, FlatList, Pressable, RefreshControl, StyleSheet, Text, View, type ViewToken } from "react-native";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useIsFocused } from "@react-navigation/native";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { GalleryPost } from "@wibestyle/shared-types";
 import { Feather } from "@expo/vector-icons";
 import { useSession } from "@/context/SessionProvider";
@@ -48,6 +49,7 @@ function GalleryPostImage({
 
 export default function GalleryScreen() {
   const router = useRouter();
+  const isFocused = useIsFocused();
   const { api, accessToken } = useSession();
   const [posts, setPosts] = useState<GalleryPost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,7 +57,13 @@ export default function GalleryScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [visiblePostIds, setVisiblePostIds] = useState<Set<string>>(() => new Set());
+  const [appIsActive, setAppIsActive] = useState(AppState.currentState === "active");
   const apiBaseUrl = getApiBaseUrl();
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 70 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
+    setVisiblePostIds(new Set(viewableItems.filter((item) => item.isViewable).map((item) => (item.item as GalleryPost).id)));
+  }).current;
 
   const load = useCallback(async () => {
     const payload = await api.listGalleryPosts({ limit: 20 });
@@ -67,6 +75,17 @@ export default function GalleryScreen() {
   useEffect(() => {
     load().finally(() => setLoading(false));
   }, [load]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => setAppIsActive(nextState === "active"));
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setVisiblePostIds(new Set());
+    }
+  }, [isFocused]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -105,6 +124,8 @@ export default function GalleryScreen() {
         ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.pink} style={styles.footerLoader} /> : null}
         onEndReachedThreshold={0.4}
         onEndReached={() => void loadMore()}
+        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
         renderItem={({ item }) => {
           const videoPath = item.mediaType === "video" ? item.publicVideoUrl ?? item.videoUrl : null;
           return (
@@ -118,6 +139,7 @@ export default function GalleryScreen() {
                 <AppVideoPlayer
                   path={videoPath}
                   autoPlay
+                  shouldPlay={isFocused && appIsActive && visiblePostIds.has(item.id)}
                   nativeControls={false}
                   contentFit="cover"
                   style={styles.image}

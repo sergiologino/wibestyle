@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-08-03 (Gallery video visibility playback)
+- Changed Android gallery autoplay from component-lifetime playback to visibility-aware playback: a video plays only while at least 70% of its grid card is visible.
+- Scrolling, leaving the gallery route and backgrounding the app now pause inline videos. The standalone gallery-post screen keeps its normal video behavior.
+- Added regression coverage; verified 64 mobile tests and TypeScript.
+
 ## 2026-08-03 (Web/mobile onboarding social sharing)
 - Confirmed that the web app already presents the onboarding to new users after authentication, using the same flow as Android rather than a separate or missing web experience.
 - Added a matching eighth onboarding screen to web and Android after the result slide. It shows that `Поделиться` creates an unlisted look link and opens the native/browser share menu, where the user can choose Instagram, stories, messengers or another installed service.

@@ -1,5 +1,10 @@
 # Current State
 
+## Gallery video visibility playback (2026-08-03)
+- Android gallery videos autoplay only after at least 70% of their card is visible. Scrolling them out of view pauses playback.
+- Playback is also paused when the gallery route loses focus or the app moves to the background; only the inline feed is affected, while a video opened in its detail screen keeps its normal controls.
+- Verified: 64 mobile tests and TypeScript type-check.
+
 ## Web/mobile onboarding social sharing (2026-08-03)
 - The web app already had the same seven-screen onboarding and routes a new user to it after registration; it was not missing or skipped by the post-auth flow.
 - Both web and Android onboarding now have a synchronized eighth screen after the try-on result: it explains that `Поделиться` creates an unlisted look link and opens the device/browser share menu for Instagram, stories, messengers and other available social networks.
