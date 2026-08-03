@@ -1,5 +1,15 @@
 # AI Changelog
 
+## 2026-08-03 (Web/mobile onboarding social sharing)
+- Confirmed that the web app already presents the onboarding to new users after authentication, using the same flow as Android rather than a separate or missing web experience.
+- Added a matching eighth onboarding screen to web and Android after the result slide. It shows that `Поделиться` creates an unlisted look link and opens the native/browser share menu, where the user can choose Instagram, stories, messengers or another installed service.
+- Added regression coverage for the shared social-sharing copy and kept web/mobile onboarding copy in lockstep. Verified: 87 web tests and Next.js production build; 64 mobile tests, TypeScript and Android debug assembly.
+
+## 2026-08-03 (Resilient Android gallery thumbnails)
+- Kept the gallery's public image proxy as the default source, preserving public viewing without leaking a session token.
+- Added an Android-only retry path for a failed thumbnail: for the signed-in owner's own legacy result URL, the app retries with the normal authenticated-media request. This covers posts whose public proxy no longer has the stored output while the personal try-on remains available.
+- Added mobile regression coverage for the source selection and retry; verified 63 mobile tests and TypeScript.
+
 ## 2026-08-03 (Native Android SMS reliability)
 - Removed the Android Mobile ID browser fallback: it conflicted with the RuStore requirement for the first authentication path to be a native, self-contained experience. The web-app Mobile ID flow is unchanged.
 - SMS Aero API v2 failures now map to safe actionable codes for invalid credentials, balance, sender-name rejection, generic provider rejection and provider unavailability; logs retain the provider's non-secret diagnostic text.

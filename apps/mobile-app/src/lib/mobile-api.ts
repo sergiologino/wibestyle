@@ -144,6 +144,30 @@ export function buildProductImageSource(
   return source;
 }
 
+export function buildGalleryImageSources(
+  baseUrl: string,
+  publicImagePath: string | undefined,
+  imagePath: string | undefined,
+  accessToken: string | null,
+  appBaseUrl = baseUrl,
+): {
+  primary: { uri: string };
+  fallback?: { uri: string; headers?: { Authorization: string } };
+} {
+  const primaryPath = publicImagePath ?? imagePath;
+  if (!primaryPath) {
+    throw new Error("Gallery post has no image path");
+  }
+
+  const primary = { uri: resolveApiPath(baseUrl, primaryPath) };
+  if (!imagePath) {
+    return { primary };
+  }
+
+  const fallback = buildProductImageSource(baseUrl, imagePath, accessToken, appBaseUrl);
+  return fallback.uri === primary.uri ? { primary } : { primary, fallback };
+}
+
 export function formatTryOnError(session: {
   errorCode?: string;
   errorMessage?: string;

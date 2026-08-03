@@ -1,5 +1,15 @@
 # Current State
 
+## Web/mobile onboarding social sharing (2026-08-03)
+- The web app already had the same seven-screen onboarding and routes a new user to it after registration; it was not missing or skipped by the post-auth flow.
+- Both web and Android onboarding now have a synchronized eighth screen after the try-on result: it explains that `Поделиться` creates an unlisted look link and opens the device/browser share menu for Instagram, stories, messengers and other available social networks.
+- Verified: 87 web tests plus Next.js production build; 64 Android tests, TypeScript and Android debug assembly.
+
+## Resilient Android gallery thumbnails (2026-08-03)
+- The community-gallery feed still loads the public image URL first, so other users' published looks stay public and never receive an access token.
+- If that public proxy cannot return a particular post's thumbnail, Android retries the original result URL with the current user's token. This restores a viewer's own legacy try-ons without weakening access to someone else's private result.
+- Verified: 63 mobile tests and TypeScript type-check.
+
 ## Native Android SMS reliability and human-readable errors (2026-08-03)
 - Android has no Mobile ID browser fallback: authentication is entirely native for RuStore review. The web application's existing Mobile ID widget is unchanged.
 - SMS Aero API v2 delivery failures are safely classified as invalid access credentials, insufficient balance, rejected sender name, provider rejection or temporary provider outage. The API logs only the provider diagnostic text and never the OTP or credentials; the client receives a human-readable remedy.

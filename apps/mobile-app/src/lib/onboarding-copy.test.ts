@@ -11,6 +11,13 @@ describe("mobileOnboardingSlides", () => {
     expect(mobileOnboardingSlides.slice(0, 3).map((slide) => slide.id)).toEqual(["photo", "link", "result"]);
   });
 
+  it("shows that a completed look can be shared in Instagram and other social networks", () => {
+    expect(mobileOnboardingSlides.find((slide) => slide.id === "share")).toMatchObject({
+      asset: "result",
+      bullets: expect.arrayContaining(["Instagram и сторис"]),
+    });
+  });
+
   it("ends with a trial paywall action and first-100 promo", () => {
     expect(mobileOnboardingSlides.at(-1)).toMatchObject({ id: "referral", cta: "trial" });
     expect(FIRST_100_PROMO_CODE).toBe("FIRST100");
@@ -18,6 +25,6 @@ describe("mobileOnboardingSlides", () => {
 
   it("uses replaceable local assets by stable keys", () => {
     const assetKeys = mobileOnboardingSlides.map((slide) => slide.asset);
-    expect(assetKeys).toEqual(["upload", "flow", "result", "privacy", "future", "paywall", "referral"]);
+    expect(assetKeys).toEqual(["upload", "flow", "result", "result", "privacy", "future", "paywall", "referral"]);
   });
 });

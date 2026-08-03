@@ -48,6 +48,17 @@ export const onboardingSlides: OnboardingSlide[] = [
     footnote: "AI-примерка не гарантирует точную посадку, размер и ткань.",
   },
   {
+    id: "share",
+    eyebrow: "Твой look",
+    title: "Делись образом в соцсетях",
+    text: "Нажми «Поделиться» на результате примерки. Приложение создаст приватную ссылку на look, а дальше выбери Instagram или другую соцсеть в меню устройства.",
+    image: "/assets/onboarding/slides/result-photo.png",
+    video: "/assets/onboarding/slides/result-photo.mp4",
+    alt: "Результат примерки, которым можно поделиться в соцсетях",
+    tone: "pink",
+    bullets: ["приватная ссылка", "Instagram и сторис", "мессенджеры и другие соцсети"],
+  },
+  {
     id: "privacy",
     eyebrow: "Приватность",
     title: "Фото остаются под контролем",

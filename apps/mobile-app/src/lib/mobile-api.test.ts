@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildProductImageSource,
+  buildGalleryImageSources,
   formatMarketplaceLinkError,
   formatTryOnError,
   resolveApiPath,
@@ -33,6 +34,23 @@ describe("mobile-api helpers", () => {
         "https://app.vibestyle.art",
       ),
     ).toEqual({ uri: "https://app.vibestyle.art/assets/demo-garment.svg" });
+  });
+
+  it("falls back from a failed public gallery image to the owner's authenticated result", () => {
+    expect(
+      buildGalleryImageSources(
+        "https://api.vibestyle.art",
+        "/api/v1/gallery/posts/post-1/image",
+        "/api/v1/try-on/sessions/session-1/after-photo",
+        "secret-token",
+      ),
+    ).toEqual({
+      primary: { uri: "https://api.vibestyle.art/api/v1/gallery/posts/post-1/image" },
+      fallback: {
+        uri: "https://api.vibestyle.art/api/v1/try-on/sessions/session-1/after-photo",
+        headers: { Authorization: "Bearer secret-token" },
+      },
+    });
   });
 
   it("authorizes protected garment snapshots", () => {

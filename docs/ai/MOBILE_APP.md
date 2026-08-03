@@ -20,7 +20,7 @@ RuStore review prompt есть только в Android-приложении. П�
 
 Видео в мобильной галерее воспроизводятся прямо в ленте: карточки с `mediaType=video` используют `publicVideoUrl`/`videoUrl`, включают autoplay+loop через `AppVideoPlayer`, скрывают native controls в сетке и сохраняют controls на детальном экране.
 
-Mobile onboarding uses replaceable media from `apps/mobile-app/assets/onboarding/slides/`. The result slide is video-first and expects `result-photo.mp4`; static slots use `.webp` where it exists and fall back to PNG assets.
+Mobile onboarding uses replaceable media from `apps/mobile-app/assets/onboarding/slides/`. It has eight synchronized web/mobile screens; the social-sharing screen follows the result and reuses the video-first `result-photo.mp4` media. It explains that `Поделиться` creates an unlisted look link and lets the user select Instagram, stories, messengers or another available service in the system menu. Static slots use `.webp` where it exists and fall back to PNG assets.
 
 **Платформа:** Android 12+ (`minSdkVersion` 31), оптимизировано под экраны ≥ 1080×2400.
 

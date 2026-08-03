@@ -9,12 +9,46 @@ import { BodyText, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { Image } from "expo-image";
 import { AppVideoPlayer } from "@/components/media/VideoPlayer";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
-import { getApiBaseUrl } from "@/lib/config";
-import { resolveApiPath } from "@/lib/mobile-api";
+import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
+import { buildGalleryImageSources } from "@/lib/mobile-api";
+
+function GalleryPostImage({
+  post,
+  accessToken,
+  apiBaseUrl,
+}: {
+  post: GalleryPost;
+  accessToken: string | null;
+  apiBaseUrl: string;
+}) {
+  const [useFallback, setUseFallback] = useState(false);
+  const sources = buildGalleryImageSources(
+    apiBaseUrl,
+    post.publicImageUrl,
+    post.imageUrl,
+    accessToken,
+    getAppBaseUrl(),
+  );
+  const source = useFallback && sources.fallback ? sources.fallback : sources.primary;
+
+  return (
+    <Image
+      source={source}
+      style={styles.image}
+      contentFit="cover"
+      transition={200}
+      onError={() => {
+        if (!useFallback && sources.fallback) {
+          setUseFallback(true);
+        }
+      }}
+    />
+  );
+}
 
 export default function GalleryScreen() {
   const router = useRouter();
-  const { api } = useSession();
+  const { api, accessToken } = useSession();
   const [posts, setPosts] = useState<GalleryPost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -89,12 +123,7 @@ export default function GalleryScreen() {
                   style={styles.image}
                 />
               ) : (
-                <Image
-                  source={{ uri: resolveApiPath(apiBaseUrl, item.publicImageUrl ?? item.imageUrl) }}
-                  style={styles.image}
-                  contentFit="cover"
-                  transition={200}
-                />
+                <GalleryPostImage post={item} accessToken={accessToken} apiBaseUrl={apiBaseUrl} />
               )}
               <View style={styles.meta}>
                 <Text style={styles.title} numberOfLines={2}>

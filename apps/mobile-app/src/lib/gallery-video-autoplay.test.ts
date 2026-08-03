@@ -12,6 +12,13 @@ describe("mobile gallery video autoplay", () => {
     expect(gallery).toContain('contentFit="cover"');
   });
 
+  it("retries a failed gallery thumbnail through the owner's result URL", () => {
+    const gallery = readFileSync(join(process.cwd(), "app", "(main)", "gallery.tsx"), "utf8");
+    expect(gallery).toContain("buildGalleryImageSources");
+    expect(gallery).toContain("onError={() => {");
+    expect(gallery).toContain("setUseFallback(true)");
+  });
+
   it("allows gallery cards to hide controls without changing detail video controls", () => {
     const player = readFileSync(join(process.cwd(), "src", "components", "media", "VideoPlayer.tsx"), "utf8");
     expect(player).toContain("nativeControls = true");
