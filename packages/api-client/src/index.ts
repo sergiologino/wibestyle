@@ -300,7 +300,7 @@ export class WibeStyleApiClient {
   }
 
   startOtp(phone: string) {
-    return this.request<{ requestId: string; expiresIn: number }>("/api/v1/auth/otp/start", {
+    return this.request<{ requestId: string; expiresIn: number; resendIn: number }>("/api/v1/auth/otp/start", {
       method: "POST",
       body: JSON.stringify({ phone }),
     });
@@ -329,7 +329,7 @@ export class WibeStyleApiClient {
   }
 
   startEmailOtp(email: string) {
-    return this.request<{ requestId: string; expiresIn: number }>("/api/v1/auth/email-otp/start", {
+    return this.request<{ requestId: string; expiresIn: number; resendIn: number }>("/api/v1/auth/email-otp/start", {
       method: "POST",
       body: JSON.stringify({ email }),
     });

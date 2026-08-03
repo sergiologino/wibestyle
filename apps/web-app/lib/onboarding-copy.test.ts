@@ -3,12 +3,13 @@ import { FIRST_100_PROMO_CODE, onboardingSlides } from "./onboarding-copy";
 import { mobileOnboardingSlides } from "../../mobile-app/src/lib/onboarding-copy";
 
 describe("onboardingSlides", () => {
-  it("matches the seven-screen mobile onboarding story", () => {
-    expect(onboardingSlides).toHaveLength(7);
+  it("matches the eight-screen mobile onboarding story", () => {
+    expect(onboardingSlides).toHaveLength(8);
     expect(onboardingSlides.map((slide) => slide.id)).toEqual([
       "photo",
       "link",
       "result",
+      "share",
       "privacy",
       "future",
       "trial",
@@ -21,6 +22,13 @@ describe("onboardingSlides", () => {
     expect(onboardingSlides.at(-1)).toMatchObject({
       id: "referral",
       cta: "trial",
+    });
+  });
+
+  it("explains how to share a private look link in social networks", () => {
+    expect(onboardingSlides.find((slide) => slide.id === "share")).toMatchObject({
+      title: "Делись образом в соцсетях",
+      bullets: expect.arrayContaining(["Instagram и сторис"]),
     });
   });
 

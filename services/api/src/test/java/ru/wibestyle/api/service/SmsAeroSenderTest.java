@@ -69,7 +69,33 @@ class SmsAeroSenderTest {
 
             assertThatThrownBy(() -> sender.sendOtpCode("79001234567", "123456"))
                     .isInstanceOf(SmsDeliveryException.class)
-                    .hasMessage("SMS_SEND_FAILED");
+                    .hasMessage("SMS_PROVIDER_AUTH_FAILED");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void exposesBalanceFailureAsSafeErrorCode() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v2/sms/send", exchange -> {
+            byte[] response = "{\"success\":false,\"message\":\"insufficient balance\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+        server.start();
+
+        try {
+            SmsAeroSender sender = new SmsAeroSender(
+                    configuredProperties(server.getAddress().getPort()),
+                    HttpClient.newHttpClient(),
+                    new ObjectMapper()
+            );
+
+            assertThatThrownBy(() -> sender.sendOtpCode("79001234567", "123456"))
+                    .isInstanceOf(SmsDeliveryException.class)
+                    .hasMessage("SMS_PROVIDER_INSUFFICIENT_BALANCE");
         } finally {
             server.stop(0);
         }

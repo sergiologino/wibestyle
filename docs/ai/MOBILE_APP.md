@@ -1,6 +1,8 @@
 # Mobile App — Android
 
-Native **Expo (React Native)** приложение «Я на стиле» — самостоятельный мобильный продукт с нативным SMS-входом, аватаром, примеркой по ссылке/фото, галереей, избранным, YooKassa checkout/autorenew и Expo push. Основной вход не открывает web-app: номер телефона и SMS-код обрабатываются внутри React Native UI через `/auth/otp/start` и `/auth/otp/verify`; Mobile ID/OAuth — только дополнительные способы авторизации.
+Native **Expo (React Native)** приложение «Я на стиле» — самостоятельный мобильный продукт с нативным SMS-входом, аватаром, примеркой по ссылке/фото, галереей, избранным, YooKassa checkout/autorenew и Expo push. Вход по номеру не открывает web-app: номер и SMS-код обрабатываются внутри React Native UI через `/auth/otp/start` и `/auth/otp/verify`; OAuth остаётся дополнительным способом входа.
+
+После запроса SMS приложение показывает серверный countdown до повторной отправки. Текущий production-контракт: код действителен 5 минут (`expiresIn=300`), повторная отправка доступна через 3 минуты (`resendIn=180`). Нативная отправка требует отдельной услуги SMS Aero API v2 с `WIBESTYLE_SMS_AERO_EMAIL` и `WIBESTYLE_SMS_AERO_API_KEY`; ключи «Мобильной авторизации» для неё не подходят. Без API v2 backend работает в безопасном dev log-only режиме.
 
 Referral parity: profile links to `/referrals`, where every user can share a personal web deep link and inspect masked reward history. Monthly/annual first purchases award 3/15 durable bonus try-ons that can be spent without a subscription.
 
@@ -18,7 +20,9 @@ RuStore review prompt есть только в Android-приложении. П�
 
 Видео в мобильной галерее воспроизводятся прямо в ленте: карточки с `mediaType=video` используют `publicVideoUrl`/`videoUrl`, включают autoplay+loop через `AppVideoPlayer`, скрывают native controls в сетке и сохраняют controls на детальном экране.
 
-Mobile onboarding uses replaceable media from `apps/mobile-app/assets/onboarding/slides/`. The result slide is video-first and expects `result-photo.mp4`; static slots use `.webp` where it exists and fall back to PNG assets.
+В inline-ленте autoplay запускается только для видео, у которого видно не менее 70% карточки. Прокрутка, уход с экрана галереи или сворачивание приложения ставят его на паузу.
+
+Mobile onboarding uses replaceable media from `apps/mobile-app/assets/onboarding/slides/`. It has eight synchronized web/mobile screens; the social-sharing screen follows the result and reuses the video-first `result-photo.mp4` media. It explains that `Поделиться` creates an unlisted look link and lets the user select Instagram, stories, messengers or another available service in the system menu. Static slots use `.webp` where it exists and fall back to PNG assets.
 
 **Платформа:** Android 12+ (`minSdkVersion` 31), оптимизировано под экраны ≥ 1080×2400.
 

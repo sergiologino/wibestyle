@@ -40,6 +40,7 @@ public class AuthService {
     private final Map<String, EmailOtpChallenge> emailChallenges = new ConcurrentHashMap<>();
     private final Map<String, Instant> lastStartByPhone = new ConcurrentHashMap<>();
     private final Map<String, Instant> lastStartByEmail = new ConcurrentHashMap<>();
+    private final Map<String, Object> verifiedPhoneLocks = new ConcurrentHashMap<>();
 
     public AuthService(
             UserRepository userRepository,
@@ -92,7 +93,11 @@ public class AuthService {
             lastStartByPhone.remove(normalized, now);
             throw ex;
         }
-        return new OtpStartResult(requestId, authProperties.getOtpTtlSeconds());
+        return new OtpStartResult(
+                requestId,
+                authProperties.getOtpTtlSeconds(),
+                authProperties.getOtpResendCooldownSeconds()
+        );
     }
 
     public OtpStartResult startEmailOtp(String email) {
@@ -112,7 +117,11 @@ public class AuthService {
         emailChallenges.put(requestId, new EmailOtpChallenge(normalized, code, now.plusSeconds(authProperties.getOtpTtlSeconds()), 0));
         lastStartByEmail.put(normalized, now);
         emailSender.sendOtpCode(normalized, code);
-        return new OtpStartResult(requestId, authProperties.getOtpTtlSeconds());
+        return new OtpStartResult(
+                requestId,
+                authProperties.getOtpTtlSeconds(),
+                authProperties.getOtpResendCooldownSeconds()
+        );
     }
 
     public AuthResult verifyOtp(String requestId, String code, String promoCode) {
@@ -168,27 +177,34 @@ public class AuthService {
         if (normalizedPhone.length() < 10 || normalizedPhone.length() > 15) {
             throw new IllegalArgumentException("INVALID_PHONE");
         }
-        boolean isNewUser = userRepository.findByPhone(normalizedPhone).isEmpty();
-        UserEntity user = userRepository.findByPhone(normalizedPhone)
-                .orElseGet(() -> userRepository.saveAndFlush(
-                        new UserEntity(UUID.randomUUID(), normalizedPhone, Instant.now())
-                ));
-        profileService.ensureProfile(user.getId());
-        if (isNewUser) referralService.captureNewUser(user.getId(), referralCode);
-        try {
-            marketingAttributionService.attachUserToVisitor(user.getId(), visitorId, isNewUser);
-        } catch (RuntimeException ex) {
-            log.warn("Marketing attribution did not attach during SMS authentication", ex);
-        }
-        DeviceTrustService.DeviceRegistrationResult deviceResult =
-                deviceTrustService.recordAuthentication(user.getId(), deviceId, isNewUser);
+        Object lock = verifiedPhoneLocks.computeIfAbsent(normalizedPhone, ignored -> new Object());
+        synchronized (lock) {
+            try {
+                boolean isNewUser = userRepository.findByPhone(normalizedPhone).isEmpty();
+                UserEntity user = userRepository.findByPhone(normalizedPhone)
+                        .orElseGet(() -> userRepository.saveAndFlush(
+                                new UserEntity(UUID.randomUUID(), normalizedPhone, Instant.now())
+                        ));
+                profileService.ensureProfile(user.getId());
+                if (isNewUser) referralService.captureNewUser(user.getId(), referralCode);
+                try {
+                    marketingAttributionService.attachUserToVisitor(user.getId(), visitorId, isNewUser);
+                } catch (RuntimeException ex) {
+                    log.warn("Marketing attribution did not attach during SMS authentication", ex);
+                }
+                DeviceTrustService.DeviceRegistrationResult deviceResult =
+                        deviceTrustService.recordAuthentication(user.getId(), deviceId, isNewUser);
 
-        Map<String, Object> promoResult = Map.of("redeemed", false);
-        if (promoCode != null && !promoCode.isBlank()) {
-            promoResult = promoService.redeemForUser(user.getId(), promoCode);
-        }
+                Map<String, Object> promoResult = Map.of("redeemed", false);
+                if (promoCode != null && !promoCode.isBlank()) {
+                    promoResult = promoService.redeemForUser(user.getId(), promoCode);
+                }
 
-        return issueTokens(user, isNewUser, promoResult, deviceResult);
+                return issueTokens(user, isNewUser, promoResult, deviceResult);
+            } finally {
+                verifiedPhoneLocks.remove(normalizedPhone, lock);
+            }
+        }
     }
 
     @Transactional
@@ -282,7 +298,7 @@ public class AuthService {
         }
     }
 
-    public record OtpStartResult(String requestId, int expiresIn) {
+    public record OtpStartResult(String requestId, int expiresIn, int resendIn) {
     }
 
     public record AuthResult(

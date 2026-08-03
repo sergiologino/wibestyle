@@ -1,6 +1,7 @@
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, AppState, FlatList, Pressable, RefreshControl, StyleSheet, Text, View, type ViewToken } from "react-native";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useIsFocused } from "@react-navigation/native";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { GalleryPost } from "@wibestyle/shared-types";
 import { Feather } from "@expo/vector-icons";
 import { useSession } from "@/context/SessionProvider";
@@ -9,19 +10,60 @@ import { BodyText, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { Image } from "expo-image";
 import { AppVideoPlayer } from "@/components/media/VideoPlayer";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
-import { getApiBaseUrl } from "@/lib/config";
-import { resolveApiPath } from "@/lib/mobile-api";
+import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
+import { buildGalleryImageSources } from "@/lib/mobile-api";
+
+function GalleryPostImage({
+  post,
+  accessToken,
+  apiBaseUrl,
+}: {
+  post: GalleryPost;
+  accessToken: string | null;
+  apiBaseUrl: string;
+}) {
+  const [useFallback, setUseFallback] = useState(false);
+  const sources = buildGalleryImageSources(
+    apiBaseUrl,
+    post.publicImageUrl,
+    post.imageUrl,
+    accessToken,
+    getAppBaseUrl(),
+  );
+  const source = useFallback && sources.fallback ? sources.fallback : sources.primary;
+
+  return (
+    <Image
+      source={source}
+      style={styles.image}
+      contentFit="cover"
+      transition={200}
+      onError={() => {
+        if (!useFallback && sources.fallback) {
+          setUseFallback(true);
+        }
+      }}
+    />
+  );
+}
 
 export default function GalleryScreen() {
   const router = useRouter();
-  const { api } = useSession();
+  const isFocused = useIsFocused();
+  const { api, accessToken } = useSession();
   const [posts, setPosts] = useState<GalleryPost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [visiblePostIds, setVisiblePostIds] = useState<Set<string>>(() => new Set());
+  const [appIsActive, setAppIsActive] = useState(AppState.currentState === "active");
   const apiBaseUrl = getApiBaseUrl();
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 70 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
+    setVisiblePostIds(new Set(viewableItems.filter((item) => item.isViewable).map((item) => (item.item as GalleryPost).id)));
+  }).current;
 
   const load = useCallback(async () => {
     const payload = await api.listGalleryPosts({ limit: 20 });
@@ -33,6 +75,17 @@ export default function GalleryScreen() {
   useEffect(() => {
     load().finally(() => setLoading(false));
   }, [load]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => setAppIsActive(nextState === "active"));
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setVisiblePostIds(new Set());
+    }
+  }, [isFocused]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -71,6 +124,8 @@ export default function GalleryScreen() {
         ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.pink} style={styles.footerLoader} /> : null}
         onEndReachedThreshold={0.4}
         onEndReached={() => void loadMore()}
+        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
         renderItem={({ item }) => {
           const videoPath = item.mediaType === "video" ? item.publicVideoUrl ?? item.videoUrl : null;
           return (
@@ -84,17 +139,13 @@ export default function GalleryScreen() {
                 <AppVideoPlayer
                   path={videoPath}
                   autoPlay
+                  shouldPlay={isFocused && appIsActive && visiblePostIds.has(item.id)}
                   nativeControls={false}
                   contentFit="cover"
                   style={styles.image}
                 />
               ) : (
-                <Image
-                  source={{ uri: resolveApiPath(apiBaseUrl, item.publicImageUrl ?? item.imageUrl) }}
-                  style={styles.image}
-                  contentFit="cover"
-                  transition={200}
-                />
+                <GalleryPostImage post={item} accessToken={accessToken} apiBaseUrl={apiBaseUrl} />
               )}
               <View style={styles.meta}>
                 <Text style={styles.title} numberOfLines={2}>

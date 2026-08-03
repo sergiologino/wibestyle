@@ -1,5 +1,38 @@
 # AI Changelog
 
+## 2026-08-03 (Gallery video visibility playback)
+- Changed Android gallery autoplay from component-lifetime playback to visibility-aware playback: a video plays only while at least 70% of its grid card is visible.
+- Scrolling, leaving the gallery route and backgrounding the app now pause inline videos. The standalone gallery-post screen keeps its normal video behavior.
+- Added regression coverage; verified 64 mobile tests and TypeScript.
+
+## 2026-08-03 (Web/mobile onboarding social sharing)
+- Confirmed that the web app already presents the onboarding to new users after authentication, using the same flow as Android rather than a separate or missing web experience.
+- Added a matching eighth onboarding screen to web and Android after the result slide. It shows that `Поделиться` creates an unlisted look link and opens the native/browser share menu, where the user can choose Instagram, stories, messengers or another installed service.
+- Added regression coverage for the shared social-sharing copy and kept web/mobile onboarding copy in lockstep. Verified: 87 web tests and Next.js production build; 64 mobile tests, TypeScript and Android debug assembly.
+
+## 2026-08-03 (Resilient Android gallery thumbnails)
+- Kept the gallery's public image proxy as the default source, preserving public viewing without leaking a session token.
+- Added an Android-only retry path for a failed thumbnail: for the signed-in owner's own legacy result URL, the app retries with the normal authenticated-media request. This covers posts whose public proxy no longer has the stored output while the personal try-on remains available.
+- Added mobile regression coverage for the source selection and retry; verified 63 mobile tests and TypeScript.
+
+## 2026-08-03 (Native Android SMS reliability)
+- Removed the Android Mobile ID browser fallback: it conflicted with the RuStore requirement for the first authentication path to be a native, self-contained experience. The web-app Mobile ID flow is unchanged.
+- SMS Aero API v2 failures now map to safe actionable codes for invalid credentials, balance, sender-name rejection, generic provider rejection and provider unavailability; logs retain the provider's non-secret diagnostic text.
+- Serialized concurrent verified-phone authentication so duplicate simultaneous sign-ins create one account rather than returning a database error. A residual uniqueness conflict is also shown as a human-readable retry action.
+- Verified: full API test suite, 61 mobile tests, TypeScript, Metro preflight and Android debug assembly.
+
+## 2026-08-03 (Mobile ID optional fallback)
+- Kept native SMS OTP as Android's primary login for RuStore self-contained-product compliance and temporarily restored the existing SMS Aero Mobile ID path as an explicit optional browser fallback.
+- The fallback uses the existing web widget only to complete Mobile ID, then returns to Android with a one-time backend handoff code; it preserves referral, visitor, device and post-auth-route context.
+- The web application Mobile ID flow was not changed. Superseded the same day by the native-only Android decision below.
+- Verified: 62 mobile tests, TypeScript, Metro preflight and Android debug assembly.
+
+## 2026-08-02 (SMS OTP resend state)
+- Changed SMS OTP resend cooldown to 180 seconds and exposed the exact `resendIn` value from both phone and email OTP start endpoints.
+- Android displays a server-aligned countdown, keeps resend disabled until it expires and clearly states that the code remains valid for five minutes.
+- Documented that SMS Aero delivery requires both production credentials; otherwise the API intentionally logs a development code instead of delivering SMS.
+- Verified: API test suite, 61 mobile tests, TypeScript, Metro dependency preflight and Android debug assembly.
+
 ## 2026-08-02 (Native SMS sign-in for RuStore review)
 - Replaced the Android app's primary web-based Mobile ID handoff with a native Russian phone and SMS OTP screen backed by the existing auth API.
 - OTP verification now creates the mobile secure session, preserves referral/visitor/device attribution and routes directly to native onboarding or home.

@@ -8,7 +8,7 @@ Auth header: `Authorization: Bearer <JWT access token>`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/auth/otp/start` | `{ phone }` → `{ requestId, expiresIn }` |
+| POST | `/auth/otp/start` | `{ phone }` → `{ requestId, expiresIn, resendIn }`; `resendIn` is the server-enforced wait before requesting another SMS |
 | POST | `/auth/otp/verify` | `{ requestId, code, promoCode? }` → tokens + user |
 | POST | `/auth/refresh` | `{ refreshToken }` → new token pair |
 | POST | `/auth/logout` | `{ refreshToken }` → `{ loggedOut: true }` |

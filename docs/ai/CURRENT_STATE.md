@@ -1,9 +1,35 @@
 # Current State
 
+## Gallery video visibility playback (2026-08-03)
+- Android gallery videos autoplay only after at least 70% of their card is visible. Scrolling them out of view pauses playback.
+- Playback is also paused when the gallery route loses focus or the app moves to the background; only the inline feed is affected, while a video opened in its detail screen keeps its normal controls.
+- Verified: 64 mobile tests and TypeScript type-check.
+
+## Web/mobile onboarding social sharing (2026-08-03)
+- The web app already had the same seven-screen onboarding and routes a new user to it after registration; it was not missing or skipped by the post-auth flow.
+- Both web and Android onboarding now have a synchronized eighth screen after the try-on result: it explains that `Поделиться` creates an unlisted look link and opens the device/browser share menu for Instagram, stories, messengers and other available social networks.
+- Verified: 87 web tests plus Next.js production build; 64 Android tests, TypeScript and Android debug assembly.
+
+## Resilient Android gallery thumbnails (2026-08-03)
+- The community-gallery feed still loads the public image URL first, so other users' published looks stay public and never receive an access token.
+- If that public proxy cannot return a particular post's thumbnail, Android retries the original result URL with the current user's token. This restores a viewer's own legacy try-ons without weakening access to someone else's private result.
+- Verified: 63 mobile tests and TypeScript type-check.
+
+## Native Android SMS reliability and human-readable errors (2026-08-03)
+- Android has no Mobile ID browser fallback: authentication is entirely native for RuStore review. The web application's existing Mobile ID widget is unchanged.
+- SMS Aero API v2 delivery failures are safely classified as invalid access credentials, insufficient balance, rejected sender name, provider rejection or temporary provider outage. The API logs only the provider diagnostic text and never the OTP or credentials; the client receives a human-readable remedy.
+- Concurrent verified logins for one previously unseen phone are serialized in the API process. One account is created and both requests sign in, instead of exposing a `users_phone_key` database error. A remaining cross-process uniqueness conflict is rendered as an actionable retry message.
+
+## SMS OTP delivery state and resend countdown (2026-08-02)
+- The phone OTP API now returns `resendIn`; the configured resend cooldown is 180 seconds, while the SMS code remains valid for 300 seconds.
+- Android shows the server-aligned `3:00` countdown, disables repeat sends until it reaches zero and tells the user that a code normally arrives within a minute.
+- Production SMS delivery through the native form needs a separate SMS Aero API v2 service and both `WIBESTYLE_SMS_AERO_EMAIL` and `WIBESTYLE_SMS_AERO_API_KEY`. Mobile ID credentials cannot send API v2 SMS. Without API v2 credentials, the backend deliberately uses the development log-only sender and no native SMS is delivered.
+- Verified: API test suite, 61 mobile tests, mobile TypeScript, Metro dependency preflight and Android debug assembly.
+
 ## Native SMS authentication for RuStore moderation (2026-08-02)
 - Android's primary sign-in flow is now fully native: the user enters a Russian phone number and SMS code directly in the Expo React Native UI, using the existing `/auth/otp/start` and `/auth/otp/verify` API contract.
 - The app creates its local secure session after OTP verification and continues to the native avatar onboarding or home screen. Referral, marketing visitor and device identifiers remain bound to the registration.
-- Mobile ID/OAuth remain optional flows only; the default entry no longer opens `app.vibestyle.art` in an in-app browser. YooKassa checkout, marketplace cards and legal pages retain their narrowly scoped external-browser behavior.
+- OAuth remains optional; the default entry never opens `app.vibestyle.art`. YooKassa checkout, marketplace cards and legal pages retain their narrowly scoped external-browser behavior.
 - This addresses the RuStore self-contained-app finding: the product already has native try-on, camera/gallery, push, gallery, favorites, sharing and profile functionality; native authentication removes the web handoff from the first essential user journey.
 - Verified: 59 mobile tests, mobile TypeScript, dependency/Metro release preflight and Android debug assembly. A signed release assembly remains an operator step because this workspace has no `VIBESTYLE_STORE_FILE` signing secret.
 

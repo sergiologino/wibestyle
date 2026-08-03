@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { useVideoPlayer, VideoView, type VideoSource } from "expo-video";
 import { colors, radius } from "@/theme/tokens";
@@ -10,6 +10,7 @@ type VideoPlayerProps = {
   accessToken?: string | null;
   style?: StyleProp<ViewStyle>;
   autoPlay?: boolean;
+  shouldPlay?: boolean;
   nativeControls?: boolean;
   contentFit?: "contain" | "cover";
 };
@@ -19,6 +20,7 @@ export function AppVideoPlayer({
   accessToken,
   style,
   autoPlay = false,
+  shouldPlay,
   nativeControls = true,
   contentFit = "contain",
 }: VideoPlayerProps) {
@@ -32,8 +34,16 @@ export function AppVideoPlayer({
 
   const player = useVideoPlayer(source, (instance) => {
     instance.loop = true;
-    if (autoPlay) instance.play();
   });
+
+  useEffect(() => {
+    if (!autoPlay || shouldPlay === false) {
+      player.pause();
+      return;
+    }
+    player.play();
+    return () => player.pause();
+  }, [autoPlay, player, shouldPlay]);
 
   if (!path) {
     return (

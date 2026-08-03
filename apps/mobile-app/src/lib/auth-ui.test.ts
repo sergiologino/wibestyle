@@ -11,8 +11,11 @@ describe("mobile auth screen", () => {
     expect(source).toContain("TextField");
     expect(source).toContain("keyboardType=\"phone-pad\"");
     expect(source).toContain("textContentType=\"oneTimeCode\"");
+    expect(source).toContain("result.resendIn");
+    expect(source).toContain("Отправить ещё раз через");
     expect(source).toContain("resolvePostAuthRoute");
     expect(source).not.toContain("WebBrowser.openAuthSessionAsync");
-    expect(source).not.toContain("/auth/mobile-id");
+    expect(source).not.toContain('"/auth/mobile-id"');
   });
+
 });

@@ -28,7 +28,11 @@ public class EmailOtpController {
     public Map<String, Object> start(@Valid @RequestBody StartEmailOtpRequest request) {
         try {
             AuthService.OtpStartResult result = authService.startEmailOtp(request.email());
-            return Map.of("requestId", result.requestId(), "expiresIn", result.expiresIn());
+            return Map.of(
+                    "requestId", result.requestId(),
+                    "expiresIn", result.expiresIn(),
+                    "resendIn", result.resendIn()
+            );
         } catch (IllegalArgumentException ex) {
             throw mapStartError(ex);
         }

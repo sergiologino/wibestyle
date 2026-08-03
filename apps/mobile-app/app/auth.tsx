@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
@@ -14,6 +14,7 @@ import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
 import { colors, spacing } from "@/theme/tokens";
 import { readVisitorId, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
 import { getOrCreateDeviceId } from "@/lib/device-id";
+import { DEFAULT_OTP_RESEND_SECONDS, formatCountdown, secondsUntil } from "@/lib/otp-countdown";
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -22,8 +23,17 @@ export default function AuthScreen() {
   const [phone, setPhone] = useState("+7 ");
   const [requestId, setRequestId] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  const [resendAvailableAt, setResendAvailableAt] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const resendSecondsLeft = secondsUntil(resendAvailableAt, nowMs);
+
+  useEffect(() => {
+    if (!requestId || resendSecondsLeft === 0) return;
+    const intervalId = setInterval(() => setNowMs(Date.now()), 1_000);
+    return () => clearInterval(intervalId);
+  }, [requestId, resendSecondsLeft]);
 
   async function startOtp() {
     if (!isRussianPhoneComplete(phone)) {
@@ -36,6 +46,8 @@ export default function AuthScreen() {
       const result = await api.startOtp(`+7${getRussianNationalPhoneDigits(phone)}`);
       setRequestId(result.requestId);
       setCode("");
+      setNowMs(Date.now());
+      setResendAvailableAt(Date.now() + (result.resendIn ?? DEFAULT_OTP_RESEND_SECONDS) * 1_000);
       void trackMobileMarketingEvent("signup_started", { method: "sms_otp" });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось отправить код. Попробуйте ещё раз.");
@@ -127,8 +139,24 @@ export default function AuthScreen() {
                 maxLength={8}
               />
               <Button label="Войти" loading={loading} onPress={() => void verifyOtp()} />
-              <Button label="Изменить номер" variant="ghost" disabled={loading} onPress={() => setRequestId(null)} />
-              <Button label="Отправить код ещё раз" variant="secondary" disabled={loading} onPress={() => void startOtp()} />
+              <Text style={styles.deliveryHint}>
+                Код обычно приходит в течение минуты. Он действует 5 минут.
+              </Text>
+              <Button
+                label={resendSecondsLeft > 0 ? `Отправить ещё раз через ${formatCountdown(resendSecondsLeft)}` : "Отправить код ещё раз"}
+                variant="secondary"
+                disabled={loading || resendSecondsLeft > 0}
+                onPress={() => void startOtp()}
+              />
+              <Button
+                label="Изменить номер"
+                variant="ghost"
+                disabled={loading}
+                onPress={() => {
+                  setRequestId(null);
+                  setResendAvailableAt(null);
+                }}
+              />
             </>
           )}
         </View>
@@ -165,6 +193,13 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontFamily: "Manrope_400Regular",
     fontSize: 14,
+  },
+  deliveryHint: {
+    color: colors.muted,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center",
   },
   legalText: {
     color: colors.eyebrow,
