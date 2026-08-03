@@ -1,5 +1,17 @@
 # AI Changelog
 
+## 2026-08-03 (Mobile ID optional fallback)
+- Kept native SMS OTP as Android's primary login for RuStore self-contained-product compliance and restored the existing SMS Aero Mobile ID path as an explicit optional browser fallback.
+- The fallback uses the existing web widget only to complete Mobile ID, then returns to Android with a one-time backend handoff code; it preserves referral, visitor, device and post-auth-route context.
+- The web application Mobile ID flow was not changed.
+- Verified: 62 mobile tests, TypeScript, Metro preflight and Android debug assembly.
+
+## 2026-08-02 (SMS OTP resend state)
+- Changed SMS OTP resend cooldown to 180 seconds and exposed the exact `resendIn` value from both phone and email OTP start endpoints.
+- Android displays a server-aligned countdown, keeps resend disabled until it expires and clearly states that the code remains valid for five minutes.
+- Documented that SMS Aero delivery requires both production credentials; otherwise the API intentionally logs a development code instead of delivering SMS.
+- Verified: API test suite, 61 mobile tests, TypeScript, Metro dependency preflight and Android debug assembly.
+
 ## 2026-08-02 (Native SMS sign-in for RuStore review)
 - Replaced the Android app's primary web-based Mobile ID handoff with a native Russian phone and SMS OTP screen backed by the existing auth API.
 - OTP verification now creates the mobile secure session, preserves referral/visitor/device attribution and routes directly to native onboarding or home.

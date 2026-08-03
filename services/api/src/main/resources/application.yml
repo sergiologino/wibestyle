@@ -55,7 +55,7 @@ wibestyle:
     default-country: ${WIBESTYLE_GEOIP_DEFAULT_COUNTRY:}
   auth:
     otp-ttl-seconds: 300
-    otp-resend-cooldown-seconds: 60
+    otp-resend-cooldown-seconds: 180
     otp-max-attempts: 5
     access-token-ttl-seconds: 2592000
     refresh-token-ttl-seconds: 31536000

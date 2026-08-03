@@ -99,3 +99,9 @@
 - Context: Subscribers should earn try-ons when an invited friend completes a first paid checkout, without webhook retries or recurring charges duplicating rewards.
 - Decision: Store referral ownership in `referral_accounts`, one first-purchase reward per invited user in `referral_rewards`, and bonus balance separately in `user_profiles.bonus_generations_left`. Award every referrer regardless of plan; bonus generations remain spendable without an active subscription.
 - Consequences: Monthly/annual rewards are 3/15, bonus quota survives plan renewals, is unavailable while paid access is inactive, and history shows who triggered it and when.
+
+## ADR-0019: Native SMS as primary Android authentication; Mobile ID as fallback
+- Status: Accepted (2026-08-03)
+- Context: SMS Aero Mobile ID is currently integrated through its hosted browser widget, while RuStore requires the application to be a self-contained product rather than a web redirect. The established web widget flow must remain working.
+- Decision: Android's default authentication is the native `/auth/otp/start` → `/auth/otp/verify` flow. The existing Mobile ID widget is available only by an explicit alternative-action button and returns through a single-use server handoff code. The web Mobile ID integration remains unchanged.
+- Consequences: Native SMS delivery requires a separately enabled SMS API v2 service; Mobile ID client credentials do not provide it. Android retains a working login method while that service is provisioned, and the browser is never needed for its primary path.

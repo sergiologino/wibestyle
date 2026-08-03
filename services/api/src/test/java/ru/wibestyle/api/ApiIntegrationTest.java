@@ -53,6 +53,8 @@ class ApiIntegrationTest {
                         .content("{\"phone\":\"+79990001122\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.requestId").exists())
+                .andExpect(jsonPath("$.expiresIn").value(300))
+                .andExpect(jsonPath("$.resendIn").value(180))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();

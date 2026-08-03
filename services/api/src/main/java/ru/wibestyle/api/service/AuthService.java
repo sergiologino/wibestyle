@@ -92,7 +92,11 @@ public class AuthService {
             lastStartByPhone.remove(normalized, now);
             throw ex;
         }
-        return new OtpStartResult(requestId, authProperties.getOtpTtlSeconds());
+        return new OtpStartResult(
+                requestId,
+                authProperties.getOtpTtlSeconds(),
+                authProperties.getOtpResendCooldownSeconds()
+        );
     }
 
     public OtpStartResult startEmailOtp(String email) {
@@ -112,7 +116,11 @@ public class AuthService {
         emailChallenges.put(requestId, new EmailOtpChallenge(normalized, code, now.plusSeconds(authProperties.getOtpTtlSeconds()), 0));
         lastStartByEmail.put(normalized, now);
         emailSender.sendOtpCode(normalized, code);
-        return new OtpStartResult(requestId, authProperties.getOtpTtlSeconds());
+        return new OtpStartResult(
+                requestId,
+                authProperties.getOtpTtlSeconds(),
+                authProperties.getOtpResendCooldownSeconds()
+        );
     }
 
     public AuthResult verifyOtp(String requestId, String code, String promoCode) {
@@ -282,7 +290,7 @@ public class AuthService {
         }
     }
 
-    public record OtpStartResult(String requestId, int expiresIn) {
+    public record OtpStartResult(String requestId, int expiresIn, int resendIn) {
     }
 
     public record AuthResult(

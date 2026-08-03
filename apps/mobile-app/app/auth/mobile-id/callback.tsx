@@ -10,7 +10,7 @@ import { colors, spacing } from "@/theme/tokens";
 
 export default function MobileIdCallbackScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ handoffCode?: string }>();
+  const params = useLocalSearchParams<{ handoffCode?: string; next?: string }>();
   const { setAuth } = useSession();
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +44,7 @@ export default function MobileIdCallbackScreen() {
         router.replace(resolvePostAuthRoute({
           newUser: Boolean(auth.newUser),
           hasActiveAvatar: Boolean(me.profile.activeAvatarId),
-          nextParam: null,
+          nextParam: typeof params.next === "string" ? params.next : null,
         }) as never);
       } catch {
         setError("Не удалось завершить вход по телефону");

@@ -28,7 +28,11 @@ public class AuthController {
     public Map<String, Object> start(@Valid @RequestBody StartOtpRequest request) {
         try {
             AuthService.OtpStartResult result = authService.startOtp(request.phone());
-            return Map.of("requestId", result.requestId(), "expiresIn", result.expiresIn());
+            return Map.of(
+                    "requestId", result.requestId(),
+                    "expiresIn", result.expiresIn(),
+                    "resendIn", result.resendIn()
+            );
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad phone", ex);
         }
