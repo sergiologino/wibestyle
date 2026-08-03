@@ -644,6 +644,7 @@ export class WibeStyleApiClient {
       defaultSelection: { plan: SubscriptionPlan; period: BillingPeriod };
       promoDiscountPercent: number;
       paymentProvider?: string;
+      recurringAvailable?: boolean;
       subscriber?: { plan: SubscriptionPlan; billingPeriod: BillingPeriod; subscriptionActive: boolean; autoRenewEnabled?: boolean; currentPeriodEnd?: string };
     }>("/api/v1/billing/plans");
   }

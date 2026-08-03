@@ -93,6 +93,7 @@ wibestyle:
       shop-id: ${WIBESTYLE_YOOKASSA_SHOP_ID:}
       secret-key: ${WIBESTYLE_YOOKASSA_SECRET_KEY:}
       api-base-url: ${WIBESTYLE_YOOKASSA_API_BASE:https://api.yookassa.ru}
+      recurring-enabled: ${WIBESTYLE_YOOKASSA_RECURRING_ENABLED:false}
     wibe-monthly-rub: 400
     wibe-annual-rub: 3840
     elite-monthly-rub: 900

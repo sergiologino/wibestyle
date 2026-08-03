@@ -49,6 +49,7 @@ export default function PaywallClient() {
   const [annualDiscountPercent, setAnnualDiscountPercent] = useState(20);
   const [promoDiscountPercent, setPromoDiscountPercent] = useState(0);
   const [paymentProvider, setPaymentProvider] = useState("mock");
+  const [recurringAvailable, setRecurringAvailable] = useState(false);
   const [subscriberPlan, setSubscriberPlan] = useState<SubscriptionPlan>("trial");
   const [subscriberPeriod, setSubscriberPeriod] = useState<BillingPeriod>("monthly");
   const [subscriptionActive, setSubscriptionActive] = useState(false);
@@ -68,6 +69,8 @@ export default function PaywallClient() {
       setAnnualDiscountPercent(data.annualDiscountPercent);
       setPromoDiscountPercent(data.promoDiscountPercent);
       setPaymentProvider(data.paymentProvider ?? "mock");
+      setRecurringAvailable(Boolean(data.recurringAvailable));
+      if (!data.recurringAvailable) setSavePaymentMethod(false);
       const activeSubscriber = data.subscriber?.subscriptionActive && data.subscriber.plan !== "trial"
         ? data.subscriber
         : null;
@@ -140,7 +143,10 @@ export default function PaywallClient() {
     setError(null);
     setSubmitting(true);
     try {
-      const result = await api.checkout(selectedPlan, period, { savePaymentMethod, client: "web" });
+      const result = await api.checkout(selectedPlan, period, {
+        savePaymentMethod: recurringAvailable && savePaymentMethod,
+        client: "web",
+      });
       if (isExternalPaymentUrl(result.provider, result.paymentUrl)) {
         rememberCheckoutId(result.checkoutId);
         window.location.href = result.paymentUrl;
@@ -217,6 +223,7 @@ export default function PaywallClient() {
               accent="#ff1fa2"
               recommended={period === "annual"}
               price={wibeOffer ? formatRub(wibeOffer.priceRub) : "…"}
+              basePrice={wibeOffer?.basePriceRub}
               monthly={wibeOffer?.monthlyEquivalentRub ? `~${formatRub(wibeOffer.monthlyEquivalentRub)}/мес` : undefined}
               perks={PLAN_PERKS.wibe}
               current={hasActivePaidSubscription && subscriberPlan === "wibe" && subscriberPeriod === period}
@@ -228,6 +235,7 @@ export default function PaywallClient() {
               selected={selectedPlan === "elite"}
               accent="#42a5ff"
               price={eliteOffer ? formatRub(eliteOffer.priceRub) : "…"}
+              basePrice={eliteOffer?.basePriceRub}
               monthly={eliteOffer?.monthlyEquivalentRub ? `~${formatRub(eliteOffer.monthlyEquivalentRub)}/мес` : undefined}
               perks={PLAN_PERKS.elite}
               current={hasActivePaidSubscription && subscriberPlan === "elite" && subscriberPeriod === period}
@@ -248,13 +256,20 @@ export default function PaywallClient() {
         )}
 
         {displayPrice != null ? (
-          <p className="mt-6 text-lg text-[#302637]">
-            К оплате: <strong>{formatRub(displayPrice)}</strong>
+          <div className="mt-6 rounded-2xl border border-[#ffb8a5] bg-[#fff7f3] px-5 py-4 text-[#302637]">
+            <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#8b3c2c]">К оплате</p>
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              {promoDiscountPercent > 0 && currentOffer?.basePriceRub != null ? (
+                <span className="text-lg text-[#8a7d86] line-through">{formatRub(currentOffer.basePriceRub)}</span>
+              ) : null}
+              <strong className="text-3xl text-[#ff1fa2]">{formatRub(displayPrice)}</strong>
+              {promoDiscountPercent > 0 ? <span className="rounded-full bg-[#ff1fa2] px-2.5 py-1 text-xs font-semibold text-white">Скидка {promoDiscountPercent}% уже включена</span> : null}
+            </p>
             {currentOffer?.monthlyEquivalentRub ? ` · ~${formatRub(currentOffer.monthlyEquivalentRub)}/мес` : ""}
-          </p>
+          </div>
         ) : null}
 
-        {paymentProvider === "yookassa" ? (
+        {paymentProvider === "yookassa" && recurringAvailable ? (
           <label className="mt-5 flex max-w-2xl cursor-pointer items-start gap-3 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] p-4 text-sm text-[#302637]">
             <input
               type="checkbox"
@@ -300,6 +315,7 @@ function PlanCard(props: {
   accent: string;
   recommended?: boolean;
   price: string;
+  basePrice?: number;
   monthly?: string;
   perks: string[];
   current?: boolean;
@@ -322,7 +338,12 @@ function PlanCard(props: {
       {props.current ? <p className="text-eyebrow" style={{ color: props.accent }}>Текущий тариф</p> : null}
       {props.recommended ? <p className="text-eyebrow" style={{ color: props.accent }}>Рекомендуем</p> : null}
       <h2 className="text-display-md mt-2 text-3xl">{props.title}</h2>
-      <p className="mt-2 text-3xl">{props.price}</p>
+      <p className="mt-2 flex flex-wrap items-baseline gap-2">
+        {props.basePrice != null && props.price !== formatRub(props.basePrice) ? (
+          <span className="text-base text-[#8a7d86] line-through">{formatRub(props.basePrice)}</span>
+        ) : null}
+        <span className="text-3xl">{props.price}</span>
+      </p>
       {props.monthly ? <p className="mt-1 text-sm text-[#6d6273]">{props.monthly}</p> : null}
       <ul className="text-body mt-4 space-y-2 text-left">
         {props.perks.map((perk) => (

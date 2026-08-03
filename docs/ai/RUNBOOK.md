@@ -296,6 +296,7 @@ cd services\api
 | `WIBESTYLE_YOOKASSA_SHOP_ID` | — | Shop ID из личного кабинета |
 | `WIBESTYLE_YOOKASSA_SECRET_KEY` | — | Secret key |
 | `WIBESTYLE_YOOKASSA_API_BASE` | `https://api.yookassa.ru` | API base (обычно не менять) |
+| `WIBESTYLE_YOOKASSA_RECURRING_ENABLED` | `false` | `true` только после подтверждения YooKassa, что магазину разрешены рекуррентные платежи; при `false` checkout остаётся разовой оплатой, а UI не предлагает автопродление |
 | `WIBESTYLE_PUSH_ENABLED` | `true` | Отправка через Expo Push Service |
 | `WIBESTYLE_EXPO_PUSH_ACCESS_TOKEN` | — | Нужен только при включённой enhanced push security Expo |
 
@@ -314,11 +315,13 @@ WIBESTYLE_BILLING_RETURN_URL=https://app.vibestyle.art/paywall/return
 WIBESTYLE_BILLING_MOBILE_RETURN_URL=wibestyle://paywall/return
 WIBESTYLE_YOOKASSA_SHOP_ID=123456
 WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
+# Оставьте false, пока менеджер YooKassa не включит рекуррентные платежи для магазина.
+WIBESTYLE_YOOKASSA_RECURRING_ENABLED=false
 ```
 
 5. Перезапустите API. Paywall покажет «Оплатить через YooKassa» и редирект на страницу оплаты.
 6. После оплаты пользователь возвращается на `/paywall/return` — фронт опрашивает `GET /billing/checkout/{id}` до `completed`.
-7. Для recurring убедитесь, что магазин разрешает сохранение способов оплаты. Повторные платежи создаются backend-планировщиком; отдельный cron вне приложения не нужен.
+7. Для recurring получите подтверждение YooKassa, что магазин разрешает рекуррентные платежи, и только затем установите `WIBESTYLE_YOOKASSA_RECURRING_ENABLED=true`. До этого значения `true` разовые оплаты продолжают работать, а согласие на автопродление не показывается. Повторные платежи создаются backend-планировщиком; отдельный cron вне приложения не нужен.
 
 ### Android push — production
 

@@ -80,6 +80,7 @@ public class BillingService {
         response.put("defaultSelection", Map.of("plan", "wibe", "period", "annual"));
         response.put("promoDiscountPercent", promoDiscount);
         response.put("paymentProvider", activeProvider());
+        response.put("recurringAvailable", billingProperties.getYookassa().isRecurringEnabled());
         Map<String, Object> subscriber = new HashMap<>();
         subscriber.put("plan", profile.getPlan());
         subscriber.put("billingPeriod", profile.getBillingPeriod() == null ? "monthly" : profile.getBillingPeriod());
@@ -127,7 +128,8 @@ public class BillingService {
         } catch (RuntimeException ignored) {
             // Analytics must not prevent checkout creation.
         }
-        checkout.setSavePaymentMethod(savePaymentMethod);
+        boolean effectiveSavePaymentMethod = savePaymentMethod && billingProperties.getYookassa().isRecurringEnabled();
+        checkout.setSavePaymentMethod(effectiveSavePaymentMethod);
 
         String paymentUrl;
         if ("yookassa".equals(provider)) {
@@ -138,7 +140,7 @@ public class BillingService {
                     pricing.finalPrice(),
                     checkoutDescription(plan, period),
                     user,
-                    savePaymentMethod,
+                    effectiveSavePaymentMethod,
                     mobileClient ? billingProperties.getMobileReturnUrl() : billingProperties.getReturnUrl()
             );
             checkout.setExternalPaymentId(payment.paymentId());
@@ -158,7 +160,7 @@ public class BillingService {
         response.put("basePriceRub", pricing.basePrice());
         response.put("provider", provider);
         response.put("paymentUrl", paymentUrl);
-        response.put("savePaymentMethod", savePaymentMethod);
+        response.put("savePaymentMethod", effectiveSavePaymentMethod);
         return response;
     }
 

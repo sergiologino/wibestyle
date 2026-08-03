@@ -63,6 +63,7 @@ class BillingServiceYooKassaTest {
         properties.setProvider("yookassa");
         properties.getYookassa().setShopId("shop");
         properties.getYookassa().setSecretKey("secret");
+        properties.getYookassa().setRecurringEnabled(true);
         properties.setReturnUrl("http://localhost:3001/paywall/return");
 
         billingService = new BillingService(
@@ -111,6 +112,38 @@ class BillingServiceYooKassaTest {
         assertThatThrownBy(() -> billingService.createCheckout(userId, "wibe", "annual", false, false))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("ONLY_UPGRADE_ALLOWED");
+    }
+
+    @Test
+    void createCheckoutDisablesSavedPaymentWhenStoreDoesNotSupportRecurring() {
+        BillingProperties properties = new BillingProperties();
+        properties.setProvider("yookassa");
+        properties.getYookassa().setShopId("shop");
+        properties.getYookassa().setSecretKey("secret");
+        BillingService serviceWithoutRecurring = new BillingService(
+                properties,
+                userProfileRepository,
+                userRepository,
+                quotaService,
+                billingCheckoutRepository,
+                billingSubscriptionRepository,
+                yooKassaClient,
+                notificationService,
+                org.mockito.Mockito.mock(ReferralService.class),
+                org.mockito.Mockito.mock(MarketingAttributionService.class)
+        );
+        UserProfileEntity profile = profile(userId);
+        UserEntity user = new UserEntity(userId, "+79990000000", Instant.now());
+        when(userProfileRepository.findById(userId)).thenReturn(Optional.of(profile));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(yooKassaClient.createRedirectPayment(any(), anyInt(), anyString(), eq(user), eq(false), anyString()))
+                .thenReturn(new YooKassaPaymentResult("pay-one-time", "pending", "https://yoomoney.ru/pay/test"));
+        when(billingCheckoutRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, Object> result = serviceWithoutRecurring.createCheckout(userId, "wibe", "annual", true, false);
+
+        assertThat(result.get("savePaymentMethod")).isEqualTo(false);
+        verify(yooKassaClient).createRedirectPayment(any(), anyInt(), anyString(), eq(user), eq(false), anyString());
     }
 
     @Test

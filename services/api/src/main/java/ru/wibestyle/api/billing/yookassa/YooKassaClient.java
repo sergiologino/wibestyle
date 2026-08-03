@@ -49,7 +49,9 @@ public class YooKassaClient {
         ));
         body.put("capture", true);
         body.put("description", description);
-        body.put("save_payment_method", savePaymentMethod);
+        if (savePaymentMethod) {
+            body.put("save_payment_method", true);
+        }
         body.put("confirmation", Map.of(
                 "type", "redirect",
                 "return_url", returnUrl
