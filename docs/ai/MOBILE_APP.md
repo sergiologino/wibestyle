@@ -1,8 +1,8 @@
 # Mobile App — Android
 
-Native **Expo (React Native)** приложение «Я на стиле» — самостоятельный мобильный продукт с нативным SMS-входом, аватаром, примеркой по ссылке/фото, галереей, избранным, YooKassa checkout/autorenew и Expo push. Основной вход не открывает web-app: номер телефона и SMS-код обрабатываются внутри React Native UI через `/auth/otp/start` и `/auth/otp/verify`. Existing SMS Aero Mobile ID is an explicit optional browser fallback that returns with a one-time handoff code; OAuth is also optional.
+Native **Expo (React Native)** приложение «Я на стиле» — самостоятельный мобильный продукт с нативным SMS-входом, аватаром, примеркой по ссылке/фото, галереей, избранным, YooKassa checkout/autorenew и Expo push. Вход по номеру не открывает web-app: номер и SMS-код обрабатываются внутри React Native UI через `/auth/otp/start` и `/auth/otp/verify`; OAuth остаётся дополнительным способом входа.
 
-После запроса SMS приложение показывает серверный countdown до повторной отправки. Текущий production-контракт: код действителен 5 минут (`expiresIn=300`), повторная отправка доступна через 3 минуты (`resendIn=180`). Нативная отправка требует отдельной услуги SMS Aero API v2 с `WIBESTYLE_SMS_AERO_EMAIL` и `WIBESTYLE_SMS_AERO_API_KEY`; ключи «Мобильной авторизации» служат только для browser fallback. Без API v2 backend работает в безопасном dev log-only режиме.
+После запроса SMS приложение показывает серверный countdown до повторной отправки. Текущий production-контракт: код действителен 5 минут (`expiresIn=300`), повторная отправка доступна через 3 минуты (`resendIn=180`). Нативная отправка требует отдельной услуги SMS Aero API v2 с `WIBESTYLE_SMS_AERO_EMAIL` и `WIBESTYLE_SMS_AERO_API_KEY`; ключи «Мобильной авторизации» для неё не подходят. Без API v2 backend работает в безопасном dev log-only режиме.
 
 Referral parity: profile links to `/referrals`, where every user can share a personal web deep link and inspect masked reward history. Monthly/annual first purchases award 3/15 durable bonus try-ons that can be spent without a subscription.
 

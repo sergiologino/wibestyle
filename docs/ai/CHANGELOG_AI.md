@@ -1,9 +1,15 @@
 # AI Changelog
 
+## 2026-08-03 (Native Android SMS reliability)
+- Removed the Android Mobile ID browser fallback: it conflicted with the RuStore requirement for the first authentication path to be a native, self-contained experience. The web-app Mobile ID flow is unchanged.
+- SMS Aero API v2 failures now map to safe actionable codes for invalid credentials, balance, sender-name rejection, generic provider rejection and provider unavailability; logs retain the provider's non-secret diagnostic text.
+- Serialized concurrent verified-phone authentication so duplicate simultaneous sign-ins create one account rather than returning a database error. A residual uniqueness conflict is also shown as a human-readable retry action.
+- Verified: full API test suite, 61 mobile tests, TypeScript, Metro preflight and Android debug assembly.
+
 ## 2026-08-03 (Mobile ID optional fallback)
-- Kept native SMS OTP as Android's primary login for RuStore self-contained-product compliance and restored the existing SMS Aero Mobile ID path as an explicit optional browser fallback.
+- Kept native SMS OTP as Android's primary login for RuStore self-contained-product compliance and temporarily restored the existing SMS Aero Mobile ID path as an explicit optional browser fallback.
 - The fallback uses the existing web widget only to complete Mobile ID, then returns to Android with a one-time backend handoff code; it preserves referral, visitor, device and post-auth-route context.
-- The web application Mobile ID flow was not changed.
+- The web application Mobile ID flow was not changed. Superseded the same day by the native-only Android decision below.
 - Verified: 62 mobile tests, TypeScript, Metro preflight and Android debug assembly.
 
 ## 2026-08-02 (SMS OTP resend state)

@@ -22,9 +22,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Map<String, String>> handleDataAccess(DataAccessException ex) {
         log.error("Database error", ex);
-        String message = ex.getMessage() != null && ex.getMessage().contains("auth_refresh_tokens")
+        String detail = ex.getMessage() == null ? "" : ex.getMessage();
+        String message = detail.contains("auth_refresh_tokens")
                 ? "Таблица сессий не создана. Перезапустите API (Flyway V11)."
-                : "Ошибка базы данных";
+                : detail.contains("users_phone_key")
+                    ? "Номер уже подтверждается в другой попытке. Нажмите «Войти» ещё раз."
+                    : "Ошибка базы данных";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", message, "code", "DATABASE_ERROR"));
     }
@@ -117,6 +120,11 @@ public class ApiExceptionHandler {
             case "OTP_MAX_ATTEMPTS" -> "Превышено число попыток ввода кода";
             case "SMS_NOT_CONFIGURED" -> "Сервис SMS временно не настроен";
             case "SMS_SEND_FAILED" -> "Не удалось отправить SMS-код. Попробуйте ещё раз";
+            case "SMS_PROVIDER_AUTH_FAILED" -> "SMS-сервис отклонил ключ доступа. Проверьте настройки SMS API.";
+            case "SMS_PROVIDER_INSUFFICIENT_BALANCE" -> "Недостаточно средств на балансе SMS-сервиса.";
+            case "SMS_PROVIDER_SENDER_REJECTED" -> "SMS-сервис отклонил имя отправителя. Проверьте его в настройках SMS API.";
+            case "SMS_PROVIDER_REJECTED" -> "SMS-сервис отклонил отправку. Проверьте доступ к SMS API, баланс и имя отправителя.";
+            case "SMS_PROVIDER_UNAVAILABLE" -> "SMS-сервис временно недоступен. Попробуйте ещё раз позже.";
             case "MOBILE_ID_NOT_CONFIGURED" -> "Вход по телефону временно не настроен";
             case "MOBILE_ID_UNAVAILABLE", "MOBILE_ID_INVALID_RESPONSE", "MOBILE_ID_SIGNATURE_FAILED" ->
                     "Сервис входа по телефону временно недоступен";

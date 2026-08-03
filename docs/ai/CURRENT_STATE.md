@@ -1,20 +1,20 @@
 # Current State
 
-## Mobile ID fallback alongside native SMS sign-in (2026-08-03)
-- Android keeps the native SMS code form as the primary sign-in flow for RuStore review.
-- Existing SMS Aero Mobile ID remains available only through the explicit "Другой способ" fallback. It opens the existing browser widget page, then returns through a one-time backend handoff code; access and refresh tokens never travel in the URL.
-- The web application Mobile ID widget and its working production flow are unchanged.
+## Native Android SMS reliability and human-readable errors (2026-08-03)
+- Android has no Mobile ID browser fallback: authentication is entirely native for RuStore review. The web application's existing Mobile ID widget is unchanged.
+- SMS Aero API v2 delivery failures are safely classified as invalid access credentials, insufficient balance, rejected sender name, provider rejection or temporary provider outage. The API logs only the provider diagnostic text and never the OTP or credentials; the client receives a human-readable remedy.
+- Concurrent verified logins for one previously unseen phone are serialized in the API process. One account is created and both requests sign in, instead of exposing a `users_phone_key` database error. A remaining cross-process uniqueness conflict is rendered as an actionable retry message.
 
 ## SMS OTP delivery state and resend countdown (2026-08-02)
 - The phone OTP API now returns `resendIn`; the configured resend cooldown is 180 seconds, while the SMS code remains valid for 300 seconds.
 - Android shows the server-aligned `3:00` countdown, disables repeat sends until it reaches zero and tells the user that a code normally arrives within a minute.
-- Production SMS delivery through the native form needs a separate SMS Aero API v2 service and both `WIBESTYLE_SMS_AERO_EMAIL` and `WIBESTYLE_SMS_AERO_API_KEY`. Mobile ID credentials are for the fallback widget and cannot send API v2 SMS. Without API v2 credentials, the backend deliberately uses the development log-only sender and no native SMS is delivered.
+- Production SMS delivery through the native form needs a separate SMS Aero API v2 service and both `WIBESTYLE_SMS_AERO_EMAIL` and `WIBESTYLE_SMS_AERO_API_KEY`. Mobile ID credentials cannot send API v2 SMS. Without API v2 credentials, the backend deliberately uses the development log-only sender and no native SMS is delivered.
 - Verified: API test suite, 61 mobile tests, mobile TypeScript, Metro dependency preflight and Android debug assembly.
 
 ## Native SMS authentication for RuStore moderation (2026-08-02)
 - Android's primary sign-in flow is now fully native: the user enters a Russian phone number and SMS code directly in the Expo React Native UI, using the existing `/auth/otp/start` and `/auth/otp/verify` API contract.
 - The app creates its local secure session after OTP verification and continues to the native avatar onboarding or home screen. Referral, marketing visitor and device identifiers remain bound to the registration.
-- Mobile ID/OAuth remain optional flows only; Mobile ID is an explicit browser fallback while the default entry never opens `app.vibestyle.art`. YooKassa checkout, marketplace cards and legal pages retain their narrowly scoped external-browser behavior.
+- OAuth remains optional; the default entry never opens `app.vibestyle.art`. YooKassa checkout, marketplace cards and legal pages retain their narrowly scoped external-browser behavior.
 - This addresses the RuStore self-contained-app finding: the product already has native try-on, camera/gallery, push, gallery, favorites, sharing and profile functionality; native authentication removes the web handoff from the first essential user journey.
 - Verified: 59 mobile tests, mobile TypeScript, dependency/Metro release preflight and Android debug assembly. A signed release assembly remains an operator step because this workspace has no `VIBESTYLE_STORE_FILE` signing secret.
 

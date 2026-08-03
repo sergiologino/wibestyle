@@ -23,6 +23,14 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import ru.wibestyle.api.service.AuthService;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -37,6 +45,9 @@ class ApiIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private AuthService authService;
 
     @Test
     void healthEndpointReturnsOk() throws Exception {
@@ -69,6 +80,34 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.accessToken").exists())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.user.phone").value("+79990001122"));
+    }
+
+    @Test
+    void simultaneousVerifiedPhoneLoginsCreateOnlyOneUser() throws Exception {
+        String phone = "+79990001234";
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            var first = executor.submit(() -> {
+                ready.countDown();
+                start.await(10, TimeUnit.SECONDS);
+                return authService.authenticateVerifiedPhone(phone, null, null, null, "concurrent-device-a");
+            });
+            var second = executor.submit(() -> {
+                ready.countDown();
+                start.await(10, TimeUnit.SECONDS);
+                return authService.authenticateVerifiedPhone(phone, null, null, null, "concurrent-device-b");
+            });
+            ready.await(10, TimeUnit.SECONDS);
+            start.countDown();
+
+            assertEquals("+79990001234", first.get(15, TimeUnit.SECONDS).user().getPhone());
+            assertEquals("+79990001234", second.get(15, TimeUnit.SECONDS).user().getPhone());
+            assertEquals(1, jdbcTemplate.queryForObject("select count(*) from users where phone = ?", Integer.class, phone));
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     @Test

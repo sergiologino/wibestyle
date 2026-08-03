@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
-import { MobileIdFallbackButton } from "@/components/auth/MobileIdFallbackButton";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
@@ -163,10 +162,6 @@ export default function AuthScreen() {
         </View>
 
         <OAuthButtons referralCode={typeof searchParams.ref === "string" ? searchParams.ref : undefined} />
-        <MobileIdFallbackButton
-          referralCode={typeof searchParams.ref === "string" ? searchParams.ref : undefined}
-          nextParam={typeof searchParams.next === "string" ? searchParams.next : undefined}
-        />
 
         <Text style={styles.legalText}>
           Продолжая, вы принимаете{" "}
