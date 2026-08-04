@@ -18,7 +18,8 @@ export function apiMediaPathname(src?: string | null) {
       return "";
     }
   }
-  return src.startsWith("/") ? src : `/${src}`;
+  const relativePath = src.startsWith("/") ? src : `/${src}`;
+  return relativePath.split(/[?#]/, 1)[0];
 }
 
 export function isProtectedApiMediaUrl(src?: string | null) {
