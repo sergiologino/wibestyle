@@ -40,7 +40,8 @@ export default function PaywallScreen() {
   const [paymentProvider, setPaymentProvider] = useState("mock");
   const [annualDiscountPercent, setAnnualDiscountPercent] = useState(20);
   const [promoDiscountPercent, setPromoDiscountPercent] = useState(0);
-  const [savePaymentMethod, setSavePaymentMethod] = useState(true);
+  const [recurringAvailable, setRecurringAvailable] = useState(false);
+  const [savePaymentMethod, setSavePaymentMethod] = useState(false);
   const [subscriberPlan, setSubscriberPlan] = useState<SubscriptionPlan>("trial");
   const [subscriberPeriod, setSubscriberPeriod] = useState<BillingPeriod>("monthly");
   const [subscriptionActive, setSubscriptionActive] = useState(false);
@@ -59,6 +60,8 @@ export default function PaywallScreen() {
         setSelected({ plan: "elite", period: "annual" });
       }
       setPaymentProvider(payload.paymentProvider ?? "mock");
+      setRecurringAvailable(Boolean(payload.recurringAvailable));
+      if (!payload.recurringAvailable) setSavePaymentMethod(false);
       setAnnualDiscountPercent(payload.annualDiscountPercent);
       setPromoDiscountPercent(payload.promoDiscountPercent);
       if (payload.subscriber) {
@@ -103,7 +106,7 @@ export default function PaywallScreen() {
     setError(null);
     try {
       const result = await api.checkout(selected.plan as "wibe" | "elite", selected.period, {
-        savePaymentMethod,
+        savePaymentMethod: recurringAvailable && savePaymentMethod,
         client: "mobile",
       });
       if (result.provider === "yookassa") {
@@ -249,7 +252,7 @@ export default function PaywallScreen() {
           </Text>
         ) : null}
 
-        {paymentProvider === "yookassa" ? (
+        {paymentProvider === "yookassa" && recurringAvailable ? (
           <View style={styles.autoRenewRow}>
             <View style={styles.autoRenewCopy}>
               <Text style={styles.autoRenewTitle}>Сохранить способ оплаты и включить автопродление</Text>

@@ -3,7 +3,7 @@
 ## 2026-08-03 (Web paywall conversion and YooKassa checkout)
 - Made the desktop subscription CTA visually prominent with an accessible animated gradient and a clear `Подключить Wibe` label.
 - Moved the promo benefit to the payment amount: eligible paywalls show a crossed-out original price, discounted final price and explicit discount label next to the CTA.
-- Fixed checkout for the current YooKassa merchant capability: recurrent payments are opt-in through `WIBESTYLE_YOOKASSA_RECURRING_ENABLED` (default `false`). Until YooKassa enables the capability, checkout omits `save_payment_method`, the UI does not offer autorenewal, and a stale client cannot request it.
+- Fixed checkout for the current YooKassa merchant capability: recurrent payments are opt-in through `WIBESTYLE_YOOKASSA_RECURRING_ENABLED` (default `false`). Until YooKassa enables the capability, checkout omits `save_payment_method`, the web and Android UIs do not offer autorenewal, and a stale client cannot request it.
 
 ## 2026-08-03 (Gallery video visibility playback)
 - Changed Android gallery autoplay from component-lifetime playback to visibility-aware playback: a video plays only while at least 70% of its grid card is visible.

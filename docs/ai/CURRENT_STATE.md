@@ -3,7 +3,7 @@
 ## Web billing conversion and one-time YooKassa checkout (2026-08-03)
 - The desktop header now gives trial users a prominent animated-gradient `Подключить Wibe` CTA; motion is disabled for users who request reduced motion.
 - The web paywall shows a promo's crossed-out base price and the final discounted price together near the payment CTA, rather than leaving the discount only in the top badge.
-- A YooKassa shop that has not been approved for recurrent payments now creates one-time payments only: the server does not send `save_payment_method`, the web UI hides the autorenew consent, and a stale client request cannot override this restriction. Set `WIBESTYLE_YOOKASSA_RECURRING_ENABLED=true` only after YooKassa approval.
+- A YooKassa shop that has not been approved for recurrent payments now creates one-time payments only: the server does not send `save_payment_method`, the web and Android UIs hide the autorenew consent, and a stale client request cannot override this restriction. Set `WIBESTYLE_YOOKASSA_RECURRING_ENABLED=true` only after YooKassa approval.
 
 ## Gallery video visibility playback (2026-08-03)
 - Android gallery videos autoplay only after at least 70% of their card is visible. Scrolling them out of view pauses playback.
