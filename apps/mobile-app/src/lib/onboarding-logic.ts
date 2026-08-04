@@ -37,7 +37,7 @@ export function syncOnboardingFromProfile(
 export function getInitialRoute(onboarding: OnboardingState): string {
   if (!onboarding.welcomeSeen) return "/welcome";
   if (!onboarding.authComplete) return "/auth";
-  if (!onboarding.avatarComplete) return "/onboarding/avatar";
+  if (!onboarding.avatarComplete) return "/(main)/profile";
   return "/(main)/home";
 }
 
@@ -63,7 +63,7 @@ export function resolvePostAuthRoute(options: {
     return options.nextParam;
   }
   if (options.newUser || !options.hasActiveAvatar) {
-    return "/onboarding/avatar";
+    return "/(main)/profile";
   }
   return "/(main)/home";
 }

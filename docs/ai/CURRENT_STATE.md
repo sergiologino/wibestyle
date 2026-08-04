@@ -289,6 +289,7 @@
 - Avatar onboarding: users without an avatar may browse web pages; a persistent header notice links to the first-avatar form inside the main-avatar card, while try-on content remains visible but its actions are unavailable until setup is complete.
 - Avatar privacy: face hiding is opt-in for new profiles and avatars; existing users retain their chosen setting.
 - Resetting a profile also returns face hiding to the opt-in (`off`) default; it never silently enables face blur for the next avatar.
+- Avatar setup now has one UI path: web onboarding and the legacy `/onboarding/avatar` URL lead to the modern profile/avatar manager; Android onboarding leads to the Profile tab. Its selected-photo progress overlay and validation guidance are therefore identical on desktop, mobile web and the native app.
 
 ## Документация
 - [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) — чеклист сделано / не сделано (актуальный)

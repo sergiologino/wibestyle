@@ -9,6 +9,7 @@
 - Added an in-place processing overlay with spinner over the chosen avatar photo in web and Android, so validation/preprocessing never resembles a stalled interface.
 - Rejected avatar guidance now explicitly explains why the temporary photo disappeared before offering the supportive recommendation (for example, several people in the frame or only a head-and-shoulders crop).
 - Corrected profile reset: it now preserves the product default of a visible face instead of silently re-enabling face blur for the next avatar.
+- Removed the competing legacy avatar-setup screen from user routes. New and returning users without an avatar now use the same modern profile/avatar manager, including its photo validation progress overlay, on web and Android.
 - Added API regression coverage that verifies rejected avatars cannot preprocess, plus web regression coverage for validation guidance and ready-avatar retention.
 
 ## 2026-08-04 (Branded try-on downloads)
