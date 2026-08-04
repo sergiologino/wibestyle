@@ -31,7 +31,7 @@ export default function AvatarOnboardingForm() {
   const [hipsCm, setHipsCm] = useState("");
   const [clothingSize, setClothingSize] = useState("M");
   const [shoeSizeEu, setShoeSizeEu] = useState("");
-  const [hideFace, setHideFace] = useState(true);
+  const [hideFace, setHideFace] = useState(false);
   const [hideBackground, setHideBackground] = useState(false);
   const [hideFeatures, setHideFeatures] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -46,7 +46,7 @@ export default function AvatarOnboardingForm() {
     if (!profile) return;
     setDisplayName(profile.displayName ?? "");
     setGender(profile.gender ?? "");
-    setHideFace(profile.privacy?.faceHidden ?? true);
+    setHideFace(profile.privacy?.faceHidden ?? false);
     setHideBackground(profile.privacy?.backgroundHidden ?? false);
     setHideFeatures(profile.privacy?.featuresHidden ?? false);
     if (profile.anthropometry?.heightCm) setHeightCm(String(profile.anthropometry.heightCm));

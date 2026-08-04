@@ -12,12 +12,13 @@ describe("missing avatar flow", () => {
     expect(topBar).toContain("AvatarRequiredNotice compact");
     expect(homeGate).not.toContain("getNextOnboardingRoute");
     expect(tryOnGate).toContain('issue !== "avatar"');
-    expect(tryOnGate).toContain("AvatarRequiredNotice");
+    expect(tryOnGate).toContain("pointer-events-none");
   });
 
   it("opens first-avatar upload directly in profile", () => {
     expect(avatarManager).toContain("needsFirstAvatar");
     expect(avatarManager).toContain("adding || needsFirstAvatar");
+    expect(avatarManager).toContain("Добавить фото");
     expect(avatarManager).toContain("Создать аватар");
   });
 });

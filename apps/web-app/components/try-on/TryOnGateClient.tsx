@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Card } from "@wibestyle/ui";
-import AvatarRequiredNotice from "@/components/avatar/AvatarRequiredNotice";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import {
   resolveTryOnSetupIssue,
@@ -55,8 +54,10 @@ export default function TryOnGateClient({ children }: TryOnGateClientProps) {
 
   if (!profile?.activeAvatarId) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10">
-        <AvatarRequiredNotice />
+      <div className="grid gap-6">
+        <div aria-disabled="true" className="pointer-events-none select-none opacity-55">
+          {children}
+        </div>
       </div>
     );
   }

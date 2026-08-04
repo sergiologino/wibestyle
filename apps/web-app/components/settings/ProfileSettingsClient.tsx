@@ -59,7 +59,7 @@ export default function ProfileSettingsClient() {
   const [hipsCm, setHipsCm] = useState("");
   const [clothingSize, setClothingSize] = useState("M");
   const [shoeSizeEu, setShoeSizeEu] = useState("");
-  const [hideFace, setHideFace] = useState(true);
+  const [hideFace, setHideFace] = useState(false);
   const [hideBackground, setHideBackground] = useState(false);
   const [activeAvatarPhotoPath, setActiveAvatarPhotoPath] = useState<string | null>(null);
   const [activeAvatarPreviewUrl, setActiveAvatarPreviewUrl] = useState<string | null>(null);
@@ -77,7 +77,7 @@ export default function ProfileSettingsClient() {
     setDisplayName(profile.displayName ?? "");
     setGender(profile.gender ?? "");
     setInterfacePalette(profile.interfacePalette ?? "vibe");
-    setHideFace(profile.privacy?.faceHidden ?? true);
+    setHideFace(profile.privacy?.faceHidden ?? false);
     setHideBackground(profile.privacy?.backgroundHidden ?? false);
     setHeightCm(profile.anthropometry?.heightCm ? String(profile.anthropometry.heightCm) : "");
     setBustCm(profile.anthropometry?.bustCm ? String(profile.anthropometry.bustCm) : "");
@@ -300,20 +300,22 @@ export default function ProfileSettingsClient() {
             <p className={sectionTitleClassName}>Основной аватар</p>
             <p className={`mt-1 ${mutedTextClassName}`}>Текущий образ для примерки и настройки приватности.</p>
           </div>
-          <AvatarPrivacyPreview
-            localPreviewUrl={activeAvatarPreviewUrl}
-            privacy={{ hideFace, hideBackground, hideFeatures: false }}
-            onPrivacyChange={(next) => {
-              if (next.hideFace !== undefined) setHideFace(next.hideFace);
-              if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
-            }}
-          />
+          {profile?.activeAvatarId ? (
+            <AvatarPrivacyPreview
+              localPreviewUrl={activeAvatarPreviewUrl}
+              privacy={{ hideFace, hideBackground, hideFeatures: false }}
+              onPrivacyChange={(next) => {
+                if (next.hideFace !== undefined) setHideFace(next.hideFace);
+                if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
+              }}
+            />
+          ) : (
+            <AvatarManager activeAvatarId={profile?.activeAvatarId} />
+          )}
         </div>
       </Card>
 
-      <Card className="p-4 sm:p-5">
-        <AvatarManager activeAvatarId={profile?.activeAvatarId} />
-      </Card>
+      {profile?.activeAvatarId ? <Card className="p-4 sm:p-5"><AvatarManager activeAvatarId={profile.activeAvatarId} /></Card> : null}
 
       <Card>
         <form className="grid gap-6" onSubmit={onSave}>

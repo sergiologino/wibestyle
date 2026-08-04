@@ -70,7 +70,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const [error, setError] = useState<string | null>(null);
   const [newPhoto, setNewPhoto] = useState<File | null>(null);
   const [newPreviewUrl, setNewPreviewUrl] = useState<string | null>(null);
-  const [hideFace, setHideFace] = useState(true);
+  const [hideFace, setHideFace] = useState(false);
   const [hideBackground, setHideBackground] = useState(false);
   const [hideFeatures, setHideFeatures] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -197,6 +197,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
 
       {adding || needsFirstAvatar ? (
         <div className="rounded-[28px] border border-[#f0dce8] bg-gradient-to-br from-white to-[#fff8fd] p-4 shadow-sm">
+          {needsFirstAvatar ? <p className="mb-2 text-sm font-medium text-[#302637]">Добавить фото</p> : null}
           <FieldInput
             accept="image/*"
             className="cursor-pointer file:mr-3 file:rounded-full file:border-0 file:bg-[#ff1fa2]/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#ff1fa2]"

@@ -45,7 +45,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
   const [hipsCm, setHipsCm] = useState("");
   const [clothingSize, setClothingSize] = useState("M");
   const [shoeSizeEu, setShoeSizeEu] = useState("");
-  const [hideFace, setHideFace] = useState(true);
+  const [hideFace, setHideFace] = useState(false);
   const [hideBackground, setHideBackground] = useState(false);
   const [activeAvatarPhotoPath, setActiveAvatarPhotoPath] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -62,7 +62,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
     setDisplayName(profile.displayName ?? "");
     setGender(profile.gender ?? "");
     setInterfacePalette(profile.interfacePalette ?? "vibe");
-    setHideFace(profile.privacy?.faceHidden ?? true);
+    setHideFace(profile.privacy?.faceHidden ?? false);
     setHideBackground(profile.privacy?.backgroundHidden ?? false);
     setHeightCm(profile.anthropometry?.heightCm ? String(profile.anthropometry.heightCm) : "");
     setBustCm(profile.anthropometry?.bustCm ? String(profile.anthropometry.bustCm) : "");

@@ -62,7 +62,7 @@ public class UserProfileEntity {
     private String sizingSystem;
 
     @Column(name = "privacy_face_hidden", nullable = false)
-    private boolean privacyFaceHidden = true;
+    private boolean privacyFaceHidden = false;
 
     @Column(name = "privacy_background_hidden", nullable = false)
     private boolean privacyBackgroundHidden = false;
