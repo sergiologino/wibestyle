@@ -197,3 +197,8 @@ export async function downloadWatermarkedTryOnImage({
 
   triggerDownload(output, filename);
 }
+
+export async function downloadProtectedFile(options: DownloadTryOnImageOptions) {
+  const blob = await fetchImageBlob(options.imageUrl, options.accessToken, options.getAccessTokenForMedia);
+  triggerDownload(blob, options.filename ?? "vibestyle-export");
+}

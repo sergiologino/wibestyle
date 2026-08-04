@@ -17,7 +17,7 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { formatTryOnError } from "@/lib/try-on-error-message";
 import { appBaseUrl, brandDomain, landingSiteUrl } from "@/lib/api-media";
 import { shareGalleryPost, buildSharePayloadFromPost } from "@/lib/share-post";
-import { downloadWatermarkedTryOnImage } from "@/lib/try-on-download";
+import { downloadProtectedFile, downloadWatermarkedTryOnImage } from "@/lib/try-on-download";
 import {
   canFavoriteTryOnProduct,
   favoriteProductKey,
@@ -355,8 +355,8 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     setDownloadBusy(true);
     setShareError(null);
     try {
-      await downloadWatermarkedTryOnImage({
-        imageUrl: result.afterImageUrl,
+      await downloadProtectedFile({
+        imageUrl: `/api/v1/try-on/sessions/${sessionId}/download?type=image`,
         accessToken,
         getAccessTokenForMedia,
         filename: `vibestyle-try-on-${sessionId.slice(0, 8)}.png`,
@@ -366,6 +366,14 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     } finally {
       setDownloadBusy(false);
     }
+  }
+
+  async function onDownloadVideo() {
+    if (!hasVideo || downloadBusy) return;
+    setDownloadBusy(true);
+    try { await downloadProtectedFile({ imageUrl: `/api/v1/try-on/sessions/${sessionId}/download?type=video`, accessToken, getAccessTokenForMedia, filename: `vibestyle-try-on-${sessionId.slice(0, 8)}.mp4` }); }
+    catch { setShareError("Не удалось скачать видео. Попробуйте ещё раз."); }
+    finally { setDownloadBusy(false); }
   }
 
   if (loading) {
@@ -444,7 +452,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         />
 
         {hasVideo && afterVideoUrl ? (
-          <TryOnResultVideo eliteFrame={result.eliteFrame} src={afterVideoUrl} />
+          <div><TryOnResultVideo eliteFrame={result.eliteFrame} src={afterVideoUrl} /><button type="button" className="text-link mt-3 text-sm" disabled={downloadBusy} onClick={() => void onDownloadVideo()}>Скачать видео с логотипом и QR</button></div>
         ) : null}
       </div>
 

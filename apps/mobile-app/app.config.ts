@@ -57,6 +57,7 @@ const config: ExpoConfig = {
     "expo-router",
     "expo-secure-store",
     "expo-video",
+    "expo-media-library",
     "expo-notifications",
     withRuStorePushProjectId as any,
     [

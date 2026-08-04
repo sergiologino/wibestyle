@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-08-04 (Branded try-on downloads)
+- Added owner-only `GET /api/v1/try-on/sessions/{id}/download?type=image|video`: exports include the VibeStyle badge, domain and QR code.
+- Web downloads branded photo and video; Android saves the same branded exports to the system gallery.
+- API Nixpacks setup installs FFmpeg for MP4 overlay export.
+
 ## 2026-08-03 (Web paywall conversion and YooKassa checkout)
 - Made the desktop subscription CTA visually prominent with an accessible animated gradient and a clear `Подключить Wibe` label.
 - Moved the promo benefit to the payment amount: eligible paywalls show a crossed-out original price, discounted final price and explicit discount label next to the CTA.

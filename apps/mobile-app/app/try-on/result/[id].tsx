@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type ErrorBoundaryProps } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
 import { ApiError } from "@wibestyle/api-client";
 import type { SeasonHitVideoStatus, TryOnResult } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
@@ -351,6 +353,25 @@ export default function TryOnResultScreen() {
     }
   }
 
+  async function downloadBranded(type: "image" | "video") {
+    if (!sessionId || !token) return;
+    setSaving(true); setShareError(null);
+    try {
+      const permission = await MediaLibrary.requestPermissionsAsync();
+      if (!permission.granted) throw new Error("MEDIA_PERMISSION_DENIED");
+      const extension = type === "video" ? "mp4" : "png";
+      const target = `${FileSystem.cacheDirectory}vibestyle-${sessionId}.${extension}`;
+      const response = await FileSystem.downloadAsync(
+        `${getApiBaseUrl()}/api/v1/try-on/sessions/${sessionId}/download?type=${type}`,
+        target,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      await MediaLibrary.saveToLibraryAsync(response.uri);
+    } catch {
+      setShareError(type === "video" ? "Не удалось скачать видео." : "Не удалось скачать фото.");
+    } finally { setSaving(false); }
+  }
+
   function closeReviewPrompt() {
     setReviewPromptStep(null);
   }
@@ -519,6 +540,8 @@ export default function TryOnResultScreen() {
           {videoStatus === "ready" && afterVideoUrl ? (
             <Button label="Видео в галерею" loading={saving} onPress={() => saveToGallery("video")} />
           ) : null}
+          <Button label="Скачать фото с логотипом и QR" variant="secondary" loading={saving} onPress={() => void downloadBranded("image")} />
+          {videoStatus === "ready" && afterVideoUrl ? <Button label="Скачать видео с логотипом и QR" variant="secondary" loading={saving} onPress={() => void downloadBranded("video")} /> : null}
           <Button label="Поделиться в галерее" variant="secondary" loading={saving} onPress={() => saveToGallery("image")} />
           <Button label="Поделиться" variant="secondary" loading={sharing} onPress={shareResult} />
           <Button label="Ещё примерка" onPress={() => router.push("/(main)/try-on")} />
