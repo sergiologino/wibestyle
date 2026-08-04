@@ -44,8 +44,10 @@ public class TryOnBrandedExportService {
         Path overlayFile = Files.createTempFile("wibestyle-overlay-", ".png");
         Path target = Files.createTempFile("wibestyle-" + sessionId + "-", ".mp4");
         ImageIO.write(overlay, "png", overlayFile.toFile());
-        Process process = new ProcessBuilder("ffmpeg", "-y", "-i", source.toString(), "-i", overlayFile.toString(),
-                "-filter_complex", "overlay=0:0", "-c:a", "copy", target.toString()).redirectErrorStream(true).start();
+        Process process = new ProcessBuilder("ffmpeg", "-y", "-i", source.toString(), "-loop", "1", "-i", overlayFile.toString(),
+                "-filter_complex", "[0:v][1:v]overlay=0:0:shortest=1[v]", "-map", "[v]", "-map", "0:a?",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "copy", "-shortest", target.toString())
+                .redirectErrorStream(true).start();
         String output = new String(process.getInputStream().readAllBytes());
         Files.deleteIfExists(overlayFile);
         if (process.waitFor() != 0) { Files.deleteIfExists(target); throw new IllegalStateException("EXPORT_VIDEO_FAILED: " + output); }
