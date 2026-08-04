@@ -530,6 +530,7 @@
 - A signed-in user without an avatar can browse the web app instead of being forced back into onboarding.
 - The app header shows a persistent avatar-required notice with a direct link to profile setup; the try-on section intentionally shows that notice instead of starting a try-on.
 - The first-avatar form now lives inside the “Main avatar” card and keeps its “Add photo” control available until a first avatar is created; no duplicate first-avatar block is shown.
+- Try-on no longer redirects an incomplete profile into settings. Its page stays visible while the interactive area is disabled until avatar/profile preparation is complete.
 ## 2026-08-04 (Avatar privacy default)
 - New avatars keep the face visible by default in web and mobile flows. A user may still explicitly enable face hiding.
 - Flyway `V38__avatar_face_privacy_default.sql` changes database defaults for future profiles and avatars only; existing privacy choices are retained.

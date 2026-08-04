@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { Card } from "@wibestyle/ui";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
-import {
-  resolveTryOnSetupIssue,
-  tryOnSetupRedirect,
-} from "@/lib/try-on-eligibility";
+import { resolveTryOnSetupIssue } from "@/lib/try-on-eligibility";
 import { useRequireAuthenticatedSession } from "@/lib/use-require-authenticated-session";
 
 type TryOnGateClientProps = {
@@ -15,34 +12,17 @@ type TryOnGateClientProps = {
 };
 
 export default function TryOnGateClient({ children }: TryOnGateClientProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const { accessToken, refreshToken, profile, accessTokenExpiresAt } = useAppSession();
   const { sessionReady, verified, checking } = useRequireAuthenticatedSession({ returnPath: pathname });
-  const [profileChecked, setProfileChecked] = useState(false);
-
-  useEffect(() => {
-    if (!verified) {
-      setProfileChecked(false);
-      return;
-    }
-
-    const issue = resolveTryOnSetupIssue({
+  const setupIssue = useMemo(() => resolveTryOnSetupIssue({
       accessToken,
       refreshToken,
       profile,
       accessTokenExpiresAt,
-    });
+    }), [accessToken, accessTokenExpiresAt, profile, refreshToken]);
 
-    if (issue && issue !== "avatar") {
-      router.replace(tryOnSetupRedirect(issue, pathname));
-      return;
-    }
-
-    setProfileChecked(true);
-  }, [accessToken, accessTokenExpiresAt, pathname, profile, refreshToken, router, verified]);
-
-  if (!sessionReady || checking || !verified || !profileChecked) {
+  if (!sessionReady || checking || !verified) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
         <Card>
@@ -52,7 +32,7 @@ export default function TryOnGateClient({ children }: TryOnGateClientProps) {
     );
   }
 
-  if (!profile?.activeAvatarId) {
+  if (setupIssue) {
     return (
       <div className="grid gap-6">
         <div aria-disabled="true" className="pointer-events-none select-none opacity-55">
