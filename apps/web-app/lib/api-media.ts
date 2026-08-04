@@ -33,7 +33,8 @@ export function isProtectedApiMediaUrl(src?: string | null) {
   return (
     pathname.endsWith("/garment-photo") ||
     pathname.endsWith("/after-photo") ||
-    pathname.endsWith("/after-video")
+    pathname.endsWith("/after-video") ||
+    pathname.endsWith("/download")
   );
 }
 

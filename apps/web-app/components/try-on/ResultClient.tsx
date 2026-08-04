@@ -452,7 +452,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         />
 
         {hasVideo && afterVideoUrl ? (
-          <div><TryOnResultVideo eliteFrame={result.eliteFrame} src={afterVideoUrl} /><button type="button" className="text-link mt-3 text-sm" disabled={downloadBusy} onClick={() => void onDownloadVideo()}>Скачать видео с логотипом и QR</button></div>
+          <TryOnResultVideo eliteFrame={result.eliteFrame} src={afterVideoUrl} downloadBusy={downloadBusy} onDownloadClick={() => void onDownloadVideo()} />
         ) : null}
       </div>
 

@@ -6,6 +6,7 @@ describe("isProtectedApiMediaUrl", () => {
     expect(isProtectedApiMediaUrl("/api/v1/try-on/sessions/s1/after-photo")).toBe(true);
     expect(isProtectedApiMediaUrl("https://api.vibestyle.art/api/v1/try-on/sessions/s1/after-photo")).toBe(true);
     expect(isProtectedApiMediaUrl("/api/v1/try-on/sessions/s1/after-video")).toBe(true);
+    expect(isProtectedApiMediaUrl("/api/v1/try-on/sessions/s1/download?type=video")).toBe(true);
     expect(isProtectedApiMediaUrl("/api/v1/try-on/sessions/s1/garment-photo")).toBe(true);
   });
 
