@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Card } from "@wibestyle/ui";
+import AvatarRequiredNotice from "@/components/avatar/AvatarRequiredNotice";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import {
   resolveTryOnSetupIssue,
-  tryOnSetupMessage,
   tryOnSetupRedirect,
 } from "@/lib/try-on-eligibility";
 import { useRequireAuthenticatedSession } from "@/lib/use-require-authenticated-session";
@@ -35,7 +35,7 @@ export default function TryOnGateClient({ children }: TryOnGateClientProps) {
       accessTokenExpiresAt,
     });
 
-    if (issue) {
+    if (issue && issue !== "avatar") {
       router.replace(tryOnSetupRedirect(issue, pathname));
       return;
     }
@@ -49,6 +49,14 @@ export default function TryOnGateClient({ children }: TryOnGateClientProps) {
         <Card>
           <p className="text-body">Проверяем профиль для примерки…</p>
         </Card>
+      </div>
+    );
+  }
+
+  if (!profile?.activeAvatarId) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <AvatarRequiredNotice />
       </div>
     );
   }

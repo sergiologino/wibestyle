@@ -277,6 +277,7 @@
 - Admin RBAC (роли SUPER_ADMIN/MODERATOR).
 - Age gate, блокировка пользователей.
 - Gallery moderation: admin cards show the publisher user ID; users can independently publish or remove photo and video posts from a completed try-on.
+- Avatar onboarding: users without an avatar may browse web pages; a persistent header notice links to the first-avatar form, while try-on remains unavailable until setup is complete.
 
 ## Документация
 - [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) — чеклист сделано / не сделано (актуальный)

@@ -166,25 +166,26 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
 
   const readyAvatarCount = avatars.filter((avatar) => avatar.status === "READY").length;
   const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
+  const needsFirstAvatar = !activeAvatarId && readyAvatarCount === 0;
   const additionalAvatars = avatars.filter((avatar) => avatar.id !== activeAvatarId && !avatar.active);
 
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-[#302637]">Мои аватары</h2>
+          <h2 className="text-lg font-semibold text-[#302637]">{needsFirstAvatar ? "Ваш первый аватар" : "Мои аватары"}</h2>
           <p className={`mt-1 max-w-xl text-xs leading-5 ${mutedTextClassName}`}>
             До {MAX_AVATARS_PER_USER} образов одного человека на аккаунт. Антропометрия общая для всех аватаров.
           </p>
         </div>
         <Button
-          disabled={atAvatarLimit}
+          disabled={atAvatarLimit || needsFirstAvatar}
           size="md"
           type="button"
           variant="secondary"
           onClick={() => setAdding((value) => !value)}
         >
-          {adding ? "Отмена" : "+ Новый аватар"}
+          {adding ? "Отмена" : needsFirstAvatar ? "Добавьте фото ниже" : "+ Новый аватар"}
         </Button>
       </div>
 
@@ -194,7 +195,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
         </p>
       ) : null}
 
-      {adding ? (
+      {adding || needsFirstAvatar ? (
         <div className="rounded-[28px] border border-[#f0dce8] bg-gradient-to-br from-white to-[#fff8fd] p-4 shadow-sm">
           <FieldInput
             accept="image/*"
@@ -213,7 +214,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
             />
           </div>
           <Button className="mt-4" disabled={busy || !newPhoto} size="lg" type="button" onClick={() => void addAvatar()}>
-            {busy ? "Загружаем…" : "Сохранить новый аватар"}
+            {busy ? "Загружаем…" : needsFirstAvatar ? "Создать аватар" : "Сохранить новый аватар"}
           </Button>
         </div>
       ) : null}

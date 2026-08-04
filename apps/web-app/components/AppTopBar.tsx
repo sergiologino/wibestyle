@@ -11,6 +11,7 @@ import { isAuthenticatedSession } from "@/lib/session-auth";
 import { isPaidSubscription } from "@/lib/billing-plan";
 import TelegramChannelButton from "@/components/community/TelegramChannelButton";
 import OverlayModal from "@/components/ui/OverlayModal";
+import AvatarRequiredNotice from "@/components/avatar/AvatarRequiredNotice";
 
 const nav = [
   { href: "/home", label: "Главная", icon: Home },
@@ -157,6 +158,7 @@ export default function AppTopBar() {
           </div>
         </div>
       </header>
+      {sessionReady && isAuthenticated && profile && !profile.activeAvatarId ? <AvatarRequiredNotice compact /> : null}
       {sessionReady && isAuthenticated ? (
         <nav
           aria-label="Основная навигация"

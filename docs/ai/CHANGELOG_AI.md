@@ -526,3 +526,7 @@
 - A completed try-on has independent photo/video actions: download and publish/unpublish in the public gallery. Owner unpublish uses `DELETE /api/v1/gallery/posts/{postId}` and cannot affect another user's post.
 - Gallery response includes `tryOnSessionId` so clients can correctly show the current publication state. Admin gallery cards display the publishing user ID for moderation.
 - Avatar sample images on web and mobile are marked with a large diagonal `ОБРАЗЕЦ` watermark until the user selects a real photo.
+## 2026-08-04 (No-avatar browsing flow)
+- A signed-in user without an avatar can browse the web app instead of being forced back into onboarding.
+- The app header shows a persistent avatar-required notice with a direct link to profile setup; the try-on section intentionally shows that notice instead of starting a try-on.
+- Profile now opens the first-avatar upload form directly and labels it as the first avatar, avoiding the misleading “additional avatar” path.
