@@ -78,7 +78,7 @@ public class AvatarQualityAnalyzer {
 
         List<String> warningList = List.copyOf(warnings);
         boolean blocking = warningList.stream().anyMatch(BLOCKING_CODES::contains);
-        String title = blocking ? "Давайте выберем кадр, на котором образ получится точнее" : "Фото подойдёт для примерки";
+        String title = blocking ? buildRejectionTitle(warningList) : "Фото подойдёт для примерки";
         String message = buildUserMessage(warningList, blocking);
         String recommendedAction = blocking ? "replace_photo" : warningList.isEmpty() ? "continue" : "continue_with_warning";
         return new AvatarQualityAssessment(warningList, blocking, title, message, recommendedAction);
@@ -203,6 +203,28 @@ public class AvatarQualityAnalyzer {
             return "Фото можно использовать, но кадр в полный рост на спокойном фоне даст более точную посадку.";
         }
         return "Фото подходит: аватар останется приватным и будет использоваться только для ваших примерок.";
+    }
+
+    static String buildRejectionTitle(List<String> warnings) {
+        if (warnings.contains("MULTIPLE_PEOPLE")) {
+            return "Фото не добавлено: в кадре несколько человек.";
+        }
+        if (warnings.contains("HEAD_ONLY")) {
+            return "Фото не добавлено: в кадре видны только голова и плечи.";
+        }
+        if (warnings.contains("NO_PERSON")) {
+            return "Фото не добавлено: на снимке не видно человека.";
+        }
+        if (warnings.contains("BODY_TOO_SMALL")) {
+            return "Фото не добавлено: человек занимает слишком мало места в кадре.";
+        }
+        if (warnings.contains("SIDEWAYS_OR_UPSIDE_DOWN")) {
+            return "Фото не добавлено: снимок нужно повернуть вертикально.";
+        }
+        if (warnings.contains("LOW_DETAIL")) {
+            return "Фото не добавлено: изображение недостаточно чёткое для примерки.";
+        }
+        return "Фото не добавлено: этот кадр не подходит для примерки.";
     }
 
     private record ImageStats(int width, int height, boolean readable) {

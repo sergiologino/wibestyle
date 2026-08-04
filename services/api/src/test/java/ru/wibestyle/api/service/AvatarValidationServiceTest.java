@@ -13,8 +13,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.List;
 
 class AvatarValidationServiceTest {
+
+    @Test
+    void multiplePeopleGetsAnExplicitReasonBeforeTheRecommendation() {
+        assertThat(AvatarQualityAnalyzer.buildRejectionTitle(List.of("MULTIPLE_PEOPLE")))
+                .isEqualTo("Фото не добавлено: в кадре несколько человек.");
+    }
 
     @Test
     void smallAvatarImageRequiresReplacement() throws Exception {

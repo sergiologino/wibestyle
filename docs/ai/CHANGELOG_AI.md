@@ -7,6 +7,8 @@
 - Fixed noteapp chat/vision request identity: the API now sends a non-empty `userId` (the owner UUID, or a stable technical classifier ID). Production diagnostics proved OpenAI completed the request but noteapp rolled back while inserting `external_users` with a null `external_user_id`; no shared noteapp network was renamed.
 - Added the human-readable `UPLOAD_INCOMPLETE` response for malformed/interrupted multipart avatar uploads.
 - Added an in-place processing overlay with spinner over the chosen avatar photo in web and Android, so validation/preprocessing never resembles a stalled interface.
+- Rejected avatar guidance now explicitly explains why the temporary photo disappeared before offering the supportive recommendation (for example, several people in the frame or only a head-and-shoulders crop).
+- Corrected profile reset: it now preserves the product default of a visible face instead of silently re-enabling face blur for the next avatar.
 - Added API regression coverage that verifies rejected avatars cannot preprocess, plus web regression coverage for validation guidance and ready-avatar retention.
 
 ## 2026-08-04 (Branded try-on downloads)

@@ -361,6 +361,23 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void resetProfileKeepsFaceVisibleByDefault() throws Exception {
+        String accessToken = authenticate("+79992223340");
+
+        mockMvc.perform(put("/api/v1/profile")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"privacyFaceHidden\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.privacy.faceHidden").value(true));
+
+        mockMvc.perform(delete("/api/v1/profile")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.privacy.faceHidden").value(false));
+    }
+
+    @Test
     void avatarFlowCreatesSnapshot() throws Exception {
         String accessToken = authenticate("+79992223344");
 

@@ -6,6 +6,7 @@
 - If a fully processed avatar cannot be activated because profile data needs completion, the client keeps it instead of deleting it; it remains available in the avatar manager for activation after the correction.
 - Interrupted multipart uploads are returned as a readable `UPLOAD_INCOMPLETE` response rather than an unhelpful server error.
 - While an avatar is uploading, validating and preparing, both clients cover its preview with an explicit progress card and spinner: `Идёт проверка корректности фото для аватара…`; the file picker is disabled until that operation finishes.
+- If validation removes a draft, its guidance begins with a concrete, non-judgmental reason (`Фото не добавлено: в кадре несколько человек`, `…видны только голова и плечи`, etc.), followed by the recommendation for the next photo.
 - Разбор production-лога noteapp подтвердил, что ключ, сеть и вызов OpenAI работают: сбой происходил при сохранении `external_users`, так как WibeStyle не передавал обязательный `userId` в chat/vision body. API теперь передаёт UUID владельца аватара (и стабильный технический ID для классификации товара); общая сеть noteapp не переименовывалась.
 
 ## Web billing conversion and one-time YooKassa checkout (2026-08-03)
@@ -287,6 +288,7 @@
 - Gallery moderation: admin cards show the publisher user ID; users can independently publish or remove photo and video posts from a completed try-on.
 - Avatar onboarding: users without an avatar may browse web pages; a persistent header notice links to the first-avatar form inside the main-avatar card, while try-on content remains visible but its actions are unavailable until setup is complete.
 - Avatar privacy: face hiding is opt-in for new profiles and avatars; existing users retain their chosen setting.
+- Resetting a profile also returns face hiding to the opt-in (`off`) default; it never silently enables face blur for the next avatar.
 
 ## Документация
 - [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) — чеклист сделано / не сделано (актуальный)
