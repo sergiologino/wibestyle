@@ -44,7 +44,7 @@ Profile UI preference: `profile.interfacePalette` is one of `vibe`, `pistachio`,
 | GET | `/try-on/sessions/{id}/download?type=image|video` | owner-only branded file export |
 | GET | `/ai/jobs/{jobId}` |
 
-`GET /try-on/sessions/{id}` result включает `styleCompliment` (опционально) — короткий post-try-on комментарий стилиста. Текст генерируется через noteapp chat network (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, обычно `gpt-4o-mini`) по prompt table key `tryon.result_compliment_ru`; при недоступности AI используется безопасный шаблон.
+`GET /try-on/sessions/{id}` result включает `styleCompliment` (опционально) — короткий post-try-on комментарий стилиста. Текст генерируется через noteapp chat network (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, по умолчанию `openai-gpt4o-mini`) по prompt table key `tryon.result_compliment_ru`; при недоступности AI используется безопасный шаблон.
 
 ## Search, Favorites, Gallery
 

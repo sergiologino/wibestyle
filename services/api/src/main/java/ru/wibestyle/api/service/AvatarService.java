@@ -132,7 +132,9 @@ public class AvatarService {
         String filename = storedPhoto.getFileName().toString();
         long sizeBytes = Files.size(storedPhoto);
         String contentType = contentTypeFromFilename(filename);
-        AvatarValidationService.ValidationOutcome outcome = avatarValidationService.validate(filename, sizeBytes, contentType, storedPhoto);
+        AvatarValidationService.ValidationOutcome outcome = avatarValidationService.validate(
+                userId.toString(), filename, sizeBytes, contentType, storedPhoto
+        );
         if (outcome.rejected()) {
             avatar.setStatus(AvatarStatus.REJECTED);
             avatar.setQualityScore(0.0);

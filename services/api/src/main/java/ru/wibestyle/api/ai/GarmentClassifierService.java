@@ -19,6 +19,7 @@ public class GarmentClassifierService {
 
     private static final Logger log = LoggerFactory.getLogger(GarmentClassifierService.class);
     private static final Pattern JSON_BLOCK = Pattern.compile("\\{[^{}]*\"category\"[^{}]*}", Pattern.DOTALL);
+    private static final String CLASSIFIER_EXTERNAL_USER_ID = "wibestyle-garment-classifier";
 
     private static final String SYSTEM_PROMPT = """
             You classify a single clothing item in a photo for a virtual try-on app.
@@ -79,6 +80,7 @@ public class GarmentClassifierService {
             String base64 = Base64.getEncoder().encodeToString(bytes);
             String response = noteappAiClient.generateVisionChatText(
                     aiProperties.getSizeComplimentNetwork(),
+                    CLASSIFIER_EXTERNAL_USER_ID,
                     SYSTEM_PROMPT,
                     "What clothing item is shown? Return JSON only.",
                     base64,

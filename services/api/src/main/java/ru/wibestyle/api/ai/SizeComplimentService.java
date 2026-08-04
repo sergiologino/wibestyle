@@ -80,7 +80,7 @@ public class SizeComplimentService {
                 snapshot.getClothingSize() == null ? "не указан" : snapshot.getClothingSize()
         );
         try {
-            return noteappAiClient.generateChatText(network, system, user);
+            return noteappAiClient.generateChatText(network, snapshot.getUserId().toString(), system, user);
         } catch (Exception ex) {
             log.warn("Size compliment AI failed, using template: {}", ex.getMessage());
             return null;
@@ -184,7 +184,7 @@ public class SizeComplimentService {
                 snapshot.getClothingSize() == null ? "не указан" : snapshot.getClothingSize()
         );
         try {
-            return noteappAiClient.generateChatText(network, system, user);
+            return noteappAiClient.generateChatText(network, session.getUserId().toString(), system, user);
         } catch (Exception ex) {
             log.warn("Result compliment AI failed, using template: {}", ex.getMessage());
             return null;

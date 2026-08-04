@@ -6,7 +6,7 @@
 - If a fully processed avatar cannot be activated because profile data needs completion, the client keeps it instead of deleting it; it remains available in the avatar manager for activation after the correction.
 - Interrupted multipart uploads are returned as a readable `UPLOAD_INCOMPLETE` response rather than an unhelpful server error.
 - While an avatar is uploading, validating and preparing, both clients cover its preview with an explicit progress card and spinner: `Идёт проверка корректности фото для аватара…`; the file picker is disabled until that operation finishes.
-- Vision QA in the supplied production log is currently unavailable because noteapp returns `403`; until its API key/network access is corrected, local checks still run but cannot reliably recognise a portrait or two people.
+- Разбор production-лога noteapp подтвердил, что ключ, сеть и вызов OpenAI работают: сбой происходил при сохранении `external_users`, так как WibeStyle не передавал обязательный `userId` в chat/vision body. API теперь передаёт UUID владельца аватара (и стабильный технический ID для классификации товара); общая сеть noteapp не переименовывалась.
 
 ## Web billing conversion and one-time YooKassa checkout (2026-08-03)
 - The desktop header now gives trial users a prominent animated-gradient `Подключить Wibe` CTA; motion is disabled for users who request reduced motion.
@@ -47,7 +47,7 @@
 - Verified: 59 mobile tests, mobile TypeScript, dependency/Metro release preflight and Android debug assembly. A signed release assembly remains an operator step because this workspace has no `VIBESTYLE_STORE_FILE` signing secret.
 
 ## Avatar quality gate and privacy copy (2026-07-30)
-- Avatar upload now has a quality gate: backend local checks and optional noteapp vision chat (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, e.g. `gpt-4o-mini`) detect portraits, tiny full-body photos, multiple/no people, rotation and low detail.
+- Avatar upload now has a quality gate: backend local checks and optional noteapp vision chat (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, the name configured for this WibeStyle client) detect portraits, tiny full-body photos, multiple/no people, rotation and low detail.
 - Weak avatars stay in `VALIDATION_FAILED`; web/mobile show a supportive replacement prompt instead of activating them.
 - New-user profile/avatar screens explicitly state that the avatar is private and never visible to other users.
 

@@ -374,7 +374,7 @@ WIBESTYLE_YOOKASSA_RECURRING_ENABLED=false
 | `WIBESTYLE_AI_ENABLED` | `false` | Включить noteapp-ai-integration |
 | `WIBESTYLE_AI_API_KEY` | — | API key клиента noteapp (`aikey_...`) |
 | `WIBESTYLE_AI_TRYON_NETWORK` | `wibestyle-vton` | Сеть virtual try-on в noteapp |
-| `WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK` | `gpt-4o-mini` | Chat-сеть noteapp для size advice и post-try-on `styleCompliment` |
+| `WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK` | `openai-gpt4o-mini` | Chat-сеть noteapp для size advice, проверки аватара и post-try-on `styleCompliment` |
 | `WIBESTYLE_AI_BASE_URL` | `http://localhost:8091` | URL noteapp-ai-integration |
 | `WIBESTYLE_AI_FALLBACK_TO_DEMO` | `false` | Fallback на demo SVG при ошибке AI |
 | `WIBESTYLE_TELEGRAM_CHANNEL_URL` | — | Reserved: public Telegram channel URL |
@@ -398,12 +398,12 @@ WIBESTYLE_YOOKASSA_RECURRING_ENABLED=false
 WIBESTYLE_AI_ENABLED=true
 WIBESTYLE_AI_API_KEY=aikey_...
 WIBESTYLE_AI_TRYON_NETWORK=wibestyle-vton
-WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK=gpt-4o-mini
+WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK=openai-gpt4o-mini
 WIBESTYLE_AI_BASE_URL=http://localhost:8091
 WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 ```
 
-В **noteapp** добавьте сеть `gpt-4o-mini` (provider `openai`, type `chat`, model `gpt-4o-mini`) и выдайте доступ клиенту wibestyle — для вежливых подсказок «возьмите размер побольше» и коротких комментариев стилиста после примерки (`styleCompliment`). Если сети нет, используются шаблоны с ротацией.
+В **noteapp** должна уже существовать сеть `openai-gpt4o-mini` (provider `openai`, type `chat`, model `gpt-4o-mini`) с доступом клиента `wibestyle`. Не переименовывайте общую сеть: укажите её техническое имя только в переменной окружения WibeStyle. Она используется для проверки аватаров, вежливых size advice и коротких комментариев стилиста после примерки (`styleCompliment`). Если сети нет, используются шаблоны с ротацией.
 
 7. Перезапустите noteapp и wibestyle API.
 

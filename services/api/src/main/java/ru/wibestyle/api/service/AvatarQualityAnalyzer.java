@@ -48,7 +48,12 @@ public class AvatarQualityAnalyzer {
         this.noteappAiClient = noteappAiClient;
     }
 
-    public AvatarQualityAssessment analyze(Path photo, String contentType, List<String> initialWarnings) {
+    public AvatarQualityAssessment analyze(
+            String externalUserId,
+            Path photo,
+            String contentType,
+            List<String> initialWarnings
+    ) {
         LinkedHashSet<String> warnings = new LinkedHashSet<>(initialWarnings);
         ImageStats stats = inspectImage(photo);
         if (stats.readable()) {
@@ -66,7 +71,7 @@ public class AvatarQualityAnalyzer {
             warnings.add("LOW_DETAIL");
         }
 
-        AvatarQualityAssessment aiAssessment = analyzeWithVision(photo, contentType);
+        AvatarQualityAssessment aiAssessment = analyzeWithVision(externalUserId, photo, contentType);
         if (aiAssessment != null) {
             warnings.addAll(aiAssessment.warnings());
         }
@@ -91,7 +96,7 @@ public class AvatarQualityAnalyzer {
         }
     }
 
-    private AvatarQualityAssessment analyzeWithVision(Path photo, String contentType) {
+    private AvatarQualityAssessment analyzeWithVision(String externalUserId, Path photo, String contentType) {
         if (!aiProperties.isChatNetworkConfigured()) {
             return null;
         }
@@ -109,6 +114,7 @@ public class AvatarQualityAnalyzer {
                     """;
             String raw = noteappAiClient.generateVisionChatText(
                     aiProperties.getSizeComplimentNetwork(),
+                    externalUserId,
                     system,
                     user,
                     imageBase64,

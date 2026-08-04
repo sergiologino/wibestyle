@@ -33,7 +33,7 @@ class AvatarValidationServiceTest {
             ImageIO.write(image, "jpg", imagePath.toFile());
 
             AvatarValidationService.ValidationOutcome outcome =
-                    service.validate("avatar.jpg", Files.size(imagePath), "image/jpeg", imagePath);
+                    service.validate("test-avatar-user", "avatar.jpg", Files.size(imagePath), "image/jpeg", imagePath);
 
             assertThat(outcome.status()).isEqualTo(AvatarStatus.VALIDATION_FAILED);
             assertThat(outcome.recommendedAction()).isEqualTo("replace_photo");

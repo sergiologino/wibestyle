@@ -23,7 +23,13 @@ public class AvatarValidationService {
         this.avatarQualityAnalyzer = avatarQualityAnalyzer;
     }
 
-    public ValidationOutcome validate(String filename, long sizeBytes, String contentType, java.nio.file.Path photoPath) {
+    public ValidationOutcome validate(
+            String externalUserId,
+            String filename,
+            long sizeBytes,
+            String contentType,
+            java.nio.file.Path photoPath
+    ) {
         List<String> warnings = new ArrayList<>();
         filename = filename == null ? "" : filename.toLowerCase(Locale.ROOT);
 
@@ -50,7 +56,7 @@ public class AvatarValidationService {
         }
 
         AvatarQualityAnalyzer.AvatarQualityAssessment qualityAssessment =
-                avatarQualityAnalyzer.analyze(photoPath, contentType, warnings);
+                avatarQualityAnalyzer.analyze(externalUserId, photoPath, contentType, warnings);
         warnings = new ArrayList<>(qualityAssessment.warnings());
         if (qualityAssessment.blocking()) {
             qualityScore = Math.min(qualityScore, 0.35);
