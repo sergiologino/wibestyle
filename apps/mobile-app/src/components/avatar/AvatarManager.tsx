@@ -235,6 +235,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
             ) : (
               <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
+            {!previewUri ? <Text style={styles.sampleWatermark}>ОБРАЗЕЦ</Text> : null}
           </Pressable>
           {avatarGuidance?.message ? (
             <View style={styles.guidanceBox}>
@@ -318,6 +319,14 @@ const styles = StyleSheet.create({
   photo: {
     width: "100%",
     height: "100%",
+  },
+  sampleWatermark: {
+    position: "absolute",
+    color: "rgba(90, 80, 88, 0.52)",
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 30,
+    letterSpacing: 3,
+    transform: [{ rotate: "-28deg" }],
   },
   guidanceBox: {
     borderRadius: radius.xl,

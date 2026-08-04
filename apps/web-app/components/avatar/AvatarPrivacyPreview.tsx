@@ -84,12 +84,15 @@ export default function AvatarPrivacyPreview({
             {privacy.hideFace ? <div aria-hidden className="avatar-preview-face-mask" /> : null}
           </>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            alt="Образец фото для аватара"
-            className="avatar-preview-image mx-auto block max-h-[520px] min-h-[320px] w-full object-contain"
-            src={DEFAULT_AVATAR_SAMPLE_SRC}
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              alt="Образец фото для аватара"
+              className="avatar-preview-image mx-auto block max-h-[520px] min-h-[320px] w-full object-contain"
+              src={DEFAULT_AVATAR_SAMPLE_SRC}
+            />
+            <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center -rotate-[28deg] text-4xl font-black tracking-[0.22em] text-[#6d6273]/55 sm:text-6xl">ОБРАЗЕЦ</span>
+          </>
         )}
       </div>
 

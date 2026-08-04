@@ -14,4 +14,13 @@ describe("AuthClient", () => {
     expect(source).not.toContain("EmailOtpForm");
     expect(source).not.toContain(">Email<");
   });
+
+  it("waits for OAuth providers before revealing every auth method", () => {
+    const source = readFileSync(join(process.cwd(), "components", "auth", "AuthClient.tsx"), "utf8");
+    const oauthSource = readFileSync(join(process.cwd(), "components", "auth", "OAuthButtons.tsx"), "utf8");
+    expect(source).toContain("oauthReady");
+    expect(source).toContain('aria-label="Загружаем способы входа"');
+    expect(source).toContain("visible={oauthReady}");
+    expect(oauthSource).toContain("finally(onProvidersResolved)");
+  });
 });

@@ -191,3 +191,7 @@ The authenticated response contains the personal referral code, eligibility, rem
 
 See Flyway migrations `V1`–`V24` in `services/api/src/main/resources/db/migration/`.
 
+### Gallery: owner publication control
+
+- `GET /api/v1/gallery/posts/mine` returns the signed-in user's posts, including `tryOnSessionId` and `mediaType`.
+- `DELETE /api/v1/gallery/posts/{postId}` removes a gallery post only when it belongs to the signed-in user. It does not delete the try-on or its source media.

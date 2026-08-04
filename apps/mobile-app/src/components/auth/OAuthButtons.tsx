@@ -11,7 +11,7 @@ const YANDEX_RED = "#FC3F1D";
 
 WebBrowser.maybeCompleteAuthSession();
 
-export function OAuthButtons({ referralCode }: { referralCode?: string }) {
+export function OAuthButtons({ referralCode, onProvidersResolved, visible = true }: { referralCode?: string; onProvidersResolved?: () => void; visible?: boolean }) {
   const { api } = useSession();
   const [providers, setProviders] = useState({ yandex: false, google: false });
   const [loading, setLoading] = useState<string | null>(null);
@@ -20,8 +20,8 @@ export function OAuthButtons({ referralCode }: { referralCode?: string }) {
   useEffect(() => {
     void api.getOAuthProviders().then((data) => {
       setProviders({ yandex: data.yandex.enabled, google: data.google.enabled });
-    }).catch(() => setProviders({ yandex: false, google: false }));
-  }, [api]);
+    }).catch(() => setProviders({ yandex: false, google: false })).finally(onProvidersResolved);
+  }, [api, onProvidersResolved]);
 
   async function start(provider: "yandex" | "google") {
     setLoading(provider);
@@ -43,7 +43,7 @@ export function OAuthButtons({ referralCode }: { referralCode?: string }) {
   }
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, !visible && styles.hidden]}>
       <Text style={styles.label}>Или войти через</Text>
       <View style={styles.row}>
         {providers.yandex ? (
@@ -81,6 +81,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: spacing.md,
   },
+  hidden: { display: "none" },
   label: {
     fontFamily: "Manrope_600SemiBold",
     fontSize: 14,

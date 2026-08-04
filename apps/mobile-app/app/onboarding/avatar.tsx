@@ -137,6 +137,7 @@ export default function AvatarOnboardingScreen() {
             ) : (
               <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
+            {!previewUri ? <Text style={styles.sampleWatermark}>ОБРАЗЕЦ</Text> : null}
           </Pressable>
 
           <View style={styles.genderRow}>
@@ -209,6 +210,14 @@ const styles = StyleSheet.create({
   photo: {
     width: "100%",
     height: "100%",
+  },
+  sampleWatermark: {
+    position: "absolute",
+    color: "rgba(90, 80, 88, 0.52)",
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 36,
+    letterSpacing: 4,
+    transform: [{ rotate: "-28deg" }],
   },
   privacyNote: {
     borderRadius: radius.xl,

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -91,6 +92,18 @@ public class GalleryController {
     ) {
         try {
             return galleryService.create(requireUserId(authorization), request);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @DeleteMapping("/posts/{postId}")
+    public Map<String, Object> deleteMine(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID postId
+    ) {
+        try {
+            return galleryService.deleteMine(requireUserId(authorization), postId);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }

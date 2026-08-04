@@ -5,7 +5,7 @@ import { Feather } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import { ApiError } from "@wibestyle/api-client";
-import type { SeasonHitVideoStatus, TryOnResult } from "@wibestyle/shared-types";
+import type { GalleryPost, SeasonHitVideoStatus, TryOnResult } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle } from "@/components/ui/Button";
@@ -64,7 +64,8 @@ export default function TryOnResultScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(accessToken);
-  const [saving, setSaving] = useState(false);
+  const [galleryAction, setGalleryAction] = useState<"image" | "video" | null>(null);
+  const [galleryPosts, setGalleryPosts] = useState<GalleryPost[]>([]);
   const [downloading, setDownloading] = useState<"image" | "video" | null>(null);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -234,18 +235,33 @@ export default function TryOnResultScreen() {
     });
   }, [result]);
 
-  async function saveToGallery(mediaType: "image" | "video" = "image") {
+  useEffect(() => {
     if (!sessionId) return;
-    setSaving(true);
+    let cancelled = false;
+    void api.listMyGalleryPosts().then(({ items }) => {
+      if (!cancelled) setGalleryPosts(items.filter((post) => post.tryOnSessionId === sessionId));
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [api, sessionId]);
+
+  const galleryPostFor = (mediaType: "image" | "video") => galleryPosts.find((post) => (post.mediaType ?? "image") === mediaType);
+
+  async function toggleGalleryPost(mediaType: "image" | "video") {
+    if (!sessionId) return;
+    setGalleryAction(mediaType);
     try {
-      await api.createGalleryPost({
-        tryOnSessionId: sessionId,
-        visibility: "public",
-        productLinkVisible: true,
-        mediaType,
-      });
+      const existing = galleryPostFor(mediaType);
+      if (existing) {
+        await api.deleteMyGalleryPost(existing.id);
+        setGalleryPosts((posts) => posts.filter((post) => post.id !== existing.id));
+      } else {
+        const { post } = await api.createGalleryPost({ tryOnSessionId: sessionId, visibility: "public", productLinkVisible: true, mediaType });
+        setGalleryPosts((posts) => [...posts, post]);
+      }
+    } catch (err) {
+      setShareError(err instanceof ApiError ? err.message : "Не удалось обновить публикацию в галерее.");
     } finally {
-      setSaving(false);
+      setGalleryAction(null);
     }
   }
 
@@ -480,13 +496,19 @@ export default function TryOnResultScreen() {
         ) : null}
 
         <BeforeAfterSlider beforeSource={imageUris.before} afterSource={imageUris.after} height={480} />
-        <Button label="Скачать фото" variant="secondary" loading={downloading === "image"} onPress={() => void downloadBranded("image")} />
+        <View style={styles.mediaActions}>
+          <Button label="Скачать фото" variant="secondary" loading={downloading === "image"} onPress={() => void downloadBranded("image")} style={styles.mediaAction} />
+          <Button label={galleryPostFor("image") ? "Убрать из галереи" : "Показать в галерее"} variant="secondary" loading={galleryAction === "image"} onPress={() => void toggleGalleryPost("image")} style={styles.mediaAction} />
+        </View>
 
         {videoStatus === "ready" && afterVideoUrl ? (
           <View style={styles.videoSection}>
             <Text style={styles.videoTitle}>Видео «Хит сезона»</Text>
             <AppVideoPlayer path={afterVideoUrl} accessToken={token} />
-            <Button label="Скачать видео" variant="secondary" loading={downloading === "video"} onPress={() => void downloadBranded("video")} />
+            <View style={styles.mediaActions}>
+              <Button label="Скачать видео" variant="secondary" loading={downloading === "video"} onPress={() => void downloadBranded("video")} style={styles.mediaAction} />
+              <Button label={galleryPostFor("video") ? "Убрать из галереи" : "Показать в галерее"} variant="secondary" loading={galleryAction === "video"} onPress={() => void toggleGalleryPost("video")} style={styles.mediaAction} />
+            </View>
           </View>
         ) : null}
 
@@ -543,10 +565,6 @@ export default function TryOnResultScreen() {
           {videoStatus !== "ready" && videoStatus !== "generating" ? (
             <BodyText>В trial доступно одно бесплатное видео. В Elite — видео к каждой примерке.</BodyText>
           ) : null}
-          {videoStatus === "ready" && afterVideoUrl ? (
-            <Button label="Видео в галерею" loading={saving} onPress={() => saveToGallery("video")} />
-          ) : null}
-          <Button label="Поделиться в галерее" variant="secondary" loading={saving} onPress={() => saveToGallery("image")} />
           <Button label="Поделиться" variant="secondary" loading={sharing} onPress={shareResult} />
           <Button label="Ещё примерка" onPress={() => router.push("/(main)/try-on")} />
         </View>
@@ -749,6 +767,13 @@ const styles = StyleSheet.create({
   },
   videoSection: {
     gap: spacing.sm,
+  },
+  mediaActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  mediaAction: {
+    flex: 1,
   },
   videoStatusCard: {
     flexDirection: "row",

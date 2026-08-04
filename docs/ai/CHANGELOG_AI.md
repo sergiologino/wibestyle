@@ -521,3 +521,8 @@
 - Opened personal referral links and first-purchase rewards to trial users and expired subscribers.
 - Bonus try-ons now participate in quota calculation and consumption even without an active subscription.
 - Updated web/mobile profile, sharing, referral-history and onboarding copy to present free referral try-ons.
+## 2026-08-04 (Auth, gallery and avatar clarity)
+- Web and mobile auth now wait for OAuth-provider availability before exposing either phone or Yandex login; a loading skeleton is shown during that short check, and a network failure still safely reveals phone login.
+- A completed try-on has independent photo/video actions: download and publish/unpublish in the public gallery. Owner unpublish uses `DELETE /api/v1/gallery/posts/{postId}` and cannot affect another user's post.
+- Gallery response includes `tryOnSessionId` so clients can correctly show the current publication state. Admin gallery cards display the publishing user ID for moderation.
+- Avatar sample images on web and mobile are marked with a large diagonal `ОБРАЗЕЦ` watermark until the user selects a real photo.

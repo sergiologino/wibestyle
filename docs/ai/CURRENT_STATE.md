@@ -276,6 +276,7 @@
 - YooKassa recurring: код готов — задать env, webhook URL и production receipt settings (см. RUNBOOK).
 - Admin RBAC (роли SUPER_ADMIN/MODERATOR).
 - Age gate, блокировка пользователей.
+- Gallery moderation: admin cards show the publisher user ID; users can independently publish or remove photo and video posts from a completed try-on.
 
 ## Документация
 - [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) — чеклист сделано / не сделано (актуальный)

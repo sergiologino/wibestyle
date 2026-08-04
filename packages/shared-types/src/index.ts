@@ -528,6 +528,7 @@ export type FavoriteRecord = {
 
 export type GalleryPost = {
   id: string;
+  tryOnSessionId?: string;
   slug: string;
   title: string;
   imageUrl: string;

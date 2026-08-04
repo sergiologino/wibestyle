@@ -604,6 +604,10 @@ export class WibeStyleApiClient {
     return this.request<PaginatedResponse<GalleryPost>>(`/api/v1/gallery/posts${query ? `?${query}` : ""}`);
   }
 
+  listMyGalleryPosts() {
+    return this.request<{ items: GalleryPost[] }>("/api/v1/gallery/posts/mine");
+  }
+
   getGalleryPostBySlug(slug: string) {
     return this.request<{ post: GalleryPost; comments: { id: string; body: string; createdAt: string }[] }>(
       `/api/v1/gallery/posts/slug/${slug}`,
@@ -624,6 +628,10 @@ export class WibeStyleApiClient {
       method: "POST",
       body: JSON.stringify(payload),
     });
+  }
+
+  deleteMyGalleryPost(postId: string) {
+    return this.request<{ deleted: boolean; postId: string }>(`/api/v1/gallery/posts/${postId}`, { method: "DELETE" });
   }
 
   toggleGalleryLike(postId: string) {
