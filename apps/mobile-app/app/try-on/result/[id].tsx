@@ -65,6 +65,8 @@ export default function TryOnResultScreen() {
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(accessToken);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState<"image" | "video" | null>(null);
+  const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const [videoStatus, setVideoStatus] = useState<SeasonHitVideoStatus>("none");
@@ -355,7 +357,7 @@ export default function TryOnResultScreen() {
 
   async function downloadBranded(type: "image" | "video") {
     if (!sessionId || !token) return;
-    setSaving(true); setShareError(null);
+    setDownloading(type); setShareError(null); setDownloadNotice(null);
     try {
       const permission = await MediaLibrary.requestPermissionsAsync();
       if (!permission.granted) throw new Error("MEDIA_PERMISSION_DENIED");
@@ -367,9 +369,10 @@ export default function TryOnResultScreen() {
         { headers: { Authorization: `Bearer ${token}` } },
       );
       await MediaLibrary.saveToLibraryAsync(response.uri);
+      setDownloadNotice(type === "video" ? "Видео сохранено на устройство" : "Фото сохранено на устройство");
     } catch {
       setShareError(type === "video" ? "Не удалось скачать видео." : "Не удалось скачать фото.");
-    } finally { setSaving(false); }
+    } finally { setDownloading(null); }
   }
 
   function closeReviewPrompt() {
@@ -477,11 +480,13 @@ export default function TryOnResultScreen() {
         ) : null}
 
         <BeforeAfterSlider beforeSource={imageUris.before} afterSource={imageUris.after} height={480} />
+        <Button label="Скачать фото" variant="secondary" loading={downloading === "image"} onPress={() => void downloadBranded("image")} />
 
         {videoStatus === "ready" && afterVideoUrl ? (
           <View style={styles.videoSection}>
             <Text style={styles.videoTitle}>Видео «Хит сезона»</Text>
             <AppVideoPlayer path={afterVideoUrl} accessToken={token} />
+            <Button label="Скачать видео" variant="secondary" loading={downloading === "video"} onPress={() => void downloadBranded("video")} />
           </View>
         ) : null}
 
@@ -496,6 +501,7 @@ export default function TryOnResultScreen() {
         ) : null}
 
         {videoError ? <Text style={styles.videoError}>{videoError}</Text> : null}
+        {downloadNotice ? <Text style={styles.downloadNotice}>{downloadNotice}</Text> : null}
         {shareError ? <Text style={styles.videoError}>{shareError}</Text> : null}
 
         {result.styleCompliment ? (
@@ -540,8 +546,6 @@ export default function TryOnResultScreen() {
           {videoStatus === "ready" && afterVideoUrl ? (
             <Button label="Видео в галерею" loading={saving} onPress={() => saveToGallery("video")} />
           ) : null}
-          <Button label="Скачать фото с логотипом и QR" variant="secondary" loading={saving} onPress={() => void downloadBranded("image")} />
-          {videoStatus === "ready" && afterVideoUrl ? <Button label="Скачать видео с логотипом и QR" variant="secondary" loading={saving} onPress={() => void downloadBranded("video")} /> : null}
           <Button label="Поделиться в галерее" variant="secondary" loading={saving} onPress={() => saveToGallery("image")} />
           <Button label="Поделиться" variant="secondary" loading={sharing} onPress={shareResult} />
           <Button label="Ещё примерка" onPress={() => router.push("/(main)/try-on")} />
@@ -804,6 +808,7 @@ const styles = StyleSheet.create({
   videoButton: {
     flex: 1,
   },
+  downloadNotice: { fontFamily: "Manrope_500Medium", fontSize: 14, color: colors.violet, backgroundColor: colors.pinkBg, padding: spacing.sm, borderRadius: radius.lg },
   modalBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
