@@ -45,7 +45,7 @@ public class TryOnBrandedExportService {
         Path target = Files.createTempFile("wibestyle-" + sessionId + "-", ".mp4");
         ImageIO.write(overlay, "png", overlayFile.toFile());
         Process process = new ProcessBuilder("ffmpeg", "-y", "-i", source.toString(), "-loop", "1", "-i", overlayFile.toString(),
-                "-filter_complex", "[0:v][1:v]overlay=0:0:shortest=1[v]", "-map", "[v]", "-map", "0:a?",
+                "-filter_complex", "[1:v][0:v]scale2ref[overlay][base];[base][overlay]overlay=0:0:shortest=1[v]", "-map", "[v]", "-map", "0:a?",
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "copy", "-shortest", target.toString())
                 .redirectErrorStream(true).start();
         String output = new String(process.getInputStream().readAllBytes());
