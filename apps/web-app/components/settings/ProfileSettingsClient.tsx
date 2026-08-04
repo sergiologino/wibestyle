@@ -286,13 +286,12 @@ export default function ProfileSettingsClient() {
             {isPaidSubscription(profile) ? "Upgrade на Elite" : "Оформить подписку"}
           </Button>
         </Link>
-        <Link
-          href="/referrals"
-          className="mt-6 flex w-fit text-xs font-medium text-[var(--pink)] underline decoration-[var(--pink)]/50 underline-offset-4 transition hover:decoration-[var(--pink)]"
-        >
-          Приглашай друзей — получай бесплатные примерки →
+        <Link href="/referrals" className="mt-6 block overflow-hidden rounded-[24px] border border-[#ffb8e4] bg-[linear-gradient(120deg,#fff0f8,#f4edff,#fff7ef)] p-5 shadow-[0_14px_34px_rgba(255,31,162,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(255,31,162,0.24)]">
+          <p className="text-eyebrow text-[var(--pink)]">Бонусы за приглашения</p>
+          <p className="mt-2 text-xl font-medium text-[#302637]">Приглашай друзей — получай бесплатные примерки</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">Поделись личной ссылкой. Подписка не нужна.</p>
+          <span className="mt-4 inline-flex min-h-10 items-center rounded-xl bg-[var(--pink)] px-4 text-sm font-medium text-white shadow-md">Пригласить друзей →</span>
         </Link>
-        <p className="mt-2 text-xs text-[var(--muted)]">Доступно всем пользователям, подписка не нужна.</p>
       </Card>
 
       <Card>

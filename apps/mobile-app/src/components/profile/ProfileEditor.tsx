@@ -293,8 +293,11 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
             </View>
           ) : null}
           <Button label="Тарифы и подписка" variant="secondary" onPress={() => router.push("/paywall")} />
-          <BodyText>Приглашай друзей и получай бесплатные примерки. Подписка не нужна.</BodyText>
-          <Button label="Пригласить друзей" variant="ghost" onPress={() => router.push("/referrals" as never)} />
+          <Pressable style={styles.referralCta} onPress={() => router.push("/referrals" as never)}>
+            <View style={styles.referralIcon}><Feather name="gift" size={20} color={colors.white} /></View>
+            <View style={styles.referralCopy}><Text style={styles.referralEyebrow}>БОНУСЫ ЗА ПРИГЛАШЕНИЯ</Text><Text style={styles.referralTitle}>Приглашай друзей — получай примерки</Text><Text style={styles.referralText}>Поделись личной ссылкой. Подписка не нужна.</Text></View>
+            <Feather name="chevron-right" size={22} color={colors.white} />
+          </Pressable>
         </Card>
 
         <Card>
@@ -460,6 +463,12 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
 }
 
 const styles = StyleSheet.create({
+  referralCta: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderRadius: radius.xl, backgroundColor: colors.pink, shadowColor: colors.pink, shadowOpacity: .3, shadowRadius: 12, elevation: 4 },
+  referralIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,.22)" },
+  referralCopy: { flex: 1 },
+  referralEyebrow: { fontFamily: "Manrope_600SemiBold", fontSize: 10, letterSpacing: 1, color: "rgba(255,255,255,.82)" },
+  referralTitle: { marginTop: 2, fontFamily: "Manrope_600SemiBold", fontSize: 15, color: colors.white },
+  referralText: { marginTop: 2, fontFamily: "Manrope_400Regular", fontSize: 12, color: "rgba(255,255,255,.88)" },
   flex: { flex: 1 },
   scroll: {
     padding: spacing.lg,
