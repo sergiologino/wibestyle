@@ -160,7 +160,7 @@ public class AvatarService {
     @Transactional
     public Map<String, Object> preprocessAvatar(UUID userId, UUID avatarId) throws IOException {
         AvatarEntity avatar = requireAvatar(userId, avatarId);
-        if (avatar.getStatus() != AvatarStatus.PHOTO_UPLOADED && avatar.getStatus() != AvatarStatus.VALIDATION_FAILED) {
+        if (avatar.getStatus() != AvatarStatus.PHOTO_UPLOADED) {
             throw new IllegalArgumentException("AVATAR_NOT_READY_FOR_PREPROCESS");
         }
 

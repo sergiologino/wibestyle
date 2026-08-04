@@ -28,6 +28,8 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 
 Avatar photo privacy: `GET /avatars/{id}/photo?variant=original` returns the uploaded original. `variant=processed` returns the server-generated privacy-aware image. When face/background hiding is enabled on the profile/avatar, preprocessing blurs the detected face and/or background in the processed variant.
 
+`POST /avatars/{id}/validate` returns `guidanceTitle`, `guidanceMessage` and `recommendedAction`. When it returns `VALIDATION_FAILED` / `replace_photo`, the client must show the supportive explanation and let the user choose another file; `POST /avatars/{id}/preprocess` then returns `AVATAR_NOT_READY_FOR_PREPROCESS`. An interrupted multipart photo upload returns `400 UPLOAD_INCOMPLETE` with a user-readable retry instruction.
+
 Profile UI preference: `profile.interfacePalette` is one of `vibe`, `pistachio`, `graphite`. `PUT /profile` accepts `interfacePalette`; new profiles default to `vibe`.
 
 ## Marketplace & Try-on

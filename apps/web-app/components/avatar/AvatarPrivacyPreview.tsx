@@ -21,6 +21,7 @@ type AvatarPrivacyPreviewProps = {
   privacy: PrivacyState;
   onPrivacyChange: (next: Partial<PrivacyState>) => void;
   showToggles?: boolean;
+  processing?: boolean;
 };
 
 export function avatarPrivacyPreviewClassName(privacy: PrivacyState) {
@@ -37,6 +38,7 @@ export default function AvatarPrivacyPreview({
   privacy,
   onPrivacyChange,
   showToggles = true,
+  processing = false,
 }: AvatarPrivacyPreviewProps) {
   const [remoteBlobUrl, setRemoteBlobUrl] = useState<string | null>(null);
 
@@ -94,6 +96,14 @@ export default function AvatarPrivacyPreview({
             <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center -rotate-[28deg] text-4xl font-black tracking-[0.22em] text-[#6d6273]/55 sm:text-6xl">ОБРАЗЕЦ</span>
           </>
         )}
+        {processing ? (
+          <div aria-live="polite" className="absolute inset-0 z-10 flex items-center justify-center bg-[#302637]/45 p-5">
+            <div className="flex max-w-xs items-center gap-3 rounded-2xl border border-white/35 bg-white/95 px-4 py-3 text-sm font-medium text-[#302637] shadow-xl">
+              <span aria-hidden className="size-5 shrink-0 animate-spin rounded-full border-2 border-[#ff1fa2]/25 border-t-[#ff1fa2]" />
+              <span>Идёт проверка корректности фото для аватара…</span>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {showToggles ? (

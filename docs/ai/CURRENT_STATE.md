@@ -1,5 +1,13 @@
 # Current State
 
+## Avatar upload regression repair (2026-08-04)
+- A failed quality check is now terminal for that uploaded draft: `VALIDATION_FAILED` cannot enter preprocessing or become an active avatar.
+- Web and Android retain the server's supportive guidance, clear the rejected selection, and show the creation button only after a real photo is selected. The unused first-avatar prompt was removed.
+- If a fully processed avatar cannot be activated because profile data needs completion, the client keeps it instead of deleting it; it remains available in the avatar manager for activation after the correction.
+- Interrupted multipart uploads are returned as a readable `UPLOAD_INCOMPLETE` response rather than an unhelpful server error.
+- While an avatar is uploading, validating and preparing, both clients cover its preview with an explicit progress card and spinner: `Идёт проверка корректности фото для аватара…`; the file picker is disabled until that operation finishes.
+- Vision QA in the supplied production log is currently unavailable because noteapp returns `403`; until its API key/network access is corrected, local checks still run but cannot reliably recognise a portrait or two people.
+
 ## Web billing conversion and one-time YooKassa checkout (2026-08-03)
 - The desktop header now gives trial users a prominent animated-gradient `Подключить Wibe` CTA; motion is disabled for users who request reduced motion.
 - The web paywall shows a promo's crossed-out base price and the final discounted price together near the payment CTA, rather than leaving the discount only in the top badge.

@@ -22,6 +22,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -482,6 +487,34 @@ class ApiIntegrationTest {
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INAPPROPRIATE_PHOTO"));
+    }
+
+    @Test
+    void rejectedAvatarCannotEnterPreprocessing() throws Exception {
+        String accessToken = authenticate("+79993334456");
+        String avatarId = createDraftAvatar(accessToken);
+        MockMultipartFile photo = new MockMultipartFile(
+                "photo",
+                "small-avatar.jpg",
+                "image/jpeg",
+                smallPhotoBytes()
+        );
+
+        mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/avatars/" + avatarId + "/photo")
+                        .file(photo)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/avatars/" + avatarId + "/validate")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.avatar.status").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.recommendedAction").value("replace_photo"));
+
+        mockMvc.perform(post("/api/v1/avatars/" + avatarId + "/preprocess")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("AVATAR_NOT_READY_FOR_PREPROCESS"));
     }
 
     @Test
@@ -1105,10 +1138,28 @@ class ApiIntegrationTest {
         return objectMapper.readTree(avatarBody).get("avatar").get("id").asText();
     }
 
-    private byte[] samplePhotoBytes() {
-        byte[] bytes = new byte[25000];
-        java.util.Arrays.fill(bytes, (byte) 0xFF);
-        return bytes;
+    private byte[] samplePhotoBytes() throws Exception {
+        return jpegBytes(800, 1200);
+    }
+
+    private byte[] smallPhotoBytes() throws Exception {
+        return jpegBytes(320, 480);
+    }
+
+    private byte[] jpegBytes(int width, int height) throws Exception {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+        try {
+            graphics.setColor(Color.WHITE);
+            graphics.fillRect(0, 0, width, height);
+            graphics.setColor(new Color(230, 185, 205));
+            graphics.fillOval(width / 3, height / 8, width / 3, height * 2 / 3);
+        } finally {
+            graphics.dispose();
+        }
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", output);
+        return output.toByteArray();
     }
 
     @Test

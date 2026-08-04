@@ -19,6 +19,8 @@ describe("missing avatar flow", () => {
     expect(avatarManager).toContain("needsFirstAvatar");
     expect(avatarManager).toContain("adding || needsFirstAvatar");
     expect(avatarManager).toContain("Добавить фото");
+    expect(avatarManager).not.toContain("Добавьте фото ниже");
+    expect(avatarManager).toContain("{newPhoto ? <Button");
     expect(avatarManager).toContain("Создать аватар");
   });
 });

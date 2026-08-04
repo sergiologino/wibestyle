@@ -74,6 +74,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const [hideBackground, setHideBackground] = useState(false);
   const [hideFeatures, setHideFeatures] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
 
   async function reload() {
     setLoading(true);
@@ -136,8 +137,10 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     }
     setBusy(true);
     setError(null);
+    setAvatarGuidance(null);
     let createdAvatarId: string | null = null;
     let avatarActivated = false;
+    let reachedReadyState = false;
     try {
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
@@ -146,8 +149,15 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       });
       createdAvatarId = avatar.id;
       await api.uploadAvatarPhoto(avatar.id, newPhoto);
-      await api.validateAvatar(avatar.id);
+      const validation = await api.validateAvatar(avatar.id);
+      if (validation.recommendedAction === "replace_photo" || validation.avatar.status === "VALIDATION_FAILED") {
+        setAvatarGuidance({ title: validation.guidanceTitle, message: validation.guidanceMessage });
+        await api.deleteAvatar(avatar.id).catch(() => undefined);
+        setNewPhoto(null);
+        return;
+      }
       await api.preprocessAvatar(avatar.id);
+      reachedReadyState = true;
       await api.activateAvatar(avatar.id);
       avatarActivated = true;
       setNewPhoto(null);
@@ -155,8 +165,11 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       await refreshProfile();
       await reload();
     } catch (err) {
-      if (createdAvatarId && !avatarActivated) {
+      if (createdAvatarId && !avatarActivated && !reachedReadyState) {
         await api.deleteAvatar(createdAvatarId).catch(() => undefined);
+      }
+      if (reachedReadyState) {
+        await reload();
       }
       setError(err instanceof ApiError ? err.message : "Не удалось добавить аватар");
     } finally {
@@ -178,15 +191,16 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
             До {MAX_AVATARS_PER_USER} образов одного человека на аккаунт. Антропометрия общая для всех аватаров.
           </p>
         </div>
-        <Button
+        {!needsFirstAvatar ? <Button
           disabled={atAvatarLimit || needsFirstAvatar}
           size="md"
           type="button"
           variant="secondary"
           onClick={() => setAdding((value) => !value)}
         >
-          {adding ? "Отмена" : needsFirstAvatar ? "Добавьте фото ниже" : "+ Новый аватар"}
+          {adding ? "Отмена" : "+ Новый аватар"}
         </Button>
+        : null}
       </div>
 
       {atAvatarLimit ? (
@@ -202,21 +216,31 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
             accept="image/*"
             className="cursor-pointer file:mr-3 file:rounded-full file:border-0 file:bg-[#ff1fa2]/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#ff1fa2]"
             type="file"
-            onChange={(event) => setNewPhoto(event.target.files?.[0] ?? null)}
+            onChange={(event) => {
+              setAvatarGuidance(null);
+              setNewPhoto(event.target.files?.[0] ?? null);
+            }}
           />
           <div className="mt-4">
             <AvatarPrivacyPreview
               localPreviewUrl={newPreviewUrl}
               privacy={{ hideFace, hideBackground, hideFeatures: false }}
+              processing={busy}
               onPrivacyChange={(next) => {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
                 if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
               }}
             />
           </div>
-          <Button className="mt-4" disabled={busy || !newPhoto} size="lg" type="button" onClick={() => void addAvatar()}>
+          {newPhoto ? <Button className="mt-4" disabled={busy} size="lg" type="button" onClick={() => void addAvatar()}>
             {busy ? "Загружаем…" : needsFirstAvatar ? "Создать аватар" : "Сохранить новый аватар"}
-          </Button>
+          </Button> : null}
+          {avatarGuidance?.message ? (
+            <div className="mt-4 rounded-2xl border border-[#ffd1ed] bg-[#fff4fb] p-4">
+              <p className="font-medium text-[#302637]">{avatarGuidance.title ?? "Подберём кадр, на котором примерка получится точнее"}</p>
+              <p className="mt-1 text-sm leading-5 text-[#6d6273]">{avatarGuidance.message}</p>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

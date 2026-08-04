@@ -1,5 +1,13 @@
 # AI Changelog
 
+## 2026-08-04 (Avatar upload reliability and quality guidance)
+- Fixed the profile avatar flow to consume the `validate` response before preprocessing. A `VALIDATION_FAILED` photo now shows the API guidance and cannot proceed into the processing pipeline.
+- Removed destructive client cleanup after successful preprocessing: a ready avatar remains in the manager if activation needs profile data to be corrected.
+- Creation actions are hidden until a photo is selected in both web and Android. Rejected selections are cleared so the next visible action is to choose a replacement photo; the redundant first-avatar prompt is gone.
+- Added the human-readable `UPLOAD_INCOMPLETE` response for malformed/interrupted multipart avatar uploads.
+- Added an in-place processing overlay with spinner over the chosen avatar photo in web and Android, so validation/preprocessing never resembles a stalled interface.
+- Added API regression coverage that verifies rejected avatars cannot preprocess, plus web regression coverage for validation guidance and ready-avatar retention.
+
 ## 2026-08-04 (Branded try-on downloads)
 - Added owner-only `GET /api/v1/try-on/sessions/{id}/download?type=image|video`: exports include the VibeStyle badge, domain and QR code.
 - Web downloads branded photo and video; Android saves the same branded exports to the system gallery.
