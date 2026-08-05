@@ -1,5 +1,16 @@
 # AI Changelog
 
+## 2026-08-05 (Mobile-web PWA, avatar flow and gallery pagination)
+- Added installable standalone PWA support for the web app: manifest, 1024px brand icon, iOS metadata/safe-area viewport and a static-assets-only service worker. Private data and API responses are deliberately never placed in the worker cache.
+- Made the avatar image area open the same file picker as the explicit file button. The “create/save avatar” control now sits directly below the selected image, before privacy settings on mobile layouts.
+- Reduced public gallery requests from 24 to 10 cards per cursor page and marked gallery images for lazy decode/load.
+- Hardened avatar vision validation against stale answers: each avatar check gets a distinct technical user subject, a content fingerprint in the prompt and `Cache-Control: no-store` on Noteapp chat/vision requests. Added regression tests for unique validation subject/fingerprint plus web PWA, gallery and avatar UI contracts.
+
+## 2026-08-05 (Follow-up roadmap reprioritized)
+- Confirmed YooKassa production checkout from received real payments; removed it from the remaining deployment blockers.
+- Deferred local rate limiting to P2 because provider-level SMS controls are active; retained S3-compatible private media storage as an infrastructure roadmap item.
+- Added P0 plans for opt-in reversible enhancement of an otherwise acceptable avatar and first-party math CAPTCHA before SMS OTP sends. No third-party CAPTCHA provider is planned; `gpt-4o-mini` is analysis-only and a separate noteapp image-edit route is required for actual pixel enhancement.
+
 ## 2026-08-04 (Avatar upload reliability and quality guidance)
 - Fixed the profile avatar flow to consume the `validate` response before preprocessing. A `VALIDATION_FAILED` photo now shows the API guidance and cannot proceed into the processing pipeline.
 - Removed destructive client cleanup after successful preprocessing: a ready avatar remains in the manager if activation needs profile data to be corrected.

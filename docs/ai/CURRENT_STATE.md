@@ -1,5 +1,16 @@
 # Current State
 
+## Mobile web installability and avatar-flow polish (2026-08-05)
+- `apps/web-app` is now installable as a standalone PWA on Android and iOS: a web manifest, Apple web-app metadata, app icon, safe-area viewport settings and a narrowly scoped service worker are present. The worker caches only public static branding/onboarding assets; API responses and private avatar media remain network-only.
+- The web avatar preview is itself a file-picker target. Once a photo is selected, the save/create action is directly below the preview and before the privacy switches on a narrow screen.
+- Gallery first-load and each cursor request now use 10 posts, with lazy image decoding. The existing “show more” cursor flow remains unchanged.
+- Avatar vision QA now sends each avatar under its own technical subject and includes the SHA-256 fingerprint of the attached file in the instruction. Outbound chat/vision calls include `Cache-Control: no-store`. This prevents an old account-level outcome from being reused for a newly selected photo.
+
+## Reprioritized follow-up work (2026-08-05)
+- YooKassa checkout/webhook is live: production payments have been received. It is no longer a deployment blocker.
+- SMS provider-level protection is currently sufficient; local API rate limiting is deferred to P2, while private S3-compatible media storage remains planned as a separate infrastructure task.
+- The next P0 work begins with optional quality improvement for otherwise acceptable avatars, a first-party CAPTCHA before phone OTP sends, scene/pose selection and factual marketplace sizes. `gpt-4o-mini` can assess an avatar but cannot edit pixels; avatar enhancement requires a separately configured image-edit network in noteapp.
+
 ## Avatar upload regression repair (2026-08-04)
 - A failed quality check is now terminal for that uploaded draft: `VALIDATION_FAILED` cannot enter preprocessing or become an active avatar.
 - Web and Android retain the server's supportive guidance, clear the rejected selection, and show the creation button only after a real photo is selected. The unused first-avatar prompt was removed.

@@ -62,6 +62,7 @@ public class NoteappAiClient {
                 .uri("/api/ai/process")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-API-Key", properties.getApiKey())
+                .header("Cache-Control", "no-store")
                 .body(body)
                 .retrieve()
                 .body(JsonNode.class);
@@ -116,6 +117,7 @@ public class NoteappAiClient {
                 .uri("/api/ai/process")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-API-Key", properties.getApiKey())
+                .header("Cache-Control", "no-store")
                 .body(body)
                 .retrieve()
                 .body(JsonNode.class);

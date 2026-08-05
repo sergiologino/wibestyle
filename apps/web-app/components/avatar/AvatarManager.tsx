@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AvatarRecord } from "@wibestyle/shared-types";
 import { MAX_AVATARS_PER_USER } from "@wibestyle/shared-types";
 import { ApiError } from "@wibestyle/api-client";
@@ -75,6 +75,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const [hideFeatures, setHideFeatures] = useState(false);
   const [adding, setAdding] = useState(false);
   const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   async function reload() {
     setLoading(true);
@@ -215,10 +216,13 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
           <FieldInput
             accept="image/*"
             className="cursor-pointer file:mr-3 file:rounded-full file:border-0 file:bg-[#ff1fa2]/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#ff1fa2]"
+            ref={photoInputRef}
             type="file"
             onChange={(event) => {
               setAvatarGuidance(null);
               setNewPhoto(event.target.files?.[0] ?? null);
+              // Permit choosing the same file again after a validation response.
+              event.target.value = "";
             }}
           />
           <div className="mt-4">
@@ -226,15 +230,18 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
               localPreviewUrl={newPreviewUrl}
               privacy={{ hideFace, hideBackground, hideFeatures: false }}
               processing={busy}
+              onSelectPhoto={() => photoInputRef.current?.click()}
               onPrivacyChange={(next) => {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
                 if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
               }}
+              primaryAction={newPhoto ? (
+                <Button disabled={busy} size="lg" type="button" onClick={() => void addAvatar()}>
+                  {busy ? "Загружаем…" : needsFirstAvatar ? "Создать аватар" : "Сохранить новый аватар"}
+                </Button>
+              ) : null}
             />
           </div>
-          {newPhoto ? <Button className="mt-4" disabled={busy} size="lg" type="button" onClick={() => void addAvatar()}>
-            {busy ? "Загружаем…" : needsFirstAvatar ? "Создать аватар" : "Сохранить новый аватар"}
-          </Button> : null}
           {avatarGuidance?.message ? (
             <div className="mt-4 rounded-2xl border border-[#ffd1ed] bg-[#fff4fb] p-4">
               <p className="font-medium text-[#302637]">{avatarGuidance.title ?? "Подберём кадр, на котором примерка получится точнее"}</p>

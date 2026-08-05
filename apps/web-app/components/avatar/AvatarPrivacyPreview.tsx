@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { fetchAuthenticatedBlobUrl, resolveApiPath } from "@/lib/api-media";
 import { FieldCheckbox } from "@/components/ui/fields";
 
@@ -22,6 +22,10 @@ type AvatarPrivacyPreviewProps = {
   onPrivacyChange: (next: Partial<PrivacyState>) => void;
   showToggles?: boolean;
   processing?: boolean;
+  /** Lets the visual avatar area open the same file picker as the explicit control. */
+  onSelectPhoto?: () => void;
+  /** Rendered immediately below the image, before privacy controls on narrow screens. */
+  primaryAction?: ReactNode;
 };
 
 export function avatarPrivacyPreviewClassName(privacy: PrivacyState) {
@@ -39,6 +43,8 @@ export default function AvatarPrivacyPreview({
   onPrivacyChange,
   showToggles = true,
   processing = false,
+  onSelectPhoto,
+  primaryAction,
 }: AvatarPrivacyPreviewProps) {
   const [remoteBlobUrl, setRemoteBlobUrl] = useState<string | null>(null);
 
@@ -74,7 +80,14 @@ export default function AvatarPrivacyPreview({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
-      <div className={`${wrapperClass} min-h-[320px] shadow-[0_24px_60px_rgba(255,31,162,0.12)]`}>
+      <div className="grid gap-3">
+        <button
+          aria-label="Выбрать фото для аватара"
+          className={`${wrapperClass} min-h-[320px] text-left shadow-[0_24px_60px_rgba(255,31,162,0.12)] ${onSelectPhoto ? "cursor-pointer transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff1fa2]" : "cursor-default"}`}
+          disabled={!onSelectPhoto || processing}
+          type="button"
+          onClick={onSelectPhoto}
+        >
         {displayUrl ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -104,6 +117,8 @@ export default function AvatarPrivacyPreview({
             </div>
           </div>
         ) : null}
+        </button>
+        {primaryAction ? <div>{primaryAction}</div> : null}
       </div>
 
       {showToggles ? (

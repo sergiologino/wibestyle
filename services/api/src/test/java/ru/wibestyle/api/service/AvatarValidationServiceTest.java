@@ -11,11 +11,24 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 
 class AvatarValidationServiceTest {
+
+    @Test
+    void eachAvatarUsesItsOwnVisionValidationSubjectAndPhotoFingerprint() {
+        UUID userId = UUID.fromString("5e48abdb-1238-4567-89ab-ef1234567890");
+        UUID firstAvatar = UUID.fromString("11111111-2222-3333-4444-555555555555");
+        UUID secondAvatar = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa");
+
+        assertThat(AvatarService.visionValidationSubject(userId, firstAvatar))
+                .isNotEqualTo(AvatarService.visionValidationSubject(userId, secondAvatar));
+        assertThat(AvatarQualityAnalyzer.sha256("first-image".getBytes()))
+                .isNotEqualTo(AvatarQualityAnalyzer.sha256("second-image".getBytes()));
+    }
 
     @Test
     void multiplePeopleGetsAnExplicitReasonBeforeTheRecommendation() {

@@ -22,4 +22,10 @@ describe("profile avatar manager validation", () => {
   it("passes the in-progress state to the avatar preview", () => {
     expect(source).toContain("processing={busy}");
   });
+
+  it("allows selecting a photo directly from the avatar preview and places the action before privacy controls", () => {
+    expect(source).toContain("photoInputRef.current?.click()");
+    expect(source).toContain("primaryAction={newPhoto ? (");
+    expect(source).toContain("event.target.value = \"\"");
+  });
 });

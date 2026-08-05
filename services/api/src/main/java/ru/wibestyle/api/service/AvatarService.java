@@ -133,7 +133,7 @@ public class AvatarService {
         long sizeBytes = Files.size(storedPhoto);
         String contentType = contentTypeFromFilename(filename);
         AvatarValidationService.ValidationOutcome outcome = avatarValidationService.validate(
-                userId.toString(), filename, sizeBytes, contentType, storedPhoto
+                visionValidationSubject(userId, avatarId), filename, sizeBytes, contentType, storedPhoto
         );
         if (outcome.rejected()) {
             avatar.setStatus(AvatarStatus.REJECTED);
@@ -283,5 +283,13 @@ public class AvatarService {
             case "image/jpeg", "image/jpg" -> ".jpg";
             default -> ".jpg";
         };
+    }
+
+    /**
+     * A fresh subject for every uploaded avatar prevents an upstream AI gateway from
+     * accidentally reusing a previous analysis for the same account.
+     */
+    static String visionValidationSubject(UUID userId, UUID avatarId) {
+        return userId + ":avatar:" + avatarId;
     }
 }

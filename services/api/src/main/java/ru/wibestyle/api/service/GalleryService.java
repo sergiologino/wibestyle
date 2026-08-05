@@ -69,7 +69,7 @@ public class GalleryService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> listPublic() {
-        return listPublic(24, null);
+        return listPublic(10, null);
     }
 
     @Transactional(readOnly = true)
@@ -279,7 +279,7 @@ public class GalleryService {
 
     private static int clampLimit(int limit) {
         if (limit < 1) {
-            return 24;
+            return 10;
         }
         return Math.min(limit, 60);
     }

@@ -1,9 +1,16 @@
 # Implementation Status
 
+## 2026-08-05 — Mobile web delivery
+
+- ✅ Web PWA: standalone installation for Android/iOS, branded icon, safe-area viewport and a static-only service worker.
+- ✅ Avatar manager mobile path: tap the preview to select a photo; create/save action is immediately below it.
+- ✅ Public gallery uses cursor pages of 10 cards with lazy image loading.
+- ✅ Avatar QA freshness: distinct avatar validation identity, image fingerprint and no-store forwarding to Noteapp.
+
 > Живой чеклист: что сделано и что осталось. Обновляется по мере реализации.
 > Оплата: YooKassa checkout/webhook и recurring готовы; для production нужны env, webhook, чеки 54-ФЗ и Expo/FCM credentials.
 
-**Последнее обновление:** 2026-08-03
+**Последнее обновление:** 2026-08-05
 
 ## План работ
 
@@ -12,7 +19,7 @@
 | **1. UI/UX gaps** | ✅ | favorites, reviews, settings, paywall checkout, anonymous report, QR |
 | **2. Auth расширение** | ✅ | OAuth Yandex/Google, login/password, math captcha (RU) |
 | **3. RBAC + Admin** | ✅ | admin_users, impersonation, plan override, delete user |
-| **4. Production infra** | ⏳ | Redis OTP, queue worker, S3 — без YooKassa до отдельной задачи |
+| **4. Production infra** | ⏳ | S3 для приватных медиа; rate limiting перенесён в низкий приоритет. YooKassa production работает, реальные оплаты получены. |
 
 ---
 
@@ -28,7 +35,7 @@
 | Admin full user delete | ✅ |
 | Admin `/users` UI | ✅ |
 | RUNBOOK (local + prod) | ✅ |
-| YooKassa checkout + webhook | ✅ код готов — нужны env |
+| YooKassa checkout + webhook | ✅ production: реальные оплаты подтверждены |
 | YooKassa auto-renew + T−3 warning | ✅ web/mobile, 3 retries, regular tariff |
 | In-app + Android Expo push notifications | ✅ нужны Expo project/FCM credentials |
 | Paywall UX + trial nudges | ✅ |
@@ -78,12 +85,11 @@
 ## Не сделано
 
 ### Оплата
-- YooKassa: задать env (см. RUNBOOK), webhook URL в личном кабинете YooKassa
 - Fiscal receipts 54-FZ (опционально)
 
 ### Production / infra
-- Redis OTP, rate limiting, refresh revokeAll
-- S3 private bucket (интерфейс готов через `BlobStorage`, adapter не реализован)
+- S3 private bucket для оригиналов аватаров, примерок и видео: миграция от локального storage через существующий `BlobStorage` adapter, private access и временные ссылки.
+- Redis для распределённых OTP-состояний и `refresh revokeAll` — после появления нескольких экземпляров API.
 - OpenAPI spec
 
 ### TZ 12 остаток
@@ -93,16 +99,19 @@
 - Multi-item, video, new marketplaces
 - Mobile: iOS release/testing
 - Reactivation push copy: add optional noteapp `gpt-4o-mini` generation for per-user motivational push text, using profile + try-on history metadata only, with DB cache/logging and template fallback.
+- P2: server-side rate limiting for OTP/API. SMS provider already supplies the primary protection; implement a stricter local policy later, preferably backed by Redis.
 
-### Следующий релиз — персонализация примерки и реальные размеры (запланировано)
+### Следующий релиз — качество аватара, безопасный SMS-вход, персонализация примерки и реальные размеры (запланировано)
 
 | Приоритет | Задача | Критерий готовности |
 |---|---|---|
+| P0 | Улучшение приемлемого аватара по желанию | Если в кадре ровно один человек в полный рост и фото пригодно для примерки, но есть предупреждения о слабом освещении, детализации или пёстром фоне, клиент предлагает «Улучшить фото». Оригинал всегда сохраняется отдельно; улучшенная версия показывается в preview и становится вариантом по умолчанию только после явного подтверждения пользователя. «Отменить улучшение» моментально возвращает исходник без повторной загрузки. `gpt-4o-mini` используется только для оценки качества: для пиксельного улучшения нужен отдельный image-to-image/image-edit маршрут в noteapp (например, совместимая image-edit модель), который выбирается и настраивается до реализации. Не менять лицо, силуэт, одежду или антропометрию; только свет, шум, резкость и фон. |
+| P0 | Локальная CAPTCHA перед отправкой SMS | Расширить существующий собственный `CaptchaService`: перед первым `POST /auth/otp/start` и повторной отправкой web и Android показывают одноразовый математический challenge. Никаких Google, Cloudflare, hCaptcha и сторонних CAPTCHA-провайдеров. Сервер проверяет одноразовый ID/ответ до заказа SMS, отдаёт понятные ошибки и новый challenge; CAPTCHA не зависит от флага будущего rate limiting. Покрыть API, web и Android тестами. |
 | P0 | Сцена и поза для примерки | В web и mobile, в сценариях примерки по ссылке и по фото, пользователь выбирает одну из 3–4 понятных комбинаций «локация + поза» (например: городская улица/лёгкий шаг, кафе/полуоборот, студия/прямо, парк/прогулка) либо описывает свой вариант. Выбранная комбинация заменяет, а не дополняет текущую категорийную сцену в промпте. Если пользователь ничего не выбрал, остаётся нынешний дефолт. Выбор сохраняется с сессией примерки; ручной текст валидируется по длине и безопасности. Генерацию видео и её промпты не изменяем. |
 | P0 | Фактические размеры товара | Для Wildberries и Ozon получать варианты размеров из карточки/вариантов товара, включая числовые и расширенные размеры (например, XXL/XXXL), а не подставлять фиктивный ряд XS–XL. При известных данных интерфейс предлагает только доступные размеры, а API повторно проверяет размер перед созданием примерки — обход через прямой запрос невозможен. Если маркетплейс не отдал размеры, показываем это явно и не рисуем фиктивный список; ручной выбор маркируется как непроверенный. |
 | P1, следующий этап | Саммари отзывов и поправка рекомендации размера | Собирать только текстовые отзывы без медиа, кешировать и дедуплицировать их, показывать дату/число учтённых отзывов и краткое саммари. Сигналы «маломерит»/«в размер»/«большемерит» влияют на рекомендацию лишь при достаточном числе отзывов и уверенности. Рекомендация всегда остаётся внутри фактически доступных размеров; при недостатке данных показываем неопределённость, а не делаем сдвиг. |
 
-**Последовательность:** сначала общий API-контракт и миграция для сценария примерки, затем точный парсинг и серверная валидация размеров, после этого элементы выбора в web/mobile и покрытие контрактными, unit- и UI-тестами. Саммари отзывов начинается только после стабилизации фактических размеров и не включает загрузку пользовательских фото или видео.
+**Последовательность:** сначала контракт улучшенного аватара и доступный image-edit маршрут noteapp, затем локальная CAPTCHA для SMS без внешнего провайдера. После этого — общий API-контракт и миграция для сценария примерки, точный парсинг и серверная валидация размеров, элементы выбора в web/mobile и покрытие контрактными, unit- и UI-тестами. Саммари отзывов начинается только после стабилизации фактических размеров и не включает загрузку пользовательских фото или видео. S3 выполняется отдельным инфраструктурным этапом; rate limiting остаётся P2.
 
 ---
 

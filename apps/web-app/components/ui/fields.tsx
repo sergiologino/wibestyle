@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 
 export const fieldClassName =
   "w-full rounded-2xl border border-[#e8d4e3] bg-white/90 px-4 py-3 text-[15px] font-normal text-[#302637] shadow-sm outline-none transition placeholder:text-[#a89aad] focus:border-[#ff1fa2]/60 focus:ring-2 focus:ring-[#ff1fa2]/15";
@@ -23,9 +23,9 @@ export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor
   );
 }
 
-export function FieldInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={fieldClassName} {...props} />;
-}
+export const FieldInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function FieldInput(props, ref) {
+  return <input ref={ref} className={fieldClassName} {...props} />;
+});
 
 export function FieldSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select className={fieldClassName} {...props} />;
