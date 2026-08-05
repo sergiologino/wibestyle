@@ -26,4 +26,10 @@ describe("mobile paywall UI contract", () => {
     expect(welcome).toContain('router.replace("/auth?next=/paywall")');
     expect(welcome).toContain("activeIndex === 0 ? skipOnboarding()");
   });
+
+  it("does not request a saved payment method until the backend enables recurring payments", () => {
+    expect(paywall).toContain("setRecurringAvailable(Boolean(payload.recurringAvailable))");
+    expect(paywall).toContain("savePaymentMethod: recurringAvailable && savePaymentMethod");
+    expect(paywall).toContain('paymentProvider === "yookassa" && recurringAvailable');
+  });
 });

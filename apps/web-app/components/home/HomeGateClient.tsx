@@ -1,26 +1,11 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { getNextOnboardingRoute } from "@/lib/onboarding-flow";
-import { syncOnboardingFromProfile } from "@/lib/session-onboarding";
-import { useAppSession } from "@/components/providers/AppSessionProvider";
+import { Suspense } from "react";
 import { useRequireAuthenticatedSession } from "@/lib/use-require-authenticated-session";
 import HomeDashboardClient from "@/components/home/HomeDashboardClient";
 
 export default function HomeGateClient() {
-  const router = useRouter();
-  const { onboarding, profile } = useAppSession();
   const { sessionReady, verified, checking } = useRequireAuthenticatedSession({ returnPath: "/home" });
-  const syncedOnboarding = syncOnboardingFromProfile(onboarding, profile);
-
-  useEffect(() => {
-    if (!verified) return;
-    const next = getNextOnboardingRoute(syncedOnboarding);
-    if (next !== "/home") {
-      router.replace(next);
-    }
-  }, [router, syncedOnboarding, verified]);
 
   if (!sessionReady || checking) {
     return (
@@ -30,7 +15,7 @@ export default function HomeGateClient() {
     );
   }
 
-  if (!verified || getNextOnboardingRoute(syncedOnboarding) !== "/home") {
+  if (!verified) {
     return null;
   }
 

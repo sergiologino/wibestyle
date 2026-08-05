@@ -91,9 +91,11 @@ type TryOnResultVideoProps = {
   src: string;
   eliteFrame?: boolean;
   className?: string;
+  onDownloadClick?: () => void;
+  downloadBusy?: boolean;
 };
 
-export function TryOnResultVideo({ src, eliteFrame = false, className }: TryOnResultVideoProps) {
+export function TryOnResultVideo({ src, eliteFrame = false, className, onDownloadClick, downloadBusy = false }: TryOnResultVideoProps) {
   return (
     <div className={clsx("relative w-full", className)}>
       <div className={clsx(mediaFrameClass, eliteFrame ? "border-[#ffb347]" : "border-[#f0dce8]")}>
@@ -103,6 +105,11 @@ export function TryOnResultVideo({ src, eliteFrame = false, className }: TryOnRe
         </span>
         {eliteFrame ? (
           <div className="pointer-events-none absolute inset-3 rounded-[22px] border-2 border-[#ffb347]/80" />
+        ) : null}
+        {onDownloadClick ? (
+          <button aria-label="Скачать видео" className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-full bg-white/95 text-[#302637] shadow-md transition hover:bg-white hover:text-[#ff1fa2] disabled:cursor-wait disabled:opacity-70" disabled={downloadBusy} type="button" onClick={onDownloadClick}>
+            <Download size={18} aria-hidden />
+          </button>
         ) : null}
       </div>
     </div>

@@ -120,6 +120,7 @@ public class BillingProperties {
         private String shopId = "";
         private String secretKey = "";
         private String apiBaseUrl = "https://api.yookassa.ru";
+        private boolean recurringEnabled;
 
         public String getShopId() {
             return shopId;
@@ -143,6 +144,14 @@ public class BillingProperties {
 
         public void setApiBaseUrl(String apiBaseUrl) {
             this.apiBaseUrl = apiBaseUrl;
+        }
+
+        public boolean isRecurringEnabled() {
+            return recurringEnabled;
+        }
+
+        public void setRecurringEnabled(boolean recurringEnabled) {
+            this.recurringEnabled = recurringEnabled;
         }
     }
 }

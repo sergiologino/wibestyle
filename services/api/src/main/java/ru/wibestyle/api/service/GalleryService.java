@@ -69,7 +69,7 @@ public class GalleryService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> listPublic() {
-        return listPublic(24, null);
+        return listPublic(10, null);
     }
 
     @Transactional(readOnly = true)
@@ -220,6 +220,17 @@ public class GalleryService {
     }
 
     @Transactional
+    public Map<String, Object> deleteMine(UUID userId, UUID postId) {
+        GalleryPostEntity post = galleryPostRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("POST_NOT_FOUND"));
+        if (!userId.equals(post.getUserId())) {
+            throw new IllegalArgumentException("POST_NOT_OWNED");
+        }
+        galleryPostRepository.delete(post);
+        return Map.of("deleted", true, "postId", postId.toString());
+    }
+
+    @Transactional
     public Map<String, Object> toggleLike(UUID userId, UUID postId) {
         GalleryPostEntity post = galleryPostRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("POST_NOT_FOUND"));
@@ -268,7 +279,7 @@ public class GalleryService {
 
     private static int clampLimit(int limit) {
         if (limit < 1) {
-            return 24;
+            return 10;
         }
         return Math.min(limit, 60);
     }
@@ -310,6 +321,9 @@ public class GalleryService {
     private Map<String, Object> toMap(GalleryPostEntity post, boolean likedByViewer, String authorDisplayName) {
         Map<String, Object> map = new HashMap<>();
         map.put("id", post.getId().toString());
+        if (post.getTryOnSessionId() != null) {
+            map.put("tryOnSessionId", post.getTryOnSessionId().toString());
+        }
         map.put("slug", post.getSlug());
         map.put("title", post.getTitle());
         map.put("description", post.getDescription());

@@ -9,6 +9,7 @@ import ReportPostButton from "@/components/gallery/ReportPostButton";
 import { resolveGalleryImageUrl, resolveGalleryVideoUrl } from "@/lib/api-media";
 
 type ViewMode = "grid" | "list";
+const GALLERY_PAGE_SIZE = 10;
 
 export default function GalleryClient() {
   const { api, accessToken } = useAppSession();
@@ -21,7 +22,7 @@ export default function GalleryClient() {
 
   useEffect(() => {
     let active = true;
-    api.listGalleryPosts({ limit: 24 })
+    api.listGalleryPosts({ limit: GALLERY_PAGE_SIZE })
       .then((payload) => {
         if (active) {
           setPosts(payload.items);
@@ -41,7 +42,7 @@ export default function GalleryClient() {
     if (!cursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const payload = await api.listGalleryPosts({ limit: 24, cursor });
+      const payload = await api.listGalleryPosts({ limit: GALLERY_PAGE_SIZE, cursor });
       setPosts((prev) => [...prev, ...payload.items]);
       setCursor(payload.nextCursor ?? null);
       setHasMore(payload.hasMore);
@@ -81,7 +82,7 @@ export default function GalleryClient() {
       );
     }
     if (imageSrc) {
-      return <img src={imageSrc} alt={post.title} className={className} />;
+      return <img src={imageSrc} alt={post.title} className={className} decoding="async" loading="lazy" />;
     }
     return <div className="flex h-full items-center justify-center text-sm font-normal text-[#6d6273]">Нет фото</div>;
   }
@@ -118,7 +119,7 @@ export default function GalleryClient() {
       ) : null}
 
       {view === "grid" ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {posts.map((post) => {
             const href = post.publicUrl ?? `/p/${post.slug}`;
             return (

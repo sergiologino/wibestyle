@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Button, Card } from "@wibestyle/ui";
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { useAdminKey } from "@/components/admin-key-provider";
@@ -224,6 +225,9 @@ export default function AdminGalleryPage() {
                 <p className="mt-3 font-black text-[#302637]">{post.title}</p>
                 <p className="mt-1 text-sm font-bold text-[#6d6273]">
                   {post.visibility} · {post.moderationStatus}
+                </p>
+                <p className="mt-1 text-xs font-bold text-[#6d6273]">
+                  Пользователь: <Link className="text-[#782cff] underline" href={`/users/${post.userId}`}>{post.userId}</Link>
                 </p>
                 <p className="mt-1 text-xs font-bold text-[#6d6273]">{formatLocalDateTime(post.createdAt)}</p>
                 <div className="mt-4 flex flex-wrap gap-2">

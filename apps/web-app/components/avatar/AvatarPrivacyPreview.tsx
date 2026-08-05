@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { fetchAuthenticatedBlobUrl, resolveApiPath } from "@/lib/api-media";
 import { FieldCheckbox } from "@/components/ui/fields";
 
@@ -21,6 +21,11 @@ type AvatarPrivacyPreviewProps = {
   privacy: PrivacyState;
   onPrivacyChange: (next: Partial<PrivacyState>) => void;
   showToggles?: boolean;
+  processing?: boolean;
+  /** Lets the visual avatar area open the same file picker as the explicit control. */
+  onSelectPhoto?: () => void;
+  /** Rendered immediately below the image, before privacy controls on narrow screens. */
+  primaryAction?: ReactNode;
 };
 
 export function avatarPrivacyPreviewClassName(privacy: PrivacyState) {
@@ -37,6 +42,9 @@ export default function AvatarPrivacyPreview({
   privacy,
   onPrivacyChange,
   showToggles = true,
+  processing = false,
+  onSelectPhoto,
+  primaryAction,
 }: AvatarPrivacyPreviewProps) {
   const [remoteBlobUrl, setRemoteBlobUrl] = useState<string | null>(null);
 
@@ -72,7 +80,14 @@ export default function AvatarPrivacyPreview({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
-      <div className={`${wrapperClass} min-h-[320px] shadow-[0_24px_60px_rgba(255,31,162,0.12)]`}>
+      <div className="grid gap-3">
+        <button
+          aria-label="Выбрать фото для аватара"
+          className={`${wrapperClass} min-h-[320px] text-left shadow-[0_24px_60px_rgba(255,31,162,0.12)] ${onSelectPhoto ? "cursor-pointer transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff1fa2]" : "cursor-default"}`}
+          disabled={!onSelectPhoto || processing}
+          type="button"
+          onClick={onSelectPhoto}
+        >
         {displayUrl ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -84,13 +99,26 @@ export default function AvatarPrivacyPreview({
             {privacy.hideFace ? <div aria-hidden className="avatar-preview-face-mask" /> : null}
           </>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            alt="Образец фото для аватара"
-            className="avatar-preview-image mx-auto block max-h-[520px] min-h-[320px] w-full object-contain"
-            src={DEFAULT_AVATAR_SAMPLE_SRC}
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              alt="Образец фото для аватара"
+              className="avatar-preview-image mx-auto block max-h-[520px] min-h-[320px] w-full object-contain"
+              src={DEFAULT_AVATAR_SAMPLE_SRC}
+            />
+            <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center -rotate-[28deg] text-4xl font-black tracking-[0.22em] text-[#6d6273]/55 sm:text-6xl">ОБРАЗЕЦ</span>
+          </>
         )}
+        {processing ? (
+          <div aria-live="polite" className="absolute inset-0 z-10 flex items-center justify-center bg-[#302637]/45 p-5">
+            <div className="flex max-w-xs items-center gap-3 rounded-2xl border border-white/35 bg-white/95 px-4 py-3 text-sm font-medium text-[#302637] shadow-xl">
+              <span aria-hidden className="size-5 shrink-0 animate-spin rounded-full border-2 border-[#ff1fa2]/25 border-t-[#ff1fa2]" />
+              <span>Идёт проверка корректности фото для аватара…</span>
+            </div>
+          </div>
+        ) : null}
+        </button>
+        {primaryAction ? <div>{primaryAction}</div> : null}
       </div>
 
       {showToggles ? (

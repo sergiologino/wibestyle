@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { UserProfile } from "@wibestyle/shared-types";
 import {
@@ -34,9 +36,14 @@ describe("onboarding-logic", () => {
     expect(synced.step).toBe("complete");
   });
 
-  it("sends post-auth to avatar onboarding when needed", () => {
-    expect(resolvePostAuthRoute({ newUser: true, hasActiveAvatar: false })).toBe("/onboarding/avatar");
+  it("sends post-auth to the unified profile avatar flow when needed", () => {
+    expect(resolvePostAuthRoute({ newUser: true, hasActiveAvatar: false })).toBe("/(main)/profile");
     expect(resolvePostAuthRoute({ newUser: false, hasActiveAvatar: true })).toBe("/(main)/home");
+  });
+
+  it("keeps the legacy onboarding URL as a redirect to the shared profile screen", () => {
+    const route = readFileSync(join(process.cwd(), "app", "onboarding", "avatar.tsx"), "utf8");
+    expect(route).toContain('<Redirect href="/(main)/profile" />');
   });
 
   it("respects explicit paywall route after onboarding registration", () => {

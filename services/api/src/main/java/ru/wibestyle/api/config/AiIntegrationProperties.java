@@ -14,7 +14,7 @@ public class AiIntegrationProperties {
     private String virtualTryOnNetwork = "";
     /** Image-to-video network in noteapp for season hit clips. */
     private String seasonVideoNetwork = "";
-    /** OpenAI-compatible chat network in noteapp (e.g. gpt-4o-mini) for size compliments. */
+    /** OpenAI-compatible chat network in noteapp (e.g. openai-gpt4o-mini) for size compliments. */
     private String sizeComplimentNetwork = "";
     private String webhookSecret = "";
 

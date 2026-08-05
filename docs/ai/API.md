@@ -28,6 +28,8 @@ Legacy `Bearer access-{uuid}` поддерживается при `wibestyle.aut
 
 Avatar photo privacy: `GET /avatars/{id}/photo?variant=original` returns the uploaded original. `variant=processed` returns the server-generated privacy-aware image. When face/background hiding is enabled on the profile/avatar, preprocessing blurs the detected face and/or background in the processed variant.
 
+`POST /avatars/{id}/validate` returns `guidanceTitle`, `guidanceMessage` and `recommendedAction`. When it returns `VALIDATION_FAILED` / `replace_photo`, the client must show the supportive explanation and let the user choose another file; `POST /avatars/{id}/preprocess` then returns `AVATAR_NOT_READY_FOR_PREPROCESS`. An interrupted multipart photo upload returns `400 UPLOAD_INCOMPLETE` with a user-readable retry instruction.
+
 Profile UI preference: `profile.interfacePalette` is one of `vibe`, `pistachio`, `graphite`. `PUT /profile` accepts `interfacePalette`; new profiles default to `vibe`.
 
 ## Marketplace & Try-on
@@ -39,9 +41,10 @@ Profile UI preference: `profile.interfacePalette` is one of `vibe`, `pistachio`,
 | POST | `/try-on/sessions/{id}/generate` |
 | GET | `/try-on/sessions/mine` | личная история завершённых примерок (status=ready) |
 | GET | `/try-on/sessions/{id}` |
+| GET | `/try-on/sessions/{id}/download?type=image|video` | owner-only branded file export |
 | GET | `/ai/jobs/{jobId}` |
 
-`GET /try-on/sessions/{id}` result включает `styleCompliment` (опционально) — короткий post-try-on комментарий стилиста. Текст генерируется через noteapp chat network (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, обычно `gpt-4o-mini`) по prompt table key `tryon.result_compliment_ru`; при недоступности AI используется безопасный шаблон.
+`GET /try-on/sessions/{id}` result включает `styleCompliment` (опционально) — короткий post-try-on комментарий стилиста. Текст генерируется через noteapp chat network (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, по умолчанию `openai-gpt4o-mini`) по prompt table key `tryon.result_compliment_ru`; при недоступности AI используется безопасный шаблон.
 
 ## Search, Favorites, Gallery
 
@@ -101,9 +104,9 @@ Provider priorities only select the `networkName` sent to `noteapp-ai-integratio
 | POST | `/billing/webhooks/{provider}` | webhook провайдера (`mock` + `payment.succeeded`) |
 | POST | `/billing/webhooks/mock/simulate?checkoutId=` | dev shortcut для завершения оплаты |
 
-`GET /billing/plans` returns period-accurate `generationsPerPeriod`: Wibe is 20 monthly or 240 annual; Elite is 100 monthly or 1200 annual. New profiles receive 3 free trial try-ons and 1 successful trial video.
+`GET /billing/plans` returns period-accurate `generationsPerPeriod`: Wibe is 20 monthly or 240 annual; Elite is 100 monthly or 1200 annual. New profiles receive 3 free trial try-ons and 1 successful trial video. The response also includes `recurringAvailable`: clients show the saved-payment/autorenew consent only when the YooKassa shop has been approved for recurrent payments.
 
-Recurring: initial payment sends `save_payment_method=true` only after explicit user consent. Only verified YooKassa `payment_method.id` is stored. Scheduler warns at T−3 days, charges the regular current tariff at T0 and retries rejected charges up to three times. Unknown network outcomes reuse the same checkout UUID as YooKassa idempotence key.
+Recurring: initial payment sends `save_payment_method=true` only after explicit user consent **and** only when `WIBESTYLE_YOOKASSA_RECURRING_ENABLED=true`. Otherwise checkout is a one-time payment and no saved payment method is requested. Only verified YooKassa `payment_method.id` is stored. Scheduler warns at T−3 days, charges the regular current tariff at T0 and retries rejected charges up to three times. Unknown network outcomes reuse the same checkout UUID as YooKassa idempotence key.
 
 ## Referrals
 
@@ -190,3 +193,7 @@ The authenticated response contains the personal referral code, eligibility, rem
 
 See Flyway migrations `V1`–`V24` in `services/api/src/main/resources/db/migration/`.
 
+### Gallery: owner publication control
+
+- `GET /api/v1/gallery/posts/mine` returns the signed-in user's posts, including `tryOnSessionId` and `mediaType`.
+- `DELETE /api/v1/gallery/posts/{postId}` removes a gallery post only when it belongs to the signed-in user. It does not delete the try-on or its source media.

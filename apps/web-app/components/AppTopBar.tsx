@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Grid2X2, Heart, Home, Search, Share2, Shirt, UserRound } from "lucide-react";
+import { Grid2X2, Heart, Home, Search, Share2, Shirt, Sparkles, UserRound } from "lucide-react";
 import { BrandLogo, Button } from "@wibestyle/ui";
 import type { ReferralOverview } from "@wibestyle/shared-types";
 import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
@@ -11,6 +11,7 @@ import { isAuthenticatedSession } from "@/lib/session-auth";
 import { isPaidSubscription } from "@/lib/billing-plan";
 import TelegramChannelButton from "@/components/community/TelegramChannelButton";
 import OverlayModal from "@/components/ui/OverlayModal";
+import AvatarRequiredNotice from "@/components/avatar/AvatarRequiredNotice";
 
 const nav = [
   { href: "/home", label: "Главная", icon: Home },
@@ -125,7 +126,13 @@ export default function AppTopBar() {
             ) : null}
             {sessionReady && isAuthenticated && profile && !isPaidSubscription(profile) ? (
               <Link href="/paywall">
-                <Button size="sm" variant="secondary">Подписка</Button>
+                <Button
+                  size="sm"
+                  className="subscription-header-cta relative overflow-hidden border border-transparent bg-[linear-gradient(105deg,#ff1fa2,#a855f7,#ff7a59,#ff1fa2)] bg-[length:220%_100%] px-4 text-white shadow-[0_8px_24px_rgba(255,31,162,0.36)] hover:bg-[linear-gradient(105deg,#eb1692,#7c3aed,#f05b3f,#eb1692)]"
+                >
+                  <Sparkles size={14} aria-hidden />
+                  Подключить Wibe
+                </Button>
               </Link>
             ) : null}
             {sessionReady && isAuthenticated ? (
@@ -151,6 +158,7 @@ export default function AppTopBar() {
           </div>
         </div>
       </header>
+      {sessionReady && isAuthenticated && profile && !profile.activeAvatarId ? <AvatarRequiredNotice compact /> : null}
       {sessionReady && isAuthenticated ? (
         <nav
           aria-label="Основная навигация"

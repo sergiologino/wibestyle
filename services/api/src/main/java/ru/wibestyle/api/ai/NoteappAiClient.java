@@ -45,7 +45,7 @@ public class NoteappAiClient {
                 .build();
     }
 
-    public String generateChatText(String networkName, String systemPrompt, String userPrompt) {
+    public String generateChatText(String networkName, String externalUserId, String systemPrompt, String userPrompt) {
         Map<String, Object> payload = new HashMap<>();
         payload.put(
                 "messages",
@@ -56,15 +56,13 @@ public class NoteappAiClient {
         );
         payload.put("settings", Map.of("temperature", 0.9, "maxTokens", 180));
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("networkName", networkName);
-        body.put("requestType", "chat");
-        body.put("payload", payload);
+        Map<String, Object> body = buildChatRequestBody(networkName, externalUserId, payload);
 
         JsonNode response = restClient.post()
                 .uri("/api/ai/process")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-API-Key", properties.getApiKey())
+                .header("Cache-Control", "no-store")
                 .body(body)
                 .retrieve()
                 .body(JsonNode.class);
@@ -89,6 +87,7 @@ public class NoteappAiClient {
 
     public String generateVisionChatText(
             String networkName,
+            String externalUserId,
             String systemPrompt,
             String userText,
             String imageBase64,
@@ -112,15 +111,13 @@ public class NoteappAiClient {
         );
         payload.put("settings", Map.of("temperature", 0.2, "maxTokens", 120));
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("networkName", networkName);
-        body.put("requestType", "chat");
-        body.put("payload", payload);
+        Map<String, Object> body = buildChatRequestBody(networkName, externalUserId, payload);
 
         JsonNode response = restClient.post()
                 .uri("/api/ai/process")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-API-Key", properties.getApiKey())
+                .header("Cache-Control", "no-store")
                 .body(body)
                 .retrieve()
                 .body(JsonNode.class);
@@ -141,6 +138,26 @@ public class NoteappAiClient {
             return text.trim();
         }
         throw new RestClientException("No text in vision chat response");
+    }
+
+    private static String requireExternalUserId(String externalUserId) {
+        if (externalUserId == null || externalUserId.isBlank()) {
+            throw new IllegalArgumentException("NOTEAPP_EXTERNAL_USER_ID_REQUIRED");
+        }
+        return externalUserId.trim();
+    }
+
+    static Map<String, Object> buildChatRequestBody(
+            String networkName,
+            String externalUserId,
+            Map<String, Object> payload
+    ) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", requireExternalUserId(externalUserId));
+        body.put("networkName", networkName);
+        body.put("requestType", "chat");
+        body.put("payload", payload);
+        return body;
     }
 
     public ProcessResult processVirtualTryOn(

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -174,6 +175,8 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
           message: validation.guidanceMessage,
         });
         await api.deleteAvatar(avatar.id).catch(() => undefined);
+        setNewPhoto(null);
+        setPreviewUri(null);
         return;
       }
       await api.preprocessAvatar(avatar.id);
@@ -229,12 +232,21 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
 
       {adding ? (
         <View style={styles.addPanel}>
-          <Pressable style={styles.photoBox} onPress={pickPhoto}>
+          <Pressable disabled={busy} style={styles.photoBox} onPress={pickPhoto}>
             {previewUri ? (
               <Image source={{ uri: previewUri }} style={styles.photo} contentFit="cover" />
             ) : (
               <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
+            {!previewUri ? <Text style={styles.sampleWatermark}>ОБРАЗЕЦ</Text> : null}
+            {busy ? (
+              <View style={styles.processingOverlay}>
+                <View style={styles.processingCard}>
+                  <ActivityIndicator color={colors.pink} size="small" />
+                  <Text style={styles.processingText}>Идёт проверка корректности фото для аватара…</Text>
+                </View>
+              </View>
+            ) : null}
           </Pressable>
           {avatarGuidance?.message ? (
             <View style={styles.guidanceBox}>
@@ -244,7 +256,9 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
               <Text style={styles.guidanceText}>{avatarGuidance.message}</Text>
             </View>
           ) : null}
-          <Button label={busy ? "Загружаем…" : "Сохранить новый аватар"} loading={busy} disabled={!newPhoto} onPress={addAvatar} />
+          {newPhoto ? (
+            <Button label={busy ? "Загружаем…" : "Сохранить новый аватар"} loading={busy} onPress={addAvatar} />
+          ) : null}
         </View>
       ) : null}
 
@@ -318,6 +332,39 @@ const styles = StyleSheet.create({
   photo: {
     width: "100%",
     height: "100%",
+  },
+  sampleWatermark: {
+    position: "absolute",
+    color: "rgba(90, 80, 88, 0.52)",
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 30,
+    letterSpacing: 3,
+    transform: [{ rotate: "-28deg" }],
+  },
+  processingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(48, 38, 55, 0.48)",
+    padding: spacing.md,
+  },
+  processingCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: "rgba(255, 255, 255, 0.5)",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  processingText: {
+    flexShrink: 1,
+    color: colors.black,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 13,
+    lineHeight: 18,
   },
   guidanceBox: {
     borderRadius: radius.xl,

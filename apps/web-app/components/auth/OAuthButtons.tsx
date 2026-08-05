@@ -19,7 +19,7 @@ function YandexLogo() {
   );
 }
 
-export default function OAuthButtons() {
+export default function OAuthButtons({ onProvidersResolved, visible = true }: { onProvidersResolved?: () => void; visible?: boolean }) {
   const { api } = useAppSession();
   const [providers, setProviders] = useState<{ yandex: boolean; google: boolean }>({ yandex: false, google: false });
   const [loading, setLoading] = useState<string | null>(null);
@@ -28,8 +28,8 @@ export default function OAuthButtons() {
   useEffect(() => {
     void api.getOAuthProviders().then((data) => {
       setProviders({ yandex: data.yandex.enabled, google: data.google.enabled });
-    }).catch(() => setProviders({ yandex: false, google: false }));
-  }, [api]);
+    }).catch(() => setProviders({ yandex: false, google: false })).finally(onProvidersResolved);
+  }, [api, onProvidersResolved]);
 
   async function start(provider: "yandex" | "google") {
     setLoading(provider);
@@ -50,6 +50,7 @@ export default function OAuthButtons() {
   }
 
   return (
+    <div className={visible ? undefined : "hidden"}>
     <Card>
       <p className="font-black text-[#302637]">Или войти через</p>
       <div className="mt-4 grid gap-2">
@@ -74,5 +75,6 @@ export default function OAuthButtons() {
       </div>
       {error ? <p className="mt-3 text-sm font-bold text-[#ff1fa2]">{error}</p> : null}
     </Card>
+    </div>
   );
 }

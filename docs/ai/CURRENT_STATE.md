@@ -1,5 +1,43 @@
 # Current State
 
+## Web product branding (2026-08-05)
+- The web app explicitly serves `app/favicon.ico` (32px ICO derived from the brand icon) and declares it in root metadata, alongside the existing PNG icon for modern browsers.
+- The shared header logo now displays the user-facing Russian product name `Я на стиле`, rather than repeating `vibestyle.art` which is already visible as the URL.
+
+## Mobile gallery tile density (2026-08-05)
+- The public gallery grid now renders two cards per row on phone widths, so “Tiles” remains a genuine compact browsing mode. Desktop keeps three columns.
+
+## Mobile PWA install prompt and compact admin users list (2026-08-05)
+- The web app now shows a mobile-only install banner whenever it is opened in a browser and is not already running standalone. Android uses the native install prompt when available and gives a browser-menu fallback; iPhone/iPad shows the explicit Safari “Share → Add to Home Screen” path. Dismissal lasts only for the current browser session.
+- The installed app continues to use the standalone manifest mode, so launch from its home-screen icon has no browser chrome.
+- The manifest icon declaration matches the actual 1024px source asset. The install CTA is enabled only after Chrome supplies `beforeinstallprompt`; all other states, including Yandex Browser, use an explicit non-error manual path.
+- Admin `/users` cards now have a phone-specific compact presentation: avatar preview, registration time, tariff and remaining try-ons only. Detailed identity, device and internal ID data remain desktop-only and on the individual support page; operational buttons wrap compactly on mobile.
+
+## Mobile web installability and avatar-flow polish (2026-08-05)
+- `apps/web-app` is now installable as a standalone PWA on Android and iOS: a web manifest, Apple web-app metadata, app icon, safe-area viewport settings and a narrowly scoped service worker are present. The worker caches only public static branding/onboarding assets; API responses and private avatar media remain network-only.
+- The web avatar preview is itself a file-picker target. Once a photo is selected, the save/create action is directly below the preview and before the privacy switches on a narrow screen.
+- Gallery first-load and each cursor request now use 10 posts, with lazy image decoding. The existing “show more” cursor flow remains unchanged.
+- Avatar vision QA now sends each avatar under its own technical subject and includes the SHA-256 fingerprint of the attached file in the instruction. Outbound chat/vision calls include `Cache-Control: no-store`. This prevents an old account-level outcome from being reused for a newly selected photo.
+
+## Reprioritized follow-up work (2026-08-05)
+- YooKassa checkout/webhook is live: production payments have been received. It is no longer a deployment blocker.
+- SMS provider-level protection is currently sufficient; local API rate limiting is deferred to P2, while private S3-compatible media storage remains planned as a separate infrastructure task.
+- The next P0 work begins with optional quality improvement for otherwise acceptable avatars, a first-party CAPTCHA before phone OTP sends, scene/pose selection and factual marketplace sizes. `gpt-4o-mini` can assess an avatar but cannot edit pixels; avatar enhancement requires a separately configured image-edit network in noteapp.
+
+## Avatar upload regression repair (2026-08-04)
+- A failed quality check is now terminal for that uploaded draft: `VALIDATION_FAILED` cannot enter preprocessing or become an active avatar.
+- Web and Android retain the server's supportive guidance, clear the rejected selection, and show the creation button only after a real photo is selected. The unused first-avatar prompt was removed.
+- If a fully processed avatar cannot be activated because profile data needs completion, the client keeps it instead of deleting it; it remains available in the avatar manager for activation after the correction.
+- Interrupted multipart uploads are returned as a readable `UPLOAD_INCOMPLETE` response rather than an unhelpful server error.
+- While an avatar is uploading, validating and preparing, both clients cover its preview with an explicit progress card and spinner: `Идёт проверка корректности фото для аватара…`; the file picker is disabled until that operation finishes.
+- If validation removes a draft, its guidance begins with a concrete, non-judgmental reason (`Фото не добавлено: в кадре несколько человек`, `…видны только голова и плечи`, etc.), followed by the recommendation for the next photo.
+- Разбор production-лога noteapp подтвердил, что ключ, сеть и вызов OpenAI работают: сбой происходил при сохранении `external_users`, так как WibeStyle не передавал обязательный `userId` в chat/vision body. API теперь передаёт UUID владельца аватара (и стабильный технический ID для классификации товара); общая сеть noteapp не переименовывалась.
+
+## Web billing conversion and one-time YooKassa checkout (2026-08-03)
+- The desktop header now gives trial users a prominent animated-gradient `Подключить Wibe` CTA; motion is disabled for users who request reduced motion.
+- The web paywall shows a promo's crossed-out base price and the final discounted price together near the payment CTA, rather than leaving the discount only in the top badge.
+- A YooKassa shop that has not been approved for recurrent payments now creates one-time payments only: the server does not send `save_payment_method`, the web and Android UIs hide the autorenew consent, and a stale client request cannot override this restriction. Set `WIBESTYLE_YOOKASSA_RECURRING_ENABLED=true` only after YooKassa approval.
+
 ## Gallery video visibility playback (2026-08-03)
 - Android gallery videos autoplay only after at least 70% of their card is visible. Scrolling them out of view pauses playback.
 - Playback is also paused when the gallery route loses focus or the app moves to the background; only the inline feed is affected, while a video opened in its detail screen keeps its normal controls.
@@ -34,7 +72,7 @@
 - Verified: 59 mobile tests, mobile TypeScript, dependency/Metro release preflight and Android debug assembly. A signed release assembly remains an operator step because this workspace has no `VIBESTYLE_STORE_FILE` signing secret.
 
 ## Avatar quality gate and privacy copy (2026-07-30)
-- Avatar upload now has a quality gate: backend local checks and optional noteapp vision chat (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, e.g. `gpt-4o-mini`) detect portraits, tiny full-body photos, multiple/no people, rotation and low detail.
+- Avatar upload now has a quality gate: backend local checks and optional noteapp vision chat (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, the name configured for this WibeStyle client) detect portraits, tiny full-body photos, multiple/no people, rotation and low detail.
 - Weak avatars stay in `VALIDATION_FAILED`; web/mobile show a supportive replacement prompt instead of activating them.
 - New-user profile/avatar screens explicitly state that the avatar is private and never visible to other users.
 
@@ -271,6 +309,11 @@
 - YooKassa recurring: код готов — задать env, webhook URL и production receipt settings (см. RUNBOOK).
 - Admin RBAC (роли SUPER_ADMIN/MODERATOR).
 - Age gate, блокировка пользователей.
+- Gallery moderation: admin cards show the publisher user ID; users can independently publish or remove photo and video posts from a completed try-on.
+- Avatar onboarding: users without an avatar may browse web pages; a persistent header notice links to the first-avatar form inside the main-avatar card, while try-on content remains visible but its actions are unavailable until setup is complete.
+- Avatar privacy: face hiding is opt-in for new profiles and avatars; existing users retain their chosen setting.
+- Resetting a profile also returns face hiding to the opt-in (`off`) default; it never silently enables face blur for the next avatar.
+- Avatar setup now has one UI path: web onboarding and the legacy `/onboarding/avatar` URL lead to the modern profile/avatar manager; Android onboarding leads to the Profile tab. Its selected-photo progress overlay and validation guidance are therefore identical on desktop, mobile web and the native app.
 
 ## Документация
 - [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) — чеклист сделано / не сделано (актуальный)

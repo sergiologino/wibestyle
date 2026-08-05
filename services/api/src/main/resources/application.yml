@@ -93,6 +93,7 @@ wibestyle:
       shop-id: ${WIBESTYLE_YOOKASSA_SHOP_ID:}
       secret-key: ${WIBESTYLE_YOOKASSA_SECRET_KEY:}
       api-base-url: ${WIBESTYLE_YOOKASSA_API_BASE:https://api.yookassa.ru}
+      recurring-enabled: ${WIBESTYLE_YOOKASSA_RECURRING_ENABLED:false}
     wibe-monthly-rub: 400
     wibe-annual-rub: 3840
     elite-monthly-rub: 900
@@ -135,7 +136,7 @@ wibestyle:
     timeout-seconds: ${WIBESTYLE_AI_TIMEOUT_SECONDS:180}
     virtual-try-on-network: ${WIBESTYLE_AI_TRYON_NETWORK:wibestyle-vton}
     season-video-network: ${WIBESTYLE_AI_SEASON_VIDEO_NETWORK:wibestyle-season-video}
-    size-compliment-network: ${WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK:gpt-4o-mini}
+    size-compliment-network: ${WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK:openai-gpt4o-mini}
     webhook-secret: ${WIBESTYLE_AI_WEBHOOK_SECRET:}
 
 management:

@@ -1,5 +1,50 @@
 # AI Changelog
 
+## 2026-08-05 (Web favicon and Russian name)
+- Added an explicit `favicon.ico` route/file and metadata declaration for dependable tab favicon support.
+- Replaced the header’s domain repetition with the product name `Я на стиле`, matching the RuStore name.
+
+## 2026-08-05 (Mobile gallery tile density)
+- Changed the gallery tile grid to two columns on phones, with a slightly tighter gap; tablet/desktop behavior remains unchanged.
+
+## 2026-08-05 (PWA install entry and mobile admin users)
+- Added a mobile PWA install banner. It launches the native Android install dialog when supported, offers menu guidance otherwise, and gives iOS users the Safari home-screen instructions. It never appears inside the installed standalone app.
+- Reworked the admin users-list cards for narrow screens: only avatar, registration timestamp, plan and remaining try-ons are shown; the desktop diagnostic data is hidden at the `md` breakpoint and actions use compact controls.
+- Corrected the PWA icon declaration to its real 1024px dimensions and made the install banner capability-aware: it never invokes a native install prompt until Chrome has offered one. Yandex Browser gets an honest home-screen shortcut instruction and a note that standalone mode is available through Chrome.
+
+## 2026-08-05 (Mobile-web PWA, avatar flow and gallery pagination)
+- Added installable standalone PWA support for the web app: manifest, 1024px brand icon, iOS metadata/safe-area viewport and a static-assets-only service worker. Private data and API responses are deliberately never placed in the worker cache.
+- Made the avatar image area open the same file picker as the explicit file button. The “create/save avatar” control now sits directly below the selected image, before privacy settings on mobile layouts.
+- Reduced public gallery requests from 24 to 10 cards per cursor page and marked gallery images for lazy decode/load.
+- Hardened avatar vision validation against stale answers: each avatar check gets a distinct technical user subject, a content fingerprint in the prompt and `Cache-Control: no-store` on Noteapp chat/vision requests. Added regression tests for unique validation subject/fingerprint plus web PWA, gallery and avatar UI contracts.
+
+## 2026-08-05 (Follow-up roadmap reprioritized)
+- Confirmed YooKassa production checkout from received real payments; removed it from the remaining deployment blockers.
+- Deferred local rate limiting to P2 because provider-level SMS controls are active; retained S3-compatible private media storage as an infrastructure roadmap item.
+- Added P0 plans for opt-in reversible enhancement of an otherwise acceptable avatar and first-party math CAPTCHA before SMS OTP sends. No third-party CAPTCHA provider is planned; `gpt-4o-mini` is analysis-only and a separate noteapp image-edit route is required for actual pixel enhancement.
+
+## 2026-08-04 (Avatar upload reliability and quality guidance)
+- Fixed the profile avatar flow to consume the `validate` response before preprocessing. A `VALIDATION_FAILED` photo now shows the API guidance and cannot proceed into the processing pipeline.
+- Removed destructive client cleanup after successful preprocessing: a ready avatar remains in the manager if activation needs profile data to be corrected.
+- Creation actions are hidden until a photo is selected in both web and Android. Rejected selections are cleared so the next visible action is to choose a replacement photo; the redundant first-avatar prompt is gone.
+- Fixed noteapp chat/vision request identity: the API now sends a non-empty `userId` (the owner UUID, or a stable technical classifier ID). Production diagnostics proved OpenAI completed the request but noteapp rolled back while inserting `external_users` with a null `external_user_id`; no shared noteapp network was renamed.
+- Added the human-readable `UPLOAD_INCOMPLETE` response for malformed/interrupted multipart avatar uploads.
+- Added an in-place processing overlay with spinner over the chosen avatar photo in web and Android, so validation/preprocessing never resembles a stalled interface.
+- Rejected avatar guidance now explicitly explains why the temporary photo disappeared before offering the supportive recommendation (for example, several people in the frame or only a head-and-shoulders crop).
+- Corrected profile reset: it now preserves the product default of a visible face instead of silently re-enabling face blur for the next avatar.
+- Removed the competing legacy avatar-setup screen from user routes. New and returning users without an avatar now use the same modern profile/avatar manager, including its photo validation progress overlay, on web and Android.
+- Added API regression coverage that verifies rejected avatars cannot preprocess, plus web regression coverage for validation guidance and ready-avatar retention.
+
+## 2026-08-04 (Branded try-on downloads)
+- Added owner-only `GET /api/v1/try-on/sessions/{id}/download?type=image|video`: exports include the VibeStyle badge, domain and QR code.
+- Web downloads branded photo and video; Android saves the same branded exports to the system gallery.
+- API Nixpacks setup installs FFmpeg for MP4 overlay export.
+
+## 2026-08-03 (Web paywall conversion and YooKassa checkout)
+- Made the desktop subscription CTA visually prominent with an accessible animated gradient and a clear `Подключить Wibe` label.
+- Moved the promo benefit to the payment amount: eligible paywalls show a crossed-out original price, discounted final price and explicit discount label next to the CTA.
+- Fixed checkout for the current YooKassa merchant capability: recurrent payments are opt-in through `WIBESTYLE_YOOKASSA_RECURRING_ENABLED` (default `false`). Until YooKassa enables the capability, checkout omits `save_payment_method`, the web and Android UIs do not offer autorenewal, and a stale client cannot request it.
+
 ## 2026-08-03 (Gallery video visibility playback)
 - Changed Android gallery autoplay from component-lifetime playback to visibility-aware playback: a video plays only while at least 70% of its grid card is visible.
 - Scrolling, leaving the gallery route and backgrounding the app now pause inline videos. The standalone gallery-post screen keeps its normal video behavior.
@@ -511,3 +556,16 @@
 - Opened personal referral links and first-purchase rewards to trial users and expired subscribers.
 - Bonus try-ons now participate in quota calculation and consumption even without an active subscription.
 - Updated web/mobile profile, sharing, referral-history and onboarding copy to present free referral try-ons.
+## 2026-08-04 (Auth, gallery and avatar clarity)
+- Web and mobile auth now wait for OAuth-provider availability before exposing either phone or Yandex login; a loading skeleton is shown during that short check, and a network failure still safely reveals phone login.
+- A completed try-on has independent photo/video actions: download and publish/unpublish in the public gallery. Owner unpublish uses `DELETE /api/v1/gallery/posts/{postId}` and cannot affect another user's post.
+- Gallery response includes `tryOnSessionId` so clients can correctly show the current publication state. Admin gallery cards display the publishing user ID for moderation.
+- Avatar sample images on web and mobile are marked with a large diagonal `ОБРАЗЕЦ` watermark until the user selects a real photo.
+## 2026-08-04 (No-avatar browsing flow)
+- A signed-in user without an avatar can browse the web app instead of being forced back into onboarding.
+- The app header shows a persistent avatar-required notice with a direct link to profile setup; the try-on section intentionally shows that notice instead of starting a try-on.
+- The first-avatar form now lives inside the “Main avatar” card and keeps its “Add photo” control available until a first avatar is created; no duplicate first-avatar block is shown.
+- Try-on no longer redirects an incomplete profile into settings. Its page stays visible while the interactive area is disabled until avatar/profile preparation is complete.
+## 2026-08-04 (Avatar privacy default)
+- New avatars keep the face visible by default in web and mobile flows. A user may still explicitly enable face hiding.
+- Flyway `V38__avatar_face_privacy_default.sql` changes database defaults for future profiles and avatars only; existing privacy choices are retained.

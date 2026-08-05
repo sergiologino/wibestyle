@@ -19,7 +19,7 @@ export function getNextOnboardingRoute(state: OnboardingState): string {
     if (!state.welcomeSeen) return "/welcome";
     return "/auth";
   }
-  if (!state.avatarComplete) return "/onboarding/avatar";
+  if (!state.avatarComplete) return "/settings";
   return "/home";
 }
 
@@ -49,7 +49,7 @@ export function resolvePostAuthRoute(options: {
     return "/welcome";
   }
   if (!options.hasActiveAvatar) {
-    return "/onboarding/avatar";
+    return "/settings";
   }
   const next = options.nextParam;
   if (next && next.startsWith("/") && !next.startsWith("//")) {

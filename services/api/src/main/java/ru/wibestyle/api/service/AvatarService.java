@@ -132,7 +132,9 @@ public class AvatarService {
         String filename = storedPhoto.getFileName().toString();
         long sizeBytes = Files.size(storedPhoto);
         String contentType = contentTypeFromFilename(filename);
-        AvatarValidationService.ValidationOutcome outcome = avatarValidationService.validate(filename, sizeBytes, contentType, storedPhoto);
+        AvatarValidationService.ValidationOutcome outcome = avatarValidationService.validate(
+                visionValidationSubject(userId, avatarId), filename, sizeBytes, contentType, storedPhoto
+        );
         if (outcome.rejected()) {
             avatar.setStatus(AvatarStatus.REJECTED);
             avatar.setQualityScore(0.0);
@@ -160,7 +162,7 @@ public class AvatarService {
     @Transactional
     public Map<String, Object> preprocessAvatar(UUID userId, UUID avatarId) throws IOException {
         AvatarEntity avatar = requireAvatar(userId, avatarId);
-        if (avatar.getStatus() != AvatarStatus.PHOTO_UPLOADED && avatar.getStatus() != AvatarStatus.VALIDATION_FAILED) {
+        if (avatar.getStatus() != AvatarStatus.PHOTO_UPLOADED) {
             throw new IllegalArgumentException("AVATAR_NOT_READY_FOR_PREPROCESS");
         }
 
@@ -281,5 +283,13 @@ public class AvatarService {
             case "image/jpeg", "image/jpg" -> ".jpg";
             default -> ".jpg";
         };
+    }
+
+    /**
+     * A fresh subject for every uploaded avatar prevents an upstream AI gateway from
+     * accidentally reusing a previous analysis for the same account.
+     */
+    static String visionValidationSubject(UUID userId, UUID avatarId) {
+        return userId + ":avatar:" + avatarId;
     }
 }

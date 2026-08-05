@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
@@ -27,6 +27,8 @@ export default function AuthScreen() {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [oauthReady, setOauthReady] = useState(false);
+  const markOauthReady = useCallback(() => setOauthReady(true), []);
   const resendSecondsLeft = secondsUntil(resendAvailableAt, nowMs);
 
   useEffect(() => {
@@ -114,6 +116,7 @@ export default function AuthScreen() {
             : "Войдите по номеру телефона — аккаунт создастся автоматически."}
         </BodyText>
 
+        {!oauthReady ? <View style={styles.authSkeleton} accessibilityLabel="Загружаем способы входа"><View style={styles.skeletonLine} /><View style={styles.skeletonLine} /><ActivityIndicator color={colors.pink} /></View> : <>
         <View style={styles.form}>
           {!requestId ? (
             <>
@@ -161,8 +164,6 @@ export default function AuthScreen() {
           )}
         </View>
 
-        <OAuthButtons referralCode={typeof searchParams.ref === "string" ? searchParams.ref : undefined} />
-
         <Text style={styles.legalText}>
           Продолжая, вы принимаете{" "}
           <Text style={styles.legalLink} onPress={() => void Linking.openURL(legalLinks.terms)}>
@@ -174,6 +175,8 @@ export default function AuthScreen() {
           </Text>.
         </Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        </>}
+        <OAuthButtons referralCode={typeof searchParams.ref === "string" ? searchParams.ref : undefined} onProvidersResolved={markOauthReady} visible={oauthReady} />
       </ScrollView>
     </Screen>
   );
@@ -189,6 +192,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginTop: spacing.sm,
   },
+  authSkeleton: { gap: spacing.md, paddingVertical: spacing.md },
+  skeletonLine: { height: 52, borderRadius: 14, backgroundColor: colors.pinkBg },
   error: {
     color: colors.danger,
     fontFamily: "Manrope_400Regular",

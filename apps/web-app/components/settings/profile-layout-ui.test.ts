@@ -6,10 +6,10 @@ describe("profile layout", () => {
   const profile = readFileSync(join(process.cwd(), "components", "settings", "ProfileSettingsClient.tsx"), "utf8");
   const avatars = readFileSync(join(process.cwd(), "components", "avatar", "AvatarManager.tsx"), "utf8");
 
-  it("styles the referral destination as a separated compact link", () => {
+  it("styles the referral destination as a prominent invitation card", () => {
     expect(profile).toContain('href="/referrals"');
-    expect(profile).toContain("mt-6 flex w-fit text-xs");
-    expect(profile).toContain("underline-offset-4");
+    expect(profile).toContain("Бонусы за приглашения");
+    expect(profile).toContain("bg-[linear-gradient(120deg,#fff0f8,#f4edff,#fff7ef)]");
   });
 
   it("keeps additional avatars compact and explains shared anthropometry", () => {

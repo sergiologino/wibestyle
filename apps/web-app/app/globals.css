@@ -26,6 +26,16 @@
   }
 }
 
+@keyframes subscriptionShine {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 @keyframes fadeInUp {
   0% {
     opacity: 0;
@@ -199,6 +209,16 @@ h3 {
   border: 1px solid var(--pink-soft);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), var(--surface-2));
   box-shadow: 0 24px 60px var(--shadow-accent);
+}
+
+.subscription-header-cta {
+  animation: subscriptionShine 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subscription-header-cta {
+    animation: none;
+  }
 }
 
 a {

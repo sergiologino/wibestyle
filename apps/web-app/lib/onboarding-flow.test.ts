@@ -13,14 +13,14 @@ describe("getNextOnboardingRoute", () => {
     expect(getNextOnboardingRoute(INITIAL_ONBOARDING)).toBe("/welcome");
   });
 
-  it("routes to avatar after auth", () => {
+  it("routes to the unified profile avatar flow after auth", () => {
     const state = advanceOnboarding(advanceOnboarding(INITIAL_ONBOARDING, "welcome"), "auth");
-    expect(getNextOnboardingRoute(state)).toBe("/onboarding/avatar");
+    expect(getNextOnboardingRoute(state)).toBe("/settings");
   });
 
   it("does not send logged-in users back to welcome", () => {
     const state = { ...INITIAL_ONBOARDING, authComplete: true, welcomeSeen: false };
-    expect(getNextOnboardingRoute(state)).toBe("/onboarding/avatar");
+    expect(getNextOnboardingRoute(state)).toBe("/settings");
   });
 });
 

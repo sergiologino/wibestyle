@@ -22,6 +22,7 @@ import ru.wibestyle.api.domain.TryOnSourceType;
 import ru.wibestyle.api.dto.CreateLinkTryOnSessionRequest;
 import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.service.TryOnService;
+import ru.wibestyle.api.service.TryOnBrandedExportService;
 import ru.wibestyle.api.support.AuthSupport;
 
 import java.io.IOException;
@@ -36,10 +37,12 @@ public class TryOnController {
 
     private final TryOnService tryOnService;
     private final BlobStorage blobStorage;
+    private final TryOnBrandedExportService brandedExportService;
 
-    public TryOnController(TryOnService tryOnService, BlobStorage blobStorage) {
+    public TryOnController(TryOnService tryOnService, BlobStorage blobStorage, TryOnBrandedExportService brandedExportService) {
         this.tryOnService = tryOnService;
         this.blobStorage = blobStorage;
+        this.brandedExportService = brandedExportService;
     }
     @PostMapping("/link")
     public Map<String, Object> createLinkSession(
@@ -140,6 +143,17 @@ public class TryOnController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"season-hit.mp4\"")
                 .contentType(MediaType.parseMediaType("video/mp4"))
                 .body(new FileSystemResource(path));
+    }
+
+    @GetMapping("/{sessionId}/download")
+    public ResponseEntity<Resource> downloadBranded(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID sessionId, @RequestParam(defaultValue = "image") String type) throws Exception {
+        UUID userId = requireUserId(authorization); tryOnService.requireSession(userId, sessionId);
+        boolean video = "video".equals(type);
+        Path file = video ? brandedExportService.video(userId, sessionId) : brandedExportService.image(userId, sessionId);
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"vibestyle-try-on." + (video ? "mp4" : "png") + "\"")
+                .contentType(MediaType.parseMediaType(video ? "video/mp4" : "image/png")).body(new FileSystemResource(file));
     }
 
     @PostMapping("/{sessionId}/generate-video")

@@ -604,6 +604,10 @@ export class WibeStyleApiClient {
     return this.request<PaginatedResponse<GalleryPost>>(`/api/v1/gallery/posts${query ? `?${query}` : ""}`);
   }
 
+  listMyGalleryPosts() {
+    return this.request<{ items: GalleryPost[] }>("/api/v1/gallery/posts/mine");
+  }
+
   getGalleryPostBySlug(slug: string) {
     return this.request<{ post: GalleryPost; comments: { id: string; body: string; createdAt: string }[] }>(
       `/api/v1/gallery/posts/slug/${slug}`,
@@ -626,6 +630,10 @@ export class WibeStyleApiClient {
     });
   }
 
+  deleteMyGalleryPost(postId: string) {
+    return this.request<{ deleted: boolean; postId: string }>(`/api/v1/gallery/posts/${postId}`, { method: "DELETE" });
+  }
+
   toggleGalleryLike(postId: string) {
     return this.request<{ post: GalleryPost }>(`/api/v1/gallery/posts/${postId}/like`, { method: "POST" });
   }
@@ -644,6 +652,7 @@ export class WibeStyleApiClient {
       defaultSelection: { plan: SubscriptionPlan; period: BillingPeriod };
       promoDiscountPercent: number;
       paymentProvider?: string;
+      recurringAvailable?: boolean;
       subscriber?: { plan: SubscriptionPlan; billingPeriod: BillingPeriod; subscriptionActive: boolean; autoRenewEnabled?: boolean; currentPeriodEnd?: string };
     }>("/api/v1/billing/plans");
   }

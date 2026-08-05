@@ -296,6 +296,7 @@ cd services\api
 | `WIBESTYLE_YOOKASSA_SHOP_ID` | — | Shop ID из личного кабинета |
 | `WIBESTYLE_YOOKASSA_SECRET_KEY` | — | Secret key |
 | `WIBESTYLE_YOOKASSA_API_BASE` | `https://api.yookassa.ru` | API base (обычно не менять) |
+| `WIBESTYLE_YOOKASSA_RECURRING_ENABLED` | `false` | `true` только после подтверждения YooKassa, что магазину разрешены рекуррентные платежи; при `false` checkout остаётся разовой оплатой, а UI не предлагает автопродление |
 | `WIBESTYLE_PUSH_ENABLED` | `true` | Отправка через Expo Push Service |
 | `WIBESTYLE_EXPO_PUSH_ACCESS_TOKEN` | — | Нужен только при включённой enhanced push security Expo |
 
@@ -314,11 +315,13 @@ WIBESTYLE_BILLING_RETURN_URL=https://app.vibestyle.art/paywall/return
 WIBESTYLE_BILLING_MOBILE_RETURN_URL=wibestyle://paywall/return
 WIBESTYLE_YOOKASSA_SHOP_ID=123456
 WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
+# Оставьте false, пока менеджер YooKassa не включит рекуррентные платежи для магазина.
+WIBESTYLE_YOOKASSA_RECURRING_ENABLED=false
 ```
 
 5. Перезапустите API. Paywall покажет «Оплатить через YooKassa» и редирект на страницу оплаты.
 6. После оплаты пользователь возвращается на `/paywall/return` — фронт опрашивает `GET /billing/checkout/{id}` до `completed`.
-7. Для recurring убедитесь, что магазин разрешает сохранение способов оплаты. Повторные платежи создаются backend-планировщиком; отдельный cron вне приложения не нужен.
+7. Для recurring получите подтверждение YooKassa, что магазин разрешает рекуррентные платежи, и только затем установите `WIBESTYLE_YOOKASSA_RECURRING_ENABLED=true`. До этого значения `true` разовые оплаты продолжают работать, а согласие на автопродление не показывается. Повторные платежи создаются backend-планировщиком; отдельный cron вне приложения не нужен.
 
 ### Android push — production
 
@@ -371,7 +374,7 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 | `WIBESTYLE_AI_ENABLED` | `false` | Включить noteapp-ai-integration |
 | `WIBESTYLE_AI_API_KEY` | — | API key клиента noteapp (`aikey_...`) |
 | `WIBESTYLE_AI_TRYON_NETWORK` | `wibestyle-vton` | Сеть virtual try-on в noteapp |
-| `WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK` | `gpt-4o-mini` | Chat-сеть noteapp для size advice и post-try-on `styleCompliment` |
+| `WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK` | `openai-gpt4o-mini` | Chat-сеть noteapp для size advice, проверки аватара и post-try-on `styleCompliment` |
 | `WIBESTYLE_AI_BASE_URL` | `http://localhost:8091` | URL noteapp-ai-integration |
 | `WIBESTYLE_AI_FALLBACK_TO_DEMO` | `false` | Fallback на demo SVG при ошибке AI |
 | `WIBESTYLE_TELEGRAM_CHANNEL_URL` | — | Reserved: public Telegram channel URL |
@@ -395,12 +398,12 @@ WIBESTYLE_YOOKASSA_SECRET_KEY=live_...
 WIBESTYLE_AI_ENABLED=true
 WIBESTYLE_AI_API_KEY=aikey_...
 WIBESTYLE_AI_TRYON_NETWORK=wibestyle-vton
-WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK=gpt-4o-mini
+WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK=openai-gpt4o-mini
 WIBESTYLE_AI_BASE_URL=http://localhost:8091
 WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 ```
 
-В **noteapp** добавьте сеть `gpt-4o-mini` (provider `openai`, type `chat`, model `gpt-4o-mini`) и выдайте доступ клиенту wibestyle — для вежливых подсказок «возьмите размер побольше» и коротких комментариев стилиста после примерки (`styleCompliment`). Если сети нет, используются шаблоны с ротацией.
+В **noteapp** должна уже существовать сеть `openai-gpt4o-mini` (provider `openai`, type `chat`, model `gpt-4o-mini`) с доступом клиента `wibestyle`. Не переименовывайте общую сеть: укажите её техническое имя только в переменной окружения WibeStyle. Она используется для проверки аватаров, вежливых size advice и коротких комментариев стилиста после примерки (`styleCompliment`). Если сети нет, используются шаблоны с ротацией.
 
 7. Перезапустите noteapp и wibestyle API.
 

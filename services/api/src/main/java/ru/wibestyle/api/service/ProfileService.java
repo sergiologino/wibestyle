@@ -114,7 +114,7 @@ public class ProfileService {
         profile.setClothingSize(null);
         profile.setProfileType(null);
         profile.setSizingSystem(null);
-        profile.setPrivacyFaceHidden(true);
+        profile.setPrivacyFaceHidden(false);
         profile.setPrivacyBackgroundHidden(false);
         profile.setPrivacyFeaturesHidden(false);
         profile.setInterfacePalette("vibe");
