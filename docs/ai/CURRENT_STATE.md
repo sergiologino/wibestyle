@@ -1,5 +1,12 @@
 # Current State
 
+## Web product branding (2026-08-05)
+- The web app explicitly serves `app/favicon.ico` (32px ICO derived from the brand icon) and declares it in root metadata, alongside the existing PNG icon for modern browsers.
+- The shared header logo now displays the user-facing Russian product name `Я на стиле`, rather than repeating `vibestyle.art` which is already visible as the URL.
+
+## Mobile gallery tile density (2026-08-05)
+- The public gallery grid now renders two cards per row on phone widths, so “Tiles” remains a genuine compact browsing mode. Desktop keeps three columns.
+
 ## Mobile PWA install prompt and compact admin users list (2026-08-05)
 - The web app now shows a mobile-only install banner whenever it is opened in a browser and is not already running standalone. Android uses the native install prompt when available and gives a browser-menu fallback; iPhone/iPad shows the explicit Safari “Share → Add to Home Screen” path. Dismissal lasts only for the current browser session.
 - The installed app continues to use the standalone manifest mode, so launch from its home-screen icon has no browser chrome.

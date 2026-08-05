@@ -24,6 +24,10 @@ export const metadata: Metadata = {
     title: "Я на стиле",
   },
   icons: {
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/icon.png", type: "image/png", sizes: "1024x1024" },
+    ],
     apple: "/assets/brand/app-logo-round.png",
   },
   openGraph: {

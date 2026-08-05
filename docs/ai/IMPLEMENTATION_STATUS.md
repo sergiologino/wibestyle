@@ -1,5 +1,13 @@
 # Implementation Status
 
+## 2026-08-05 — Web branding
+
+- ✅ Explicit browser favicon and Russian product name in the web-app header.
+
+## 2026-08-05 — Mobile gallery grid
+
+- ✅ Gallery tiles use two columns on phone widths and three columns on desktop.
+
 ## 2026-08-05 — Mobile PWA and admin density
 
 - ✅ Mobile install banner for the standalone web PWA, with native Android and explicit iOS flows.

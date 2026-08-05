@@ -1,5 +1,12 @@
 # AI Changelog
 
+## 2026-08-05 (Web favicon and Russian name)
+- Added an explicit `favicon.ico` route/file and metadata declaration for dependable tab favicon support.
+- Replaced the header’s domain repetition with the product name `Я на стиле`, matching the RuStore name.
+
+## 2026-08-05 (Mobile gallery tile density)
+- Changed the gallery tile grid to two columns on phones, with a slightly tighter gap; tablet/desktop behavior remains unchanged.
+
 ## 2026-08-05 (PWA install entry and mobile admin users)
 - Added a mobile PWA install banner. It launches the native Android install dialog when supported, offers menu guidance otherwise, and gives iOS users the Safari home-screen instructions. It never appears inside the installed standalone app.
 - Reworked the admin users-list cards for narrow screens: only avatar, registration timestamp, plan and remaining try-ons are shown; the desktop diagnostic data is hidden at the `md` breakpoint and actions use compact controls.

@@ -19,8 +19,7 @@ export function BrandLogo({ className, showText = true, markClassName }: BrandLo
       />
       {showText ? (
         <span className="font-[family-name:var(--font-manrope)] text-[1.08rem] font-normal tracking-[-0.02em] text-[#14101a]">
-          vibe<span className="text-[#ff1fa2]">style</span>
-          <span className="text-[#9a8f99]">.art</span>
+          Я <span className="text-[#ff1fa2]">на стиле</span>
         </span>
       ) : null}
     </span>

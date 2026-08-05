@@ -8,5 +8,6 @@ describe("gallery pagination", () => {
     expect(source).toContain("const GALLERY_PAGE_SIZE = 10");
     expect(source).toContain("limit: GALLERY_PAGE_SIZE");
     expect(source).toContain('loading="lazy"');
+    expect(source).toContain('grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3');
   });
 });

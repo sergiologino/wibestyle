@@ -15,5 +15,6 @@ describe("PWA installation", () => {
     expect(worker).toContain("CACHEABLE_PATH");
     expect(layout).toContain("PwaServiceWorker");
     expect(layout).toContain("appleWebApp");
+    expect(layout).toContain('url: "/favicon.ico"');
   });
 });
