@@ -3,6 +3,7 @@
 ## Mobile PWA install prompt and compact admin users list (2026-08-05)
 - The web app now shows a mobile-only install banner whenever it is opened in a browser and is not already running standalone. Android uses the native install prompt when available and gives a browser-menu fallback; iPhone/iPad shows the explicit Safari “Share → Add to Home Screen” path. Dismissal lasts only for the current browser session.
 - The installed app continues to use the standalone manifest mode, so launch from its home-screen icon has no browser chrome.
+- The manifest icon declaration matches the actual 1024px source asset. The install CTA is enabled only after Chrome supplies `beforeinstallprompt`; all other states, including Yandex Browser, use an explicit non-error manual path.
 - Admin `/users` cards now have a phone-specific compact presentation: avatar preview, registration time, tariff and remaining try-ons only. Detailed identity, device and internal ID data remain desktop-only and on the individual support page; operational buttons wrap compactly on mobile.
 
 ## Mobile web installability and avatar-flow polish (2026-08-05)

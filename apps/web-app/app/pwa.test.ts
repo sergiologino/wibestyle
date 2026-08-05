@@ -10,6 +10,7 @@ describe("PWA installation", () => {
 
     expect(manifest).toContain('display: "standalone"');
     expect(manifest).toContain('start_url: "/"');
+    expect(manifest).toContain('sizes: "1024x1024"');
     expect(worker).toContain('request.method !== "GET"');
     expect(worker).toContain("CACHEABLE_PATH");
     expect(layout).toContain("PwaServiceWorker");

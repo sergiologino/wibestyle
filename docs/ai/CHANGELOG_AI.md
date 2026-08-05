@@ -3,6 +3,7 @@
 ## 2026-08-05 (PWA install entry and mobile admin users)
 - Added a mobile PWA install banner. It launches the native Android install dialog when supported, offers menu guidance otherwise, and gives iOS users the Safari home-screen instructions. It never appears inside the installed standalone app.
 - Reworked the admin users-list cards for narrow screens: only avatar, registration timestamp, plan and remaining try-ons are shown; the desktop diagnostic data is hidden at the `md` breakpoint and actions use compact controls.
+- Corrected the PWA icon declaration to its real 1024px dimensions and made the install banner capability-aware: it never invokes a native install prompt until Chrome has offered one. Yandex Browser gets an honest home-screen shortcut instruction and a note that standalone mode is available through Chrome.
 
 ## 2026-08-05 (Mobile-web PWA, avatar flow and gallery pagination)
 - Added installable standalone PWA support for the web app: manifest, 1024px brand icon, iOS metadata/safe-area viewport and a static-assets-only service worker. Private data and API responses are deliberately never placed in the worker cache.
