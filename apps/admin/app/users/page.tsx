@@ -196,11 +196,11 @@ export default function AdminUsersPage() {
         {!loading && items.length === 0 ? <p className="font-bold text-[#6d6273]">No users found.</p> : null}
         {items.map((user) => (
           <Card key={user.id}>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex min-w-0 flex-1 gap-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
+              <div className="flex min-w-0 flex-1 gap-3 md:gap-4">
                 <button
                   type="button"
-                  className="h-28 w-20 shrink-0 overflow-hidden rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] disabled:cursor-default"
+                  className="h-20 w-14 shrink-0 overflow-hidden rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] disabled:cursor-default md:h-28 md:w-20"
                   disabled={!user.activeAvatarPhotoUrl}
                   title={user.activeAvatarPhotoUrl ? "Открыть аватар" : "У пользователя нет активного аватара"}
                   onClick={() => setPreviewUser(user)}
@@ -213,6 +213,12 @@ export default function AdminUsersPage() {
                   />
                 </button>
                 <div className="min-w-0">
+                  <div className="grid gap-1 text-xs font-bold text-[#6d6273] md:hidden">
+                    <p>Зарегистрирован: {new Date(user.createdAt).toLocaleString("ru-RU")}</p>
+                    <p>Тариф: {user.plan ?? "—"}</p>
+                    <p>Осталось примерок: {user.plan === "trial" ? user.trialGenerationsLeft ?? 0 : user.planGenerationsLeft ?? 0}</p>
+                  </div>
+                  <div className="hidden md:block">
                   <p className="text-xs font-black uppercase tracking-[0.12em] text-[#782cff]">{user.primaryAuth ?? "user"}</p>
                   <h2 className="break-words text-xl font-black">{user.displayName ?? user.login ?? user.email ?? user.phone ?? "Без имени"}</h2>
                   <p className="mt-1 break-words text-sm font-bold text-[#6d6273]">
@@ -246,9 +252,10 @@ export default function AdminUsersPage() {
                     <p className="mt-1 text-xs font-bold text-[#9a8f99]">Device ID: нет данных</p>
                   )}
                   <p className="mt-1 break-all text-xs font-bold text-[#6d6273]">ID: {user.id}</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-2 md:flex-col">
                 <Link href={`/users/${user.id}`}>
                   <Button size="md">Поддержка</Button>
                 </Link>
@@ -256,7 +263,8 @@ export default function AdminUsersPage() {
                   {planPresets.map((preset) => (
                     <Button
                       key={preset.id}
-                      size="md"
+                      className="md:min-h-9 md:px-4 md:py-2 md:text-sm"
+                      size="sm"
                       variant="secondary"
                       disabled={actionUserId === user.id || !configured}
                       onClick={() => void applyPlan(user, preset.id)}
@@ -267,13 +275,13 @@ export default function AdminUsersPage() {
                 </div>
                 <button
                   type="button"
-                  className="min-h-9 rounded-xl border-2 border-[#782cff] bg-white px-4 py-2 text-sm font-black text-[#782cff] underline decoration-2 underline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-8 rounded-xl border-2 border-[#782cff] bg-white px-3 py-1.5 text-xs font-black text-[#782cff] underline decoration-2 underline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:min-h-9 md:px-4 md:py-2 md:text-sm"
                   disabled={actionUserId === user.id || !configured}
                   onClick={() => void impersonate(user)}
                 >
                   Войти как пользователь
                 </button>
-                <Button disabled={actionUserId === user.id || !configured} variant="secondary" onClick={() => void deleteUser(user)}>
+                <Button className="md:min-h-9 md:px-4 md:py-2 md:text-sm" disabled={actionUserId === user.id || !configured} size="sm" variant="secondary" onClick={() => void deleteUser(user)}>
                   Удалить полностью
                 </Button>
               </div>

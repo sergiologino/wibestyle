@@ -1,5 +1,10 @@
 # Current State
 
+## Mobile PWA install prompt and compact admin users list (2026-08-05)
+- The web app now shows a mobile-only install banner whenever it is opened in a browser and is not already running standalone. Android uses the native install prompt when available and gives a browser-menu fallback; iPhone/iPad shows the explicit Safari “Share → Add to Home Screen” path. Dismissal lasts only for the current browser session.
+- The installed app continues to use the standalone manifest mode, so launch from its home-screen icon has no browser chrome.
+- Admin `/users` cards now have a phone-specific compact presentation: avatar preview, registration time, tariff and remaining try-ons only. Detailed identity, device and internal ID data remain desktop-only and on the individual support page; operational buttons wrap compactly on mobile.
+
 ## Mobile web installability and avatar-flow polish (2026-08-05)
 - `apps/web-app` is now installable as a standalone PWA on Android and iOS: a web manifest, Apple web-app metadata, app icon, safe-area viewport settings and a narrowly scoped service worker are present. The worker caches only public static branding/onboarding assets; API responses and private avatar media remain network-only.
 - The web avatar preview is itself a file-picker target. Once a photo is selected, the save/create action is directly below the preview and before the privacy switches on a narrow screen.

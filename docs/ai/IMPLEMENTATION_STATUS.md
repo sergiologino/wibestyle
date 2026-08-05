@@ -1,5 +1,10 @@
 # Implementation Status
 
+## 2026-08-05 — Mobile PWA and admin density
+
+- ✅ Mobile install banner for the standalone web PWA, with native Android and explicit iOS flows.
+- ✅ Admin `/users` compact mobile cards: preview, registration time, tariff, remaining try-ons and small operational actions.
+
 ## 2026-08-05 — Mobile web delivery
 
 - ✅ Web PWA: standalone installation for Android/iOS, branded icon, safe-area viewport and a static-only service worker.

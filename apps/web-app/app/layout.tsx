@@ -4,6 +4,7 @@ import AppShell from "@/components/AppShell";
 import { AppSessionProvider } from "@/components/providers/AppSessionProvider";
 import YandexMetrika from "@/components/YandexMetrika";
 import MarketingVisitorCapture from "@/components/MarketingVisitorCapture";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import PwaServiceWorker from "@/components/PwaServiceWorker";
 import { appBaseUrl, brandDomain } from "@/lib/api-media";
 import "./globals.css";
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <YandexMetrika />
         <MarketingVisitorCapture />
         <PwaServiceWorker />
+        <PwaInstallPrompt />
         <AppSessionProvider>
           <AppShell>{children}</AppShell>
         </AppSessionProvider>

@@ -1,5 +1,9 @@
 # AI Changelog
 
+## 2026-08-05 (PWA install entry and mobile admin users)
+- Added a mobile PWA install banner. It launches the native Android install dialog when supported, offers menu guidance otherwise, and gives iOS users the Safari home-screen instructions. It never appears inside the installed standalone app.
+- Reworked the admin users-list cards for narrow screens: only avatar, registration timestamp, plan and remaining try-ons are shown; the desktop diagnostic data is hidden at the `md` breakpoint and actions use compact controls.
+
 ## 2026-08-05 (Mobile-web PWA, avatar flow and gallery pagination)
 - Added installable standalone PWA support for the web app: manifest, 1024px brand icon, iOS metadata/safe-area viewport and a static-assets-only service worker. Private data and API responses are deliberately never placed in the worker cache.
 - Made the avatar image area open the same file picker as the explicit file button. The “create/save avatar” control now sits directly below the selected image, before privacy settings on mobile layouts.
