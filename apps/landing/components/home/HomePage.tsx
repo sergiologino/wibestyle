@@ -49,17 +49,17 @@ export default function HomePage() {
             </ul>
             <div className="cta-row">
               <Link className="hero-web-cta" href={siteConfig.appUrl} data-analytics="hero_web_app">
-                Перейти в приложение
+                Перейти в веб-приложение
               </Link>
-              <a className="store-button store-apple" href="#lead" data-analytics="hero_appstore">
+              <span className="store-button store-apple store-button--disabled" aria-disabled="true" title="Пока недоступно">
                  <span>Скоро в<br /><b>App Store</b></span>
-              </a>
-              <a className="store-button store-google" href="#lead" data-analytics="hero_googleplay">
+              </span>
+              <span className="store-button store-google store-button--disabled" aria-disabled="true" title="Пока недоступно">
                 ▶ <span>Скачать в<br /><b>Google Play</b></span>
-              </a>
-              <Link className="store-button store-rustore" href={siteConfig.rustoreUrl ?? siteConfig.appUrl} data-analytics="hero_rustore">
+              </span>
+              <a className="store-button store-rustore" href={siteConfig.rustoreUrl} data-analytics="hero_rustore">
                 Ru <span>Скачать в<br /><b>RuStore</b></span>
-              </Link>
+              </a>
             </div>
             <p className="scribble">
               Твой стиль.

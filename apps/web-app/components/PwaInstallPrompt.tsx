@@ -32,7 +32,7 @@ export default function PwaInstallPrompt() {
   const [installReady, setInstallReady] = useState(false);
 
   useEffect(() => {
-    if (!isMobileBrowser() || isStandalone() || window.sessionStorage.getItem("wibestyle-pwa-install-dismissed")) return;
+    if (!isMobileBrowser() || isStandalone()) return;
     setVisible(true);
     if (isIosDevice()) return;
     const onBeforeInstallPrompt = (event: Event) => {
@@ -51,7 +51,6 @@ export default function PwaInstallPrompt() {
   }, []);
 
   function dismiss() {
-    window.sessionStorage.setItem("wibestyle-pwa-install-dismissed", "1");
     setVisible(false);
   }
 

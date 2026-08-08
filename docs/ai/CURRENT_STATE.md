@@ -1,5 +1,10 @@
 # Current State
 
+## RuStore launch links and persistent PWA invitation (2026-08-08)
+- The published Android app is available at `https://www.rustore.ru/catalog/app/ru.vibestyle.app`. Landing hero RuStore links use this URL. Google Play and App Store cards are visibly disabled until publication.
+- Landing header routes “Перейти в приложение” to RuStore only after Android client detection; all other platforms open the web app. The hero web CTA is explicitly labelled “Перейти в веб-приложение” and always opens the web app.
+- The web PWA install banner appears on every fresh browser opening while the app is not standalone. Closing it is temporary in React state only; installed PWA launches are detected via display mode and do not show it.
+
 ## Web product branding (2026-08-05)
 - The web app explicitly serves `app/favicon.ico` (32px ICO derived from the brand icon) and declares it in root metadata, alongside the existing PNG icon for modern browsers.
 - The shared header logo now displays the user-facing Russian product name `Я на стиле`, rather than repeating `vibestyle.art` which is already visible as the URL.

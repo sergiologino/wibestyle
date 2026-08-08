@@ -1,5 +1,10 @@
 # Implementation Status
 
+## 2026-08-08 — Published Android entry points
+
+- ✅ Landing points Android users to the published RuStore app; unavailable stores are disabled.
+- ✅ Android-aware header routing and persistent-until-installed web PWA invitation.
+
 ## 2026-08-05 — Web branding
 
 - ✅ Explicit browser favicon and Russian product name in the web-app header.

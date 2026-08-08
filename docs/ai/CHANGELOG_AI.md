@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-08-08 (RuStore launch and landing store-state clarity)
+- Linked the landing hero to the published RuStore app page. Google Play and App Store buttons are now non-interactive greyed-out availability states.
+- Made header app routing platform-aware (Android → RuStore, otherwise web app), while the hero web CTA now explicitly says “Перейти в веб-приложение”.
+- Removed session-persistent dismissal of the mobile PWA install banner: it returns when the browser app is opened again until standalone installation succeeds.
+
 ## 2026-08-05 (Web favicon and Russian name)
 - Added an explicit `favicon.ico` route/file and metadata declaration for dependable tab favicon support.
 - Replaced the header’s domain repetition with the product name `Я на стиле`, matching the RuStore name.

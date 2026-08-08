@@ -224,6 +224,12 @@ h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255
 .store-apple { background: linear-gradient(135deg, #ff1fa2, #ff6abf); }
 .store-google { background: linear-gradient(135deg, #7b2cff, #ce28ff); }
 .store-rustore { background: linear-gradient(135deg, #00a3ff, #ff6b00); }
+.store-button--disabled {
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: .42;
+  box-shadow: none;
+}
 .hero-web-cta {
   display: inline-flex;
   align-items: center;
@@ -1195,5 +1201,5 @@ details p { margin: 14px 0 0; color: var(--muted); font-weight: 700; line-height
 @media (prefers-reduced-motion: no-preference) {
   .category-card, .future-card, .review-card, .store-button, .download-cta, .lead-form button, .app-redirect-cta__button, .hero-look-card { transition: transform .22s ease, box-shadow .22s ease; }
   .category-card:hover, .future-card:hover, .review-card:hover { transform: translateY(-6px); }
-  .store-button:hover, .download-cta:hover, .lead-form button:hover, .app-redirect-cta__button:hover { transform: translateY(-2px); }
+  .store-button:not(.store-button--disabled):hover, .download-cta:hover, .lead-form button:hover, .app-redirect-cta__button:hover { transform: translateY(-2px); }
 }
