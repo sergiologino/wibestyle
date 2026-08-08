@@ -156,7 +156,7 @@ export const seoPages: SeoPageContent[] = [
     intro:
       "Макияж в связке с причёской и одеждой — цельный образ, а не фильтр на лице. Смотрите, как вечерний или лёгкий дневной макияж меняет ваш look.",
     template: "editorial",
-    badge: "Макияж · причёска · одежда",
+    badge: "Скоро",
     visuals: {
       type: "beforeAfterPairs",
       pairs: [

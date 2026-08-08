@@ -196,6 +196,41 @@ h1 {
   letter-spacing: -0.075em;
 }
 h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255,31,162,.18); }
+.seo-title--coming-soon {
+  position: relative;
+  isolation: isolate;
+  padding-top: .2em;
+}
+.seo-coming-soon-badge {
+  position: absolute;
+  z-index: 1;
+  top: -.02em;
+  left: -.08em;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.02em;
+  padding: .08em .38em;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: .18em;
+  color: rgba(255, 255, 255, .96) !important;
+  background: linear-gradient(135deg, rgba(255, 31, 162, .74), rgba(126, 64, 255, .7));
+  box-shadow: 0 .12em .34em rgba(119, 38, 133, .22);
+  font-size: .56em;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: -.055em;
+  text-transform: uppercase;
+  text-shadow: none !important;
+  transform: rotate(-3deg);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+@media (max-width: 620px) {
+  .seo-coming-soon-badge {
+    left: -.03em;
+    font-size: .5em;
+  }
+}
 .lead {
   font-size: clamp(18px, 1.6vw, 24px);
   line-height: 1.28;

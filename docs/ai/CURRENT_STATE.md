@@ -1,5 +1,12 @@
 # Current State
 
+## Coming-soon title treatment (2026-08-08)
+- The `Скоро` labels on `/pricheski`, `/podbor-obraza`, and `/makiyazh` now overlap the top of their headings with a translucent high-contrast treatment, so the status is seen before the title is read.
+
+## Virtual-makeup landing-page availability clarity (2026-08-08)
+- `/makiyazh` is explicitly marked `Скоро` above its title. Its existing FAQ content is intentionally unchanged.
+- The page now renders four isolated replaceable visual files in `apps/landing/public/assets/makeup/`: `makeup-evening-before.png`, `makeup-evening-after.png`, `makeup-light-before.png`, and `makeup-light-after.png`.
+
 ## Look-request landing-page availability clarity (2026-08-08)
 - `/podbor-obraza` is explicitly marked `Скоро` above its title, and its FAQ says the feature is planned for the nearest August–September releases.
 - The page renders four isolated replaceable visual files in `apps/landing/public/assets/look-request/`: `full-look.png`, `accessories.png`, `shoes.png`, and `makeup.png`. Legacy alternates in the same folder are not rendered.

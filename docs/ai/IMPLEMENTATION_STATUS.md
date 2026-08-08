@@ -1,5 +1,13 @@
 # Implementation Status
 
+## 2026-08-08 — Coming-soon labels
+
+- ✅ Prominent translucent overlap treatment for the hairstyle, look-request and virtual-makeup page titles.
+
+## 2026-08-08 — Virtual-makeup landing page
+
+- ✅ Clear `Скоро` availability label, preserved FAQ and dedicated image-slot folder for the before/after makeup examples.
+
 ## 2026-08-08 — Look-request landing page
 
 - ✅ Clear `Скоро` availability label, August–September FAQ wording and documented active image slots for the look-request mosaic.
