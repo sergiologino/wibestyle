@@ -137,12 +137,12 @@ export const seoPages: SeoPageContent[] = [
     faq: [
       {
         q: "Когда появится функция?",
-        a: "Одежду уже можно примерять в приложении. Подбор полного образа появится позже, а сейчас можно перейти в веб-версию или установить Android-приложение.",
+        a: "В ближайших релизах августа–сентября.",
       },
     ],
     showProductFeatures: true,
     template: "editorial",
-    badge: "Лук целиком",
+    badge: "Скоро",
     visualsCompact: true,
   },
   {

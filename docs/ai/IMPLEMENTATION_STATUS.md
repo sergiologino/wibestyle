@@ -1,5 +1,9 @@
 # Implementation Status
 
+## 2026-08-08 — Look-request landing page
+
+- ✅ Clear `Скоро` availability label, August–September FAQ wording and documented active image slots for the look-request mosaic.
+
 ## 2026-08-08 — Hairstyle landing page
 
 - ✅ Clear “Скоро” availability label, August–September FAQ wording and dedicated image-slot folder for hairstyle previews.

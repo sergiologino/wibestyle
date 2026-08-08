@@ -1,5 +1,9 @@
 # Current State
 
+## Look-request landing-page availability clarity (2026-08-08)
+- `/podbor-obraza` is explicitly marked `Скоро` above its title, and its FAQ says the feature is planned for the nearest August–September releases.
+- The page renders four isolated replaceable visual files in `apps/landing/public/assets/look-request/`: `full-look.png`, `accessories.png`, `shoes.png`, and `makeup.png`. Legacy alternates in the same folder are not rendered.
+
 ## Hairstyle landing-page availability clarity (2026-08-08)
 - `/pricheski` is explicitly marked `Скоро` above its title, and its FAQ now says the feature is planned for the nearest August–September releases.
 - Its two mosaic visuals have isolated slots at `apps/landing/public/assets/hairstyles/hairstyle-preview-1.png` and `hairstyle-preview-2.png`; these no longer reuse general clothing-card images.

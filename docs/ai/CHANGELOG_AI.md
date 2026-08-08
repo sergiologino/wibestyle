@@ -1,5 +1,8 @@
 # AI Changelog
 
+## 2026-08-08 (Look-request landing-page availability)
+- Marked the look-request page as `Скоро`, clarified the planned August–September release window in its FAQ, and documented the four active replaceable visuals under `public/assets/look-request/`.
+
 ## 2026-08-08 (Hairstyle landing-page availability)
 - Marked the virtual-hairstyle page as `Скоро`, clarified the planned August–September release window in its FAQ, and created dedicated replaceable visual slots under `public/assets/hairstyles/`.
 
