@@ -1,5 +1,9 @@
 # Implementation Status
 
+## 2026-08-08 — Hairstyle landing page
+
+- ✅ Clear “Скоро” availability label, August–September FAQ wording and dedicated image-slot folder for hairstyle previews.
+
 ## 2026-08-08 — Published Android entry points
 
 - ✅ Landing points Android users to the published RuStore app; unavailable stores are disabled.

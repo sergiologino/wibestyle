@@ -73,6 +73,18 @@ export const imageSlots = {
     width: 600,
     height: 800,
   },
+  hairstylePreview1: {
+    src: "/assets/hairstyles/hairstyle-preview-1.png",
+    alt: "Пример виртуальной примерки причёски",
+    width: 600,
+    height: 800,
+  },
+  hairstylePreview2: {
+    src: "/assets/hairstyles/hairstyle-preview-2.png",
+    alt: "Пример виртуальной примерки укладки и цвета волос",
+    width: 600,
+    height: 800,
+  },
   /** Замените на свои close-up фото макияжа в /public/assets/makeup/ */
   makeupEveningBefore: {
     src: "/assets/female-card-1.png",

@@ -29,6 +29,7 @@ export default function DefaultSeoPage({ page, interest = "clothing" }: Props) {
           <nav className="seo-breadcrumbs light">
             <Link href="/">Главная</Link> / {page.h1}
           </nav>
+          {page.badge ? <span className="pill">{page.badge}</span> : null}
           <h1>{page.h1}</h1>
           <p className="lead">{page.intro}</p>
         </div>

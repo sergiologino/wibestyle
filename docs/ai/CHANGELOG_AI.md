@@ -1,5 +1,8 @@
 # AI Changelog
 
+## 2026-08-08 (Hairstyle landing-page availability)
+- Marked the virtual-hairstyle page as `Скоро`, clarified the planned August–September release window in its FAQ, and created dedicated replaceable visual slots under `public/assets/hairstyles/`.
+
 ## 2026-08-08 (RuStore launch and landing store-state clarity)
 - Linked the landing hero to the published RuStore app page. Google Play and App Store buttons are now non-interactive greyed-out availability states.
 - Made header app routing platform-aware (Android → RuStore, otherwise web app), while the hero web CTA now explicitly says “Перейти в веб-приложение”.

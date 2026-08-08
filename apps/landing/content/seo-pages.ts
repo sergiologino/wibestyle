@@ -295,10 +295,11 @@ export const seoPages: SeoPageContent[] = [
     h1: "Виртуальная примерка причёсок",
     keywords: ["примерить причёску", "нейростилист"],
     priority: 0.7,
+    badge: "Скоро",
     intro: "Укладка, длина, чёлка и цвет — вместе с одеждой и макияжем.",
-    visuals: { type: "mosaic", images: [imageSlots.femaleCard3, imageSlots.femaleCard1] },
+    visuals: { type: "mosaic", images: [imageSlots.hairstylePreview1, imageSlots.hairstylePreview2] },
     sections: [{ title: "Причёска под образ", body: "Одно платье — разные укладки, разное настроение." }],
-    faq: [{ q: "Когда?", a: `В ${t.appLaunch} вместе с приложением.` }],
+    faq: [{ q: "Когда?", a: "В ближайших релизах августа–сентября." }],
   },
   {
     slug: "/polnyy-obraz",
