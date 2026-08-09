@@ -1,5 +1,11 @@
 # AI Changelog
 
+## 2026-08-09 (Landing forthcoming-feature navigation)
+- Added the `Причёски` entry to the top navigation so it matches the homepage AI-hairstyles card.
+- Redirected the homepage `Полный look` card to the canonical, more informative `/podbor-obraza` page.
+- Made the three homepage `Скоро` labels bright, angled and overlapping their card titles, matching the treatment already used on their feature pages.
+- Documented that click-only interest tracking needs a separate anonymous event contract; the existing landing-interest endpoint is a consented contact lead and must not be reused silently.
+
 ## 2026-08-08 (Coming-soon title treatment)
 - Changed the three forthcoming-feature labels from a separate line to translucent overlapping title labels, without affecting non-`Скоро` page badges.
 

@@ -16,7 +16,7 @@ import ProductFeaturesBlock from "@/components/seo/ProductFeaturesBlock";
 const futureCards = [
   { title: "AI-макияж", text: "Нюдовый, вечерний, деловой, яркий или свадебный макияж на портретном фото.", href: "/makiyazh", analytics: "future_makeup_click" },
   { title: "AI-причёски", text: "Каре, локоны, чёлка, хвост, укладка и новый цвет волос до визита к мастеру.", href: "/pricheski", analytics: "future_hairstyle_click" },
-  { title: "Полный look", text: "Одежда, обувь, аксессуары, макияж и причёска — один образ с ссылками на покупку.", href: "/polnyy-obraz", analytics: "future_full_look_click" },
+  { title: "Полный look", text: "Одежда, обувь, аксессуары, макияж и причёска — один образ с ссылками на покупку.", href: "/podbor-obraza", analytics: "future_full_look_click" },
 ];
 
 const steps = [

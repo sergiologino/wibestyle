@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/ai-primerka", label: "AI-примерка" },
   { href: "/podbor-obraza", label: "Подбор образа" },
   { href: "/makiyazh", label: "Макияж" },
+  { href: "/pricheski", label: "Причёски" },
   { href: "/faq", label: "FAQ" },
 ];
 

@@ -1,5 +1,9 @@
 # Current State
 
+## Landing forthcoming-feature navigation (2026-08-09)
+- `AI-причёски` is now available in the top navigation, while the homepage `Полный look` card uses the canonical `/podbor-obraza` page.
+- Homepage future-card `Скоро` labels now use the same high-contrast overlapping treatment as their SEO pages.
+
 ## Coming-soon title treatment (2026-08-08)
 - The `Скоро` labels on `/pricheski`, `/podbor-obraza`, and `/makiyazh` now overlap the top of their headings with a translucent high-contrast treatment, so the status is seen before the title is read.
 
