@@ -24,6 +24,16 @@ describe("seo-pages", () => {
     expect(page?.h1).toContain("Нейропримерка");
   });
 
+  it("discloses recurring-payment conditions in the public terms", () => {
+    const terms = getSeoPage("/terms");
+    const recurring = terms?.sections.find((section) => section.title.startsWith("8. Автоплатежи"));
+    expect(recurring?.body).toContain("отдельно включил");
+    expect(recurring?.body).toContain("один раз в месяц");
+    expect(recurring?.body).toContain("один раз в год");
+    expect(recurring?.body).toContain("отключить автопродление");
+    expect(recurring?.body).toContain("до трёх раз");
+  });
+
   it("each page has title, description, h1, intro", () => {
     for (const page of seoPages) {
       expect(page.title.length).toBeGreaterThan(5);

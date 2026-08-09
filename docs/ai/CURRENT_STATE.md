@@ -1,5 +1,8 @@
 # Current State
 
+## Recurring-payment disclosure (2026-08-09)
+- `/terms` now contains a dedicated recurring-payment section: separate consent, saved payment method, monthly/annual cadence, next-charge price, three-day in-app warning, self-service cancellation, and the bounded failed-charge flow. `WIBESTYLE_YOOKASSA_RECURRING_ENABLED` remains disabled until YooKassa confirms production eligibility.
+
 ## Landing forthcoming-feature navigation (2026-08-09)
 - `AI-причёски` is now available in the top navigation, while the homepage `Полный look` card uses the canonical `/podbor-obraza` page.
 - Homepage future-card `Скоро` labels now use the same high-contrast overlapping treatment as their SEO pages.

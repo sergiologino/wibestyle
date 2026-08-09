@@ -1,5 +1,9 @@
 # AI Changelog
 
+## 2026-08-09 (Recurring-payment terms)
+- Added a dedicated public-terms section for recurring payments and auto-renewal. It documents explicit opt-in, charging cadence and price, the three-day notice, self-service cancellation, and up-to-three failed-charge attempts.
+- The production recurring feature flag remains off pending written YooKassa approval; this change does not activate any automatic payments.
+
 ## 2026-08-09 (Landing forthcoming-feature navigation)
 - Added the `Причёски` entry to the top navigation so it matches the homepage AI-hairstyles card.
 - Redirected the homepage `Полный look` card to the canonical, more informative `/podbor-obraza` page.
