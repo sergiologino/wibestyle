@@ -41,7 +41,7 @@ public class CaptchaService {
     }
 
     public void verify(String challengeId, String answerRaw) {
-        if (!securityProperties.isRateLimitEnabled()) {
+        if (!securityProperties.isOtpCaptchaEnabled()) {
             return;
         }
         if (challengeId == null || challengeId.isBlank() || answerRaw == null || answerRaw.isBlank()) {

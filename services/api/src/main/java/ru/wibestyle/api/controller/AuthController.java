@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.wibestyle.api.dto.StartOtpRequest;
 import ru.wibestyle.api.dto.VerifyOtpRequest;
 import ru.wibestyle.api.service.AuthService;
+import ru.wibestyle.api.service.CaptchaService;
 import ru.wibestyle.api.support.AuthResponseSupport;
 
 import java.util.Map;
@@ -19,14 +20,17 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final CaptchaService captchaService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, CaptchaService captchaService) {
         this.authService = authService;
+        this.captchaService = captchaService;
     }
 
     @PostMapping("/start")
     public Map<String, Object> start(@Valid @RequestBody StartOtpRequest request) {
         try {
+            captchaService.verify(request.captchaId(), request.captchaAnswer());
             AuthService.OtpStartResult result = authService.startOtp(request.phone());
             return Map.of(
                     "requestId", result.requestId(),

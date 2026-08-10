@@ -29,9 +29,10 @@ type AvatarThumbProps = {
   busy: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onEnhance: () => void;
 };
 
-function AvatarThumb({ avatar, active, accessToken, busy, onSelect, onDelete }: AvatarThumbProps) {
+function AvatarThumb({ avatar, active, accessToken, busy, onSelect, onDelete, onEnhance }: AvatarThumbProps) {
   const photoPath = avatar.photoProcessedUrl ?? avatar.photoOriginalUrl;
 
   return (
@@ -47,6 +48,9 @@ function AvatarThumb({ avatar, active, accessToken, busy, onSelect, onDelete }: 
       </View>
       <View style={styles.thumbActions}>
         {active ? <Text style={styles.activeBadge}>По умолчанию</Text> : null}
+        {avatar.enhancementRecommended ? (
+          <Button label="Улучшить фото" size="sm" variant="secondary" disabled={busy} onPress={onEnhance} />
+        ) : null}
         {!active ? (
           <Button label="Сделать основным" size="sm" variant="secondary" disabled={busy} onPress={onSelect} />
         ) : null}
@@ -74,6 +78,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
   const [newPhoto, setNewPhoto] = useState<RNFile | null>(null);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
+  const [enhancementAvatar, setEnhancementAvatar] = useState<AvatarRecord | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -150,6 +155,54 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
     }
   }
 
+  async function enhanceAvatar(avatarId: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      const { avatar } = await api.enhanceAvatar(avatarId);
+      setEnhancementAvatar(avatar);
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось улучшить фото");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyEnhancement() {
+    if (!enhancementAvatar) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.applyAvatarEnhancement(enhancementAvatar.id);
+      await api.activateAvatar(enhancementAvatar.id);
+      setEnhancementAvatar(null);
+      await refreshProfile();
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось применить улучшенный вариант");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revertEnhancement() {
+    if (!enhancementAvatar) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.revertAvatarEnhancement(enhancementAvatar.id);
+      if (enhancementAvatar.active) await api.activateAvatar(enhancementAvatar.id);
+      setEnhancementAvatar(null);
+      await refreshProfile();
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось вернуть исходный вариант");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function addAvatar() {
     if (!newPhoto) {
       setError("Выберите фото для нового аватара");
@@ -199,7 +252,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
 
   const readyAvatarCount = avatars.filter((avatar) => avatar.status === "READY").length;
   const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
-  const additionalAvatars = avatars.filter((avatar) => avatar.id !== activeAvatarId && !avatar.active);
+  const visibleAvatars = avatars.filter((avatar) => avatar.status === "READY");
 
   return (
     <View style={styles.wrap}>
@@ -264,11 +317,30 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
 
       {loading ? <BodyText>Загружаем аватары…</BodyText> : null}
 
-      {!loading && additionalAvatars.length === 0 ? (
-        <BodyText>Дополнительных аватаров пока нет. Основной образ показан выше.</BodyText>
+      {enhancementAvatar ? (
+        <View style={styles.enhancementPanel}>
+          <SectionTitle>Сравните варианты</SectionTitle>
+          <BodyText>Улучшаем только свет, резкость, шум и фон. Лицо, фигура и одежда остаются прежними.</BodyText>
+          <View style={styles.comparisonRow}>
+            <View style={styles.comparisonCard}>
+              {enhancementAvatar.photoOriginalUrl ? <AuthenticatedImage path={enhancementAvatar.photoOriginalUrl} accessToken={accessToken} style={styles.comparisonImage} /> : null}
+              <Text style={styles.comparisonLabel}>Исходное</Text>
+            </View>
+            <View style={styles.comparisonCard}>
+              {enhancementAvatar.photoEnhancedUrl ? <AuthenticatedImage path={enhancementAvatar.photoEnhancedUrl} accessToken={accessToken} style={styles.comparisonImage} /> : null}
+              <Text style={styles.comparisonLabel}>Улучшенное</Text>
+            </View>
+          </View>
+          <Button label="Использовать улучшенный" disabled={busy} loading={busy} onPress={applyEnhancement} />
+          <Button label="Оставить исходный" disabled={busy} variant="secondary" onPress={revertEnhancement} />
+        </View>
+      ) : null}
+
+      {!loading && visibleAvatars.length === 0 ? (
+        <BodyText>Аватары пока не готовы.</BodyText>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbRow}>
-          {additionalAvatars.map((avatar) => (
+          {visibleAvatars.map((avatar) => (
             <AvatarThumb
               key={avatar.id}
               avatar={avatar}
@@ -277,6 +349,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
               busy={busy}
               onSelect={() => void activateAvatar(avatar.id)}
               onDelete={() => confirmDeleteAvatar(avatar.id)}
+              onEnhance={() => void enhanceAvatar(avatar.id)}
             />
           ))}
         </ScrollView>
@@ -384,6 +457,34 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 13,
     lineHeight: 19,
+  },
+  enhancementPanel: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.xxl,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.pinkBg,
+  },
+  comparisonRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  comparisonCard: {
+    flex: 1,
+    overflow: "hidden",
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+  },
+  comparisonImage: {
+    width: "100%",
+    aspectRatio: 3 / 4,
+  },
+  comparisonLabel: {
+    padding: spacing.sm,
+    color: colors.muted,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
   },
   thumbRow: {
     gap: spacing.md,

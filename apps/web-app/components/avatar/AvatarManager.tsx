@@ -14,12 +14,14 @@ function AvatarThumb({
   active,
   onSelect,
   onDelete,
+  onEnhance,
   busy,
 }: {
   avatar: AvatarRecord;
   active: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onEnhance: () => void;
   busy: boolean;
 }) {
   const photoPath = avatar.photoProcessedUrl ?? avatar.photoOriginalUrl;
@@ -42,6 +44,11 @@ function AvatarThumb({
       <div className="grid gap-1 p-1.5">
         {active ? <Pill tone="soft">По умолчанию</Pill> : null}
         <div className="flex flex-wrap gap-1">
+          {avatar.enhancementRecommended ? (
+            <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onEnhance}>
+              Улучшить фото
+            </Button>
+          ) : null}
           {!active ? (
             <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onSelect}>
               Сделать основным
@@ -55,6 +62,43 @@ function AvatarThumb({
         </div>
       </div>
     </div>
+  );
+}
+
+function AvatarEnhancementPanel({
+  avatar,
+  busy,
+  onApply,
+  onRevert,
+}: {
+  avatar: AvatarRecord;
+  busy: boolean;
+  onApply: () => void;
+  onRevert: () => void;
+}) {
+  const originalUrl = useAuthenticatedBlob(avatar.photoOriginalUrl);
+  const enhancedUrl = useAuthenticatedBlob(avatar.photoEnhancedUrl);
+  if (!enhancedUrl) return null;
+
+  return (
+    <section className="rounded-[28px] border border-[#f0dce8] bg-[#fff8fd] p-4">
+      <h3 className="text-base font-semibold text-[#302637]">Сравните варианты</h3>
+      <p className="mt-1 text-sm leading-5 text-[#6d6273]">Улучшаем только свет, резкость, шум и фон. Лицо, фигура и одежда не должны меняться.</p>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <figure className="overflow-hidden rounded-2xl bg-white">
+          {originalUrl ? <img alt="Исходное фото" className="aspect-[3/4] w-full object-cover" src={originalUrl} /> : null}
+          <figcaption className="p-2 text-xs text-[#6d6273]">Исходное</figcaption>
+        </figure>
+        <figure className="overflow-hidden rounded-2xl bg-white">
+          <img alt="Улучшенное фото" className="aspect-[3/4] w-full object-cover" src={enhancedUrl} />
+          <figcaption className="p-2 text-xs text-[#6d6273]">Улучшенное</figcaption>
+        </figure>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button disabled={busy} type="button" onClick={onApply}>Использовать улучшенный</Button>
+        <Button disabled={busy} type="button" variant="secondary" onClick={onRevert}>Оставить исходный</Button>
+      </div>
+    </section>
   );
 }
 
@@ -75,6 +119,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const [hideFeatures, setHideFeatures] = useState(false);
   const [adding, setAdding] = useState(false);
   const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
+  const [enhancementAvatar, setEnhancementAvatar] = useState<AvatarRecord | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   async function reload() {
@@ -131,6 +176,54 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     }
   }
 
+  async function enhanceAvatar(avatarId: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      const { avatar } = await api.enhanceAvatar(avatarId);
+      setEnhancementAvatar(avatar);
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось улучшить фото");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyEnhancement() {
+    if (!enhancementAvatar) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.applyAvatarEnhancement(enhancementAvatar.id);
+      await api.activateAvatar(enhancementAvatar.id);
+      setEnhancementAvatar(null);
+      await refreshProfile();
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось применить улучшенный вариант");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revertEnhancement() {
+    if (!enhancementAvatar) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.revertAvatarEnhancement(enhancementAvatar.id);
+      if (enhancementAvatar.active) await api.activateAvatar(enhancementAvatar.id);
+      setEnhancementAvatar(null);
+      await refreshProfile();
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось вернуть исходный вариант");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function addAvatar() {
     if (!newPhoto) {
       setError("Выберите фото для нового аватара");
@@ -181,7 +274,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const readyAvatarCount = avatars.filter((avatar) => avatar.status === "READY").length;
   const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
   const needsFirstAvatar = !activeAvatarId && readyAvatarCount === 0;
-  const additionalAvatars = avatars.filter((avatar) => avatar.id !== activeAvatarId && !avatar.active);
+  const visibleAvatars = avatars.filter((avatar) => avatar.status === "READY");
 
   return (
     <div className="grid gap-3">
@@ -253,17 +346,22 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
 
       {loading ? <p className={mutedTextClassName}>Загружаем аватары…</p> : null}
 
-      {!loading && additionalAvatars.length === 0 ? (
-        <p className={mutedTextClassName}>Дополнительных аватаров пока нет. Основной образ показан выше.</p>
+      {enhancementAvatar ? (
+        <AvatarEnhancementPanel avatar={enhancementAvatar} busy={busy} onApply={() => void applyEnhancement()} onRevert={() => void revertEnhancement()} />
+      ) : null}
+
+      {!loading && visibleAvatars.length === 0 ? (
+        <p className={mutedTextClassName}>Аватары пока не готовы.</p>
       ) : (
         <div className="flex flex-wrap gap-3">
-          {additionalAvatars.map((avatar) => (
+          {visibleAvatars.map((avatar) => (
             <AvatarThumb
               key={avatar.id}
               active={avatar.active}
               avatar={avatar}
               busy={busy}
               onDelete={() => void deleteAvatar(avatar.id)}
+              onEnhance={() => void enhanceAvatar(avatar.id)}
               onSelect={() => void activateAvatar(avatar.id)}
             />
           ))}

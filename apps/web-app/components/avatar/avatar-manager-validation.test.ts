@@ -23,6 +23,13 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain("processing={busy}");
   });
 
+  it("offers a reversible before-and-after avatar enhancement flow", () => {
+    expect(source).toContain("api.enhanceAvatar(avatarId)");
+    expect(source).toContain("api.applyAvatarEnhancement(enhancementAvatar.id)");
+    expect(source).toContain("api.revertAvatarEnhancement(enhancementAvatar.id)");
+    expect(source).toContain("Сравните варианты");
+  });
+
   it("allows selecting a photo directly from the avatar preview and places the action before privacy controls", () => {
     expect(source).toContain("photoInputRef.current?.click()");
     expect(source).toContain("primaryAction={newPhoto ? (");

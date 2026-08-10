@@ -21,4 +21,11 @@ describe("mobile avatar manager validation", () => {
     expect(source).toContain("styles.processingOverlay");
     expect(source).toContain("Идёт проверка корректности фото для аватара…");
   });
+
+  it("offers an explicit reversible before-and-after enhancement choice", () => {
+    expect(source).toContain("api.enhanceAvatar(avatarId)");
+    expect(source).toContain("api.applyAvatarEnhancement(enhancementAvatar.id)");
+    expect(source).toContain("api.revertAvatarEnhancement(enhancementAvatar.id)");
+    expect(source).toContain("Сравните варианты");
+  });
 });

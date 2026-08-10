@@ -79,6 +79,7 @@ wibestyle:
       client-secret: ${WIBESTYLE_OAUTH_GOOGLE_CLIENT_SECRET:}
   security:
     rate-limit-enabled: true
+    otp-captcha-enabled: ${WIBESTYLE_OTP_CAPTCHA_ENABLED:true}
     otp-start-per-minute: 10
     media-access-ttl-seconds: 900
     max-upload-bytes: 10485760

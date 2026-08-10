@@ -299,10 +299,10 @@ export class WibeStyleApiClient {
     });
   }
 
-  startOtp(phone: string) {
+  startOtp(phone: string, captcha?: { captchaId: string; captchaAnswer: string }) {
     return this.request<{ requestId: string; expiresIn: number; resendIn: number }>("/api/v1/auth/otp/start", {
       method: "POST",
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, captchaId: captcha?.captchaId, captchaAnswer: captcha?.captchaAnswer }),
     });
   }
 
