@@ -5,5 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record MobileIdTokenRequest(
-        @JsonProperty("fingerprint_hash") @NotBlank @Size(max = 256) String fingerprintHash
+        @JsonProperty("fingerprint_hash") @NotBlank @Size(max = 256) String fingerprintHash,
+        String captchaId,
+        String captchaAnswer
 ) {}

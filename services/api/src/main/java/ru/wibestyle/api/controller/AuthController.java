@@ -30,7 +30,7 @@ public class AuthController {
     @PostMapping("/start")
     public Map<String, Object> start(@Valid @RequestBody StartOtpRequest request) {
         try {
-            captchaService.verify(request.captchaId(), request.captchaAnswer());
+            captchaService.verifyOtpCaptcha(request.captchaId(), request.captchaAnswer());
             AuthService.OtpStartResult result = authService.startOtp(request.phone());
             return Map.of(
                     "requestId", result.requestId(),
