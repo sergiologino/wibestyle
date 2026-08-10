@@ -61,8 +61,25 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain("function FeaturedAvatarPanel");
     expect(source).toContain("const [featuredAvatarId, setFeaturedAvatarId]");
     expect(source).toContain("<FeaturedAvatarPanel");
-    expect(source).toContain("const reserveAvatars = featuredAvatar");
+    expect(source).toContain("const reserveAvatars = avatarReviewFlow");
+    expect(source).toContain("visibleAvatars.filter((avatar) => avatar.id !== featuredAvatar.id)");
     expect(source).toContain("reserveAvatars.map");
+  });
+
+  it("moves the current avatar into the compact reserve list while adding another one", () => {
+    expect(source).toContain("const addingNewAvatar = adding && !pendingAvatar && !enhancementAvatar");
+    expect(source).toContain("const avatarReviewFlow = addingNewAvatar || Boolean(pendingAvatar) || Boolean(enhancementAvatar)");
+    expect(source).toContain("const reviewedAvatarId = enhancementAvatar?.id ?? pendingAvatar?.id ?? null");
+    expect(source).toContain("visibleAvatars.filter((avatar) => avatar.id !== reviewedAvatarId)");
+    expect(source).toContain("const showReserveAvatarActions = visibleAvatars.length > 1");
+    expect(source).toContain("showActions={showReserveAvatarActions}");
+  });
+
+  it("keeps a stable enhancement handoff while the comparison is prepared", () => {
+    expect(source).toContain("accessToken?: string | null");
+    expect(source).toContain("remotePhotoPath={avatar.photoOriginalUrl ?? avatar.photoProcessedUrl}");
+    expect(source).toContain('processingLabel="');
+    expect(source).toContain("<AvatarEnhancementPanel accessToken={accessToken}");
   });
 
   it("starts avatar validation automatically after photo selection", () => {

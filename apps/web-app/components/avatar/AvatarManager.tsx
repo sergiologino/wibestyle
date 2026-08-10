@@ -16,6 +16,7 @@ function AvatarThumb({
   onSelect,
   onDelete,
   onEnhance,
+  showActions,
   busy,
 }: {
   avatar: AvatarRecord;
@@ -23,6 +24,7 @@ function AvatarThumb({
   onSelect: () => void;
   onDelete: () => void;
   onEnhance: () => void;
+  showActions: boolean;
   busy: boolean;
 }) {
   const photoPath = avatar.photoProcessedUrl ?? avatar.photoOriginalUrl;
@@ -61,12 +63,12 @@ function AvatarThumb({
               Улучшить аватар
             </Button>
           ) : null}
-          {!active ? (
+          {showActions && !active ? (
             <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onSelect}>
               {showEnhancementHint ? "Сохранить этот вариант" : "Сделать основным"}
             </Button>
           ) : null}
-          {!active && avatar.status !== "DELETED" ? (
+          {showActions && !active && avatar.status !== "DELETED" ? (
             <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onDelete}>
               Удалить
             </Button>
@@ -103,28 +105,45 @@ function FeaturedAvatarPanel({
 
 function AvatarEnhancementPanel({
   avatar,
+  accessToken,
   busy,
   onApply,
   onRevert,
 }: {
   avatar: AvatarRecord;
+  accessToken?: string | null;
   busy: boolean;
   onApply: () => void;
   onRevert: () => void;
 }) {
   const originalPath = avatar.photoOriginalUrl;
   const enhancedPath = avatar.photoEnhancedUrl;
-  if (!originalPath || !enhancedPath) return null;
 
   return (
     <section className="rounded-[28px] border border-[#f0dce8] bg-[#fff8fd] p-4">
       <h3 className="text-base font-semibold text-[#302637]">Сравните варианты</h3>
       <p className="mt-1 text-sm leading-5 text-[#6d6273]">Улучшаем фон, чёткость и одежду для точной примерки. Лицо, фигура, пропорции и поза должны сохраниться.</p>
-      <TryOnBeforeAfter afterSrc={enhancedPath} beforeSrc={originalPath} className="mt-3 max-w-[560px]" />
-      <div className="mt-3 flex flex-wrap gap-2">
+      {originalPath && enhancedPath ? (
+        <>
+          <TryOnBeforeAfter afterSrc={enhancedPath} beforeSrc={originalPath} className="mt-3 max-w-[560px]" />
+          <div className="mt-3 flex flex-wrap gap-2">
         <Button disabled={busy} type="button" onClick={onApply}>Сохранить этот вариант</Button>
         <Button disabled={busy} type="button" variant="secondary" onClick={onRevert}>Вернуть первоначальный</Button>
-      </div>
+          </div>
+        </>
+      ) : (
+        <div className="mt-3 max-w-[560px]">
+          <AvatarPrivacyPreview
+            accessToken={accessToken}
+            privacy={{ hideFace: avatar.privacyFaceHidden, hideBackground: avatar.privacyBackgroundHidden, hideFeatures: false }}
+            remotePhotoPath={avatar.photoOriginalUrl ?? avatar.photoProcessedUrl}
+            showToggles={false}
+            processing
+            processingLabel="Готовим сравнение…"
+            onPrivacyChange={() => undefined}
+          />
+        </div>
+      )}
     </section>
   );
 }
@@ -271,6 +290,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     setError(null);
     try {
       const { avatar } = await api.enhanceAvatar(avatarId);
+      setAdding(false);
       setEnhancementAvatar(avatar);
       setPendingAvatar((current) => (current?.id === avatar.id ? avatar : current));
       await reload();
@@ -423,13 +443,21 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
   const needsFirstAvatar = !activeAvatarId && readyAvatarCount === 0;
   const visibleAvatars = avatars.filter((avatar) => avatar.status === "READY");
+  const addingNewAvatar = adding && !pendingAvatar && !enhancementAvatar;
+  const avatarReviewFlow = addingNewAvatar || Boolean(pendingAvatar) || Boolean(enhancementAvatar);
+  const reviewedAvatarId = enhancementAvatar?.id ?? pendingAvatar?.id ?? null;
   const featuredAvatar =
-    visibleAvatars.find((avatar) => avatar.active) ??
-    visibleAvatars.find((avatar) => avatar.id === featuredAvatarId) ??
-    (visibleAvatars.length === 1 ? visibleAvatars[0] : null);
-  const reserveAvatars = featuredAvatar
+    avatarReviewFlow
+      ? null
+      : visibleAvatars.find((avatar) => avatar.active) ??
+        visibleAvatars.find((avatar) => avatar.id === featuredAvatarId) ??
+        (visibleAvatars.length === 1 ? visibleAvatars[0] : null);
+  const reserveAvatars = avatarReviewFlow
+    ? visibleAvatars.filter((avatar) => avatar.id !== reviewedAvatarId)
+    : featuredAvatar
     ? visibleAvatars.filter((avatar) => avatar.id !== featuredAvatar.id)
     : visibleAvatars;
+  const showReserveAvatarActions = visibleAvatars.length > 1;
 
   return (
     <div className="grid gap-3">
@@ -497,7 +525,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       {loading ? <p className={mutedTextClassName}>Загружаем аватары…</p> : null}
 
       {enhancementAvatar ? (
-        <AvatarEnhancementPanel avatar={enhancementAvatar} busy={busy} onApply={() => void applyEnhancement()} onRevert={() => void revertEnhancement()} />
+        <AvatarEnhancementPanel accessToken={accessToken} avatar={enhancementAvatar} busy={busy} onApply={() => void applyEnhancement()} onRevert={() => void revertEnhancement()} />
       ) : null}
 
       {!enhancementAvatar && pendingAvatar ? (
@@ -525,6 +553,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
               active={avatar.active}
               avatar={avatar}
               busy={busy}
+              showActions={showReserveAvatarActions}
               onDelete={() => void deleteAvatar(avatar.id)}
               onEnhance={() => void enhanceAvatar(avatar.id)}
               onSelect={() => void activateAvatar(avatar.id)}
