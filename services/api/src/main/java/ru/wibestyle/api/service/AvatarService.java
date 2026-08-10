@@ -371,6 +371,9 @@ public class AvatarService {
     }
 
     private boolean isEnhancementRecommended(AvatarEntity avatar) {
+        if (avatar.isUseEnhancedPhoto()) {
+            return false;
+        }
         return avatarValidationService.deserializeWarnings(avatar.getQualityWarnings())
                 .stream()
                 .anyMatch(ENHANCEABLE_WARNINGS::contains);

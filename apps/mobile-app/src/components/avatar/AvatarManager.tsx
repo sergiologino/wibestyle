@@ -319,7 +319,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
       {enhancementAvatar ? (
         <View style={styles.enhancementPanel}>
           <SectionTitle>Сравните варианты</SectionTitle>
-          <BodyText>Улучшаем только свет, резкость, шум и фон. Лицо, фигура и одежда остаются прежними.</BodyText>
+          <BodyText>Улучшаем фон, чёткость и одежду для точной примерки. Лицо, фигура, пропорции и поза должны сохраниться.</BodyText>
           <View style={styles.comparisonRow}>
             <View style={styles.comparisonCard}>
               {enhancementAvatar.photoOriginalUrl ? <AuthenticatedImage path={enhancementAvatar.photoOriginalUrl} accessToken={accessToken} style={styles.comparisonImage} /> : null}

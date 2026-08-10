@@ -22,7 +22,9 @@ describe("profile avatar manager validation", () => {
   });
 
   it("passes the in-progress state to the avatar preview", () => {
-    expect(source).toContain("processing={busy}");
+    expect(source).toContain('processingLabel="Улучшаем аватар…"');
+    expect(source).toContain('processing={busyAction === "validate"}');
+    expect(source).toContain('processing={busyAction === "enhance"}');
   });
 
   it("offers a reversible before-and-after avatar enhancement flow", () => {
@@ -36,7 +38,8 @@ describe("profile avatar manager validation", () => {
   });
 
   it("renders enhancement recommendations as a regular avatar card", () => {
-    expect(source).toContain("const showEnhancementHint = avatar.enhancementRecommended || warnings.length > 0");
+    expect(source).toContain("const canEnhance = !avatar.useEnhancedPhoto && avatar.enhancementRecommended");
+    expect(source).toContain("const showEnhancementHint = !avatar.useEnhancedPhoto && (avatar.enhancementRecommended || warnings.length > 0)");
     expect(source).toContain("max-w-[280px]");
     expect(source).toContain("aspect-[3/4]");
     expect(source).toContain("sm:grid-cols-2 lg:grid-cols-3");
@@ -52,6 +55,14 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain("<AvatarCandidatePanel");
     expect(source).toContain("onSaveOriginal={() => void saveOriginalAvatar(pendingAvatar.id)}");
     expect(source).toContain("(adding || needsFirstAvatar) && !pendingAvatar && !enhancementAvatar");
+  });
+
+  it("renders the selected saved avatar as a large featured avatar", () => {
+    expect(source).toContain("function FeaturedAvatarPanel");
+    expect(source).toContain("const [featuredAvatarId, setFeaturedAvatarId]");
+    expect(source).toContain("<FeaturedAvatarPanel");
+    expect(source).toContain("const reserveAvatars = featuredAvatar");
+    expect(source).toContain("reserveAvatars.map");
   });
 
   it("starts avatar validation automatically after photo selection", () => {

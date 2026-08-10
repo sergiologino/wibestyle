@@ -28,7 +28,8 @@ function AvatarThumb({
   const photoPath = avatar.photoProcessedUrl ?? avatar.photoOriginalUrl;
   const thumbUrl = useAuthenticatedBlob(photoPath);
   const warnings = Array.isArray(avatar.warnings) ? avatar.warnings : [];
-  const showEnhancementHint = avatar.enhancementRecommended || warnings.length > 0;
+  const canEnhance = !avatar.useEnhancedPhoto && avatar.enhancementRecommended;
+  const showEnhancementHint = !avatar.useEnhancedPhoto && (avatar.enhancementRecommended || warnings.length > 0);
 
   return (
     <div
@@ -55,7 +56,7 @@ function AvatarThumb({
           </p>
         ) : null}
         <div className="grid gap-2">
-          {avatar.enhancementRecommended ? (
+          {canEnhance ? (
             <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onEnhance}>
               Улучшить аватар
             </Button>
@@ -73,6 +74,30 @@ function AvatarThumb({
         </div>
       </div>
     </div>
+  );
+}
+
+function FeaturedAvatarPanel({
+  avatar,
+  accessToken,
+}: {
+  avatar: AvatarRecord;
+  accessToken?: string | null;
+}) {
+  return (
+    <section className="rounded-[28px] border border-[#f0dce8] bg-gradient-to-br from-white to-[#fff8fd] p-4 shadow-sm">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {avatar.active ? <Pill tone="soft">По умолчанию</Pill> : <Pill tone="soft">Сохранён</Pill>}
+        {avatar.useEnhancedPhoto ? <Pill tone="soft">Улучшенный</Pill> : null}
+      </div>
+      <AvatarPrivacyPreview
+        accessToken={accessToken}
+        privacy={{ hideFace: avatar.privacyFaceHidden, hideBackground: avatar.privacyBackgroundHidden, hideFeatures: false }}
+        remotePhotoPath={avatar.photoProcessedUrl ?? avatar.photoOriginalUrl}
+        showToggles={false}
+        onPrivacyChange={() => undefined}
+      />
+    </section>
   );
 }
 
@@ -94,7 +119,7 @@ function AvatarEnhancementPanel({
   return (
     <section className="rounded-[28px] border border-[#f0dce8] bg-[#fff8fd] p-4">
       <h3 className="text-base font-semibold text-[#302637]">Сравните варианты</h3>
-      <p className="mt-1 text-sm leading-5 text-[#6d6273]">Улучшаем только свет, резкость, шум и фон. Лицо, фигура и одежда не должны меняться.</p>
+      <p className="mt-1 text-sm leading-5 text-[#6d6273]">Улучшаем фон, чёткость и одежду для точной примерки. Лицо, фигура, пропорции и поза должны сохраниться.</p>
       <TryOnBeforeAfter afterSrc={enhancedPath} beforeSrc={originalPath} className="mt-3 max-w-[560px]" />
       <div className="mt-3 flex flex-wrap gap-2">
         <Button disabled={busy} type="button" onClick={onApply}>Сохранить этот вариант</Button>
@@ -110,12 +135,14 @@ function AvatarCandidatePanel({
   busy,
   onEnhance,
   onSaveOriginal,
+  processing,
 }: {
   avatar: AvatarRecord;
   accessToken?: string | null;
   busy: boolean;
   onEnhance: () => void;
   onSaveOriginal: () => void;
+  processing: boolean;
 }) {
   return (
     <section className="rounded-[28px] border border-[#f0dce8] bg-gradient-to-br from-white to-[#fff8fd] p-4 shadow-sm">
@@ -130,7 +157,8 @@ function AvatarCandidatePanel({
         privacy={{ hideFace: avatar.privacyFaceHidden, hideBackground: avatar.privacyBackgroundHidden, hideFeatures: false }}
         remotePhotoPath={avatar.photoOriginalUrl ?? avatar.photoProcessedUrl}
         showToggles={false}
-        processing={busy}
+        processing={processing}
+        processingLabel="Улучшаем аватар…"
         onPrivacyChange={() => undefined}
       />
       <div className="mt-4 flex flex-wrap gap-2">
@@ -154,6 +182,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const [avatars, setAvatars] = useState<AvatarRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<"validate" | "enhance" | "save" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newPhoto, setNewPhoto] = useState<File | null>(null);
   const [newPreviewUrl, setNewPreviewUrl] = useState<string | null>(null);
@@ -164,6 +193,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
   const [enhancementAvatar, setEnhancementAvatar] = useState<AvatarRecord | null>(null);
   const [pendingAvatar, setPendingAvatar] = useState<AvatarRecord | null>(null);
+  const [featuredAvatarId, setFeaturedAvatarId] = useState<string | null>(activeAvatarId ?? null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const autoAddPhotoRef = useRef<File | null>(null);
 
@@ -182,6 +212,12 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   useEffect(() => {
     void reload();
   }, [api]);
+
+  useEffect(() => {
+    if (activeAvatarId) {
+      setFeaturedAvatarId(activeAvatarId);
+    }
+  }, [activeAvatarId]);
 
   useEffect(() => {
     if (!newPhoto) {
@@ -231,6 +267,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
 
   async function enhanceAvatar(avatarId: string) {
     setBusy(true);
+    setBusyAction("enhance");
     setError(null);
     try {
       const { avatar } = await api.enhanceAvatar(avatarId);
@@ -240,6 +277,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось улучшить фото");
     } finally {
+      setBusyAction(null);
       setBusy(false);
     }
   }
@@ -247,10 +285,12 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   async function applyEnhancement() {
     if (!enhancementAvatar) return;
     setBusy(true);
+    setBusyAction("save");
     setError(null);
     try {
       await api.applyAvatarEnhancement(enhancementAvatar.id);
       await activateReadyAvatarOrShowAnthropometry(enhancementAvatar.id, "Улучшенное фото сохранено");
+      setFeaturedAvatarId(enhancementAvatar.id);
       setEnhancementAvatar(null);
       setPendingAvatar(null);
       await refreshProfile();
@@ -258,6 +298,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось применить улучшенный вариант");
     } finally {
+      setBusyAction(null);
       setBusy(false);
     }
   }
@@ -265,10 +306,12 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   async function revertEnhancement() {
     if (!enhancementAvatar) return;
     setBusy(true);
+    setBusyAction("save");
     setError(null);
     try {
       await api.revertAvatarEnhancement(enhancementAvatar.id);
       await activateReadyAvatarOrShowAnthropometry(enhancementAvatar.id, "Аватар сохранён");
+      setFeaturedAvatarId(enhancementAvatar.id);
       setEnhancementAvatar(null);
       setPendingAvatar(null);
       await refreshProfile();
@@ -276,6 +319,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось вернуть исходный вариант");
     } finally {
+      setBusyAction(null);
       setBusy(false);
     }
   }
@@ -286,6 +330,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       return;
     }
     setBusy(true);
+    setBusyAction("validate");
     setError(null);
     setAvatarGuidance(null);
     let createdAvatarId: string | null = null;
@@ -314,6 +359,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       await api.preprocessAvatar(avatar.id);
       reachedReadyState = true;
       avatarActivated = await activateReadyAvatarOrShowAnthropometry(avatar.id, "Аватар сохранён");
+      setFeaturedAvatarId(avatar.id);
       setNewPhoto(null);
       setAdding(false);
       await refreshProfile();
@@ -330,17 +376,20 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       if (autoAddPhotoRef.current === photo) {
         autoAddPhotoRef.current = null;
       }
+      setBusyAction(null);
       setBusy(false);
     }
   }
 
   async function saveOriginalAvatar(avatarId: string) {
     setBusy(true);
+    setBusyAction("save");
     setError(null);
     setAvatarGuidance(null);
     try {
       await api.preprocessAvatar(avatarId);
       await activateReadyAvatarOrShowAnthropometry(avatarId, "Аватар сохранён");
+      setFeaturedAvatarId(avatarId);
       setPendingAvatar(null);
       setEnhancementAvatar(null);
       setAdding(false);
@@ -349,6 +398,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось сохранить аватар");
     } finally {
+      setBusyAction(null);
       setBusy(false);
     }
   }
@@ -373,6 +423,13 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
   const needsFirstAvatar = !activeAvatarId && readyAvatarCount === 0;
   const visibleAvatars = avatars.filter((avatar) => avatar.status === "READY");
+  const featuredAvatar =
+    visibleAvatars.find((avatar) => avatar.active) ??
+    visibleAvatars.find((avatar) => avatar.id === featuredAvatarId) ??
+    (visibleAvatars.length === 1 ? visibleAvatars[0] : null);
+  const reserveAvatars = featuredAvatar
+    ? visibleAvatars.filter((avatar) => avatar.id !== featuredAvatar.id)
+    : visibleAvatars;
 
   return (
     <div className="grid gap-3">
@@ -420,7 +477,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
             <AvatarPrivacyPreview
               localPreviewUrl={newPreviewUrl}
               privacy={{ hideFace, hideBackground, hideFeatures: false }}
-              processing={busy}
+              processing={busyAction === "validate"}
               onSelectPhoto={() => photoInputRef.current?.click()}
               onPrivacyChange={(next) => {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
@@ -448,16 +505,21 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
           accessToken={accessToken}
           avatar={pendingAvatar}
           busy={busy}
+          processing={busyAction === "enhance"}
           onEnhance={() => void enhanceAvatar(pendingAvatar.id)}
           onSaveOriginal={() => void saveOriginalAvatar(pendingAvatar.id)}
         />
+      ) : null}
+
+      {!pendingAvatar && !enhancementAvatar && featuredAvatar ? (
+        <FeaturedAvatarPanel accessToken={accessToken} avatar={featuredAvatar} />
       ) : null}
 
       {!loading && visibleAvatars.length === 0 && !pendingAvatar && !enhancementAvatar ? (
         <p className={mutedTextClassName}>Аватары пока не готовы.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visibleAvatars.map((avatar) => (
+          {reserveAvatars.map((avatar) => (
             <AvatarThumb
               key={avatar.id}
               active={avatar.active}
