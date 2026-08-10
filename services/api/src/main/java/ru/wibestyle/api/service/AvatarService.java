@@ -33,7 +33,7 @@ public class AvatarService {
 
     public static final int MAX_AVATARS_PER_USER = 3;
     public static final String AVATAR_LIMIT_REACHED = "AVATAR_LIMIT_REACHED";
-    private static final Set<String> ENHANCEABLE_WARNINGS = Set.of("POOR_LIGHTING", "BUSY_BACKGROUND");
+    private static final Set<String> ENHANCEABLE_WARNINGS = Set.of("POOR_LIGHTING", "BUSY_BACKGROUND", "LOW_DETAIL");
 
     private final AvatarRepository avatarRepository;
     private final AvatarSnapshotRepository avatarSnapshotRepository;

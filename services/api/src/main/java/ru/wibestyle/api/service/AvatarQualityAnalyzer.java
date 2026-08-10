@@ -33,7 +33,7 @@ public class AvatarQualityAnalyzer {
             "HEAD_ONLY",
             "BODY_TOO_SMALL",
             "SIDEWAYS_OR_UPSIDE_DOWN",
-            "LOW_DETAIL"
+            "LOW_RESOLUTION"
     );
 
     private final ObjectMapper objectMapper;
@@ -60,7 +60,7 @@ public class AvatarQualityAnalyzer {
         ImageStats stats = inspectImage(photo);
         if (stats.readable()) {
             if (stats.width() < 600 || stats.height() < 800) {
-                warnings.add("LOW_DETAIL");
+                warnings.add("LOW_RESOLUTION");
             }
             double ratio = stats.width() / (double) stats.height();
             if (ratio > 1.05) {
@@ -70,7 +70,7 @@ public class AvatarQualityAnalyzer {
                 warnings.add("UNUSUAL_CROP");
             }
         } else {
-            warnings.add("LOW_DETAIL");
+            warnings.add("LOW_RESOLUTION");
         }
 
         AvatarQualityAssessment aiAssessment = analyzeWithVision(externalUserId, photo, contentType);
@@ -112,7 +112,7 @@ public class AvatarQualityAnalyzer {
                     """;
             String user = """
                     Analyze whether this image is suitable as a private avatar for a virtual clothing try-on app.
-                    Requirements: exactly one real person, visible full body or at least from head to knees, person should occupy most of the frame, upright orientation, not only a head/portrait, not a tiny figure in a landscape, not multiple people, reasonable lighting.
+                    Requirements: exactly one real person, visible full body or at least from head to knees, person should occupy most of the frame, upright orientation, not only a head/portrait, not a tiny figure in a landscape, not multiple people. Return needs_new_photo only for no person, multiple people, head-only crop, tiny body, or wrong orientation. For imperfect lighting, a busy natural background, patterned clothing, or mild lack of detail return usable with warnings: those photos can be improved after upload.
                     This is an independent validation request for image fingerprint %s. Analyze only the image attached to this request; do not reuse any conclusion from another image.
                     Return JSON:
                     {"quality":"good|usable|needs_new_photo","warnings":["NO_PERSON|MULTIPLE_PEOPLE|HEAD_ONLY|BODY_TOO_SMALL|BUSY_BACKGROUND|SIDEWAYS_OR_UPSIDE_DOWN|POOR_LIGHTING|LOW_DETAIL"],"message":"one short Russian user-facing sentence, supportive tone, no words bad/poor/rejected"}
@@ -136,7 +136,9 @@ public class AvatarQualityAnalyzer {
                     }
                 }
             }
-            boolean blocking = "needs_new_photo".equalsIgnoreCase(json.path("quality").asText(""));
+            // The returned severity can be overly conservative for a recoverable
+            // lighting/detail issue; hard rejection is decided from warning codes.
+            boolean blocking = false;
             String message = json.path("message").asText(null);
             if (message == null || message.isBlank()) {
                 message = buildUserMessage(warnings, blocking);
@@ -174,7 +176,7 @@ public class AvatarQualityAnalyzer {
         String value = raw.trim().toUpperCase(Locale.ROOT);
         return switch (value) {
             case "NO_PERSON", "MULTIPLE_PEOPLE", "HEAD_ONLY", "BODY_TOO_SMALL", "BUSY_BACKGROUND",
-                    "SIDEWAYS_OR_UPSIDE_DOWN", "POOR_LIGHTING", "LOW_DETAIL", "LANDSCAPE_FRAME", "UNUSUAL_CROP" -> value;
+                    "SIDEWAYS_OR_UPSIDE_DOWN", "POOR_LIGHTING", "LOW_DETAIL", "LOW_RESOLUTION", "LANDSCAPE_FRAME", "UNUSUAL_CROP" -> value;
             default -> null;
         };
     }
