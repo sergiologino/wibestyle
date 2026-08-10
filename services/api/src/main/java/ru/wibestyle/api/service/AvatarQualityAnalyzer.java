@@ -72,13 +72,13 @@ public class AvatarQualityAnalyzer {
             if (ratio < 0.35 || ratio > 1.35) {
                 warnings.add("UNUSUAL_CROP");
             }
-        } else {
-            warnings.add("LOW_RESOLUTION");
         }
 
         AvatarQualityAssessment aiAssessment = analyzeWithVision(externalUserId, photo, contentType);
         if (aiAssessment != null) {
             warnings.addAll(aiAssessment.warnings());
+        } else if (!stats.readable()) {
+            warnings.add("LOW_RESOLUTION");
         }
 
         List<String> warningList = List.copyOf(warnings);
@@ -113,10 +113,13 @@ public class AvatarQualityAnalyzer {
                     You are a strict but supportive virtual try-on avatar photo QA assistant.
                     Return only compact JSON. Never include markdown.
                     """;
-            String user = promptTemplateService.getBodyOrDefault(
-                    AiPromptTemplateService.AVATAR_QUALITY_ANALYSIS_KEY,
-                    defaultAvatarQualityPrompt()
-            ).replace("{photoFingerprint}", photoFingerprint);
+            String promptTemplate = promptTemplateService == null
+                    ? defaultAvatarQualityPrompt()
+                    : promptTemplateService.getBodyOrDefault(
+                            AiPromptTemplateService.AVATAR_QUALITY_ANALYSIS_KEY,
+                            defaultAvatarQualityPrompt()
+                    );
+            String user = promptTemplate.replace("{photoFingerprint}", photoFingerprint);
             String raw = noteappAiClient.generateVisionChatText(
                     aiProperties.getSizeComplimentNetwork(),
                     externalUserId,

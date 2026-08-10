@@ -2,6 +2,8 @@ package ru.wibestyle.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.client.RestClient;
+import ru.wibestyle.api.ai.NoteappAiClient;
 import ru.wibestyle.api.config.AiIntegrationProperties;
 import ru.wibestyle.api.domain.AvatarStatus;
 
@@ -40,7 +42,7 @@ class AvatarValidationServiceTest {
     void smallAvatarImageRequiresReplacement() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         AiIntegrationProperties aiProperties = new AiIntegrationProperties();
-        AvatarQualityAnalyzer analyzer = new AvatarQualityAnalyzer(objectMapper, aiProperties, null);
+        AvatarQualityAnalyzer analyzer = new AvatarQualityAnalyzer(objectMapper, aiProperties, null, null);
         AvatarValidationService service = new AvatarValidationService(objectMapper, analyzer);
 
         Path imagePath = Files.createTempFile("avatar-small-", ".jpg");
@@ -57,10 +59,70 @@ class AvatarValidationServiceTest {
 
             assertThat(outcome.status()).isEqualTo(AvatarStatus.VALIDATION_FAILED);
             assertThat(outcome.recommendedAction()).isEqualTo("replace_photo");
-            assertThat(outcome.warnings()).contains("LOW_DETAIL");
-            assertThat(outcome.guidanceMessage()).contains("чёткое фото");
+            assertThat(outcome.warnings()).contains("LOW_RESOLUTION");
         } finally {
             Files.deleteIfExists(imagePath);
+        }
+    }
+
+    @Test
+    void aiUsableBusyBackgroundOverridesUnreadableLocalImageProbe() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        AiIntegrationProperties aiProperties = new AiIntegrationProperties();
+        aiProperties.setEnabled(true);
+        aiProperties.setApiKey("test-key");
+        aiProperties.setSizeComplimentNetwork("openai-gpt4o-mini");
+        AvatarQualityAnalyzer analyzer = new AvatarQualityAnalyzer(
+                objectMapper,
+                aiProperties,
+                new FakeVisionClient("{\"quality\":\"usable\",\"warnings\":[\"BUSY_BACKGROUND\"],\"message\":\"Отличное фото, но фон немного загружен!\"}"),
+                null
+        );
+        AvatarValidationService service = new AvatarValidationService(objectMapper, analyzer);
+
+        Path imagePath = Files.createTempFile("avatar-webp-unreadable-", ".webp");
+        try {
+            byte[] bytes = new byte[25_000];
+            bytes[0] = 'R';
+            bytes[1] = 'I';
+            bytes[2] = 'F';
+            bytes[3] = 'F';
+            bytes[8] = 'W';
+            bytes[9] = 'E';
+            bytes[10] = 'B';
+            bytes[11] = 'P';
+            Files.write(imagePath, bytes);
+
+            AvatarValidationService.ValidationOutcome outcome =
+                    service.validate("test-avatar-user", "avatar.webp", Files.size(imagePath), "image/webp", imagePath);
+
+            assertThat(outcome.status()).isEqualTo(AvatarStatus.PHOTO_UPLOADED);
+            assertThat(outcome.recommendedAction()).isEqualTo("continue_with_warning");
+            assertThat(outcome.warnings()).containsExactly("BUSY_BACKGROUND");
+            assertThat(outcome.guidanceTitle()).isEqualTo("Фото подойдёт для примерки");
+        } finally {
+            Files.deleteIfExists(imagePath);
+        }
+    }
+
+    private static class FakeVisionClient extends NoteappAiClient {
+        private final String response;
+
+        FakeVisionClient(String response) {
+            super(RestClient.builder(), new AiIntegrationProperties(), null, null);
+            this.response = response;
+        }
+
+        @Override
+        public String generateVisionChatText(
+                String networkName,
+                String externalUserId,
+                String systemPrompt,
+                String userText,
+                String imageBase64,
+                String mimeType
+        ) {
+            return response;
         }
     }
 }
