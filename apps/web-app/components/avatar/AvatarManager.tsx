@@ -26,14 +26,16 @@ function AvatarThumb({
 }) {
   const photoPath = avatar.photoProcessedUrl ?? avatar.photoOriginalUrl;
   const thumbUrl = useAuthenticatedBlob(photoPath);
+  const warnings = Array.isArray(avatar.warnings) ? avatar.warnings : [];
+  const showEnhancementHint = avatar.enhancementRecommended || warnings.length > 0;
 
   return (
     <div
-      className={`relative w-28 overflow-hidden rounded-2xl border bg-white shadow-sm transition sm:w-32 ${
+      className={`relative w-full max-w-[240px] overflow-hidden rounded-[28px] border bg-white shadow-sm transition ${
         active ? "border-[#ff1fa2] ring-2 ring-[#ff1fa2]/20" : "border-[#f0dce8]"
       }`}
     >
-      <div className="aspect-[4/5] bg-[#faf5f9]">
+      <div className="aspect-[3/4] bg-[#faf5f9]">
         {thumbUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img alt="" className="size-full object-cover" src={thumbUrl} />
@@ -41,9 +43,17 @@ function AvatarThumb({
           <div className="flex size-full items-center justify-center text-xs text-[#a89aad]">Нет фото</div>
         )}
       </div>
-      <div className="grid gap-1 p-1.5">
-        {active ? <Pill tone="soft">По умолчанию</Pill> : null}
-        <div className="flex flex-wrap gap-1">
+      <div className="grid gap-2 p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {active ? <Pill tone="soft">По умолчанию</Pill> : null}
+          {showEnhancementHint ? <Pill tone="soft">Можно улучшить</Pill> : null}
+        </div>
+        {showEnhancementHint ? (
+          <p className="text-xs leading-5 text-[#6d6273]">
+            Фото подходит для примерки. Улучшение может сделать фон спокойнее и кадр чище.
+          </p>
+        ) : null}
+        <div className="grid gap-2">
           {avatar.enhancementRecommended ? (
             <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onEnhance}>
               Улучшить фото
@@ -196,7 +206,17 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     setError(null);
     try {
       await api.applyAvatarEnhancement(enhancementAvatar.id);
-      await api.activateAvatar(enhancementAvatar.id);
+      try {
+        await api.activateAvatar(enhancementAvatar.id);
+      } catch (err) {
+        if (!(err instanceof ApiError) || err.code !== "ANTHROPOMETRY_REQUIRED") {
+          throw err;
+        }
+        setAvatarGuidance({
+          title: "Улучшенное фото сохранено",
+          message: "Чтобы сделать аватар основным, укажите рост, грудь, талию и бёдра.",
+        });
+      }
       setEnhancementAvatar(null);
       await refreshProfile();
       await reload();
@@ -251,8 +271,18 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       }
       await api.preprocessAvatar(avatar.id);
       reachedReadyState = true;
-      await api.activateAvatar(avatar.id);
-      avatarActivated = true;
+      try {
+        await api.activateAvatar(avatar.id);
+        avatarActivated = true;
+      } catch (err) {
+        if (!(err instanceof ApiError) || err.code !== "ANTHROPOMETRY_REQUIRED") {
+          throw err;
+        }
+        setAvatarGuidance({
+          title: "Аватар сохранён",
+          message: "Чтобы сделать его основным, укажите рост, грудь, талию и бёдра.",
+        });
+      }
       setNewPhoto(null);
       setAdding(false);
       await refreshProfile();
@@ -352,7 +382,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       {!loading && visibleAvatars.length === 0 ? (
         <p className={mutedTextClassName}>Аватары пока не готовы.</p>
       ) : (
-        <div className="flex flex-wrap gap-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleAvatars.map((avatar) => (
             <AvatarThumb
               key={avatar.id}

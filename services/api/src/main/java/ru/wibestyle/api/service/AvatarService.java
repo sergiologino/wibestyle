@@ -2,6 +2,7 @@ package ru.wibestyle.api.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
 import ru.wibestyle.api.domain.AvatarEntity;
 import ru.wibestyle.api.domain.AvatarSnapshotEntity;
@@ -193,7 +194,7 @@ public class AvatarService {
     public Map<String, Object> enhanceAvatar(UUID userId, UUID avatarId) throws IOException {
         AvatarEntity avatar = requireAvatar(userId, avatarId);
         if (!aiProperties.isAvatarEnhanceConfigured()) {
-            throw new IllegalStateException("AVATAR_ENHANCEMENT_NOT_CONFIGURED");
+            throw new IllegalArgumentException("AVATAR_ENHANCEMENT_NOT_CONFIGURED");
         }
         if (avatar.getPhotoOriginalPath() == null || avatar.getStatus() == AvatarStatus.VALIDATION_FAILED
                 || avatar.getStatus() == AvatarStatus.REJECTED || avatar.getStatus() == AvatarStatus.DELETED) {
@@ -205,12 +206,17 @@ public class AvatarService {
 
         Path source = blobStorage.resolveLocalFile(avatar.getPhotoOriginalPath());
         byte[] sourceBytes = Files.readAllBytes(source);
-        NoteappAiClient.AvatarEnhancementResult result = noteappAiClient.enhanceAvatar(
-                aiProperties.getAvatarEnhanceNetwork(),
-                visionValidationSubject(userId, avatarId) + ":enhancement",
-                Base64.getEncoder().encodeToString(sourceBytes),
-                contentTypeFromFilename(source.getFileName().toString())
-        );
+        NoteappAiClient.AvatarEnhancementResult result;
+        try {
+            result = noteappAiClient.enhanceAvatar(
+                    aiProperties.getAvatarEnhanceNetwork(),
+                    visionValidationSubject(userId, avatarId) + ":enhancement",
+                    Base64.getEncoder().encodeToString(sourceBytes),
+                    contentTypeFromFilename(source.getFileName().toString())
+            );
+        } catch (RestClientException ex) {
+            throw new IllegalArgumentException("AVATAR_ENHANCEMENT_FAILED", ex);
+        }
         String path = blobStorage.put(
                 BlobKeys.avatarEnhanced(userId, avatarId),
                 new ByteArrayInputStream(result.imageBytes())

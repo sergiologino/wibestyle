@@ -177,10 +177,26 @@ public class NoteappAiClient {
             throw new RestClientException("Avatar enhancement provider mismatch");
         }
         ImageResult image = extractImageResult(response.path("response"));
-        if (image == null || image.bytes() == null || image.bytes().length == 0) {
+        byte[] imageBytes = image == null ? null : image.bytes();
+        if ((imageBytes == null || imageBytes.length == 0) && image != null && image.sourceUrl() != null) {
+            imageBytes = downloadImageBytes(image.sourceUrl());
+        }
+        if (imageBytes == null || imageBytes.length == 0) {
             throw new RestClientException("Avatar enhancement returned no image");
         }
-        return new AvatarEnhancementResult(image.bytes(), response.path("response").path("imageContentType").asText("image/jpeg"));
+        return new AvatarEnhancementResult(imageBytes, response.path("response").path("imageContentType").asText("image/jpeg"));
+    }
+
+    private byte[] downloadImageBytes(String imageUrl) {
+        try {
+            return RestClient.create()
+                    .get()
+                    .uri(imageUrl)
+                    .retrieve()
+                    .body(byte[].class);
+        } catch (RestClientException ex) {
+            throw new RestClientException("Avatar enhancement image download failed", ex);
+        }
     }
 
     private static String requireExternalUserId(String externalUserId) {

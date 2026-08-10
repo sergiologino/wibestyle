@@ -17,6 +17,8 @@ describe("profile avatar manager validation", () => {
   it("keeps a ready avatar available if activation needs a later correction", () => {
     expect(source).toContain("if (reachedReadyState) {");
     expect(source).toContain("await reload();");
+    expect(source).toContain('err.code !== "ANTHROPOMETRY_REQUIRED"');
+    expect(source).toContain("Аватар сохранён");
   });
 
   it("passes the in-progress state to the avatar preview", () => {
@@ -28,6 +30,13 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain("api.applyAvatarEnhancement(enhancementAvatar.id)");
     expect(source).toContain("api.revertAvatarEnhancement(enhancementAvatar.id)");
     expect(source).toContain("Сравните варианты");
+  });
+
+  it("renders enhancement recommendations as a regular avatar card", () => {
+    expect(source).toContain("const showEnhancementHint = avatar.enhancementRecommended || warnings.length > 0");
+    expect(source).toContain("max-w-[240px]");
+    expect(source).toContain("aspect-[3/4]");
+    expect(source).toContain("sm:grid-cols-2 lg:grid-cols-3");
   });
 
   it("allows selecting a photo directly from the avatar preview and places the action before privacy controls", () => {
