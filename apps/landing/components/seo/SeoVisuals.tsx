@@ -3,9 +3,9 @@ import type { PageVisuals } from "@/content/seo-pages";
 import BeforeAfterSection from "@/components/home/BeforeAfterSection";
 import StyleShowcaseSection from "@/components/home/StyleShowcaseSection";
 
-type Props = { visuals: PageVisuals; compact?: boolean };
+type Props = { visuals: PageVisuals; compact?: boolean; tall?: boolean };
 
-export default function SeoVisuals({ visuals, compact }: Props) {
+export default function SeoVisuals({ visuals, compact, tall }: Props) {
   if (visuals.type === "hero") {
     return (
       <div className="seo-hero-visual">
@@ -23,7 +23,7 @@ export default function SeoVisuals({ visuals, compact }: Props) {
 
   if (visuals.type === "mosaic") {
     return (
-      <div className={`seo-mosaic-labeled${compact ? " seo-mosaic-labeled--compact" : ""}`}>
+      <div className={`seo-mosaic-labeled${compact ? " seo-mosaic-labeled--compact" : ""}${tall ? " seo-mosaic-labeled--tall" : ""}`}>
         {visuals.images.map((img, i) => (
           <article key={img.src} className="seo-mosaic-card">
             <div className="seo-mosaic-card-media">
@@ -31,7 +31,7 @@ export default function SeoVisuals({ visuals, compact }: Props) {
                 src={img.src}
                 alt={img.alt}
                 fill
-                sizes={compact ? "(max-width: 860px) 50vw, 45vw" : "(max-width: 860px) 100vw, 25vw"}
+                sizes={compact ? "(max-width: 860px) 50vw, 45vw" : "(max-width: 860px) 100vw, 45vw"}
                 className="seo-mosaic-card-img"
               />
             </div>

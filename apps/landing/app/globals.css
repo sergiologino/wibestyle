@@ -471,6 +471,17 @@ a.category-card {
   bottom: 12px;
 }
 
+.seo-visual-band--tall-mosaic {
+  padding: 40px 0;
+}
+.seo-mosaic-labeled--tall .seo-mosaic-card-media {
+  height: min(72vh, 720px);
+  min-height: 520px;
+}
+.seo-mosaic-labeled--tall .seo-mosaic-card-img {
+  object-position: center top;
+}
+
 .seo-mosaic-label {
   position: absolute;
   left: 16px;
@@ -723,6 +734,10 @@ a.category-card {
 }
 @media (max-width: 860px) {
   .seo-mosaic-labeled:not(.seo-mosaic-labeled--compact) { grid-template-columns: 1fr; }
+  .seo-mosaic-labeled--tall .seo-mosaic-card-media {
+    height: 76vh;
+    min-height: 460px;
+  }
   .seo-mosaic-labeled--compact {
     grid-template-columns: repeat(2, 1fr);
   }
