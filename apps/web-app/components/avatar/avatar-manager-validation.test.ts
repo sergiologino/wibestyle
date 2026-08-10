@@ -30,6 +30,9 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain("api.applyAvatarEnhancement(enhancementAvatar.id)");
     expect(source).toContain("api.revertAvatarEnhancement(enhancementAvatar.id)");
     expect(source).toContain("Сравните варианты");
+    expect(source).toContain("TryOnBeforeAfter");
+    expect(source).toContain("afterSrc={enhancedPath}");
+    expect(source).toContain("beforeSrc={originalPath}");
   });
 
   it("renders enhancement recommendations as a regular avatar card", () => {
@@ -48,6 +51,7 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain("setPendingAvatar(validation.avatar)");
     expect(source).toContain("<AvatarCandidatePanel");
     expect(source).toContain("onSaveOriginal={() => void saveOriginalAvatar(pendingAvatar.id)}");
+    expect(source).toContain("(adding || needsFirstAvatar) && !pendingAvatar && !enhancementAvatar");
   });
 
   it("starts avatar validation automatically after photo selection", () => {

@@ -7,6 +7,7 @@ import { ApiError } from "@wibestyle/api-client";
 import { Button, Pill } from "@wibestyle/ui";
 import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
+import { TryOnBeforeAfter } from "@/components/try-on/TryOnResultImages";
 import { FieldInput, mutedTextClassName } from "@/components/ui/fields";
 
 function AvatarThumb({
@@ -86,24 +87,15 @@ function AvatarEnhancementPanel({
   onApply: () => void;
   onRevert: () => void;
 }) {
-  const originalUrl = useAuthenticatedBlob(avatar.photoOriginalUrl);
-  const enhancedUrl = useAuthenticatedBlob(avatar.photoEnhancedUrl);
-  if (!enhancedUrl) return null;
+  const originalPath = avatar.photoOriginalUrl;
+  const enhancedPath = avatar.photoEnhancedUrl;
+  if (!originalPath || !enhancedPath) return null;
 
   return (
     <section className="rounded-[28px] border border-[#f0dce8] bg-[#fff8fd] p-4">
       <h3 className="text-base font-semibold text-[#302637]">Сравните варианты</h3>
       <p className="mt-1 text-sm leading-5 text-[#6d6273]">Улучшаем только свет, резкость, шум и фон. Лицо, фигура и одежда не должны меняться.</p>
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <figure className="overflow-hidden rounded-2xl bg-white">
-          {originalUrl ? <img alt="Исходное фото" className="aspect-[3/4] w-full object-cover" src={originalUrl} /> : null}
-          <figcaption className="p-2 text-xs text-[#6d6273]">Исходное</figcaption>
-        </figure>
-        <figure className="overflow-hidden rounded-2xl bg-white">
-          <img alt="Улучшенное фото" className="aspect-[3/4] w-full object-cover" src={enhancedUrl} />
-          <figcaption className="p-2 text-xs text-[#6d6273]">Улучшенное</figcaption>
-        </figure>
-      </div>
+      <TryOnBeforeAfter afterSrc={enhancedPath} beforeSrc={originalPath} className="mt-3 max-w-[560px]" />
       <div className="mt-3 flex flex-wrap gap-2">
         <Button disabled={busy} type="button" onClick={onApply}>Сохранить этот вариант</Button>
         <Button disabled={busy} type="button" variant="secondary" onClick={onRevert}>Вернуть первоначальный</Button>
@@ -409,7 +401,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
         </p>
       ) : null}
 
-      {adding || needsFirstAvatar ? (
+      {(adding || needsFirstAvatar) && !pendingAvatar && !enhancementAvatar ? (
         <div className="rounded-[28px] border border-[#f0dce8] bg-gradient-to-br from-white to-[#fff8fd] p-4 shadow-sm">
           {needsFirstAvatar ? <p className="mb-2 text-sm font-medium text-[#302637]">Добавить фото</p> : null}
           <FieldInput
