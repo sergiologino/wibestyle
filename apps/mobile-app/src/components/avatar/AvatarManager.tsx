@@ -227,7 +227,6 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
           title: validation.guidanceTitle,
           message: validation.guidanceMessage,
         });
-        await api.deleteAvatar(avatar.id).catch(() => undefined);
         setNewPhoto(null);
         setPreviewUri(null);
         return;

@@ -19,6 +19,9 @@ type AdminUserItem = {
   displayName?: string;
   primaryAuth?: string;
   activeAvatarPhotoUrl?: string;
+  avatarUploadAttempts?: number;
+  avatarFailedAttempts?: number;
+  lastFailedAvatarPhotoUrl?: string;
   devices?: Array<{
     deviceHash: string;
     deviceHashShort: string;
@@ -51,6 +54,7 @@ export default function AdminUsersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [previewUser, setPreviewUser] = useState<AdminUserItem | null>(null);
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
   const api = createAdminApi();
 
@@ -195,7 +199,22 @@ export default function AdminUsersPage() {
         {loading ? <p className="font-bold text-[#6d6273]">Загружаем…</p> : null}
         {!loading && items.length === 0 ? <p className="font-bold text-[#6d6273]">No users found.</p> : null}
         {items.map((user) => (
-          <Card key={user.id}>
+          <Card
+            key={user.id}
+            className="cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onClick={(event) => {
+              if ((event.target as HTMLElement).closest("button,a")) return;
+              setExpandedUserId((current) => current === user.id ? null : user.id);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setExpandedUserId((current) => current === user.id ? null : user.id);
+              }
+            }}
+          >
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
               <div className="flex min-w-0 flex-1 gap-3 md:gap-4">
                 <button
@@ -217,6 +236,7 @@ export default function AdminUsersPage() {
                     <p>Зарегистрирован: {new Date(user.createdAt).toLocaleString("ru-RU")}</p>
                     <p>Тариф: {user.plan ?? "—"}</p>
                     <p>Осталось примерок: {user.plan === "trial" ? user.trialGenerationsLeft ?? 0 : user.planGenerationsLeft ?? 0}</p>
+                    <p>Avatar attempts: {user.avatarUploadAttempts ?? 0} · failed: {user.avatarFailedAttempts ?? 0}</p>
                   </div>
                   <div className="hidden md:block">
                   <p className="text-xs font-black uppercase tracking-[0.12em] text-[#782cff]">{user.primaryAuth ?? "user"}</p>
@@ -230,10 +250,13 @@ export default function AdminUsersPage() {
                     Тариф: {user.plan ?? "—"}
                     {user.plan === "trial" ? ` · trial ${user.trialGenerationsLeft ?? 0}` : ` · gen ${user.planGenerationsLeft ?? 0}`}
                   </p>
+                  <p className="mt-1 text-sm font-bold text-[#6d6273]">
+                    Avatar attempts: {user.avatarUploadAttempts ?? 0} · failed: {user.avatarFailedAttempts ?? 0}
+                  </p>
                   <p className="mt-1 text-xs font-bold text-[#6d6273]">
                     Создан: {new Date(user.createdAt).toLocaleString("ru-RU")}
                   </p>
-                  {user.devices?.length ? (
+                  {expandedUserId === user.id && user.devices?.length ? (
                     <div className="mt-2 grid gap-1 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] p-3 text-xs font-bold text-[#6d6273]">
                       {user.devices.map((device) => (
                         <div key={device.deviceHash} className="break-words">
@@ -248,14 +271,14 @@ export default function AdminUsersPage() {
                         </div>
                       ))}
                     </div>
-                  ) : (
+                  ) : expandedUserId === user.id ? (
                     <p className="mt-1 text-xs font-bold text-[#9a8f99]">Device ID: нет данных</p>
-                  )}
+                  ) : null}
                   <p className="mt-1 break-all text-xs font-bold text-[#6d6273]">ID: {user.id}</p>
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 md:flex-col">
+              <div className={`${expandedUserId === user.id ? "flex" : "hidden"} flex-wrap gap-2 md:flex-col`}>
                 <Link href={`/users/${user.id}`}>
                   <Button size="md">Поддержка</Button>
                 </Link>
@@ -286,6 +309,38 @@ export default function AdminUsersPage() {
                 </Button>
               </div>
             </div>
+            {expandedUserId === user.id ? (
+              <div className="mt-4 grid gap-3 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] p-4 text-sm font-bold text-[#6d6273]">
+                <div className="grid gap-3 md:grid-cols-[120px_1fr]">
+                  <div className="h-36 w-24 overflow-hidden rounded-2xl border border-[#ffd1ed] bg-white">
+                    <AdminMediaImage
+                      adminKey={adminKey}
+                      alt={`Последняя неудачная попытка аватара ${user.displayName ?? user.login ?? user.phone ?? user.id}`}
+                      className="h-full w-full object-cover"
+                      path={user.lastFailedAvatarPhotoUrl ?? user.activeAvatarPhotoUrl}
+                    />
+                  </div>
+                  <div className="grid gap-1">
+                    <p>Тип: {user.primaryAuth ?? "—"} · создан: {new Date(user.createdAt).toLocaleString("ru-RU")}</p>
+                    <p>Имя: {user.displayName ?? user.email ?? user.phone ?? "—"} · ник: {user.login ? `@${user.login}` : "—"}</p>
+                    <p>Тариф: {user.plan ?? "—"} · trial: {user.trialGenerationsLeft ?? 0} · gen: {user.planGenerationsLeft ?? 0}</p>
+                    <p>Попытки аватара: {user.avatarUploadAttempts ?? 0} · неудачные: {user.avatarFailedAttempts ?? 0}</p>
+                    <p className="break-all">ID: {user.id}</p>
+                  </div>
+                </div>
+                {user.devices?.length ? (
+                  <div className="grid gap-1">
+                    {user.devices.map((device) => (
+                      <p key={device.deviceHash} className="break-words">
+                        device {device.deviceHashShort} · registrations: {device.registrationCount} · deleted: {device.deletedAccountCount} · trial: {device.trialGenerationsUsed}/{device.trialGenerationsLeft}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p>Device ID: нет данных</p>
+                )}
+              </div>
+            ) : null}
           </Card>
         ))}
       </div>

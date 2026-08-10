@@ -246,7 +246,6 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       const validation = await api.validateAvatar(avatar.id);
       if (validation.recommendedAction === "replace_photo" || validation.avatar.status === "VALIDATION_FAILED") {
         setAvatarGuidance({ title: validation.guidanceTitle, message: validation.guidanceMessage });
-        await api.deleteAvatar(avatar.id).catch(() => undefined);
         setNewPhoto(null);
         return;
       }

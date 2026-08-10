@@ -6,7 +6,10 @@ import { createAdminApi } from "@/lib/api";
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { useAdminKey } from "@/components/admin-key-provider";
 
-const VTON_KEY = "vton.base_ru";
+const PROMPT_TEMPLATES = [
+  { key: "vton.base_ru", label: "Примерка" },
+  { key: "avatar.quality_analysis", label: "Анализ аватара" },
+] as const;
 
 type AiPromptTemplate = {
   key: string;
@@ -18,6 +21,7 @@ type AiPromptTemplate = {
 
 export default function AdminAiPromptsPage() {
   const { adminKey, configured } = useAdminKey();
+  const [selectedKey, setSelectedKey] = useState<(typeof PROMPT_TEMPLATES)[number]["key"]>("vton.base_ru");
   const [template, setTemplate] = useState<AiPromptTemplate | null>(null);
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
@@ -35,16 +39,16 @@ export default function AdminAiPromptsPage() {
 
   useEffect(() => {
     if (configured && adminKey) {
-      void load(adminKey, VTON_KEY).catch(() => setError("Не удалось загрузить шаблон промпта"));
+      void load(adminKey, selectedKey).catch(() => setError("Не удалось загрузить шаблон промпта"));
     }
-  }, [load, configured, adminKey]);
+  }, [load, configured, adminKey, selectedKey]);
 
   async function onSave(event: FormEvent) {
     event.preventDefault();
     setError(null);
     setSaving(true);
     try {
-      const data = await api.updateAdminAiPrompt(adminKey, VTON_KEY, { body });
+      const data = await api.updateAdminAiPrompt(adminKey, selectedKey, { body });
       setTemplate(data.template);
       setBody(data.template.body);
       setSavedAt(new Date().toLocaleString("ru-RU"));
@@ -66,6 +70,22 @@ export default function AdminAiPromptsPage() {
       ) : null}
 
       <Card>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {PROMPT_TEMPLATES.map((item) => (
+            <Button
+              key={item.key}
+              type="button"
+              size="sm"
+              variant={selectedKey === item.key ? "primary" : "secondary"}
+              onClick={() => {
+                setSelectedKey(item.key);
+                setSavedAt(null);
+              }}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </div>
         <h2 className="text-xl font-black">{template?.title ?? "Примерка — базовый промпт"}</h2>
         {template?.description ? (
           <p className="mt-2 font-bold text-[#6d6273]">{template.description}</p>

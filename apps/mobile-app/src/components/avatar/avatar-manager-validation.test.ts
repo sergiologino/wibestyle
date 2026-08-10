@@ -8,6 +8,7 @@ describe("mobile avatar manager validation", () => {
   it("shows guidance for a rejected photo and requires a fresh selection", () => {
     expect(source).toContain('validation.recommendedAction === "replace_photo"');
     expect(source).toContain("setAvatarGuidance");
+    expect(source).not.toContain("await api.deleteAvatar(avatar.id).catch(() => undefined)");
     expect(source).toContain("setNewPhoto(null)");
     expect(source).toContain("setPreviewUri(null)");
   });

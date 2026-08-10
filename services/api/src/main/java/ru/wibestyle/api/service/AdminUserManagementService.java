@@ -4,6 +4,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import ru.wibestyle.api.domain.AvatarEntity;
+import ru.wibestyle.api.domain.AvatarStatus;
 import ru.wibestyle.api.domain.UserEntity;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.repository.AvatarRepository;
@@ -18,6 +20,11 @@ import java.util.UUID;
 
 @Service
 public class AdminUserManagementService {
+
+    private static final List<AvatarStatus> FAILED_AVATAR_STATUSES = List.of(
+            AvatarStatus.REJECTED,
+            AvatarStatus.VALIDATION_FAILED
+    );
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
@@ -116,6 +123,13 @@ public class AdminUserManagementService {
         map.put("login", user.getLogin());
         map.put("primaryAuth", user.getPrimaryAuth());
         map.put("createdAt", user.getCreatedAt().toString());
+        map.put("avatarUploadAttempts", avatarRepository.countByUserIdAndStatusNot(user.getId(), AvatarStatus.DELETED));
+        map.put("avatarFailedAttempts", avatarRepository.countByUserIdAndStatusIn(user.getId(), FAILED_AVATAR_STATUSES));
+        avatarRepository.findByUserIdAndStatusInOrderByCreatedAtDesc(user.getId(), FAILED_AVATAR_STATUSES)
+                .stream()
+                .filter(avatar -> avatar.getPhotoOriginalPath() != null)
+                .findFirst()
+                .ifPresent(avatar -> map.put("lastFailedAvatarPhotoUrl", adminAvatarPhotoUrl(user.getId(), avatar, "original")));
         List<DeviceTrustService.DeviceAdminRecord> devices = deviceTrustService.listAdminDevices(user.getId());
         map.put("devices", devices.stream().map(device -> {
             Map<String, Object> deviceMap = new HashMap<>();
@@ -141,15 +155,17 @@ public class AdminUserManagementService {
             map.put("displayName", profile.getDisplayName());
             avatarRepository.findByUserIdAndActiveTrue(user.getId()).ifPresent(avatar -> {
                 if (avatar.getPhotoProcessedPath() != null) {
-                    map.put("activeAvatarPhotoUrl", "/api/v1/admin/users/" + user.getId()
-                            + "/avatars/" + avatar.getId() + "/photo?variant=processed");
+                    map.put("activeAvatarPhotoUrl", adminAvatarPhotoUrl(user.getId(), avatar, "processed"));
                 } else if (avatar.getPhotoOriginalPath() != null) {
-                    map.put("activeAvatarPhotoUrl", "/api/v1/admin/users/" + user.getId()
-                            + "/avatars/" + avatar.getId() + "/photo?variant=original");
+                    map.put("activeAvatarPhotoUrl", adminAvatarPhotoUrl(user.getId(), avatar, "original"));
                 }
             });
         });
         return map;
+    }
+
+    private static String adminAvatarPhotoUrl(UUID userId, AvatarEntity avatar, String variant) {
+        return "/api/v1/admin/users/" + userId + "/avatars/" + avatar.getId() + "/photo?variant=" + variant;
     }
 
     public record AdminSubscriptionUpdateRequest(

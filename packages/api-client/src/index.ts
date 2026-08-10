@@ -1130,6 +1130,9 @@ export class WibeStyleApiClient {
         displayName?: string;
         primaryAuth?: string;
         activeAvatarPhotoUrl?: string;
+        avatarUploadAttempts?: number;
+        avatarFailedAttempts?: number;
+        lastFailedAvatarPhotoUrl?: string;
         devices?: Array<{
           deviceHash: string;
           deviceHashShort: string;
@@ -1197,6 +1200,7 @@ export class WibeStyleApiClient {
           createdAt: string;
           adminOriginalPhotoUrl?: string;
           adminProcessedPhotoUrl?: string;
+          adminEnhancedPhotoUrl?: string;
         }>;
       };
       tryOnSessions: {

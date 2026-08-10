@@ -15,6 +15,7 @@ public class AiPromptTemplateService {
 
     public static final String VTON_BASE_RU_KEY = "vton.base_ru";
     public static final String TRYON_RESULT_COMPLIMENT_RU_KEY = "tryon.result_compliment_ru";
+    public static final String AVATAR_QUALITY_ANALYSIS_KEY = "avatar.quality_analysis";
 
     private final AiPromptTemplateRepository repository;
 

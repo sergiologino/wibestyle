@@ -39,15 +39,18 @@ public class AvatarQualityAnalyzer {
     private final ObjectMapper objectMapper;
     private final AiIntegrationProperties aiProperties;
     private final NoteappAiClient noteappAiClient;
+    private final AiPromptTemplateService promptTemplateService;
 
     public AvatarQualityAnalyzer(
             ObjectMapper objectMapper,
             AiIntegrationProperties aiProperties,
-            NoteappAiClient noteappAiClient
+            NoteappAiClient noteappAiClient,
+            AiPromptTemplateService promptTemplateService
     ) {
         this.objectMapper = objectMapper;
         this.aiProperties = aiProperties;
         this.noteappAiClient = noteappAiClient;
+        this.promptTemplateService = promptTemplateService;
     }
 
     public AvatarQualityAssessment analyze(
@@ -110,13 +113,10 @@ public class AvatarQualityAnalyzer {
                     You are a strict but supportive virtual try-on avatar photo QA assistant.
                     Return only compact JSON. Never include markdown.
                     """;
-            String user = """
-                    Analyze whether this image is suitable as a private avatar for a virtual clothing try-on app.
-                    Requirements: exactly one real person, visible full body or at least from head to knees, person should occupy most of the frame, upright orientation, not only a head/portrait, not a tiny figure in a landscape, not multiple people. Return needs_new_photo only for no person, multiple people, head-only crop, tiny body, or wrong orientation. For imperfect lighting, a busy natural background, patterned clothing, or mild lack of detail return usable with warnings: those photos can be improved after upload.
-                    This is an independent validation request for image fingerprint %s. Analyze only the image attached to this request; do not reuse any conclusion from another image.
-                    Return JSON:
-                    {"quality":"good|usable|needs_new_photo","warnings":["NO_PERSON|MULTIPLE_PEOPLE|HEAD_ONLY|BODY_TOO_SMALL|BUSY_BACKGROUND|SIDEWAYS_OR_UPSIDE_DOWN|POOR_LIGHTING|LOW_DETAIL"],"message":"one short Russian user-facing sentence, supportive tone, no words bad/poor/rejected"}
-                    """.formatted(photoFingerprint);
+            String user = promptTemplateService.getBodyOrDefault(
+                    AiPromptTemplateService.AVATAR_QUALITY_ANALYSIS_KEY,
+                    defaultAvatarQualityPrompt()
+            ).replace("{photoFingerprint}", photoFingerprint);
             String raw = noteappAiClient.generateVisionChatText(
                     aiProperties.getSizeComplimentNetwork(),
                     externalUserId,
@@ -245,6 +245,18 @@ public class AvatarQualityAnalyzer {
             return "Фото не добавлено: изображение недостаточно чёткое для примерки.";
         }
         return "Фото не добавлено: этот кадр не подходит для примерки.";
+    }
+
+    static String defaultAvatarQualityPrompt() {
+        return """
+                Analyze whether this image is suitable as a private avatar for a virtual clothing try-on app.
+                Requirements: exactly one real person, visible full body or at least from head to knees, person should occupy a useful part of the frame, upright orientation, not only a head/portrait, not a tiny figure in a landscape, not multiple people.
+                Return needs_new_photo only for no person, multiple people, head-only crop, tiny body, wrong orientation, or objectively too-low image resolution.
+                Important: a busy garden/nature/city/home background, patterned clothing, colorful dress, imperfect lighting, mild softness, or mild lack of detail is recoverable. For those cases return usable with warnings, not needs_new_photo; the app can improve the photo after upload.
+                This is an independent validation request for image fingerprint {photoFingerprint}. Analyze only the image attached to this request; do not reuse any conclusion from another image.
+                Return JSON:
+                {"quality":"good|usable|needs_new_photo","warnings":["NO_PERSON|MULTIPLE_PEOPLE|HEAD_ONLY|BODY_TOO_SMALL|BUSY_BACKGROUND|SIDEWAYS_OR_UPSIDE_DOWN|POOR_LIGHTING|LOW_DETAIL"],"message":"one short Russian user-facing sentence, supportive tone, no words bad/poor/rejected"}
+                """;
     }
 
     private record ImageStats(int width, int height, boolean readable) {

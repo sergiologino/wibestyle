@@ -10,7 +10,7 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain('validation.recommendedAction === "replace_photo"');
     expect(source).toContain("setAvatarGuidance");
     expect(source).toContain("reachedReadyState");
-    expect(source).toContain("await api.deleteAvatar(avatar.id).catch(() => undefined)");
+    expect(source).not.toContain("await api.deleteAvatar(avatar.id).catch(() => undefined)");
     expect(source).toContain("setNewPhoto(null)");
   });
 
