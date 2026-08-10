@@ -27,6 +27,7 @@ export default function OtpForm() {
   const [captchaId, setCaptchaId] = useState("");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [mobileIdCaptcha, setMobileIdCaptcha] = useState<{ id: string; answer: string } | null>(null);
+  const [phoneSelected, setPhoneSelected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -141,32 +142,47 @@ export default function OtpForm() {
         autoCapitalize="characters"
         spellCheck={false}
       />
-      <div className="mt-4">
-        <MathCaptchaField
-          api={api}
-          captchaId={captchaId}
-          captchaAnswer={captchaAnswer}
-          onCaptchaIdChange={(value) => {
-            setCaptchaId(value);
-            setMobileIdCaptcha(null);
+      {!phoneSelected ? (
+        <Button
+          className="mt-4 w-full"
+          type="button"
+          onClick={() => {
+            setError(null);
+            setPhoneSelected(true);
           }}
-          onCaptchaAnswerChange={(value) => {
-            setCaptchaAnswer(value);
-            setMobileIdCaptcha(null);
-          }}
-        />
-      </div>
-      <Button
-        className="mt-3 w-full"
-        disabled={!captchaId || !captchaAnswer.trim() || loading}
-        type="button"
-        onClick={() => {
-          setError(null);
-          setMobileIdCaptcha({ id: captchaId, answer: captchaAnswer.trim() });
-        }}
-      >
-        Продолжить вход
-      </Button>
+        >
+          Войти по телефону
+        </Button>
+      ) : (
+        <>
+          <div className="mt-4">
+            <MathCaptchaField
+              api={api}
+              captchaId={captchaId}
+              captchaAnswer={captchaAnswer}
+              onCaptchaIdChange={(value) => {
+                setCaptchaId(value);
+                setMobileIdCaptcha(null);
+              }}
+              onCaptchaAnswerChange={(value) => {
+                setCaptchaAnswer(value);
+                setMobileIdCaptcha(null);
+              }}
+            />
+          </div>
+          <Button
+            className="mt-3 w-full"
+            disabled={!captchaId || !captchaAnswer.trim() || loading}
+            type="button"
+            onClick={() => {
+              setError(null);
+              setMobileIdCaptcha({ id: captchaId, answer: captchaAnswer.trim() });
+            }}
+          >
+            Продолжить вход
+          </Button>
+        </>
+      )}
       {loading ? <p className="mt-4 text-sm text-[#9a8f99]">Подключаем безопасный вход…</p> : null}
       <div className="mt-4 min-h-40" ref={widgetHost} />
       {error ? <p className="mt-3 font-normal text-[#ff1fa2]">{error}</p> : null}

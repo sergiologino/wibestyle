@@ -23,4 +23,22 @@ describe("AuthClient", () => {
     expect(source).toContain("visible={oauthReady}");
     expect(oauthSource).toContain("finally(onProvidersResolved)");
   });
+
+  it("keeps math captcha stable while parent auth forms re-render", () => {
+    const source = readFileSync(join(process.cwd(), "components", "auth", "MathCaptchaField.tsx"), "utf8");
+    expect(source).toContain("useRef(onCaptchaIdChange)");
+    expect(source).toContain("useRef(onCaptchaAnswerChange)");
+    expect(source).toContain("}, [api]);");
+    expect(source).toContain("bg-white");
+    expect(source).toContain("placeholder:font-normal");
+    expect(source).toContain("placeholder:text-[#c8bcc8]");
+  });
+
+  it("does not show phone captcha before the user selects phone login", () => {
+    const source = readFileSync(join(process.cwd(), "components", "auth", "OtpForm.tsx"), "utf8");
+    expect(source).toContain("const [phoneSelected, setPhoneSelected] = useState(false)");
+    expect(source).toContain("!phoneSelected ? (");
+    expect(source).toContain("Войти по телефону");
+    expect(source).toContain("<MathCaptchaField");
+  });
 });
