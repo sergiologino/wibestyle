@@ -298,6 +298,7 @@ export const seoPages: SeoPageContent[] = [
     badge: "Скоро",
     intro: "Укладка, длина, чёлка и цвет — вместе с одеждой и макияжем.",
     visuals: { type: "mosaic", images: [imageSlots.hairstylePreview1, imageSlots.hairstylePreview2] },
+    visualsCompact: true,
     sections: [{ title: "Причёска под образ", body: "Одно платье — разные укладки, разное настроение." }],
     faq: [{ q: "Когда?", a: "В ближайших релизах августа–сентября." }],
   },
