@@ -42,9 +42,19 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain("Вернуть первоначальный");
   });
 
-  it("allows selecting a photo directly from the avatar preview and places the action before privacy controls", () => {
+  it("keeps a usable photo with warnings in a large pending candidate flow", () => {
+    expect(source).toContain("const [pendingAvatar, setPendingAvatar] = useState<AvatarRecord | null>(null)");
+    expect(source).toContain('validation.recommendedAction === "continue_with_warning" || validation.warnings.length > 0');
+    expect(source).toContain("setPendingAvatar(validation.avatar)");
+    expect(source).toContain("<AvatarCandidatePanel");
+    expect(source).toContain("onSaveOriginal={() => void saveOriginalAvatar(pendingAvatar.id)}");
+  });
+
+  it("starts avatar validation automatically after photo selection", () => {
     expect(source).toContain("photoInputRef.current?.click()");
-    expect(source).toContain("primaryAction={newPhoto ? (");
+    expect(source).toContain("const autoAddPhotoRef = useRef<File | null>(null)");
+    expect(source).toContain("void addAvatar(newPhoto)");
+    expect(source).not.toContain("primaryAction={newPhoto ? (");
     expect(source).toContain("event.target.value = \"\"");
   });
 });

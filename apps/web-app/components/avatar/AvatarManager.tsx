@@ -112,6 +112,47 @@ function AvatarEnhancementPanel({
   );
 }
 
+function AvatarCandidatePanel({
+  avatar,
+  accessToken,
+  busy,
+  onEnhance,
+  onSaveOriginal,
+}: {
+  avatar: AvatarRecord;
+  accessToken?: string | null;
+  busy: boolean;
+  onEnhance: () => void;
+  onSaveOriginal: () => void;
+}) {
+  return (
+    <section className="rounded-[28px] border border-[#f0dce8] bg-gradient-to-br from-white to-[#fff8fd] p-4 shadow-sm">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Pill tone="soft">Можно улучшить</Pill>
+        <p className="text-sm leading-5 text-[#6d6273]">
+          Фото подходит для примерки. Можно сохранить как есть или сначала улучшить фон и чёткость.
+        </p>
+      </div>
+      <AvatarPrivacyPreview
+        accessToken={accessToken}
+        privacy={{ hideFace: avatar.privacyFaceHidden, hideBackground: avatar.privacyBackgroundHidden, hideFeatures: false }}
+        remotePhotoPath={avatar.photoOriginalUrl ?? avatar.photoProcessedUrl}
+        showToggles={false}
+        processing={busy}
+        onPrivacyChange={() => undefined}
+      />
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button disabled={busy} type="button" onClick={onEnhance}>
+          Улучшить аватар
+        </Button>
+        <Button disabled={busy} type="button" variant="secondary" onClick={onSaveOriginal}>
+          Сохранить этот вариант
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 type AvatarManagerProps = {
   activeAvatarId?: string | null;
 };
@@ -130,7 +171,9 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const [adding, setAdding] = useState(false);
   const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
   const [enhancementAvatar, setEnhancementAvatar] = useState<AvatarRecord | null>(null);
+  const [pendingAvatar, setPendingAvatar] = useState<AvatarRecord | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const autoAddPhotoRef = useRef<File | null>(null);
 
   async function reload() {
     setLoading(true);
@@ -157,6 +200,14 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     setNewPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [newPhoto]);
+
+  useEffect(() => {
+    if (!newPhoto || busy || autoAddPhotoRef.current === newPhoto) {
+      return;
+    }
+    autoAddPhotoRef.current = newPhoto;
+    void addAvatar(newPhoto);
+  }, [newPhoto, busy]);
 
   async function activateAvatar(avatarId: string) {
     setBusy(true);
@@ -192,6 +243,7 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     try {
       const { avatar } = await api.enhanceAvatar(avatarId);
       setEnhancementAvatar(avatar);
+      setPendingAvatar((current) => (current?.id === avatar.id ? avatar : current));
       await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось улучшить фото");
@@ -206,18 +258,9 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     setError(null);
     try {
       await api.applyAvatarEnhancement(enhancementAvatar.id);
-      try {
-        await api.activateAvatar(enhancementAvatar.id);
-      } catch (err) {
-        if (!(err instanceof ApiError) || err.code !== "ANTHROPOMETRY_REQUIRED") {
-          throw err;
-        }
-        setAvatarGuidance({
-          title: "Улучшенное фото сохранено",
-          message: "Чтобы сделать аватар основным, укажите рост, грудь, талию и бёдра.",
-        });
-      }
+      await activateReadyAvatarOrShowAnthropometry(enhancementAvatar.id, "Улучшенное фото сохранено");
       setEnhancementAvatar(null);
+      setPendingAvatar(null);
       await refreshProfile();
       await reload();
     } catch (err) {
@@ -233,8 +276,9 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     setError(null);
     try {
       await api.revertAvatarEnhancement(enhancementAvatar.id);
-      if (enhancementAvatar.active) await api.activateAvatar(enhancementAvatar.id);
+      await activateReadyAvatarOrShowAnthropometry(enhancementAvatar.id, "Аватар сохранён");
       setEnhancementAvatar(null);
+      setPendingAvatar(null);
       await refreshProfile();
       await reload();
     } catch (err) {
@@ -244,8 +288,8 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
     }
   }
 
-  async function addAvatar() {
-    if (!newPhoto) {
+  async function addAvatar(photo: File | null = newPhoto) {
+    if (!photo) {
       setError("Выберите фото для нового аватара");
       return;
     }
@@ -262,27 +306,22 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
         privacyFeaturesHidden: false,
       });
       createdAvatarId = avatar.id;
-      await api.uploadAvatarPhoto(avatar.id, newPhoto);
+      await api.uploadAvatarPhoto(avatar.id, photo);
       const validation = await api.validateAvatar(avatar.id);
       if (validation.recommendedAction === "replace_photo" || validation.avatar.status === "VALIDATION_FAILED") {
         setAvatarGuidance({ title: validation.guidanceTitle, message: validation.guidanceMessage });
         setNewPhoto(null);
         return;
       }
+      if (validation.recommendedAction === "continue_with_warning" || validation.warnings.length > 0) {
+        setPendingAvatar(validation.avatar);
+        setAdding(false);
+        setNewPhoto(null);
+        return;
+      }
       await api.preprocessAvatar(avatar.id);
       reachedReadyState = true;
-      try {
-        await api.activateAvatar(avatar.id);
-        avatarActivated = true;
-      } catch (err) {
-        if (!(err instanceof ApiError) || err.code !== "ANTHROPOMETRY_REQUIRED") {
-          throw err;
-        }
-        setAvatarGuidance({
-          title: "Аватар сохранён",
-          message: "Чтобы сделать его основным, укажите рост, грудь, талию и бёдра.",
-        });
-      }
+      avatarActivated = await activateReadyAvatarOrShowAnthropometry(avatar.id, "Аватар сохранён");
       setNewPhoto(null);
       setAdding(false);
       await refreshProfile();
@@ -296,7 +335,45 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       }
       setError(err instanceof ApiError ? err.message : "Не удалось добавить аватар");
     } finally {
+      if (autoAddPhotoRef.current === photo) {
+        autoAddPhotoRef.current = null;
+      }
       setBusy(false);
+    }
+  }
+
+  async function saveOriginalAvatar(avatarId: string) {
+    setBusy(true);
+    setError(null);
+    setAvatarGuidance(null);
+    try {
+      await api.preprocessAvatar(avatarId);
+      await activateReadyAvatarOrShowAnthropometry(avatarId, "Аватар сохранён");
+      setPendingAvatar(null);
+      setEnhancementAvatar(null);
+      setAdding(false);
+      await refreshProfile();
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось сохранить аватар");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function activateReadyAvatarOrShowAnthropometry(avatarId: string, title: string) {
+    try {
+      await api.activateAvatar(avatarId);
+      return true;
+    } catch (err) {
+      if (!(err instanceof ApiError) || err.code !== "ANTHROPOMETRY_REQUIRED") {
+        throw err;
+      }
+      setAvatarGuidance({
+        title,
+        message: "Чтобы сделать его основным, укажите рост, грудь, талию и бёдра.",
+      });
+      return false;
     }
   }
 
@@ -357,11 +434,6 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
                 if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
               }}
-              primaryAction={newPhoto ? (
-                <Button disabled={busy} size="lg" type="button" onClick={() => void addAvatar()}>
-                  {busy ? "Загружаем…" : needsFirstAvatar ? "Создать аватар" : "Сохранить новый аватар"}
-                </Button>
-              ) : null}
             />
           </div>
           {avatarGuidance?.message ? (
@@ -379,7 +451,17 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
         <AvatarEnhancementPanel avatar={enhancementAvatar} busy={busy} onApply={() => void applyEnhancement()} onRevert={() => void revertEnhancement()} />
       ) : null}
 
-      {!loading && visibleAvatars.length === 0 ? (
+      {!enhancementAvatar && pendingAvatar ? (
+        <AvatarCandidatePanel
+          accessToken={accessToken}
+          avatar={pendingAvatar}
+          busy={busy}
+          onEnhance={() => void enhanceAvatar(pendingAvatar.id)}
+          onSaveOriginal={() => void saveOriginalAvatar(pendingAvatar.id)}
+        />
+      ) : null}
+
+      {!loading && visibleAvatars.length === 0 && !pendingAvatar && !enhancementAvatar ? (
         <p className={mutedTextClassName}>Аватары пока не готовы.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
