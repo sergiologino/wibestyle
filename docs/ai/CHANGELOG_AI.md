@@ -1,5 +1,32 @@
 # AI Changelog
 
+## 2026-08-09 (Recurring-payment terms)
+- Added a dedicated public-terms section for recurring payments and auto-renewal. It documents explicit opt-in, charging cadence and price, the three-day notice, self-service cancellation, and up-to-three failed-charge attempts.
+- The production recurring feature flag remains off pending written YooKassa approval; this change does not activate any automatic payments.
+
+## 2026-08-09 (Landing forthcoming-feature navigation)
+- Added the `Причёски` entry to the top navigation so it matches the homepage AI-hairstyles card.
+- Redirected the homepage `Полный look` card to the canonical, more informative `/podbor-obraza` page.
+- Made the three homepage `Скоро` labels bright, angled and overlapping their card titles, matching the treatment already used on their feature pages.
+- Documented that click-only interest tracking needs a separate anonymous event contract; the existing landing-interest endpoint is a consented contact lead and must not be reused silently.
+
+## 2026-08-08 (Coming-soon title treatment)
+- Changed the three forthcoming-feature labels from a separate line to translucent overlapping title labels, without affecting non-`Скоро` page badges.
+
+## 2026-08-08 (Virtual-makeup landing-page availability)
+- Marked the virtual-makeup page as `Скоро`, preserved its existing FAQ, and created four dedicated replaceable visual slots under `public/assets/makeup/`.
+
+## 2026-08-08 (Look-request landing-page availability)
+- Marked the look-request page as `Скоро`, clarified the planned August–September release window in its FAQ, and documented the four active replaceable visuals under `public/assets/look-request/`.
+
+## 2026-08-08 (Hairstyle landing-page availability)
+- Marked the virtual-hairstyle page as `Скоро`, clarified the planned August–September release window in its FAQ, and created dedicated replaceable visual slots under `public/assets/hairstyles/`.
+
+## 2026-08-08 (RuStore launch and landing store-state clarity)
+- Linked the landing hero to the published RuStore app page. Google Play and App Store buttons are now non-interactive greyed-out availability states.
+- Made header app routing platform-aware (Android → RuStore, otherwise web app), while the hero web CTA now explicitly says “Перейти в веб-приложение”.
+- Removed session-persistent dismissal of the mobile PWA install banner: it returns when the browser app is opened again until standalone installation succeeds.
+
 ## 2026-08-05 (Web favicon and Russian name)
 - Added an explicit `favicon.ico` route/file and metadata declaration for dependable tab favicon support.
 - Replaced the header’s domain repetition with the product name `Я на стиле`, matching the RuStore name.

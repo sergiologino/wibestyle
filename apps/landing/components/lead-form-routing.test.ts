@@ -6,12 +6,12 @@ afterEach(() => {
 });
 
 describe("landing application routing", () => {
-  it("opens the web app on Android while RuStore URL is empty", async () => {
-    vi.stubEnv("NEXT_PUBLIC_RUSTORE_URL", "");
+  it("opens the published RuStore app page on Android by default", async () => {
+    vi.stubEnv("NEXT_PUBLIC_RUSTORE_URL", "https://www.rustore.ru/catalog/app/ru.vibestyle.app");
     const { resolveAppLaunchUrl } = await import("./LeadForm");
 
     expect(resolveAppLaunchUrl("Mozilla/5.0 (Linux; Android 14)", true))
-      .toContain("https://app.vibestyle.art");
+      .toBe("https://www.rustore.ru/catalog/app/ru.vibestyle.app");
   });
 
   it("opens RuStore on Android when its URL is configured", async () => {

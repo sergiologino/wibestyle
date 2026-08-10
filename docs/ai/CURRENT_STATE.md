@@ -1,5 +1,32 @@
 # Current State
 
+## Recurring-payment disclosure (2026-08-09)
+- `/terms` now contains a dedicated recurring-payment section: separate consent, saved payment method, monthly/annual cadence, next-charge price, three-day in-app warning, self-service cancellation, and the bounded failed-charge flow. `WIBESTYLE_YOOKASSA_RECURRING_ENABLED` remains disabled until YooKassa confirms production eligibility.
+
+## Landing forthcoming-feature navigation (2026-08-09)
+- `AI-причёски` is now available in the top navigation, while the homepage `Полный look` card uses the canonical `/podbor-obraza` page.
+- Homepage future-card `Скоро` labels now use the same high-contrast overlapping treatment as their SEO pages.
+
+## Coming-soon title treatment (2026-08-08)
+- The `Скоро` labels on `/pricheski`, `/podbor-obraza`, and `/makiyazh` now overlap the top of their headings with a translucent high-contrast treatment, so the status is seen before the title is read.
+
+## Virtual-makeup landing-page availability clarity (2026-08-08)
+- `/makiyazh` is explicitly marked `Скоро` above its title. Its existing FAQ content is intentionally unchanged.
+- The page now renders four isolated replaceable visual files in `apps/landing/public/assets/makeup/`: `makeup-evening-before.png`, `makeup-evening-after.png`, `makeup-light-before.png`, and `makeup-light-after.png`.
+
+## Look-request landing-page availability clarity (2026-08-08)
+- `/podbor-obraza` is explicitly marked `Скоро` above its title, and its FAQ says the feature is planned for the nearest August–September releases.
+- The page renders four isolated replaceable visual files in `apps/landing/public/assets/look-request/`: `full-look.png`, `accessories.png`, `shoes.png`, and `makeup.png`. Legacy alternates in the same folder are not rendered.
+
+## Hairstyle landing-page availability clarity (2026-08-08)
+- `/pricheski` is explicitly marked `Скоро` above its title, and its FAQ now says the feature is planned for the nearest August–September releases.
+- Its two mosaic visuals have isolated slots at `apps/landing/public/assets/hairstyles/hairstyle-preview-1.png` and `hairstyle-preview-2.png`; these no longer reuse general clothing-card images.
+
+## RuStore launch links and persistent PWA invitation (2026-08-08)
+- The published Android app is available at `https://www.rustore.ru/catalog/app/ru.vibestyle.app`. Landing hero RuStore links use this URL. Google Play and App Store cards are visibly disabled until publication.
+- Landing header routes “Перейти в приложение” to RuStore only after Android client detection; all other platforms open the web app. The hero web CTA is explicitly labelled “Перейти в веб-приложение” and always opens the web app.
+- The web PWA install banner appears on every fresh browser opening while the app is not standalone. Closing it is temporary in React state only; installed PWA launches are detected via display mode and do not show it.
+
 ## Web product branding (2026-08-05)
 - The web app explicitly serves `app/favicon.ico` (32px ICO derived from the brand icon) and declares it in root metadata, alongside the existing PNG icon for modern browsers.
 - The shared header logo now displays the user-facing Russian product name `Я на стиле`, rather than repeating `vibestyle.art` which is already visible as the URL.

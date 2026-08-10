@@ -13,6 +13,8 @@ type Props = {
 };
 
 export default function EditorialSeoPage({ page, interest = "clothing" }: Props) {
+  const isComingSoon = page.badge === "Скоро";
+  const displayBadge = page.badge ?? "Скоро в приложении";
   const schemas = [
     breadcrumbSchema([
       { name: "Главная", path: "/" },
@@ -30,8 +32,11 @@ export default function EditorialSeoPage({ page, interest = "clothing" }: Props)
           <nav className="seo-breadcrumbs light">
             <Link href="/">Главная</Link> / {page.h1}
           </nav>
-          <span className="pill">{page.badge ?? "Скоро в приложении"}</span>
-          <h1>{page.h1}</h1>
+          {!isComingSoon ? <span className="pill">{displayBadge}</span> : null}
+          <h1 className={isComingSoon ? "seo-title--coming-soon" : undefined}>
+            {isComingSoon ? <span className="seo-coming-soon-badge">{page.badge}</span> : null}
+            {page.h1}
+          </h1>
           <p className="lead">{page.intro}</p>
         </div>
       </section>

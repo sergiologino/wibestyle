@@ -1,5 +1,26 @@
 # Implementation Status
 
+## 2026-08-08 — Coming-soon labels
+
+- ✅ Prominent translucent overlap treatment for the hairstyle, look-request and virtual-makeup page titles.
+
+## 2026-08-08 — Virtual-makeup landing page
+
+- ✅ Clear `Скоро` availability label, preserved FAQ and dedicated image-slot folder for the before/after makeup examples.
+
+## 2026-08-08 — Look-request landing page
+
+- ✅ Clear `Скоро` availability label, August–September FAQ wording and documented active image slots for the look-request mosaic.
+
+## 2026-08-08 — Hairstyle landing page
+
+- ✅ Clear “Скоро” availability label, August–September FAQ wording and dedicated image-slot folder for hairstyle previews.
+
+## 2026-08-08 — Published Android entry points
+
+- ✅ Landing points Android users to the published RuStore app; unavailable stores are disabled.
+- ✅ Android-aware header routing and persistent-until-installed web PWA invitation.
+
 ## 2026-08-05 — Web branding
 
 - ✅ Explicit browser favicon and Russian product name in the web-app header.

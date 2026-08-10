@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { BrandMarkGraphicSvg } from "@wibestyle/ui";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { handleHashLinkClick } from "@/lib/navigation";
 import { siteConfig } from "@/lib/site";
 
@@ -13,12 +13,18 @@ const navLinks = [
   { href: "/ai-primerka", label: "AI-примерка" },
   { href: "/podbor-obraza", label: "Подбор образа" },
   { href: "/makiyazh", label: "Макияж" },
+  { href: "/pricheski", label: "Причёски" },
   { href: "/faq", label: "FAQ" },
 ];
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const [appHref, setAppHref] = useState(siteConfig.appUrl);
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (/Android/i.test(window.navigator.userAgent)) setAppHref(siteConfig.rustoreUrl);
+  }, []);
 
   function onNavClick(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
     setOpen(false);
@@ -52,8 +58,8 @@ export default function Header() {
       </nav>
       <Link
         className="download-cta"
-        href={siteConfig.appUrl}
-        data-analytics="header_web_app"
+        href={appHref}
+        data-analytics={appHref === siteConfig.rustoreUrl ? "header_rustore_app" : "header_web_app"}
         aria-label="Перейти в приложение"
       >
         <span className="download-cta__desktop">Перейти в приложение</span>

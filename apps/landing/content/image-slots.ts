@@ -73,27 +73,39 @@ export const imageSlots = {
     width: 600,
     height: 800,
   },
-  /** Замените на свои close-up фото макияжа в /public/assets/makeup/ */
+  hairstylePreview1: {
+    src: "/assets/hairstyles/hairstyle-preview-1.png",
+    alt: "Пример виртуальной примерки причёски",
+    width: 600,
+    height: 800,
+  },
+  hairstylePreview2: {
+    src: "/assets/hairstyles/hairstyle-preview-2.png",
+    alt: "Пример виртуальной примерки укладки и цвета волос",
+    width: 600,
+    height: 800,
+  },
+  /** Replaceable close-up makeup visuals in /public/assets/makeup/. */
   makeupEveningBefore: {
-    src: "/assets/female-card-1.png",
+    src: "/assets/makeup/makeup-evening-before.png",
     alt: "Девушка до примерки вечернего макияжа — базовый образ",
     width: 600,
     height: 800,
   },
   makeupEveningAfter: {
-    src: "/assets/female-card-3.png",
+    src: "/assets/makeup/makeup-evening-after.png",
     alt: "Вечерний макияж и образ после нейростилиста",
     width: 600,
     height: 800,
   },
   makeupLightBefore: {
-    src: "/assets/female-card-2.png",
+    src: "/assets/makeup/makeup-light-before.png",
     alt: "Образ до — насыщенный макияж, требующий смягчения",
     width: 600,
     height: 800,
   },
   makeupLightAfter: {
-    src: "/assets/female-card-4.png",
+    src: "/assets/makeup/makeup-light-after.png",
     alt: "Лёгкий стильный макияж и цельный look — после",
     width: 600,
     height: 800,
