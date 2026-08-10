@@ -31,7 +31,7 @@ function AvatarThumb({
 
   return (
     <div
-      className={`relative w-full max-w-[240px] overflow-hidden rounded-[28px] border bg-white shadow-sm transition ${
+      className={`relative w-full max-w-[280px] overflow-hidden rounded-[28px] border bg-white shadow-sm transition ${
         active ? "border-[#ff1fa2] ring-2 ring-[#ff1fa2]/20" : "border-[#f0dce8]"
       }`}
     >
@@ -56,12 +56,12 @@ function AvatarThumb({
         <div className="grid gap-2">
           {avatar.enhancementRecommended ? (
             <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onEnhance}>
-              Улучшить фото
+              Улучшить аватар
             </Button>
           ) : null}
           {!active ? (
             <Button disabled={busy} size="sm" type="button" variant="secondary" onClick={onSelect}>
-              Сделать основным
+              {showEnhancementHint ? "Сохранить этот вариант" : "Сделать основным"}
             </Button>
           ) : null}
           {!active && avatar.status !== "DELETED" ? (
@@ -105,8 +105,8 @@ function AvatarEnhancementPanel({
         </figure>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button disabled={busy} type="button" onClick={onApply}>Использовать улучшенный</Button>
-        <Button disabled={busy} type="button" variant="secondary" onClick={onRevert}>Оставить исходный</Button>
+        <Button disabled={busy} type="button" onClick={onApply}>Сохранить этот вариант</Button>
+        <Button disabled={busy} type="button" variant="secondary" onClick={onRevert}>Вернуть первоначальный</Button>
       </div>
     </section>
   );

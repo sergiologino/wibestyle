@@ -34,9 +34,12 @@ describe("profile avatar manager validation", () => {
 
   it("renders enhancement recommendations as a regular avatar card", () => {
     expect(source).toContain("const showEnhancementHint = avatar.enhancementRecommended || warnings.length > 0");
-    expect(source).toContain("max-w-[240px]");
+    expect(source).toContain("max-w-[280px]");
     expect(source).toContain("aspect-[3/4]");
     expect(source).toContain("sm:grid-cols-2 lg:grid-cols-3");
+    expect(source).toContain("Улучшить аватар");
+    expect(source).toContain('showEnhancementHint ? "Сохранить этот вариант" : "Сделать основным"');
+    expect(source).toContain("Вернуть первоначальный");
   });
 
   it("allows selecting a photo directly from the avatar preview and places the action before privacy controls", () => {

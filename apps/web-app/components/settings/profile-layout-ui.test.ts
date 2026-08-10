@@ -16,7 +16,7 @@ describe("profile layout", () => {
     expect(avatars).toContain("Мои аватары");
     expect(avatars).toContain("образов одного человека");
     expect(avatars).toContain("Антропометрия общая для всех аватаров");
-    expect(avatars).toContain("relative w-full max-w-[240px]");
+    expect(avatars).toContain("relative w-full max-w-[280px]");
     expect(avatars).toContain("aspect-[3/4]");
   });
 });
