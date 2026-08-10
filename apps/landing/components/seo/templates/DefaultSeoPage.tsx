@@ -40,9 +40,11 @@ export default function DefaultSeoPage({ page, interest = "clothing" }: Props) {
       </section>
 
       {page.visuals ? (
-        <section className="seo-visual-band">
+        <section
+          className={`seo-visual-band${page.visualsCompact ? " seo-visual-band--compact-mosaic" : ""}${page.visualsTall ? " seo-visual-band--tall-mosaic" : ""}`}
+        >
           <div className="container-wide">
-            <SeoVisuals visuals={page.visuals} />
+            <SeoVisuals visuals={page.visuals} compact={page.visualsCompact} tall={page.visualsTall} />
           </div>
         </section>
       ) : null}
