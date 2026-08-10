@@ -16,6 +16,8 @@ public class AiIntegrationProperties {
     private String seasonVideoNetwork = "";
     /** OpenAI-compatible chat network in noteapp (e.g. openai-gpt4o-mini) for size compliments. */
     private String sizeComplimentNetwork = "";
+    /** Opt-in image-edit network in noteapp for reversible avatar enhancement. */
+    private String avatarEnhanceNetwork = "";
     private String webhookSecret = "";
 
     public boolean isEnabled() {
@@ -90,6 +92,14 @@ public class AiIntegrationProperties {
         this.sizeComplimentNetwork = sizeComplimentNetwork;
     }
 
+    public String getAvatarEnhanceNetwork() {
+        return avatarEnhanceNetwork;
+    }
+
+    public void setAvatarEnhanceNetwork(String avatarEnhanceNetwork) {
+        this.avatarEnhanceNetwork = avatarEnhanceNetwork;
+    }
+
     public String getWebhookSecret() {
         return webhookSecret;
     }
@@ -116,5 +126,11 @@ public class AiIntegrationProperties {
                 && !apiKey.isBlank()
                 && sizeComplimentNetwork != null
                 && !sizeComplimentNetwork.isBlank();
+    }
+
+    public boolean isAvatarEnhanceConfigured() {
+        return isIntegrationConfigured()
+                && avatarEnhanceNetwork != null
+                && !avatarEnhanceNetwork.isBlank();
     }
 }

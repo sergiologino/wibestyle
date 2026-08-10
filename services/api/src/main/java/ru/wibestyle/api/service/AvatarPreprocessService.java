@@ -21,7 +21,10 @@ public class AvatarPreprocessService {
     }
 
     public void preprocess(AvatarEntity avatar) throws IOException {
-        Path original = blobStorage.resolveLocalFile(avatar.getPhotoOriginalPath());
+        String sourcePath = avatar.isUseEnhancedPhoto() && avatar.getPhotoEnhancedPath() != null
+                ? avatar.getPhotoEnhancedPath()
+                : avatar.getPhotoOriginalPath();
+        Path original = blobStorage.resolveLocalFile(sourcePath);
         UUID userId = avatar.getUserId();
         UUID avatarId = avatar.getId();
         Path processed = Files.createTempFile("wibestyle-avatar-", ".jpg");

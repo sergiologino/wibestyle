@@ -140,6 +140,49 @@ public class NoteappAiClient {
         throw new RestClientException("No text in vision chat response");
     }
 
+    public AvatarEnhancementResult enhanceAvatar(
+            String networkName,
+            String externalUserId,
+            String imageBase64,
+            String mimeType
+    ) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("imageBase64", imageBase64);
+        payload.put("imageContentType", mimeType == null || mimeType.isBlank() ? "image/jpeg" : mimeType);
+        payload.put("quality", "medium");
+        payload.put("output_format", "jpeg");
+        payload.put("input_fidelity", "high");
+        payload.put("settings", Map.of("width", 1024, "height", 1536));
+        payload.put("prompt", "Improve this private virtual try-on avatar photo only by correcting lighting, reducing noise, improving sharpness, and making the background less distracting. Preserve exactly the person's identity, face, hair, skin tone, body shape, proportions, pose, camera angle, framing, and all clothing. Do not add, remove, replace, recolor, restyle, beautify, slim, age, or otherwise alter the person or clothing.");
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", requireExternalUserId(externalUserId));
+        body.put("networkName", networkName);
+        body.put("requestType", "image_edit");
+        body.put("payload", payload);
+
+        JsonNode response = restClient.post()
+                .uri("/api/ai/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-API-Key", properties.getApiKey())
+                .header("Cache-Control", "no-store")
+                .body(body)
+                .retrieve()
+                .body(JsonNode.class);
+        if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
+            throw new RestClientException(extractErrorMessage(response, "Avatar enhancement failed"));
+        }
+        String networkUsed = response.path("networkUsed").asText(null);
+        if (isUnexpectedNetwork(networkName, networkUsed)) {
+            throw new RestClientException("Avatar enhancement provider mismatch");
+        }
+        ImageResult image = extractImageResult(response.path("response"));
+        if (image == null || image.bytes() == null || image.bytes().length == 0) {
+            throw new RestClientException("Avatar enhancement returned no image");
+        }
+        return new AvatarEnhancementResult(image.bytes(), response.path("response").path("imageContentType").asText("image/jpeg"));
+    }
+
     private static String requireExternalUserId(String externalUserId) {
         if (externalUserId == null || externalUserId.isBlank()) {
             throw new IllegalArgumentException("NOTEAPP_EXTERNAL_USER_ID_REQUIRED");
@@ -776,6 +819,9 @@ public class NoteappAiClient {
         public static ProcessResult failed(String errorCode, String errorMessage) {
             return failure(errorCode, errorMessage);
         }
+    }
+
+    public record AvatarEnhancementResult(byte[] imageBytes, String contentType) {
     }
 
     public record VideoProcessResult(

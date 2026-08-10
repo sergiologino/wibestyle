@@ -1,0 +1,2 @@
+ALTER TABLE avatars ADD COLUMN photo_enhanced_path VARCHAR(512);
+ALTER TABLE avatars ADD COLUMN use_enhanced_photo BOOLEAN NOT NULL DEFAULT FALSE;

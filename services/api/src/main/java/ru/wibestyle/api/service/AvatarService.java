@@ -9,15 +9,21 @@ import ru.wibestyle.api.domain.AvatarStatus;
 import ru.wibestyle.api.domain.DomainEvents;
 import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.dto.CreateAvatarRequest;
+import ru.wibestyle.api.ai.NoteappAiClient;
+import ru.wibestyle.api.config.AiIntegrationProperties;
 import ru.wibestyle.api.repository.AvatarRepository;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
 import ru.wibestyle.api.storage.BlobStorage;
+import ru.wibestyle.api.storage.BlobKeys;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.Base64;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,6 +33,7 @@ public class AvatarService {
 
     public static final int MAX_AVATARS_PER_USER = 3;
     public static final String AVATAR_LIMIT_REACHED = "AVATAR_LIMIT_REACHED";
+    private static final Set<String> ENHANCEABLE_WARNINGS = Set.of("POOR_LIGHTING", "BUSY_BACKGROUND");
 
     private final AvatarRepository avatarRepository;
     private final AvatarSnapshotRepository avatarSnapshotRepository;
@@ -34,6 +41,8 @@ public class AvatarService {
     private final BlobStorage blobStorage;
     private final AvatarValidationService avatarValidationService;
     private final AvatarPreprocessService avatarPreprocessService;
+    private final NoteappAiClient noteappAiClient;
+    private final AiIntegrationProperties aiProperties;
 
     public AvatarService(
             AvatarRepository avatarRepository,
@@ -41,7 +50,9 @@ public class AvatarService {
             ProfileService profileService,
             BlobStorage blobStorage,
             AvatarValidationService avatarValidationService,
-            AvatarPreprocessService avatarPreprocessService
+            AvatarPreprocessService avatarPreprocessService,
+            NoteappAiClient noteappAiClient,
+            AiIntegrationProperties aiProperties
     ) {
         this.avatarRepository = avatarRepository;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
@@ -49,6 +60,8 @@ public class AvatarService {
         this.blobStorage = blobStorage;
         this.avatarValidationService = avatarValidationService;
         this.avatarPreprocessService = avatarPreprocessService;
+        this.noteappAiClient = noteappAiClient;
+        this.aiProperties = aiProperties;
     }
 
     @Transactional(readOnly = true)
@@ -175,6 +188,67 @@ public class AvatarService {
         return Map.of("avatar", toAvatarMap(avatar));
     }
 
+    /** Produces a preview only. The original remains immutable until the user explicitly applies the result. */
+    @Transactional
+    public Map<String, Object> enhanceAvatar(UUID userId, UUID avatarId) throws IOException {
+        AvatarEntity avatar = requireAvatar(userId, avatarId);
+        if (!aiProperties.isAvatarEnhanceConfigured()) {
+            throw new IllegalStateException("AVATAR_ENHANCEMENT_NOT_CONFIGURED");
+        }
+        if (avatar.getPhotoOriginalPath() == null || avatar.getStatus() == AvatarStatus.VALIDATION_FAILED
+                || avatar.getStatus() == AvatarStatus.REJECTED || avatar.getStatus() == AvatarStatus.DELETED) {
+            throw new IllegalArgumentException("AVATAR_NOT_ELIGIBLE_FOR_ENHANCEMENT");
+        }
+        if (!isEnhancementRecommended(avatar)) {
+            throw new IllegalArgumentException("AVATAR_ENHANCEMENT_NOT_RECOMMENDED");
+        }
+
+        Path source = blobStorage.resolveLocalFile(avatar.getPhotoOriginalPath());
+        byte[] sourceBytes = Files.readAllBytes(source);
+        NoteappAiClient.AvatarEnhancementResult result = noteappAiClient.enhanceAvatar(
+                aiProperties.getAvatarEnhanceNetwork(),
+                visionValidationSubject(userId, avatarId) + ":enhancement",
+                Base64.getEncoder().encodeToString(sourceBytes),
+                contentTypeFromFilename(source.getFileName().toString())
+        );
+        String path = blobStorage.put(
+                BlobKeys.avatarEnhanced(userId, avatarId),
+                new ByteArrayInputStream(result.imageBytes())
+        );
+        avatar.setPhotoEnhancedPath(path);
+        avatar.setUpdatedAt(Instant.now());
+        avatarRepository.save(avatar);
+        return Map.of("avatar", toAvatarMap(avatar));
+    }
+
+    @Transactional
+    public Map<String, Object> applyAvatarEnhancement(UUID userId, UUID avatarId) throws IOException {
+        AvatarEntity avatar = requireAvatar(userId, avatarId);
+        if (avatar.getPhotoEnhancedPath() == null || !blobStorage.exists(avatar.getPhotoEnhancedPath())) {
+            throw new IllegalArgumentException("AVATAR_ENHANCEMENT_NOT_FOUND");
+        }
+        avatar.setUseEnhancedPhoto(true);
+        avatarPreprocessService.preprocess(avatar);
+        avatar.setStatus(AvatarStatus.READY);
+        avatar.setUpdatedAt(Instant.now());
+        avatarRepository.save(avatar);
+        return Map.of("avatar", toAvatarMap(avatar));
+    }
+
+    @Transactional
+    public Map<String, Object> revertAvatarEnhancement(UUID userId, UUID avatarId) throws IOException {
+        AvatarEntity avatar = requireAvatar(userId, avatarId);
+        if (avatar.getPhotoOriginalPath() == null) {
+            throw new IllegalArgumentException("PHOTO_REQUIRED");
+        }
+        avatar.setUseEnhancedPhoto(false);
+        avatarPreprocessService.preprocess(avatar);
+        avatar.setStatus(AvatarStatus.READY);
+        avatar.setUpdatedAt(Instant.now());
+        avatarRepository.save(avatar);
+        return Map.of("avatar", toAvatarMap(avatar));
+    }
+
     @Transactional
     public Map<String, Object> activateAvatar(UUID userId, UUID avatarId) {
         AvatarEntity avatar = requireAvatar(userId, avatarId);
@@ -257,6 +331,11 @@ public class AvatarService {
         if (avatar.getPhotoProcessedPath() != null) {
             map.put("photoProcessedUrl", "/api/v1/avatars/" + avatar.getId() + "/photo?variant=processed");
         }
+        if (avatar.getPhotoEnhancedPath() != null) {
+            map.put("photoEnhancedUrl", "/api/v1/avatars/" + avatar.getId() + "/photo?variant=enhanced");
+        }
+        map.put("useEnhancedPhoto", avatar.isUseEnhancedPhoto());
+        map.put("enhancementRecommended", isEnhancementRecommended(avatar));
         map.put("createdAt", avatar.getCreatedAt().toString());
         map.put("updatedAt", avatar.getUpdatedAt().toString());
         return map;
@@ -283,6 +362,12 @@ public class AvatarService {
             case "image/jpeg", "image/jpg" -> ".jpg";
             default -> ".jpg";
         };
+    }
+
+    private boolean isEnhancementRecommended(AvatarEntity avatar) {
+        return avatarValidationService.deserializeWarnings(avatar.getQualityWarnings())
+                .stream()
+                .anyMatch(ENHANCEABLE_WARNINGS::contains);
     }
 
     /**

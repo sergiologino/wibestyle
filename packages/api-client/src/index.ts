@@ -604,6 +604,24 @@ export class WibeStyleApiClient {
     return this.request<PaginatedResponse<GalleryPost>>(`/api/v1/gallery/posts${query ? `?${query}` : ""}`);
   }
 
+  enhanceAvatar(avatarId: string) {
+    return this.request<{ avatar: AvatarRecord }>(`/api/v1/avatars/${avatarId}/enhance`, {
+      method: "POST",
+    });
+  }
+
+  applyAvatarEnhancement(avatarId: string) {
+    return this.request<{ avatar: AvatarRecord }>(`/api/v1/avatars/${avatarId}/enhancement/apply`, {
+      method: "POST",
+    });
+  }
+
+  revertAvatarEnhancement(avatarId: string) {
+    return this.request<{ avatar: AvatarRecord }>(`/api/v1/avatars/${avatarId}/enhancement/revert`, {
+      method: "POST",
+    });
+  }
+
   listMyGalleryPosts() {
     return this.request<{ items: GalleryPost[] }>("/api/v1/gallery/posts/mine");
   }
