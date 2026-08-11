@@ -86,6 +86,20 @@ function FeaturedAvatarPanel({
   avatar: AvatarRecord;
   accessToken?: string | null;
 }) {
+  const [privacyPreview, setPrivacyPreview] = useState({
+    hideFace: avatar.privacyFaceHidden,
+    hideBackground: avatar.privacyBackgroundHidden,
+    hideFeatures: false,
+  });
+
+  useEffect(() => {
+    setPrivacyPreview({
+      hideFace: avatar.privacyFaceHidden,
+      hideBackground: avatar.privacyBackgroundHidden,
+      hideFeatures: false,
+    });
+  }, [avatar.id, avatar.privacyBackgroundHidden, avatar.privacyFaceHidden]);
+
   return (
     <section className="rounded-[28px] border border-[#f0dce8] bg-gradient-to-br from-white to-[#fff8fd] p-4 shadow-sm">
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -94,10 +108,9 @@ function FeaturedAvatarPanel({
       </div>
       <AvatarPrivacyPreview
         accessToken={accessToken}
-        privacy={{ hideFace: avatar.privacyFaceHidden, hideBackground: avatar.privacyBackgroundHidden, hideFeatures: false }}
+        privacy={privacyPreview}
         remotePhotoPath={avatar.photoProcessedUrl ?? avatar.photoOriginalUrl}
-        showToggles={false}
-        onPrivacyChange={() => undefined}
+        onPrivacyChange={(next) => setPrivacyPreview((current) => ({ ...current, ...next }))}
       />
     </section>
   );

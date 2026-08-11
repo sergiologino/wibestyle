@@ -66,6 +66,12 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain("reserveAvatars.map");
   });
 
+  it("keeps privacy controls visible on the large featured avatar", () => {
+    expect(source).toContain("const [privacyPreview, setPrivacyPreview] = useState");
+    expect(source).toContain("privacy={privacyPreview}");
+    expect(source).toContain("setPrivacyPreview((current) => ({ ...current, ...next }))");
+  });
+
   it("falls back to a large featured avatar after reload when no active flag is present", () => {
     expect(source).toContain("visibleAvatars.find((avatar) => avatar.active)");
     expect(source).toContain("visibleAvatars.find((avatar) => avatar.id === featuredAvatarId)");
