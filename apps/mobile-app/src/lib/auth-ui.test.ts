@@ -7,6 +7,8 @@ describe("mobile auth screen", () => {
     const source = readFileSync(join(process.cwd(), "app", "auth.tsx"), "utf8");
 
     expect(source).toContain("api.startOtp(");
+    expect(source).toContain("api.getCaptcha()");
+    expect(source).toContain("captchaId: captcha.challengeId");
     expect(source).toContain("api.verifyOtp(");
     expect(source).toContain("TextField");
     expect(source).toContain("keyboardType=\"phone-pad\"");

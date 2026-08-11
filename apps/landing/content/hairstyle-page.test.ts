@@ -5,6 +5,8 @@ describe("hairstyle landing page", () => {
   it("clearly marks the feature as coming soon and uses dedicated visual slots", () => {
     const page = getSeoPage("/pricheski");
     expect(page?.badge).toBe("Скоро");
+    expect(page?.visualsCompact).not.toBe(true);
+    expect(page?.visualsTall).toBe(true);
     expect(page?.faq).toContainEqual({ q: "Когда?", a: "В ближайших релизах августа–сентября." });
     expect(page?.visuals).toMatchObject({
       type: "mosaic",

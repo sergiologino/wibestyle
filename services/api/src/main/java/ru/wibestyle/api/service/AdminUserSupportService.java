@@ -170,6 +170,10 @@ public class AdminUserSupportService {
             map.put("adminProcessedPhotoUrl",
                     "/api/v1/admin/users/" + userId + "/avatars/" + avatar.getId() + "/photo?variant=processed");
         }
+        if (avatar.getPhotoEnhancedPath() != null) {
+            map.put("adminEnhancedPhotoUrl",
+                    "/api/v1/admin/users/" + userId + "/avatars/" + avatar.getId() + "/photo?variant=enhanced");
+        }
         return map;
     }
 

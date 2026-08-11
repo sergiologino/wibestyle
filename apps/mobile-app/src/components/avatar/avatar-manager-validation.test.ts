@@ -8,6 +8,7 @@ describe("mobile avatar manager validation", () => {
   it("shows guidance for a rejected photo and requires a fresh selection", () => {
     expect(source).toContain('validation.recommendedAction === "replace_photo"');
     expect(source).toContain("setAvatarGuidance");
+    expect(source).not.toContain("await api.deleteAvatar(avatar.id).catch(() => undefined)");
     expect(source).toContain("setNewPhoto(null)");
     expect(source).toContain("setPreviewUri(null)");
   });
@@ -20,5 +21,12 @@ describe("mobile avatar manager validation", () => {
   it("covers the selected photo with an explicit processing state", () => {
     expect(source).toContain("styles.processingOverlay");
     expect(source).toContain("Идёт проверка корректности фото для аватара…");
+  });
+
+  it("offers an explicit reversible before-and-after enhancement choice", () => {
+    expect(source).toContain("api.enhanceAvatar(avatarId)");
+    expect(source).toContain("api.applyAvatarEnhancement(enhancementAvatar.id)");
+    expect(source).toContain("api.revertAvatarEnhancement(enhancementAvatar.id)");
+    expect(source).toContain("Сравните варианты");
   });
 });

@@ -27,6 +27,8 @@ export type SeoPageContent = PageSeo & {
   visuals?: PageVisuals;
   /** Крупные плитки мозаики: каждое фото ~2/3 высоты экрана */
   visualsCompact?: boolean;
+  /** Высокие плитки мозаики для двух крупных примерочных кадров */
+  visualsTall?: boolean;
   showProductFeatures?: boolean;
   template?: SeoPageTemplate;
   badge?: string;
@@ -298,6 +300,7 @@ export const seoPages: SeoPageContent[] = [
     badge: "Скоро",
     intro: "Укладка, длина, чёлка и цвет — вместе с одеждой и макияжем.",
     visuals: { type: "mosaic", images: [imageSlots.hairstylePreview1, imageSlots.hairstylePreview2] },
+    visualsTall: true,
     sections: [{ title: "Причёска под образ", body: "Одно платье — разные укладки, разное настроение." }],
     faq: [{ q: "Когда?", a: "В ближайших релизах августа–сентября." }],
   },

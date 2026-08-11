@@ -43,10 +43,10 @@ export default function EditorialSeoPage({ page, interest = "clothing" }: Props)
 
       {page.visuals ? (
         <section
-          className={`seo-visual-band${page.visualsCompact ? " seo-visual-band--compact-mosaic" : ""}`}
+          className={`seo-visual-band${page.visualsCompact ? " seo-visual-band--compact-mosaic" : ""}${page.visualsTall ? " seo-visual-band--tall-mosaic" : ""}`}
         >
           <div className="container-wide">
-            <SeoVisuals visuals={page.visuals} compact={page.visualsCompact} />
+            <SeoVisuals visuals={page.visuals} compact={page.visualsCompact} tall={page.visualsTall} />
           </div>
         </section>
       ) : null}

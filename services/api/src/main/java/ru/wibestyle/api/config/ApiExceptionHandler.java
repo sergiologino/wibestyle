@@ -182,6 +182,9 @@ public class ApiExceptionHandler {
             case "DELETE_CONFIRM_REQUIRED" -> "Для удаления аккаунта передайте confirm=DELETE";
             case "LAST_AVATAR_CANNOT_DELETE" -> "Нельзя удалить единственный аватар пользователя";
             case "AVATAR_LIMIT_REACHED" -> "Можно хранить не больше 3 avatar. Удалите один, чтобы добавить новый.";
+            case "AVATAR_ENHANCEMENT_NOT_CONFIGURED" -> "Улучшение фото временно не настроено";
+            case "AVATAR_ENHANCEMENT_NOT_RECOMMENDED" -> "Для этого фото улучшение не требуется";
+            case "AVATAR_ENHANCEMENT_FAILED" -> "Не удалось улучшить фото. Попробуйте ещё раз или загрузите другой кадр";
             case "ACCOUNT_DELETE_FAILED" -> "Не удалось удалить данные аккаунта";
             case "REPORT_REASON_INVALID" -> "Неверная причина жалобы";
             case "FILE_TOO_LARGE" -> "Файл слишком большой";

@@ -33,21 +33,24 @@ public class AvatarQualityAnalyzer {
             "HEAD_ONLY",
             "BODY_TOO_SMALL",
             "SIDEWAYS_OR_UPSIDE_DOWN",
-            "LOW_DETAIL"
+            "LOW_RESOLUTION"
     );
 
     private final ObjectMapper objectMapper;
     private final AiIntegrationProperties aiProperties;
     private final NoteappAiClient noteappAiClient;
+    private final AiPromptTemplateService promptTemplateService;
 
     public AvatarQualityAnalyzer(
             ObjectMapper objectMapper,
             AiIntegrationProperties aiProperties,
-            NoteappAiClient noteappAiClient
+            NoteappAiClient noteappAiClient,
+            AiPromptTemplateService promptTemplateService
     ) {
         this.objectMapper = objectMapper;
         this.aiProperties = aiProperties;
         this.noteappAiClient = noteappAiClient;
+        this.promptTemplateService = promptTemplateService;
     }
 
     public AvatarQualityAssessment analyze(
@@ -60,7 +63,7 @@ public class AvatarQualityAnalyzer {
         ImageStats stats = inspectImage(photo);
         if (stats.readable()) {
             if (stats.width() < 600 || stats.height() < 800) {
-                warnings.add("LOW_DETAIL");
+                warnings.add("LOW_RESOLUTION");
             }
             double ratio = stats.width() / (double) stats.height();
             if (ratio > 1.05) {
@@ -69,13 +72,13 @@ public class AvatarQualityAnalyzer {
             if (ratio < 0.35 || ratio > 1.35) {
                 warnings.add("UNUSUAL_CROP");
             }
-        } else {
-            warnings.add("LOW_DETAIL");
         }
 
         AvatarQualityAssessment aiAssessment = analyzeWithVision(externalUserId, photo, contentType);
         if (aiAssessment != null) {
             warnings.addAll(aiAssessment.warnings());
+        } else if (!stats.readable()) {
+            warnings.add("LOW_RESOLUTION");
         }
 
         List<String> warningList = List.copyOf(warnings);
@@ -110,13 +113,13 @@ public class AvatarQualityAnalyzer {
                     You are a strict but supportive virtual try-on avatar photo QA assistant.
                     Return only compact JSON. Never include markdown.
                     """;
-            String user = """
-                    Analyze whether this image is suitable as a private avatar for a virtual clothing try-on app.
-                    Requirements: exactly one real person, visible full body or at least from head to knees, person should occupy most of the frame, upright orientation, not only a head/portrait, not a tiny figure in a landscape, not multiple people, reasonable lighting.
-                    This is an independent validation request for image fingerprint %s. Analyze only the image attached to this request; do not reuse any conclusion from another image.
-                    Return JSON:
-                    {"quality":"good|usable|needs_new_photo","warnings":["NO_PERSON|MULTIPLE_PEOPLE|HEAD_ONLY|BODY_TOO_SMALL|BUSY_BACKGROUND|SIDEWAYS_OR_UPSIDE_DOWN|POOR_LIGHTING|LOW_DETAIL"],"message":"one short Russian user-facing sentence, supportive tone, no words bad/poor/rejected"}
-                    """.formatted(photoFingerprint);
+            String promptTemplate = promptTemplateService == null
+                    ? defaultAvatarQualityPrompt()
+                    : promptTemplateService.getBodyOrDefault(
+                            AiPromptTemplateService.AVATAR_QUALITY_ANALYSIS_KEY,
+                            defaultAvatarQualityPrompt()
+                    );
+            String user = promptTemplate.replace("{photoFingerprint}", photoFingerprint);
             String raw = noteappAiClient.generateVisionChatText(
                     aiProperties.getSizeComplimentNetwork(),
                     externalUserId,
@@ -136,7 +139,9 @@ public class AvatarQualityAnalyzer {
                     }
                 }
             }
-            boolean blocking = "needs_new_photo".equalsIgnoreCase(json.path("quality").asText(""));
+            // The returned severity can be overly conservative for a recoverable
+            // lighting/detail issue; hard rejection is decided from warning codes.
+            boolean blocking = false;
             String message = json.path("message").asText(null);
             if (message == null || message.isBlank()) {
                 message = buildUserMessage(warnings, blocking);
@@ -174,7 +179,7 @@ public class AvatarQualityAnalyzer {
         String value = raw.trim().toUpperCase(Locale.ROOT);
         return switch (value) {
             case "NO_PERSON", "MULTIPLE_PEOPLE", "HEAD_ONLY", "BODY_TOO_SMALL", "BUSY_BACKGROUND",
-                    "SIDEWAYS_OR_UPSIDE_DOWN", "POOR_LIGHTING", "LOW_DETAIL", "LANDSCAPE_FRAME", "UNUSUAL_CROP" -> value;
+                    "SIDEWAYS_OR_UPSIDE_DOWN", "POOR_LIGHTING", "LOW_DETAIL", "LOW_RESOLUTION", "LANDSCAPE_FRAME", "UNUSUAL_CROP" -> value;
             default -> null;
         };
     }
@@ -243,6 +248,18 @@ public class AvatarQualityAnalyzer {
             return "Фото не добавлено: изображение недостаточно чёткое для примерки.";
         }
         return "Фото не добавлено: этот кадр не подходит для примерки.";
+    }
+
+    static String defaultAvatarQualityPrompt() {
+        return """
+                Analyze whether this image is suitable as a private avatar for a virtual clothing try-on app.
+                Requirements: exactly one real person, visible full body or at least from head to knees, person should occupy a useful part of the frame, upright orientation, not only a head/portrait, not a tiny figure in a landscape, not multiple people.
+                Return needs_new_photo only for no person, multiple people, head-only crop, tiny body, wrong orientation, or objectively too-low image resolution.
+                Important: a busy garden/nature/city/home background, patterned clothing, colorful dress, imperfect lighting, mild softness, or mild lack of detail is recoverable. For those cases return usable with warnings, not needs_new_photo; the app can improve the photo after upload.
+                This is an independent validation request for image fingerprint {photoFingerprint}. Analyze only the image attached to this request; do not reuse any conclusion from another image.
+                Return JSON:
+                {"quality":"good|usable|needs_new_photo","warnings":["NO_PERSON|MULTIPLE_PEOPLE|HEAD_ONLY|BODY_TOO_SMALL|BUSY_BACKGROUND|SIDEWAYS_OR_UPSIDE_DOWN|POOR_LIGHTING|LOW_DETAIL"],"message":"one short Russian user-facing sentence, supportive tone, no words bad/poor/rejected"}
+                """;
     }
 
     private record ImageStats(int width, int height, boolean readable) {

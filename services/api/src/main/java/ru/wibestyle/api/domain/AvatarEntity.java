@@ -33,6 +33,12 @@ public class AvatarEntity {
     @Column(name = "photo_processed_path", length = 512)
     private String photoProcessedPath;
 
+    @Column(name = "photo_enhanced_path", length = 512)
+    private String photoEnhancedPath;
+
+    @Column(name = "use_enhanced_photo", nullable = false)
+    private boolean useEnhancedPhoto = false;
+
     @Column(name = "quality_score")
     private Double qualityScore;
 
@@ -123,6 +129,22 @@ public class AvatarEntity {
 
     public void setPhotoProcessedPath(String photoProcessedPath) {
         this.photoProcessedPath = photoProcessedPath;
+    }
+
+    public String getPhotoEnhancedPath() {
+        return photoEnhancedPath;
+    }
+
+    public void setPhotoEnhancedPath(String photoEnhancedPath) {
+        this.photoEnhancedPath = photoEnhancedPath;
+    }
+
+    public boolean isUseEnhancedPhoto() {
+        return useEnhancedPhoto;
+    }
+
+    public void setUseEnhancedPhoto(boolean useEnhancedPhoto) {
+        this.useEnhancedPhoto = useEnhancedPhoto;
     }
 
     public Double getQualityScore() {

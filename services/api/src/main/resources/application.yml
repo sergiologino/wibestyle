@@ -79,6 +79,7 @@ wibestyle:
       client-secret: ${WIBESTYLE_OAUTH_GOOGLE_CLIENT_SECRET:}
   security:
     rate-limit-enabled: true
+    otp-captcha-enabled: ${WIBESTYLE_OTP_CAPTCHA_ENABLED:true}
     otp-start-per-minute: 10
     media-access-ttl-seconds: 900
     max-upload-bytes: 10485760
@@ -137,6 +138,7 @@ wibestyle:
     virtual-try-on-network: ${WIBESTYLE_AI_TRYON_NETWORK:wibestyle-vton}
     season-video-network: ${WIBESTYLE_AI_SEASON_VIDEO_NETWORK:wibestyle-season-video}
     size-compliment-network: ${WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK:openai-gpt4o-mini}
+    avatar-enhance-network: ${WIBESTYLE_AI_AVATAR_ENHANCE_NETWORK:wibestyle-avatar-enhance}
     webhook-secret: ${WIBESTYLE_AI_WEBHOOK_SECRET:}
 
 management:

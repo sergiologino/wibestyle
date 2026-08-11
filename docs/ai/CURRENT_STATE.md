@@ -1,5 +1,14 @@
 # Current State
 
+## Recoverable avatar-quality warnings (2026-08-10)
+- A vision-model `LOW_DETAIL` judgment is now recoverable rather than a hard rejection. Only objectively undersized sources (`LOW_RESOLUTION`) and unsuitable subject/composition warnings reject an avatar.
+- Natural or busy backgrounds, patterned clothing, mild softness and lighting issues lead to opt-in enhancement instead of forcing a new upload.
+
+## Reversible avatar enhancement (2026-08-10)
+- `wibestyle-avatar-enhance` is registered in noteapp as a dedicated `image_edit` network using `gpt-image-1.5`, `input_fidelity: high`, and the existing encrypted OpenAI credential from `openai-gpt4o-mini`; the migration never contains a plaintext secret.
+- WibeStyle stores the generated enhancement separately from the immutable original. The user explicitly compares the original and enhanced images before applying it; reverting re-runs the privacy-processing pipeline from the original without uploading again.
+- Web and Android expose the same opt-in action for eligible warning states (`POOR_LIGHTING` and `BUSY_BACKGROUND`), before/after preview, apply and revert controls. A production smoke test remains after both Flyway migrations are deployed.
+
 ## Recurring-payment disclosure (2026-08-09)
 - `/terms` now contains a dedicated recurring-payment section: separate consent, saved payment method, monthly/annual cadence, next-charge price, three-day in-app warning, self-service cancellation, and the bounded failed-charge flow. `WIBESTYLE_YOOKASSA_RECURRING_ENABLED` remains disabled until YooKassa confirms production eligibility.
 

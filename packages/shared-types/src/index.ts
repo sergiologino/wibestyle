@@ -330,6 +330,9 @@ export type AvatarRecord = {
   pipelineVersion?: string;
   photoOriginalUrl?: string;
   photoProcessedUrl?: string;
+  photoEnhancedUrl?: string;
+  useEnhancedPhoto?: boolean;
+  enhancementRecommended?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };

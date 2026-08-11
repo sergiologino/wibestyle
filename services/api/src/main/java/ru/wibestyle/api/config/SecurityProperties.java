@@ -7,6 +7,7 @@ public class SecurityProperties {
 
     private boolean rateLimitEnabled = true;
     private int otpStartPerMinute = 10;
+    private boolean otpCaptchaEnabled = true;
     private int mediaAccessTtlSeconds = 900;
     private long maxUploadBytes = 10 * 1024 * 1024;
 
@@ -25,6 +26,9 @@ public class SecurityProperties {
     public void setOtpStartPerMinute(int otpStartPerMinute) {
         this.otpStartPerMinute = otpStartPerMinute;
     }
+
+    public boolean isOtpCaptchaEnabled() { return otpCaptchaEnabled; }
+    public void setOtpCaptchaEnabled(boolean otpCaptchaEnabled) { this.otpCaptchaEnabled = otpCaptchaEnabled; }
 
     public int getMediaAccessTtlSeconds() {
         return mediaAccessTtlSeconds;

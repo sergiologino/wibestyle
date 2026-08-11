@@ -22,6 +22,7 @@ type AvatarPrivacyPreviewProps = {
   onPrivacyChange: (next: Partial<PrivacyState>) => void;
   showToggles?: boolean;
   processing?: boolean;
+  processingLabel?: string;
   /** Lets the visual avatar area open the same file picker as the explicit control. */
   onSelectPhoto?: () => void;
   /** Rendered immediately below the image, before privacy controls on narrow screens. */
@@ -43,6 +44,7 @@ export default function AvatarPrivacyPreview({
   onPrivacyChange,
   showToggles = true,
   processing = false,
+  processingLabel = "Идёт проверка корректности фото для аватара…",
   onSelectPhoto,
   primaryAction,
 }: AvatarPrivacyPreviewProps) {
@@ -113,7 +115,7 @@ export default function AvatarPrivacyPreview({
           <div aria-live="polite" className="absolute inset-0 z-10 flex items-center justify-center bg-[#302637]/45 p-5">
             <div className="flex max-w-xs items-center gap-3 rounded-2xl border border-white/35 bg-white/95 px-4 py-3 text-sm font-medium text-[#302637] shadow-xl">
               <span aria-hidden className="size-5 shrink-0 animate-spin rounded-full border-2 border-[#ff1fa2]/25 border-t-[#ff1fa2]" />
-              <span>Идёт проверка корректности фото для аватара…</span>
+              <span>{processingLabel}</span>
             </div>
           </div>
         ) : null}

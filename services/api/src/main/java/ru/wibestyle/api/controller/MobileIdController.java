@@ -10,6 +10,7 @@ import ru.wibestyle.api.dto.MobileIdTokenRequest;
 import ru.wibestyle.api.dto.MobileIdVerifyRequest;
 import ru.wibestyle.api.dto.MobileIdExchangeRequest;
 import ru.wibestyle.api.service.AuthService;
+import ru.wibestyle.api.service.CaptchaService;
 import ru.wibestyle.api.service.MobileIdClient;
 import ru.wibestyle.api.service.MobileIdHandoffService;
 import ru.wibestyle.api.support.AuthResponseSupport;
@@ -22,15 +23,18 @@ public class MobileIdController {
     private final MobileIdClient mobileIdClient;
     private final AuthService authService;
     private final MobileIdHandoffService handoffService;
+    private final CaptchaService captchaService;
 
     public MobileIdController(
             MobileIdClient mobileIdClient,
             AuthService authService,
-            MobileIdHandoffService handoffService
+            MobileIdHandoffService handoffService,
+            CaptchaService captchaService
     ) {
         this.mobileIdClient = mobileIdClient;
         this.authService = authService;
         this.handoffService = handoffService;
+        this.captchaService = captchaService;
     }
 
     @GetMapping("/status")
@@ -39,8 +43,20 @@ public class MobileIdController {
     }
 
     @PostMapping("/token")
-    public Map<String, String> token(@Valid @RequestBody MobileIdTokenRequest request) {
+    public Map<String, String> token(
+            @Valid @RequestBody MobileIdTokenRequest request,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String captchaId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String captchaAnswer
+    ) {
+        captchaService.verifyOtpCaptcha(
+                firstNonBlank(request.captchaId(), captchaId),
+                firstNonBlank(request.captchaAnswer(), captchaAnswer)
+        );
         return Map.of("token", mobileIdClient.createInitToken(request.fingerprintHash()));
+    }
+
+    private static String firstNonBlank(String left, String right) {
+        return left != null && !left.isBlank() ? left : right;
     }
 
     @PostMapping("/siteverify")

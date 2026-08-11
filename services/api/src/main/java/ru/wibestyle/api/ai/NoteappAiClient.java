@@ -140,6 +140,65 @@ public class NoteappAiClient {
         throw new RestClientException("No text in vision chat response");
     }
 
+    public AvatarEnhancementResult enhanceAvatar(
+            String networkName,
+            String externalUserId,
+            String imageBase64,
+            String mimeType
+    ) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("imageBase64", imageBase64);
+        payload.put("imageContentType", mimeType == null || mimeType.isBlank() ? "image/jpeg" : mimeType);
+        payload.put("quality", "medium");
+        payload.put("output_format", "jpeg");
+        payload.put("input_fidelity", "high");
+        payload.put("settings", Map.of("width", 1024, "height", 1536));
+        payload.put("prompt", "Create an improved private virtual try-on avatar reference from this photo. Preserve exactly the person's identity, face, hair, skin tone, body shape, proportions, pose, camera angle, and framing. Improve lighting, reduce noise, improve sharpness, and make the background less distracting. Replace the current outfit with a clean, form-fitting athletic outfit suitable for body-contour detection: long leggings and a fitted long-sleeve or short-sleeve top, modest, opaque, no logos, no busy patterns, no loose fabric. Choose outfit colors that clearly contrast with the background and skin while still looking natural: for dark green/nature/garden backgrounds prefer light neutral colors such as off-white, light beige, pale gray, or soft cream; for light backgrounds choose a medium saturated color such as muted blue, teal, burgundy, or gray, but never pure black. Keep shoes simple and light/neutral if visible. Do not slim, beautify, age, reshape, retouch facial features, change posture, change body proportions, or change the person's silhouette except for replacing clothing with the described fitted athletic outfit.");
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", requireExternalUserId(externalUserId));
+        body.put("networkName", networkName);
+        body.put("requestType", "image_edit");
+        body.put("payload", payload);
+
+        JsonNode response = restClient.post()
+                .uri("/api/ai/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-API-Key", properties.getApiKey())
+                .header("Cache-Control", "no-store")
+                .body(body)
+                .retrieve()
+                .body(JsonNode.class);
+        if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
+            throw new RestClientException(extractErrorMessage(response, "Avatar enhancement failed"));
+        }
+        String networkUsed = response.path("networkUsed").asText(null);
+        if (isUnexpectedNetwork(networkName, networkUsed)) {
+            throw new RestClientException("Avatar enhancement provider mismatch");
+        }
+        ImageResult image = extractImageResult(response.path("response"));
+        byte[] imageBytes = image == null ? null : image.bytes();
+        if ((imageBytes == null || imageBytes.length == 0) && image != null && image.sourceUrl() != null) {
+            imageBytes = downloadImageBytes(image.sourceUrl());
+        }
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new RestClientException("Avatar enhancement returned no image");
+        }
+        return new AvatarEnhancementResult(imageBytes, response.path("response").path("imageContentType").asText("image/jpeg"));
+    }
+
+    private byte[] downloadImageBytes(String imageUrl) {
+        try {
+            return RestClient.create()
+                    .get()
+                    .uri(imageUrl)
+                    .retrieve()
+                    .body(byte[].class);
+        } catch (RestClientException ex) {
+            throw new RestClientException("Avatar enhancement image download failed", ex);
+        }
+    }
+
     private static String requireExternalUserId(String externalUserId) {
         if (externalUserId == null || externalUserId.isBlank()) {
             throw new IllegalArgumentException("NOTEAPP_EXTERNAL_USER_ID_REQUIRED");
@@ -776,6 +835,9 @@ public class NoteappAiClient {
         public static ProcessResult failed(String errorCode, String errorMessage) {
             return failure(errorCode, errorMessage);
         }
+    }
+
+    public record AvatarEnhancementResult(byte[] imageBytes, String contentType) {
     }
 
     public record VideoProcessResult(

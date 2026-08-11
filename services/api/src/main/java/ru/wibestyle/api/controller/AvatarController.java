@@ -80,7 +80,11 @@ public class AvatarController {
     ) throws IOException {
         UUID userId = requireUserId(authorization);
         AvatarEntity avatar = avatarService.requireAvatar(userId, avatarId);
-        String storedPath = "original".equals(variant) ? avatar.getPhotoOriginalPath() : avatar.getPhotoProcessedPath();
+        String storedPath = switch (variant) {
+            case "original" -> avatar.getPhotoOriginalPath();
+            case "enhanced" -> avatar.getPhotoEnhancedPath();
+            default -> avatar.getPhotoProcessedPath();
+        };
         if (storedPath == null || !blobStorage.exists(storedPath)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found");
         }
@@ -109,6 +113,30 @@ public class AvatarController {
             @PathVariable UUID avatarId
     ) throws IOException {
         return avatarService.preprocessAvatar(requireUserId(authorization), avatarId);
+    }
+
+    @PostMapping("/{avatarId}/enhance")
+    public Map<String, Object> enhanceAvatar(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID avatarId
+    ) throws IOException {
+        return avatarService.enhanceAvatar(requireUserId(authorization), avatarId);
+    }
+
+    @PostMapping("/{avatarId}/enhancement/apply")
+    public Map<String, Object> applyAvatarEnhancement(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID avatarId
+    ) throws IOException {
+        return avatarService.applyAvatarEnhancement(requireUserId(authorization), avatarId);
+    }
+
+    @PostMapping("/{avatarId}/enhancement/revert")
+    public Map<String, Object> revertAvatarEnhancement(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID avatarId
+    ) throws IOException {
+        return avatarService.revertAvatarEnhancement(requireUserId(authorization), avatarId);
     }
 
     @PostMapping("/{avatarId}/activate")

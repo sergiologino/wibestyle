@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card } from "@wibestyle/ui";
+import { Button, Card } from "@wibestyle/ui";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import { promoErrorMessage, validatePromoCodeInput } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
@@ -14,6 +14,7 @@ import {
   mobileIdTheme,
   type MobileIdWidgetInstance,
 } from "@/lib/mobile-id-widget";
+import MathCaptchaField from "@/components/auth/MathCaptchaField";
 
 export default function OtpForm() {
   const router = useRouter();
@@ -23,6 +24,10 @@ export default function OtpForm() {
   const widgetRef = useRef<MobileIdWidgetInstance | null>(null);
   const promoRef = useRef("");
   const [promoCode, setPromoCode] = useState("");
+  const [captchaId, setCaptchaId] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [mobileIdCaptcha, setMobileIdCaptcha] = useState<{ id: string; answer: string } | null>(null);
+  const [phoneSelected, setPhoneSelected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,14 +39,24 @@ export default function OtpForm() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (!mobileIdCaptcha) {
+      setLoading(false);
+      return;
+    }
     let active = true;
+    setLoading(true);
     void api.getMobileIdStatus().then(async ({ enabled }) => {
       if (!active) return;
       if (!enabled) throw new Error("Вход по телефону временно не настроен");
       const Widget = await loadMobileIdWidget();
       if (!active || !widgetHost.current) return;
+      widgetHost.current.replaceChildren();
+      const tokenParams = new URLSearchParams({
+        captchaId: mobileIdCaptcha.id,
+        captchaAnswer: mobileIdCaptcha.answer,
+      });
       widgetRef.current = new Widget({
-        tokenUrl: `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1/auth/mobile-id/token`,
+        tokenUrl: `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1/auth/mobile-id/token?${tokenParams.toString()}`,
         resultView: "phone",
         theme: mobileIdTheme,
         onVerified: async ({ session_id, verify_token }) => {
@@ -107,7 +122,7 @@ export default function OtpForm() {
       widgetRef.current?.destroy();
       widgetRef.current = null;
     };
-  }, [api, router, searchParams, setAuth]);
+  }, [api, router, searchParams, setAuth, mobileIdCaptcha]);
 
   return (
     <Card>
@@ -127,6 +142,47 @@ export default function OtpForm() {
         autoCapitalize="characters"
         spellCheck={false}
       />
+      {!phoneSelected ? (
+        <Button
+          className="mt-4 w-full"
+          type="button"
+          onClick={() => {
+            setError(null);
+            setPhoneSelected(true);
+          }}
+        >
+          Войти по телефону
+        </Button>
+      ) : (
+        <>
+          <div className="mt-4">
+            <MathCaptchaField
+              api={api}
+              captchaId={captchaId}
+              captchaAnswer={captchaAnswer}
+              onCaptchaIdChange={(value) => {
+                setCaptchaId(value);
+                setMobileIdCaptcha(null);
+              }}
+              onCaptchaAnswerChange={(value) => {
+                setCaptchaAnswer(value);
+                setMobileIdCaptcha(null);
+              }}
+            />
+          </div>
+          <Button
+            className="mt-3 w-full"
+            disabled={!captchaId || !captchaAnswer.trim() || loading}
+            type="button"
+            onClick={() => {
+              setError(null);
+              setMobileIdCaptcha({ id: captchaId, answer: captchaAnswer.trim() });
+            }}
+          >
+            Продолжить вход
+          </Button>
+        </>
+      )}
       {loading ? <p className="mt-4 text-sm text-[#9a8f99]">Подключаем безопасный вход…</p> : null}
       <div className="mt-4 min-h-40" ref={widgetHost} />
       {error ? <p className="mt-3 font-normal text-[#ff1fa2]">{error}</p> : null}

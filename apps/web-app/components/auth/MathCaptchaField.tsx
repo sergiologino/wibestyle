@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@wibestyle/ui";
 import { WibeStyleApiClient } from "@wibestyle/api-client";
 
@@ -26,18 +26,25 @@ export default function MathCaptchaField({
 }: MathCaptchaFieldProps) {
   const [captcha, setCaptcha] = useState<CaptchaState | null>(null);
   const [loading, setLoading] = useState(false);
+  const onCaptchaIdChangeRef = useRef(onCaptchaIdChange);
+  const onCaptchaAnswerChangeRef = useRef(onCaptchaAnswerChange);
+
+  useEffect(() => {
+    onCaptchaIdChangeRef.current = onCaptchaIdChange;
+    onCaptchaAnswerChangeRef.current = onCaptchaAnswerChange;
+  }, [onCaptchaAnswerChange, onCaptchaIdChange]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const next = await api.getCaptcha();
       setCaptcha({ challengeId: next.challengeId, question: next.question });
-      onCaptchaIdChange(next.challengeId);
-      onCaptchaAnswerChange("");
+      onCaptchaIdChangeRef.current(next.challengeId);
+      onCaptchaAnswerChangeRef.current("");
     } finally {
       setLoading(false);
     }
-  }, [api, onCaptchaAnswerChange, onCaptchaIdChange]);
+  }, [api]);
 
   useEffect(() => {
     void refresh();
@@ -49,7 +56,7 @@ export default function MathCaptchaField({
       <p className="mt-1 text-xs font-bold text-[#6d6273]">Решите простой пример — так мы отличаем людей от ботов.</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <input
-          className="w-24 rounded-xl border border-[#ffd1ed] px-3 py-2 font-black outline-none focus:border-[#ff1fa2]"
+          className="w-24 rounded-xl border border-[#ffd1ed] bg-white px-3 py-2 font-normal text-[#302637] outline-none placeholder:font-normal placeholder:text-[#c8bcc8] focus:border-[#ff1fa2]"
           inputMode="numeric"
           placeholder="Ответ"
           value={captchaAnswer}

@@ -299,10 +299,10 @@ export class WibeStyleApiClient {
     });
   }
 
-  startOtp(phone: string) {
+  startOtp(phone: string, captcha?: { captchaId: string; captchaAnswer: string }) {
     return this.request<{ requestId: string; expiresIn: number; resendIn: number }>("/api/v1/auth/otp/start", {
       method: "POST",
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, captchaId: captcha?.captchaId, captchaAnswer: captcha?.captchaAnswer }),
     });
   }
 
@@ -602,6 +602,24 @@ export class WibeStyleApiClient {
     if (options?.cursor) params.set("cursor", options.cursor);
     const query = params.toString();
     return this.request<PaginatedResponse<GalleryPost>>(`/api/v1/gallery/posts${query ? `?${query}` : ""}`);
+  }
+
+  enhanceAvatar(avatarId: string) {
+    return this.request<{ avatar: AvatarRecord }>(`/api/v1/avatars/${avatarId}/enhance`, {
+      method: "POST",
+    });
+  }
+
+  applyAvatarEnhancement(avatarId: string) {
+    return this.request<{ avatar: AvatarRecord }>(`/api/v1/avatars/${avatarId}/enhancement/apply`, {
+      method: "POST",
+    });
+  }
+
+  revertAvatarEnhancement(avatarId: string) {
+    return this.request<{ avatar: AvatarRecord }>(`/api/v1/avatars/${avatarId}/enhancement/revert`, {
+      method: "POST",
+    });
   }
 
   listMyGalleryPosts() {
@@ -1112,6 +1130,9 @@ export class WibeStyleApiClient {
         displayName?: string;
         primaryAuth?: string;
         activeAvatarPhotoUrl?: string;
+        avatarUploadAttempts?: number;
+        avatarFailedAttempts?: number;
+        lastFailedAvatarPhotoUrl?: string;
         devices?: Array<{
           deviceHash: string;
           deviceHashShort: string;
@@ -1179,6 +1200,7 @@ export class WibeStyleApiClient {
           createdAt: string;
           adminOriginalPhotoUrl?: string;
           adminProcessedPhotoUrl?: string;
+          adminEnhancedPhotoUrl?: string;
         }>;
       };
       tryOnSessions: {

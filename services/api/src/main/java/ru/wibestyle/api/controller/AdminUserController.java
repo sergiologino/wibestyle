@@ -161,7 +161,11 @@ public class AdminUserController {
         requireManageUsers(adminKey, authorization);
         try {
             AvatarEntity avatar = adminUserSupportService.requireAvatar(userId, avatarId);
-            String storedPath = "original".equals(variant) ? avatar.getPhotoOriginalPath() : avatar.getPhotoProcessedPath();
+            String storedPath = switch (variant) {
+                case "original" -> avatar.getPhotoOriginalPath();
+                case "enhanced" -> avatar.getPhotoEnhancedPath();
+                default -> avatar.getPhotoProcessedPath();
+            };
             return serveStoredFile(storedPath);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);

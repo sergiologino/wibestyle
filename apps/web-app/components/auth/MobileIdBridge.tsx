@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Card } from "@wibestyle/ui";
+import { Button, Card } from "@wibestyle/ui";
 import { ApiError, WibeStyleApiClient } from "@wibestyle/api-client";
 import {
   loadMobileIdWidget,
   mobileIdTheme,
   type MobileIdWidgetInstance,
 } from "@/lib/mobile-id-widget";
+import MathCaptchaField from "@/components/auth/MathCaptchaField";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const MOBILE_CALLBACK = "wibestyle://auth/mobile-id/callback";
@@ -17,22 +18,31 @@ export default function MobileIdBridge() {
   const searchParams = useSearchParams();
   const host = useRef<HTMLDivElement>(null);
   const widget = useRef<MobileIdWidgetInstance | null>(null);
+  const api = useMemo(() => new WibeStyleApiClient({ baseUrl: API_URL }), []);
+  const [captchaId, setCaptchaId] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [mobileIdCaptcha, setMobileIdCaptcha] = useState<{ id: string; answer: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!mobileIdCaptcha) return;
     let active = true;
     const returnUrl = searchParams.get("returnUrl");
     if (!returnUrl || !returnUrl.startsWith(MOBILE_CALLBACK)) {
       setError("Некорректный адрес возврата в приложение");
       return;
     }
-    const api = new WibeStyleApiClient({ baseUrl: API_URL });
     void api.getMobileIdStatus().then(async ({ enabled }) => {
       if (!enabled) throw new Error("Вход по телефону временно не настроен");
       const Widget = await loadMobileIdWidget();
       if (!active || !host.current) return;
+      host.current.replaceChildren();
+      const tokenParams = new URLSearchParams({
+        captchaId: mobileIdCaptcha.id,
+        captchaAnswer: mobileIdCaptcha.answer,
+      });
       widget.current = new Widget({
-        tokenUrl: `${API_URL}/api/v1/auth/mobile-id/token`,
+        tokenUrl: `${API_URL}/api/v1/auth/mobile-id/token?${tokenParams.toString()}`,
         resultView: "phone",
         theme: mobileIdTheme,
         onVerified: async ({ session_id, verify_token }) => {
@@ -63,13 +73,39 @@ export default function MobileIdBridge() {
       widget.current?.destroy();
       widget.current = null;
     };
-  }, [searchParams]);
+  }, [api, searchParams, mobileIdCaptcha]);
 
   return (
     <Card className="w-full">
       <p className="text-eyebrow">Безопасный вход</p>
       <h1 className="mt-3 text-3xl font-bold">Подтвердите номер</h1>
       <p className="mt-2 text-sm text-[#6f656d]">После подтверждения вы автоматически вернётесь в приложение.</p>
+      <div className="mt-4">
+        <MathCaptchaField
+          api={api}
+          captchaId={captchaId}
+          captchaAnswer={captchaAnswer}
+          onCaptchaIdChange={(value) => {
+            setCaptchaId(value);
+            setMobileIdCaptcha(null);
+          }}
+          onCaptchaAnswerChange={(value) => {
+            setCaptchaAnswer(value);
+            setMobileIdCaptcha(null);
+          }}
+        />
+      </div>
+      <Button
+        className="mt-3 w-full"
+        disabled={!captchaId || !captchaAnswer.trim()}
+        type="button"
+        onClick={() => {
+          setError(null);
+          setMobileIdCaptcha({ id: captchaId, answer: captchaAnswer.trim() });
+        }}
+      >
+        Продолжить вход
+      </Button>
       <div className="mt-6 min-h-48" ref={host} />
       {error ? <p className="mt-3 text-sm text-[#ff1fa2]">{error}</p> : null}
     </Card>

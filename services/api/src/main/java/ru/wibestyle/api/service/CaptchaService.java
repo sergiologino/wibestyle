@@ -41,9 +41,6 @@ public class CaptchaService {
     }
 
     public void verify(String challengeId, String answerRaw) {
-        if (!securityProperties.isRateLimitEnabled()) {
-            return;
-        }
         if (challengeId == null || challengeId.isBlank() || answerRaw == null || answerRaw.isBlank()) {
             throw new IllegalArgumentException("CAPTCHA_REQUIRED");
         }
@@ -60,6 +57,13 @@ public class CaptchaService {
         if (!challenge.answerHash().equals(hashAnswer(answer))) {
             throw new IllegalArgumentException("CAPTCHA_INVALID");
         }
+    }
+
+    public void verifyOtpCaptcha(String challengeId, String answerRaw) {
+        if (!securityProperties.isOtpCaptchaEnabled()) {
+            return;
+        }
+        verify(challengeId, answerRaw);
     }
 
     private void cleanupExpired() {

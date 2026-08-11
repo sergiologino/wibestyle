@@ -28,6 +28,8 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [oauthReady, setOauthReady] = useState(false);
+  const [captcha, setCaptcha] = useState<{ challengeId: string; question: string } | null>(null);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const markOauthReady = useCallback(() => setOauthReady(true), []);
   const resendSecondsLeft = secondsUntil(resendAvailableAt, nowMs);
 
@@ -37,15 +39,32 @@ export default function AuthScreen() {
     return () => clearInterval(intervalId);
   }, [requestId, resendSecondsLeft]);
 
+  const refreshCaptcha = useCallback(async () => {
+    const next = await api.getCaptcha();
+    setCaptcha({ challengeId: next.challengeId, question: next.question });
+    setCaptchaAnswer("");
+  }, [api]);
+
+  useEffect(() => {
+    if (!requestId) void refreshCaptcha().catch(() => setError("Не удалось загрузить проверочный пример."));
+  }, [refreshCaptcha, requestId]);
+
   async function startOtp() {
     if (!isRussianPhoneComplete(phone)) {
       setError("Введите номер российского мобильного телефона полностью.");
       return;
     }
+    if (!captcha || !captchaAnswer.trim()) {
+      setError("Решите простой пример перед отправкой SMS.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const result = await api.startOtp(`+7${getRussianNationalPhoneDigits(phone)}`);
+      const result = await api.startOtp(`+7${getRussianNationalPhoneDigits(phone)}`, {
+        captchaId: captcha.challengeId,
+        captchaAnswer: captchaAnswer.trim(),
+      });
       setRequestId(result.requestId);
       setCode("");
       setNowMs(Date.now());
@@ -53,6 +72,7 @@ export default function AuthScreen() {
       void trackMobileMarketingEvent("signup_started", { method: "sms_otp" });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось отправить код. Попробуйте ещё раз.");
+      await refreshCaptcha().catch(() => undefined);
     } finally {
       setLoading(false);
     }
@@ -128,6 +148,14 @@ export default function AuthScreen() {
                 autoComplete="tel"
                 textContentType="telephoneNumber"
               />
+              <View style={styles.captchaBox}>
+                <Text style={styles.captchaQuestion}>Проверка: {captcha?.question ?? "Загружаем…"}</Text>
+                <Text style={styles.captchaHint}>Решите пример — так мы защищаем отправку SMS от ботов.</Text>
+                <View style={styles.captchaRow}>
+                  <View style={styles.captchaInput}><TextField placeholder="Ответ" value={captchaAnswer} onChangeText={(value) => setCaptchaAnswer(value.replace(/\D/g, "").slice(0, 2))} keyboardType="number-pad" /></View>
+                  <Button label="Другой" size="sm" variant="secondary" disabled={loading} onPress={() => void refreshCaptcha()} />
+                </View>
+              </View>
               <Button label="Получить код" loading={loading} onPress={() => void startOtp()} />
             </>
           ) : (
@@ -192,6 +220,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginTop: spacing.sm,
   },
+  captchaBox: { gap: spacing.xs, padding: spacing.md, borderRadius: 16, backgroundColor: colors.pinkBg },
+  captchaQuestion: { color: colors.black, fontFamily: "Manrope_600SemiBold", fontSize: 14 },
+  captchaHint: { color: colors.muted, fontFamily: "Manrope_400Regular", fontSize: 12, lineHeight: 17 },
+  captchaRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  captchaInput: { flex: 1 },
   authSkeleton: { gap: spacing.md, paddingVertical: spacing.md },
   skeletonLine: { height: 52, borderRadius: 14, backgroundColor: colors.pinkBg },
   error: {

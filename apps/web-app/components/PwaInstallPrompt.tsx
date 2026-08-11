@@ -8,6 +8,25 @@ type DeferredInstallPrompt = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+const PROMPT_SHOWN_SESSION_KEY = "wibestyle-pwa-install-prompt-shown";
+const APP_INSTALLED_KEY = "wibestyle-pwa-installed";
+
+function getStoredFlag(storage: Storage | undefined, key: string) {
+  try {
+    return storage?.getItem(key) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setStoredFlag(storage: Storage | undefined, key: string) {
+  try {
+    storage?.setItem(key, "true");
+  } catch {
+    // Storage can be unavailable in private modes. The prompt still works for the current render.
+  }
+}
+
 function isIosDevice() {
   const userAgent = window.navigator.userAgent;
   return /iPhone|iPad|iPod/i.test(userAgent);
@@ -33,15 +52,25 @@ export default function PwaInstallPrompt() {
 
   useEffect(() => {
     if (!isMobileBrowser() || isStandalone()) return;
-    setVisible(true);
+    if (getStoredFlag(window.localStorage, APP_INSTALLED_KEY)) return;
+    if (getStoredFlag(window.sessionStorage, PROMPT_SHOWN_SESSION_KEY)) return;
+
+    const showOncePerLaunch = () => {
+      setStoredFlag(window.sessionStorage, PROMPT_SHOWN_SESSION_KEY);
+      setVisible(true);
+    };
+
+    showOncePerLaunch();
     if (isIosDevice()) return;
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       deferredPrompt.current = event as DeferredInstallPrompt;
       setInstallReady(true);
-      setVisible(true);
     };
-    const onInstalled = () => setVisible(false);
+    const onInstalled = () => {
+      setStoredFlag(window.localStorage, APP_INSTALLED_KEY);
+      setVisible(false);
+    };
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     window.addEventListener("appinstalled", onInstalled);
     return () => {

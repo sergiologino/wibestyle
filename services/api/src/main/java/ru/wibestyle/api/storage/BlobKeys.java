@@ -16,6 +16,10 @@ public final class BlobKeys {
         return userId + "/" + avatarId + "/processed.jpg";
     }
 
+    public static String avatarEnhanced(UUID userId, UUID avatarId) {
+        return userId + "/" + avatarId + "/enhanced.jpg";
+    }
+
     public static String tryOnGarment(UUID userId, UUID sessionId, String extension) {
         return userId + "/try-on/" + sessionId + "/garment" + extension;
     }
