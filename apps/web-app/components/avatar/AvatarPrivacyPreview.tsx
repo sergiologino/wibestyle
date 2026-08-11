@@ -31,7 +31,6 @@ type AvatarPrivacyPreviewProps = {
 
 export function avatarPrivacyPreviewClassName(privacy: PrivacyState) {
   const classes = ["relative overflow-hidden rounded-[28px] bg-[#f8f0f6]"];
-  if (privacy.hideBackground) classes.push("avatar-preview--hide-bg");
   if (privacy.hideFeatures) classes.push("avatar-preview--hide-features");
   return classes.join(" ");
 }
@@ -132,12 +131,6 @@ export default function AvatarPrivacyPreview({
             description="Размываем область лица"
             label="Скрыть лицо"
             onChange={(checked) => onPrivacyChange({ hideFace: checked })}
-          />
-          <FieldCheckbox
-            checked={privacy.hideBackground}
-            description="Убираем отвлекающий фон"
-            label="Скрыть фон"
-            onChange={(checked) => onPrivacyChange({ hideBackground: checked })}
           />
           <FieldCheckbox
             checked={false}

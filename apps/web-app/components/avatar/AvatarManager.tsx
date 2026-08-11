@@ -88,17 +88,17 @@ function FeaturedAvatarPanel({
 }) {
   const [privacyPreview, setPrivacyPreview] = useState({
     hideFace: avatar.privacyFaceHidden,
-    hideBackground: avatar.privacyBackgroundHidden,
+    hideBackground: false,
     hideFeatures: false,
   });
 
   useEffect(() => {
     setPrivacyPreview({
       hideFace: avatar.privacyFaceHidden,
-      hideBackground: avatar.privacyBackgroundHidden,
+      hideBackground: false,
       hideFeatures: false,
     });
-  }, [avatar.id, avatar.privacyBackgroundHidden, avatar.privacyFaceHidden]);
+  }, [avatar.id, avatar.privacyFaceHidden]);
 
   return (
     <section className="rounded-[28px] border border-[#f0dce8] bg-gradient-to-br from-white to-[#fff8fd] p-4 shadow-sm">
@@ -148,7 +148,7 @@ function AvatarEnhancementPanel({
         <div className="mt-3 max-w-[560px]">
           <AvatarPrivacyPreview
             accessToken={accessToken}
-            privacy={{ hideFace: avatar.privacyFaceHidden, hideBackground: avatar.privacyBackgroundHidden, hideFeatures: false }}
+            privacy={{ hideFace: avatar.privacyFaceHidden, hideBackground: false, hideFeatures: false }}
             remotePhotoPath={avatar.photoOriginalUrl ?? avatar.photoProcessedUrl}
             showToggles={false}
             processing
@@ -186,7 +186,7 @@ function AvatarCandidatePanel({
       </div>
       <AvatarPrivacyPreview
         accessToken={accessToken}
-        privacy={{ hideFace: avatar.privacyFaceHidden, hideBackground: avatar.privacyBackgroundHidden, hideFeatures: false }}
+        privacy={{ hideFace: avatar.privacyFaceHidden, hideBackground: false, hideFeatures: false }}
         remotePhotoPath={avatar.photoOriginalUrl ?? avatar.photoProcessedUrl}
         showToggles={false}
         processing={processing}
@@ -220,7 +220,6 @@ export default function AvatarManager({ activeAvatarId, showFeaturedAvatar = tru
   const [newPhoto, setNewPhoto] = useState<File | null>(null);
   const [newPreviewUrl, setNewPreviewUrl] = useState<string | null>(null);
   const [hideFace, setHideFace] = useState(false);
-  const [hideBackground, setHideBackground] = useState(false);
   const [hideFeatures, setHideFeatures] = useState(false);
   const [adding, setAdding] = useState(false);
   const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
@@ -373,7 +372,7 @@ export default function AvatarManager({ activeAvatarId, showFeaturedAvatar = tru
     try {
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
-        privacyBackgroundHidden: hideBackground,
+        privacyBackgroundHidden: false,
         privacyFeaturesHidden: false,
       });
       createdAvatarId = avatar.id;
@@ -521,12 +520,11 @@ export default function AvatarManager({ activeAvatarId, showFeaturedAvatar = tru
           <div className="mt-4">
             <AvatarPrivacyPreview
               localPreviewUrl={newPreviewUrl}
-              privacy={{ hideFace, hideBackground, hideFeatures: false }}
+              privacy={{ hideFace, hideBackground: false, hideFeatures: false }}
               processing={busyAction === "validate"}
               onSelectPhoto={() => photoInputRef.current?.click()}
               onPrivacyChange={(next) => {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
-                if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
               }}
             />
           </div>

@@ -60,7 +60,6 @@ export default function ProfileSettingsClient() {
   const [clothingSize, setClothingSize] = useState("M");
   const [shoeSizeEu, setShoeSizeEu] = useState("");
   const [hideFace, setHideFace] = useState(false);
-  const [hideBackground, setHideBackground] = useState(false);
   const [activeAvatarPhotoPath, setActiveAvatarPhotoPath] = useState<string | null>(null);
   const [activeAvatarPreviewUrl, setActiveAvatarPreviewUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -78,7 +77,6 @@ export default function ProfileSettingsClient() {
     setGender(profile.gender ?? "");
     setInterfacePalette(profile.interfacePalette ?? "vibe");
     setHideFace(profile.privacy?.faceHidden ?? false);
-    setHideBackground(profile.privacy?.backgroundHidden ?? false);
     setHeightCm(profile.anthropometry?.heightCm ? String(profile.anthropometry.heightCm) : "");
     setBustCm(profile.anthropometry?.bustCm ? String(profile.anthropometry.bustCm) : "");
     setWaistCm(profile.anthropometry?.waistCm ? String(profile.anthropometry.waistCm) : "");
@@ -155,7 +153,7 @@ export default function ProfileSettingsClient() {
       clothingSize,
       shoeSizeEu: shoeSizeEu ? Number(shoeSizeEu) : undefined,
       privacyFaceHidden: hideFace,
-      privacyBackgroundHidden: hideBackground,
+      privacyBackgroundHidden: false,
       privacyFeaturesHidden: false,
     };
     try {
@@ -303,10 +301,9 @@ export default function ProfileSettingsClient() {
           {profile?.activeAvatarId ? (
             <AvatarPrivacyPreview
               localPreviewUrl={activeAvatarPreviewUrl}
-              privacy={{ hideFace, hideBackground, hideFeatures: false }}
+              privacy={{ hideFace, hideBackground: false, hideFeatures: false }}
               onPrivacyChange={(next) => {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
-                if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
               }}
             />
           ) : (

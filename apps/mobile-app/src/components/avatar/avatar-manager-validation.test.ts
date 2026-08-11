@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 describe("mobile avatar manager validation", () => {
   const source = readFileSync(join(process.cwd(), "src", "components", "avatar", "AvatarManager.tsx"), "utf8");
+  const profile = readFileSync(join(process.cwd(), "src", "components", "profile", "ProfileEditor.tsx"), "utf8");
 
   it("shows guidance for a rejected photo and requires a fresh selection", () => {
     expect(source).toContain('validation.recommendedAction === "replace_photo"');
@@ -33,5 +34,12 @@ describe("mobile avatar manager validation", () => {
     expect(source).toContain("AvatarCandidatePanel");
     expect(source).toContain("AvatarEnhancementPanel");
     expect(source).toContain("BeforeAfterSlider");
+  });
+
+  it("does not expose background hiding for avatars anymore", () => {
+    expect(source).toContain("privacyBackgroundHidden: false");
+    expect(source).not.toContain("hideBackground");
+    expect(profile).not.toContain("Скрыть фон");
+    expect(profile).not.toContain("setHideBackground");
   });
 });

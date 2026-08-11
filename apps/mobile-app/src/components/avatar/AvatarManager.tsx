@@ -140,11 +140,10 @@ function AvatarEnhancementPanel({ avatar, accessToken, busy, onApply, onRevert }
 
 type AvatarManagerProps = {
   hideFace: boolean;
-  hideBackground: boolean;
   activeAvatarId?: string | null;
 };
 
-export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: AvatarManagerProps) {
+export function AvatarManager({ hideFace, activeAvatarId }: AvatarManagerProps) {
   const { api, uploads, accessToken, refreshProfile } = useSession();
   const [avatars, setAvatars] = useState<AvatarRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -314,7 +313,7 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
     try {
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
-        privacyBackgroundHidden: hideBackground,
+        privacyBackgroundHidden: false,
         privacyFeaturesHidden: false,
       });
       createdAvatarId = avatar.id;
