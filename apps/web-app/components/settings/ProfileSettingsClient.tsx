@@ -315,7 +315,7 @@ export default function ProfileSettingsClient() {
         </div>
       </Card>
 
-      {profile?.activeAvatarId ? <Card className="p-4 sm:p-5"><AvatarManager activeAvatarId={profile.activeAvatarId} /></Card> : null}
+      {profile?.activeAvatarId ? <Card className="p-4 sm:p-5"><AvatarManager activeAvatarId={profile.activeAvatarId} showFeaturedAvatar={false} /></Card> : null}
 
       <Card>
         <form className="grid gap-6" onSubmit={onSave}>

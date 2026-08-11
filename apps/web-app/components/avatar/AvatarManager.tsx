@@ -207,9 +207,10 @@ function AvatarCandidatePanel({
 
 type AvatarManagerProps = {
   activeAvatarId?: string | null;
+  showFeaturedAvatar?: boolean;
 };
 
-export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
+export default function AvatarManager({ activeAvatarId, showFeaturedAvatar = true }: AvatarManagerProps) {
   const { api, accessToken, refreshProfile } = useAppSession();
   const [avatars, setAvatars] = useState<AvatarRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -459,15 +460,17 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
   const addingNewAvatar = adding && !pendingAvatar && !enhancementAvatar;
   const avatarReviewFlow = addingNewAvatar || Boolean(pendingAvatar) || Boolean(enhancementAvatar);
   const reviewedAvatarId = enhancementAvatar?.id ?? pendingAvatar?.id ?? null;
-  const featuredAvatar =
-    avatarReviewFlow
-      ? null
-      : visibleAvatars.find((avatar) => avatar.active) ??
-        visibleAvatars.find((avatar) => avatar.id === featuredAvatarId) ??
-        visibleAvatars[0] ??
-        null;
+  const mainSavedAvatar =
+    visibleAvatars.find((avatar) => avatar.active) ??
+    visibleAvatars.find((avatar) => avatar.id === activeAvatarId) ??
+    visibleAvatars.find((avatar) => avatar.id === featuredAvatarId) ??
+    visibleAvatars[0] ??
+    null;
+  const featuredAvatar = showFeaturedAvatar && !avatarReviewFlow ? mainSavedAvatar : null;
   const reserveAvatars = avatarReviewFlow
     ? visibleAvatars.filter((avatar) => avatar.id !== reviewedAvatarId)
+    : !showFeaturedAvatar && mainSavedAvatar
+    ? visibleAvatars.filter((avatar) => avatar.id !== mainSavedAvatar.id)
     : featuredAvatar
     ? visibleAvatars.filter((avatar) => avatar.id !== featuredAvatar.id)
     : visibleAvatars;

@@ -61,7 +61,11 @@ describe("profile avatar manager validation", () => {
     expect(source).toContain("function FeaturedAvatarPanel");
     expect(source).toContain("const [featuredAvatarId, setFeaturedAvatarId]");
     expect(source).toContain("<FeaturedAvatarPanel");
+    expect(source).toContain("showFeaturedAvatar = true");
+    expect(source).toContain("const mainSavedAvatar =");
+    expect(source).toContain("const featuredAvatar = showFeaturedAvatar && !avatarReviewFlow ? mainSavedAvatar : null");
     expect(source).toContain("const reserveAvatars = avatarReviewFlow");
+    expect(source).toContain("!showFeaturedAvatar && mainSavedAvatar");
     expect(source).toContain("visibleAvatars.filter((avatar) => avatar.id !== featuredAvatar.id)");
     expect(source).toContain("reserveAvatars.map");
   });
@@ -74,6 +78,7 @@ describe("profile avatar manager validation", () => {
 
   it("falls back to a large featured avatar after reload when no active flag is present", () => {
     expect(source).toContain("visibleAvatars.find((avatar) => avatar.active)");
+    expect(source).toContain("visibleAvatars.find((avatar) => avatar.id === activeAvatarId)");
     expect(source).toContain("visibleAvatars.find((avatar) => avatar.id === featuredAvatarId)");
     expect(source).toContain("visibleAvatars[0] ??");
   });
