@@ -12,6 +12,8 @@ describe("PWA install prompt", () => {
     expect(source).toContain("isYandexBrowser");
     expect(source).toContain("installReady");
     expect(source).toContain("Добавить на главный экран");
-    expect(source).not.toContain("wibestyle-pwa-install-dismissed");
+    expect(source).toContain("wibestyle-pwa-install-prompt-shown");
+    expect(source).toContain("window.sessionStorage");
+    expect(source).toContain("wibestyle-pwa-installed");
   });
 });
