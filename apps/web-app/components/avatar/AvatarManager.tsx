@@ -451,7 +451,8 @@ export default function AvatarManager({ activeAvatarId }: AvatarManagerProps) {
       ? null
       : visibleAvatars.find((avatar) => avatar.active) ??
         visibleAvatars.find((avatar) => avatar.id === featuredAvatarId) ??
-        (visibleAvatars.length === 1 ? visibleAvatars[0] : null);
+        visibleAvatars[0] ??
+        null;
   const reserveAvatars = avatarReviewFlow
     ? visibleAvatars.filter((avatar) => avatar.id !== reviewedAvatarId)
     : featuredAvatar
