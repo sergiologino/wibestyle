@@ -20,4 +20,12 @@ describe("paywall conversion UI", () => {
     expect(topBar).toContain("Подключить Wibe");
     expect(topBar).toContain("subscription-header-cta");
   });
+
+  it("uses everyday paywall wording instead of AI/generation wording", () => {
+    expect(paywall).toContain("Программа может ошибаться");
+    expect(paywall).toContain("качество примерок");
+    expect(paywall).toContain("Больше примерок в периоде");
+    expect(paywall).not.toContain("AI-пример");
+    expect(paywall).not.toContain("качество генераций");
+  });
 });

@@ -222,7 +222,7 @@ export default function PaywallScreen() {
                 <Text style={styles.planMeta}>{formatTryOnAllowance(offer.generationsPerPeriod, offer.period)}</Text>
                 {plan === "elite" ? (
                   <View style={styles.elitePerks}>
-                    {["Генерация видео к любой примерке", "Лучшие нейросети", "Приоритетная поддержка"].map((perk) => (
+                    {["Видео к любой примерке", "Более точная обработка", "Приоритетная поддержка"].map((perk) => (
                       <View key={perk} style={styles.elitePerk}>
                         <Feather name="check" size={14} color={colors.violet} />
                         <Text style={styles.elitePerkText}>{perk}</Text>
@@ -265,7 +265,7 @@ export default function PaywallScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Button label={checkoutLabel} disabled={selectedPlanBlocked || !current} loading={loading} onPress={checkout} />
         <BodyText>
-          AI может ошибаться в посадке, слоях одежды и обработке белья. Мы улучшаем качество и исправляем такие случаи.
+          Программа может ошибаться в посадке, слоях одежды и обработке белья. Мы улучшаем качество примерок и исправляем такие случаи.
         </BodyText>
       </ScrollView>
     </Screen>
