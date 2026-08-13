@@ -15,5 +15,9 @@ describe("avatar privacy defaults", () => {
     expect(preview).not.toContain("Скрыть фон");
     expect(preview).not.toContain("avatar-preview--hide-bg");
     expect(manager).toContain("privacyBackgroundHidden: false");
+    expect(preview).toContain("showSelectHint");
+    expect(preview).toContain("Нажмите на образец");
+    expect(preview).toContain("Кликните по образцу");
+    expect(preview).toContain("avatarTapHint");
   });
 });

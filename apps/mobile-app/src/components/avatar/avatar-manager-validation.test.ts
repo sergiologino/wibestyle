@@ -42,4 +42,12 @@ describe("mobile avatar manager validation", () => {
     expect(profile).not.toContain("Скрыть фон");
     expect(profile).not.toContain("setHideBackground");
   });
+
+  it("makes the avatar sample obviously tappable", () => {
+    expect(source).toContain("Animated.loop");
+    expect(source).toContain("tapHintAnim");
+    expect(source).toContain("Нажмите на образец");
+    expect(source).toContain("чтобы выбрать фото для аватара");
+    expect(source).toContain("styles.tapHint");
+  });
 });

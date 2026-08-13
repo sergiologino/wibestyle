@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -157,6 +158,7 @@ export function AvatarManager({ hideFace, activeAvatarId }: AvatarManagerProps) 
   const [pendingAvatar, setPendingAvatar] = useState<AvatarRecord | null>(null);
   const [enhancementAvatar, setEnhancementAvatar] = useState<AvatarRecord | null>(null);
   const autoAddPhotoRef = useRef<RNFile | null>(null);
+  const tapHintAnim = useRef(new Animated.Value(0)).current;
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -179,6 +181,17 @@ export function AvatarManager({ hideFace, activeAvatarId }: AvatarManagerProps) 
     autoAddPhotoRef.current = newPhoto;
     void addAvatar(newPhoto);
   }, [newPhoto, busy]);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(tapHintAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(tapHintAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [tapHintAnim]);
 
   async function pickPhoto() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -421,6 +434,28 @@ export function AvatarManager({ hideFace, activeAvatarId }: AvatarManagerProps) 
               <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
             {!previewUri ? <Text style={styles.sampleWatermark}>ОБРАЗЕЦ</Text> : null}
+            {!previewUri && busyAction !== "validate" ? (
+              <View style={styles.tapHint} pointerEvents="none">
+                <View style={styles.tapHintCopy}>
+                  <Text style={styles.tapHintTitle}>Нажмите на образец</Text>
+                  <Text style={styles.tapHintText}>чтобы выбрать фото для аватара</Text>
+                </View>
+                <Animated.View
+                  style={[
+                    styles.tapHintIcon,
+                    {
+                      opacity: tapHintAnim.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] }),
+                      transform: [
+                        { translateY: tapHintAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+                        { scale: tapHintAnim.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1.08] }) },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.tapHintIconText}>👆</Text>
+                </Animated.View>
+              </View>
+            ) : null}
             {busyAction === "validate" ? <ProcessingOverlay label="Идёт проверка корректности фото для аватара…" /> : null}
           </Pressable>
           {avatarGuidance?.message ? (
@@ -528,6 +563,49 @@ const styles = StyleSheet.create({
     fontSize: 30,
     letterSpacing: 3,
     transform: [{ rotate: "-28deg" }],
+  },
+  tapHint: {
+    position: "absolute",
+    left: spacing.md,
+    right: spacing.md,
+    bottom: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    borderRadius: radius.xxl,
+    borderWidth: hairline,
+    borderColor: "rgba(255, 255, 255, 0.6)",
+    backgroundColor: "rgba(48, 38, 55, 0.88)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  tapHintCopy: {
+    flexShrink: 1,
+  },
+  tapHintTitle: {
+    color: colors.white,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  tapHintText: {
+    marginTop: 2,
+    color: "rgba(255, 255, 255, 0.82)",
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  tapHintIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.white,
+  },
+  tapHintIconText: {
+    fontSize: 22,
   },
   processingOverlay: {
     ...StyleSheet.absoluteFillObject,

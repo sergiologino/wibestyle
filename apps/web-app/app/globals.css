@@ -47,6 +47,19 @@
   }
 }
 
+@keyframes avatarTapHint {
+  0%,
+  100% {
+    transform: translate(-8px, 6px) scale(0.96);
+  }
+  45% {
+    transform: translate(0, 0) scale(1.08);
+  }
+  60% {
+    transform: translate(0, 0) scale(0.92);
+  }
+}
+
 :root {
   --pink: #ff1fa2;
   --pink-dark: #eb1692;
