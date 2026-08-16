@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import { getApiBaseUrl } from "@/lib/config";
+import { trackMyTrackerEvent } from "@/lib/mytracker";
 import { readStoredSession } from "@/lib/session-storage";
 
 const VISITOR_ID_KEY = "vibestyle_visitor_id";
@@ -33,6 +34,7 @@ export async function getOrCreateVisitorId() {
 }
 
 export async function trackMobileMarketingEvent(eventType: string, metadata?: Record<string, string>) {
+  void trackMyTrackerEvent(eventType, metadata);
   const visitorId = await getOrCreateVisitorId();
   if (!visitorId) return;
   const session = await readStoredSession();

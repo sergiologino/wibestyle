@@ -11,6 +11,11 @@ export function getAppBaseUrl(): string {
 }
 
 /** Android emulator → host machine localhost */
+export function getMyTrackerSdkKey(): string {
+  const fromExtra = Constants.expoConfig?.extra?.myTrackerSdkKey as string | undefined;
+  return (fromExtra ?? process.env.EXPO_PUBLIC_MYTRACKER_SDK_KEY ?? "").trim();
+}
+
 export const DEFAULT_DEV_API_URL = "http://10.0.2.2:8080";
 
 export const SESSION_STORAGE_KEY = "wibestyle.app.session";
