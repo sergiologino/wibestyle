@@ -21,6 +21,7 @@ type AdminAvatarItem = {
   createdAt: string;
   adminOriginalPhotoUrl?: string;
   adminProcessedPhotoUrl?: string;
+  adminEnhancedPhotoUrl?: string;
 };
 
 type AdminTryOnItem = {
@@ -183,6 +184,37 @@ export default function AdminUserSupportPage() {
       await load();
     } catch {
       setError("Не удалось удалить аватар (возможно, это единственный)");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function onDownloadAvatarPhoto(avatar: AdminAvatarItem, variant: "original" | "processed" | "enhanced") {
+    if (!adminKey) return;
+    const path =
+      variant === "original"
+        ? avatar.adminOriginalPhotoUrl
+        : variant === "enhanced"
+          ? avatar.adminEnhancedPhotoUrl
+          : avatar.adminProcessedPhotoUrl;
+    if (!path) return;
+
+    setActionId(`${avatar.id}:${variant}`);
+    setError(null);
+    setMessage(null);
+    try {
+      const blob = await api.fetchAdminBlob(adminKey, path);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const extension = blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg";
+      link.href = url;
+      link.download = `avatar-${userId}-${avatar.id.slice(0, 8)}-${variant}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Не удалось скачать фото аватара");
     } finally {
       setActionId(null);
     }
@@ -351,6 +383,41 @@ export default function AdminUserSupportPage() {
                     {avatar.qualityScore != null ? ` · q=${avatar.qualityScore.toFixed(2)}` : ""}
                   </p>
                   <p className="text-xs font-bold text-[#6d6273]">{formatLocalDateTime(avatar.createdAt)}</p>
+                  <div className="mt-2 grid gap-2">
+                    {avatar.adminOriginalPhotoUrl ? (
+                      <Button
+                        size="md"
+                        variant="secondary"
+                        className="w-full"
+                        disabled={actionId === `${avatar.id}:original` || !configured}
+                        onClick={() => void onDownloadAvatarPhoto(avatar, "original")}
+                      >
+                        Скачать оригинал
+                      </Button>
+                    ) : null}
+                    {avatar.adminProcessedPhotoUrl ? (
+                      <Button
+                        size="md"
+                        variant="secondary"
+                        className="w-full"
+                        disabled={actionId === `${avatar.id}:processed` || !configured}
+                        onClick={() => void onDownloadAvatarPhoto(avatar, "processed")}
+                      >
+                        Скачать обработанное
+                      </Button>
+                    ) : null}
+                    {avatar.adminEnhancedPhotoUrl ? (
+                      <Button
+                        size="md"
+                        variant="secondary"
+                        className="w-full"
+                        disabled={actionId === `${avatar.id}:enhanced` || !configured}
+                        onClick={() => void onDownloadAvatarPhoto(avatar, "enhanced")}
+                      >
+                        Скачать улучшенное
+                      </Button>
+                    ) : null}
+                  </div>
                   <Button
                     size="md"
                     variant="secondary"
