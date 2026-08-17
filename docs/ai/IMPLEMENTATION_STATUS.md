@@ -1,5 +1,32 @@
 # Implementation Status
 
+## 2026-08-17 — Current todo / актуальная очередь
+
+1. **P0 — Referral link in downloadable media QR.**
+   - Generate a personal referral account/code immediately when a user is created, even if the user was not registered through someone else's referral link. Current backend behavior guarantees the code on `/api/v1/referrals`, but for QR-in-downloads we need the code to exist before the user opens the referral screen.
+   - Replace the plain app/share URL embedded into downloadable photo/video QR codes with the user's personal referral URL: `/welcome?ref=CODE`.
+   - Keep the visual QR/watermark behavior stable; change only the encoded target URL.
+   - Update web and mobile result-download flows if QR generation is client-side; update backend download endpoint if QR/watermark is generated server-side.
+   - Update the referral onboarding slide copy: explain that shared try-on photos can bring bonus try-ons when friends register and buy a subscription.
+   - Acceptance: a newly registered user has a referral code without visiting `/referrals`; downloaded/shared image/video QR leads through that user's referral link; referral attribution and reward flow stay idempotent.
+
+2. **P0 — Try-on scene and pose selection.**
+   - Web/mobile choose one of 3–4 clear scene+pose presets or enter a safe custom prompt.
+   - Persist the choice with the try-on session and pass it into the try-on prompt as a replacement for the default scene.
+
+3. **P0 — Real marketplace sizes.**
+   - Parse actual Wildberries/Ozon size variants instead of showing a fictional XS–XL list.
+   - Validate selected size on the backend before creating the try-on session.
+
+4. **P1 — Review summary and size recommendation correction.**
+   - Cache/deduplicate text reviews, summarize sizing signals and only shift the size recommendation with enough confidence.
+
+5. **Infra backlog.**
+   - S3/private media storage migration.
+   - Redis-backed distributed OTP/refresh-token state if multiple API instances are introduced.
+   - OpenAPI spec.
+   - Server-side OTP/API rate limiting as P2; provider-level SMS controls remain the primary protection for now.
+
 ## 2026-08-08 — Coming-soon labels
 
 - ✅ Prominent translucent overlap treatment for the hairstyle, look-request and virtual-makeup page titles.
@@ -44,7 +71,7 @@
 > Живой чеклист: что сделано и что осталось. Обновляется по мере реализации.
 > Оплата: YooKassa checkout/webhook и recurring готовы; для production нужны env, webhook, чеки 54-ФЗ и Expo/FCM credentials.
 
-**Последнее обновление:** 2026-08-10
+**Последнее обновление:** 2026-08-17
 
 ## План работ
 
