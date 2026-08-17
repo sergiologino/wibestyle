@@ -6,6 +6,7 @@ import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { getApiBaseUrl } from "@/lib/config";
 import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
+import { trackMyTrackerLogin, trackMyTrackerRegistration } from "@/lib/mytracker";
 import { colors, spacing } from "@/theme/tokens";
 
 export default function OAuthCallbackScreen() {
@@ -35,6 +36,11 @@ export default function OAuthCallbackScreen() {
           params.refreshToken,
           undefined,
         );
+        if (params.newUser === "true") {
+          void trackMyTrackerRegistration(me.profile.userId);
+        } else {
+          void trackMyTrackerLogin(me.profile.userId);
+        }
         router.replace(
           resolvePostAuthRoute({
             newUser: params.newUser === "true",

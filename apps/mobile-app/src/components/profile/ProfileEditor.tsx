@@ -46,7 +46,6 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
   const [clothingSize, setClothingSize] = useState("M");
   const [shoeSizeEu, setShoeSizeEu] = useState("");
   const [hideFace, setHideFace] = useState(false);
-  const [hideBackground, setHideBackground] = useState(false);
   const [activeAvatarPhotoPath, setActiveAvatarPhotoPath] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -63,7 +62,6 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
     setGender(profile.gender ?? "");
     setInterfacePalette(profile.interfacePalette ?? "vibe");
     setHideFace(profile.privacy?.faceHidden ?? false);
-    setHideBackground(profile.privacy?.backgroundHidden ?? false);
     setHeightCm(profile.anthropometry?.heightCm ? String(profile.anthropometry.heightCm) : "");
     setBustCm(profile.anthropometry?.bustCm ? String(profile.anthropometry.bustCm) : "");
     setWaistCm(profile.anthropometry?.waistCm ? String(profile.anthropometry.waistCm) : "");
@@ -134,7 +132,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
       clothingSize,
       shoeSizeEu: shoeSizeEu ? Number(shoeSizeEu) : undefined,
       privacyFaceHidden: hideFace,
-      privacyBackgroundHidden: hideBackground,
+      privacyBackgroundHidden: false,
       privacyFeaturesHidden: false,
     };
     try {
@@ -319,17 +317,12 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
             <Text style={styles.toggleLabel}>Скрыть лицо в ленте</Text>
             <Switch value={hideFace} onValueChange={setHideFace} trackColor={{ true: theme.colors.primary }} />
           </View>
-          <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Скрыть фон</Text>
-            <Switch value={hideBackground} onValueChange={setHideBackground} trackColor={{ true: theme.colors.primary }} />
-          </View>
         </Card>
 
         <Card>
           <AvatarManager
             activeAvatarId={profile?.activeAvatarId}
             hideFace={hideFace}
-            hideBackground={hideBackground}
           />
         </Card>
 

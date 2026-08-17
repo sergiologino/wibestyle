@@ -13,6 +13,7 @@ import { formatRussianPhone, getRussianNationalPhoneDigits, isRussianPhoneComple
 import { resolvePostAuthRoute } from "@/lib/onboarding-flow";
 import { colors, spacing } from "@/theme/tokens";
 import { readVisitorId, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
+import { trackMyTrackerLogin, trackMyTrackerRegistration } from "@/lib/mytracker";
 import { getOrCreateDeviceId } from "@/lib/device-id";
 import { DEFAULT_OTP_RESEND_SECONDS, formatCountdown, secondsUntil } from "@/lib/otp-countdown";
 
@@ -107,6 +108,11 @@ export default function AuthScreen() {
         auth.refreshToken,
         auth.expiresIn,
       );
+      if (auth.newUser) {
+        void trackMyTrackerRegistration(me.profile.userId);
+      } else {
+        void trackMyTrackerLogin(me.profile.userId);
+      }
       if (auth.device?.previousRegistrationOnDevice) {
         Alert.alert(
           "Устройство уже использовалось",

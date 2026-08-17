@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,10 +16,12 @@ import type { AvatarRecord } from "@wibestyle/shared-types";
 import { MAX_AVATARS_PER_USER } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
+import { BeforeAfterSlider } from "@/components/try-on/BeforeAfterSlider";
 import { BodyText, Button, SectionTitle } from "@/components/ui/Button";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { preparePickedImageForUpload } from "@/lib/image-upload";
-import type { RNFile } from "@/lib/mobile-api";
+import { buildProductImageSource, type RNFile } from "@/lib/mobile-api";
+import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
 
 const defaultAvatarSample = require("../../../assets/avatar/default-avatar-sample.webp");
 
@@ -62,23 +65,100 @@ function AvatarThumb({ avatar, active, accessToken, busy, onSelect, onDelete, on
   );
 }
 
+type ProcessingOverlayProps = {
+  label: string;
+};
+
+function ProcessingOverlay({ label }: ProcessingOverlayProps) {
+  return (
+    <View style={styles.processingOverlay}>
+      <View style={styles.processingCard}>
+        <ActivityIndicator color={colors.pink} size="small" />
+        <Text style={styles.processingText}>{label}</Text>
+      </View>
+    </View>
+  );
+}
+
+type AvatarCandidatePanelProps = {
+  avatar: AvatarRecord;
+  accessToken: string | null;
+  busy: boolean;
+  processingLabel?: string | null;
+  onEnhance: () => void;
+  onSaveOriginal: () => void;
+};
+
+function AvatarCandidatePanel({
+  avatar,
+  accessToken,
+  busy,
+  processingLabel,
+  onEnhance,
+  onSaveOriginal,
+}: AvatarCandidatePanelProps) {
+  const photoPath = avatar.photoOriginalUrl ?? avatar.photoProcessedUrl;
+  return (
+    <View style={styles.reviewPanel}>
+      <Text style={styles.reviewBadge}>Можно улучшить</Text>
+      <BodyText>Фото подходит для примерки. Можно сохранить как есть или сначала улучшить фон, чёткость и одежду.</BodyText>
+      <View style={styles.largePhotoBox}>
+        {photoPath ? <AuthenticatedImage path={photoPath} accessToken={accessToken} style={styles.largePhoto} /> : null}
+        {processingLabel ? <ProcessingOverlay label={processingLabel} /> : null}
+      </View>
+      <Button label="Улучшить аватар" disabled={busy} onPress={onEnhance} />
+      <Button label="Сохранить этот вариант" disabled={busy} variant="secondary" onPress={onSaveOriginal} />
+    </View>
+  );
+}
+
+type AvatarEnhancementPanelProps = {
+  avatar: AvatarRecord;
+  accessToken: string | null;
+  busy: boolean;
+  onApply: () => void;
+  onRevert: () => void;
+};
+
+function AvatarEnhancementPanel({ avatar, accessToken, busy, onApply, onRevert }: AvatarEnhancementPanelProps) {
+  const originalSource = avatar.photoOriginalUrl
+    ? buildProductImageSource(getApiBaseUrl(), avatar.photoOriginalUrl, accessToken, getAppBaseUrl())
+    : null;
+  const enhancedSource = avatar.photoEnhancedUrl
+    ? buildProductImageSource(getApiBaseUrl(), avatar.photoEnhancedUrl, accessToken, getAppBaseUrl())
+    : null;
+
+  return (
+    <View style={styles.enhancementPanel}>
+      <SectionTitle>Сравните варианты</SectionTitle>
+      <BodyText>Улучшаем фон, чёткость и одежду для точной примерки. Лицо, фигура, пропорции и поза должны сохраниться.</BodyText>
+      <BeforeAfterSlider beforeSource={originalSource} afterSource={enhancedSource} height={460} />
+      <Button label="Использовать улучшенный" disabled={busy} loading={busy} onPress={onApply} />
+      <Button label="Оставить исходный" disabled={busy} variant="secondary" onPress={onRevert} />
+    </View>
+  );
+}
+
 type AvatarManagerProps = {
   hideFace: boolean;
-  hideBackground: boolean;
   activeAvatarId?: string | null;
 };
 
-export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: AvatarManagerProps) {
+export function AvatarManager({ hideFace, activeAvatarId }: AvatarManagerProps) {
   const { api, uploads, accessToken, refreshProfile } = useSession();
   const [avatars, setAvatars] = useState<AvatarRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<"validate" | "enhance" | "save" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [newPhoto, setNewPhoto] = useState<RNFile | null>(null);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [avatarGuidance, setAvatarGuidance] = useState<{ title?: string; message?: string } | null>(null);
+  const [pendingAvatar, setPendingAvatar] = useState<AvatarRecord | null>(null);
   const [enhancementAvatar, setEnhancementAvatar] = useState<AvatarRecord | null>(null);
+  const autoAddPhotoRef = useRef<RNFile | null>(null);
+  const tapHintAnim = useRef(new Animated.Value(0)).current;
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -95,6 +175,23 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  useEffect(() => {
+    if (!newPhoto || busy || autoAddPhotoRef.current === newPhoto) return;
+    autoAddPhotoRef.current = newPhoto;
+    void addAvatar(newPhoto);
+  }, [newPhoto, busy]);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(tapHintAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(tapHintAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [tapHintAnim]);
 
   async function pickPhoto() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -157,14 +254,18 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
 
   async function enhanceAvatar(avatarId: string) {
     setBusy(true);
+    setBusyAction("enhance");
     setError(null);
     try {
       const { avatar } = await api.enhanceAvatar(avatarId);
+      setAdding(false);
       setEnhancementAvatar(avatar);
+      setPendingAvatar((current) => (current?.id === avatar.id ? avatar : current));
       await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось улучшить фото");
     } finally {
+      setBusyAction(null);
       setBusy(false);
     }
   }
@@ -172,16 +273,20 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
   async function applyEnhancement() {
     if (!enhancementAvatar) return;
     setBusy(true);
+    setBusyAction("save");
     setError(null);
     try {
       await api.applyAvatarEnhancement(enhancementAvatar.id);
       await api.activateAvatar(enhancementAvatar.id);
       setEnhancementAvatar(null);
+      setPendingAvatar(null);
+      setAdding(false);
       await refreshProfile();
       await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось применить улучшенный вариант");
     } finally {
+      setBusyAction(null);
       setBusy(false);
     }
   }
@@ -189,26 +294,31 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
   async function revertEnhancement() {
     if (!enhancementAvatar) return;
     setBusy(true);
+    setBusyAction("save");
     setError(null);
     try {
       await api.revertAvatarEnhancement(enhancementAvatar.id);
       if (enhancementAvatar.active) await api.activateAvatar(enhancementAvatar.id);
       setEnhancementAvatar(null);
+      setPendingAvatar(null);
+      setAdding(false);
       await refreshProfile();
       await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось вернуть исходный вариант");
     } finally {
+      setBusyAction(null);
       setBusy(false);
     }
   }
 
-  async function addAvatar() {
-    if (!newPhoto) {
+  async function addAvatar(photo: RNFile | null = newPhoto) {
+    if (!photo) {
       setError("Выберите фото для нового аватара");
       return;
     }
     setBusy(true);
+    setBusyAction("validate");
     setError(null);
     setAvatarGuidance(null);
     let createdAvatarId: string | null = null;
@@ -216,17 +326,24 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
     try {
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
-        privacyBackgroundHidden: hideBackground,
+        privacyBackgroundHidden: false,
         privacyFeaturesHidden: false,
       });
       createdAvatarId = avatar.id;
-      await uploads.uploadAvatarPhoto(api, avatar.id, newPhoto);
+      await uploads.uploadAvatarPhoto(api, avatar.id, photo);
       const validation = await api.validateAvatar(avatar.id);
       if (validation.recommendedAction === "replace_photo" || validation.avatar.status === "VALIDATION_FAILED") {
         setAvatarGuidance({
           title: validation.guidanceTitle,
           message: validation.guidanceMessage,
         });
+        setNewPhoto(null);
+        setPreviewUri(null);
+        return;
+      }
+      if (validation.recommendedAction === "continue_with_warning" || validation.warnings.length > 0) {
+        setPendingAvatar(validation.avatar);
+        setAdding(false);
         setNewPhoto(null);
         setPreviewUri(null);
         return;
@@ -245,6 +362,30 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
       }
       setError(err instanceof ApiError ? err.message : "Не удалось добавить аватар");
     } finally {
+      if (autoAddPhotoRef.current === photo) {
+        autoAddPhotoRef.current = null;
+      }
+      setBusyAction(null);
+      setBusy(false);
+    }
+  }
+
+  async function saveOriginalAvatar(avatarId: string) {
+    setBusy(true);
+    setBusyAction("save");
+    setError(null);
+    try {
+      await api.preprocessAvatar(avatarId);
+      await api.activateAvatar(avatarId);
+      setPendingAvatar(null);
+      setEnhancementAvatar(null);
+      setAdding(false);
+      await refreshProfile();
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось сохранить аватар");
+    } finally {
+      setBusyAction(null);
       setBusy(false);
     }
   }
@@ -252,6 +393,8 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
   const readyAvatarCount = avatars.filter((avatar) => avatar.status === "READY").length;
   const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
   const visibleAvatars = avatars.filter((avatar) => avatar.status === "READY");
+  const reviewedAvatarId = enhancementAvatar?.id ?? pendingAvatar?.id ?? null;
+  const reserveAvatars = reviewedAvatarId ? visibleAvatars.filter((avatar) => avatar.id !== reviewedAvatarId) : visibleAvatars;
 
   return (
     <View style={styles.wrap}>
@@ -291,14 +434,29 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
               <Image source={defaultAvatarSample} style={styles.photo} contentFit="contain" />
             )}
             {!previewUri ? <Text style={styles.sampleWatermark}>ОБРАЗЕЦ</Text> : null}
-            {busy ? (
-              <View style={styles.processingOverlay}>
-                <View style={styles.processingCard}>
-                  <ActivityIndicator color={colors.pink} size="small" />
-                  <Text style={styles.processingText}>Идёт проверка корректности фото для аватара…</Text>
+            {!previewUri && busyAction !== "validate" ? (
+              <View style={styles.tapHint} pointerEvents="none">
+                <View style={styles.tapHintCopy}>
+                  <Text style={styles.tapHintTitle}>Нажмите на образец</Text>
+                  <Text style={styles.tapHintText}>чтобы выбрать фото для аватара</Text>
                 </View>
+                <Animated.View
+                  style={[
+                    styles.tapHintIcon,
+                    {
+                      opacity: tapHintAnim.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] }),
+                      transform: [
+                        { translateY: tapHintAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+                        { scale: tapHintAnim.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1.08] }) },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.tapHintIconText}>👆</Text>
+                </Animated.View>
               </View>
             ) : null}
+            {busyAction === "validate" ? <ProcessingOverlay label="Идёт проверка корректности фото для аватара…" /> : null}
           </Pressable>
           {avatarGuidance?.message ? (
             <View style={styles.guidanceBox}>
@@ -308,38 +466,31 @@ export function AvatarManager({ hideFace, hideBackground, activeAvatarId }: Avat
               <Text style={styles.guidanceText}>{avatarGuidance.message}</Text>
             </View>
           ) : null}
-          {newPhoto ? (
-            <Button label={busy ? "Загружаем…" : "Сохранить новый аватар"} loading={busy} onPress={addAvatar} />
-          ) : null}
         </View>
       ) : null}
 
       {loading ? <BodyText>Загружаем аватары…</BodyText> : null}
 
       {enhancementAvatar ? (
-        <View style={styles.enhancementPanel}>
-          <SectionTitle>Сравните варианты</SectionTitle>
-          <BodyText>Улучшаем фон, чёткость и одежду для точной примерки. Лицо, фигура, пропорции и поза должны сохраниться.</BodyText>
-          <View style={styles.comparisonRow}>
-            <View style={styles.comparisonCard}>
-              {enhancementAvatar.photoOriginalUrl ? <AuthenticatedImage path={enhancementAvatar.photoOriginalUrl} accessToken={accessToken} style={styles.comparisonImage} /> : null}
-              <Text style={styles.comparisonLabel}>Исходное</Text>
-            </View>
-            <View style={styles.comparisonCard}>
-              {enhancementAvatar.photoEnhancedUrl ? <AuthenticatedImage path={enhancementAvatar.photoEnhancedUrl} accessToken={accessToken} style={styles.comparisonImage} /> : null}
-              <Text style={styles.comparisonLabel}>Улучшенное</Text>
-            </View>
-          </View>
-          <Button label="Использовать улучшенный" disabled={busy} loading={busy} onPress={applyEnhancement} />
-          <Button label="Оставить исходный" disabled={busy} variant="secondary" onPress={revertEnhancement} />
-        </View>
+        <AvatarEnhancementPanel avatar={enhancementAvatar} accessToken={accessToken} busy={busy} onApply={applyEnhancement} onRevert={revertEnhancement} />
       ) : null}
 
-      {!loading && visibleAvatars.length === 0 ? (
+      {!enhancementAvatar && pendingAvatar ? (
+        <AvatarCandidatePanel
+          avatar={pendingAvatar}
+          accessToken={accessToken}
+          busy={busy}
+          processingLabel={busyAction === "enhance" ? "Улучшаем аватар…" : null}
+          onEnhance={() => void enhanceAvatar(pendingAvatar.id)}
+          onSaveOriginal={() => void saveOriginalAvatar(pendingAvatar.id)}
+        />
+      ) : null}
+
+      {!loading && visibleAvatars.length === 0 && !pendingAvatar && !enhancementAvatar ? (
         <BodyText>Аватары пока не готовы.</BodyText>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbRow}>
-          {visibleAvatars.map((avatar) => (
+          {reserveAvatars.map((avatar) => (
             <AvatarThumb
               key={avatar.id}
               avatar={avatar}
@@ -413,6 +564,49 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     transform: [{ rotate: "-28deg" }],
   },
+  tapHint: {
+    position: "absolute",
+    left: spacing.md,
+    right: spacing.md,
+    bottom: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    borderRadius: radius.xxl,
+    borderWidth: hairline,
+    borderColor: "rgba(255, 255, 255, 0.6)",
+    backgroundColor: "rgba(48, 38, 55, 0.88)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  tapHintCopy: {
+    flexShrink: 1,
+  },
+  tapHintTitle: {
+    color: colors.white,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  tapHintText: {
+    marginTop: 2,
+    color: "rgba(255, 255, 255, 0.82)",
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  tapHintIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.white,
+  },
+  tapHintIconText: {
+    fontSize: 22,
+  },
   processingOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
@@ -456,6 +650,39 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 13,
     lineHeight: 19,
+  },
+  reviewPanel: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.xxl,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.white,
+  },
+  reviewBadge: {
+    alignSelf: "flex-start",
+    overflow: "hidden",
+    borderRadius: radius.pill,
+    borderWidth: hairline,
+    borderColor: colors.pinkSoft,
+    backgroundColor: colors.pinkBg,
+    color: colors.pink,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 12,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  largePhotoBox: {
+    minHeight: 420,
+    borderRadius: radius.xxl,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.pinkBg,
+    overflow: "hidden",
+  },
+  largePhoto: {
+    width: "100%",
+    height: 460,
   },
   enhancementPanel: {
     gap: spacing.sm,

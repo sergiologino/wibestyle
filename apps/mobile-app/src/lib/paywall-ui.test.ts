@@ -15,8 +15,8 @@ describe("mobile paywall UI contract", () => {
   it("recommends annual Elite and lists its differentiated benefits", () => {
     expect(paywall).toContain('plan: "elite"');
     expect(paywall).toContain("Рекомендуем годовой Elite");
-    expect(paywall).toContain("Генерация видео к любой примерке");
-    expect(paywall).toContain("Лучшие нейросети");
+    expect(paywall).toContain("Видео к любой примерке");
+    expect(paywall).toContain("Более точная обработка");
     expect(paywall).toContain("Приоритетная поддержка");
   });
 
@@ -31,5 +31,13 @@ describe("mobile paywall UI contract", () => {
     expect(paywall).toContain("setRecurringAvailable(Boolean(payload.recurringAvailable))");
     expect(paywall).toContain("savePaymentMethod: recurringAvailable && savePaymentMethod");
     expect(paywall).toContain('paymentProvider === "yookassa" && recurringAvailable');
+  });
+
+  it("uses everyday paywall wording instead of AI/generation wording", () => {
+    expect(paywall).toContain("Программа может ошибаться");
+    expect(paywall).toContain("качество примерок");
+    expect(paywall).not.toContain("AI может");
+    expect(paywall).not.toContain("Генерация видео");
+    expect(paywall).not.toContain("нейросети");
   });
 });

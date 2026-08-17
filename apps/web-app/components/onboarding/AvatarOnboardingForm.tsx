@@ -32,7 +32,6 @@ export default function AvatarOnboardingForm() {
   const [clothingSize, setClothingSize] = useState("M");
   const [shoeSizeEu, setShoeSizeEu] = useState("");
   const [hideFace, setHideFace] = useState(false);
-  const [hideBackground, setHideBackground] = useState(false);
   const [hideFeatures, setHideFeatures] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
@@ -47,7 +46,6 @@ export default function AvatarOnboardingForm() {
     setDisplayName(profile.displayName ?? "");
     setGender(profile.gender ?? "");
     setHideFace(profile.privacy?.faceHidden ?? false);
-    setHideBackground(profile.privacy?.backgroundHidden ?? false);
     setHideFeatures(profile.privacy?.featuresHidden ?? false);
     if (profile.anthropometry?.heightCm) setHeightCm(String(profile.anthropometry.heightCm));
     if (profile.anthropometry?.bustCm) setBustCm(String(profile.anthropometry.bustCm));
@@ -132,7 +130,7 @@ export default function AvatarOnboardingForm() {
         displayName: displayName.trim() || undefined,
         gender: gender || undefined,
         privacyFaceHidden: hideFace,
-        privacyBackgroundHidden: hideBackground,
+        privacyBackgroundHidden: false,
         privacyFeaturesHidden: false,
       };
 
@@ -162,7 +160,7 @@ export default function AvatarOnboardingForm() {
 
       const { avatar } = await api.createAvatar({
         privacyFaceHidden: hideFace,
-        privacyBackgroundHidden: hideBackground,
+        privacyBackgroundHidden: false,
         privacyFeaturesHidden: false,
       });
       createdAvatarId = avatar.id;
@@ -270,10 +268,9 @@ export default function AvatarOnboardingForm() {
             </label>
             <AvatarPrivacyPreview
               localPreviewUrl={photoPreviewUrl}
-              privacy={{ hideFace, hideBackground, hideFeatures: false }}
+              privacy={{ hideFace, hideBackground: false, hideFeatures: false }}
               onPrivacyChange={(next) => {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
-                if (next.hideBackground !== undefined) setHideBackground(next.hideBackground);
               }}
             />
           </section>

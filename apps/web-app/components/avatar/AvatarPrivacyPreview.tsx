@@ -31,7 +31,6 @@ type AvatarPrivacyPreviewProps = {
 
 export function avatarPrivacyPreviewClassName(privacy: PrivacyState) {
   const classes = ["relative overflow-hidden rounded-[28px] bg-[#f8f0f6]"];
-  if (privacy.hideBackground) classes.push("avatar-preview--hide-bg");
   if (privacy.hideFeatures) classes.push("avatar-preview--hide-features");
   return classes.join(" ");
 }
@@ -51,6 +50,7 @@ export default function AvatarPrivacyPreview({
   const [remoteBlobUrl, setRemoteBlobUrl] = useState<string | null>(null);
 
   const displayUrl = localPreviewUrl ?? remoteBlobUrl;
+  const showSelectHint = Boolean(onSelectPhoto && !displayUrl && !processing);
 
   useEffect(() => {
     if (localPreviewUrl || !remotePhotoPath || !accessToken) {
@@ -108,6 +108,20 @@ export default function AvatarPrivacyPreview({
               className="avatar-preview-image mx-auto block max-h-[520px] min-h-[320px] w-full object-contain"
               src={DEFAULT_AVATAR_SAMPLE_SRC}
             />
+            {showSelectHint ? (
+              <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 flex items-end justify-center gap-3 rounded-3xl border border-white/70 bg-[#302637]/88 px-4 py-3 text-white shadow-xl backdrop-blur-sm">
+                <div className="min-w-0 text-center">
+                  <p className="text-sm font-semibold sm:hidden">Нажмите на образец</p>
+                  <p className="hidden text-sm font-semibold sm:block">Кликните по образцу</p>
+                  <p className="text-xs leading-4 text-white/82">чтобы выбрать фото для аватара</p>
+                </div>
+                <span aria-hidden className="relative flex size-10 shrink-0 animate-[avatarTapHint_1.6s_ease-in-out_infinite] items-center justify-center rounded-full bg-white text-xl shadow-lg">
+                  <span className="absolute size-10 animate-ping rounded-full bg-white/45" />
+                  <span className="relative sm:hidden">👆</span>
+                  <span className="relative hidden sm:inline">↖</span>
+                </span>
+              </div>
+            ) : null}
             <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center -rotate-[28deg] text-4xl font-black tracking-[0.22em] text-[#6d6273]/55 sm:text-6xl">ОБРАЗЕЦ</span>
           </>
         )}
@@ -132,12 +146,6 @@ export default function AvatarPrivacyPreview({
             description="Размываем область лица"
             label="Скрыть лицо"
             onChange={(checked) => onPrivacyChange({ hideFace: checked })}
-          />
-          <FieldCheckbox
-            checked={privacy.hideBackground}
-            description="Убираем отвлекающий фон"
-            label="Скрыть фон"
-            onChange={(checked) => onPrivacyChange({ hideBackground: checked })}
           />
           <FieldCheckbox
             checked={false}

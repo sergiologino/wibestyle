@@ -14,6 +14,7 @@ import { Screen } from "@/components/ui/Screen";
 import { addPushResponseListener, addRuStorePushResponseListener } from "@/lib/push-notifications";
 import * as Linking from "expo-linking";
 import { captureVisitorIdFromUrl, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
+import { initializeMyTracker } from "@/lib/mytracker";
 
 function PushNotificationObserver() {
   const router = useRouter();
@@ -32,6 +33,7 @@ function MarketingVisitorObserver() {
   const pathname = usePathname();
 
   useEffect(() => {
+    void initializeMyTracker();
     void Linking.getInitialURL().then(async (url) => {
       await captureVisitorIdFromUrl(url);
       void trackMobileMarketingEvent("app_opened");
