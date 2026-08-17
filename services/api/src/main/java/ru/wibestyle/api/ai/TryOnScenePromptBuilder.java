@@ -25,12 +25,7 @@ public class TryOnScenePromptBuilder {
                     """.trim().replaceAll("\\s+", " ");
         }
 
-        String sceneKey = resolveSceneKey(session);
-        Map<String, String> prompts = settingsService.getTryOnScenePrompts();
-        String location = selectStableOption(
-                prompts.getOrDefault(sceneKey, prompts.get("default")),
-                session
-        );
+        String location = resolveSelectedLocation(session);
         String pose = settingsService.isTryOnPoseChangeEnabled()
                 ? """
                   You may slightly change the customer's pose to a natural catalog or lifestyle pose appropriate for this location.
@@ -48,6 +43,44 @@ public class TryOnScenePromptBuilder {
                 Preserve the exact garment color, cut, material, print and details from image2.
                 Photorealistic premium fashion photography, coherent lighting and shadows, vertical 3:4 framing, PG-safe styling.
                 """.formatted(location, pose).trim().replaceAll("\\s+", " ");
+    }
+
+    private String resolveSelectedLocation(TryOnSessionEntity session) {
+        String custom = sanitizeCustomScene(session.getCustomScene());
+        if (custom != null) {
+            return custom;
+        }
+        String preset = session.getScenePreset() == null ? "" : session.getScenePreset().trim().toLowerCase(Locale.ROOT);
+        String presetLocation = locationForPreset(preset);
+        if (presetLocation != null) {
+            return presetLocation;
+        }
+
+        String sceneKey = resolveSceneKey(session);
+        Map<String, String> prompts = settingsService.getTryOnScenePrompts();
+        return selectStableOption(
+                prompts.getOrDefault(sceneKey, prompts.get("default")),
+                session
+        );
+    }
+
+    private static String locationForPreset(String preset) {
+        return switch (preset) {
+            case "studio_front" -> "a clean premium fitting studio with soft neutral lighting, standing front-facing in a calm catalog pose";
+            case "city_walk" -> "a modern city street in daylight, standing or gently walking in a natural lifestyle pose";
+            case "cafe_turn" -> "a stylish cafe terrace or boutique interior, three-quarter turn pose with the full outfit clearly visible";
+            case "park_walk" -> "a calm green park path in daylight, relaxed full-body walking pose with uncluttered background";
+            case "evening_event" -> "an elegant evening lobby or restaurant entrance, confident full-body pose with premium lighting";
+            default -> null;
+        };
+    }
+
+    private static String sanitizeCustomScene(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().replaceAll("\\s+", " ");
+        return normalized.length() > 512 ? normalized.substring(0, 512) : normalized;
     }
 
     private static String selectStableOption(String configured, TryOnSessionEntity session) {

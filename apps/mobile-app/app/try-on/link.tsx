@@ -10,7 +10,13 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { extractMarketplaceUrl, type ProductPreview, type SizeAdvice } from "@wibestyle/shared-types";
+import {
+  TRY_ON_SCENE_PRESETS,
+  extractMarketplaceUrl,
+  type ProductPreview,
+  type SizeAdvice,
+  type TryOnScenePreset,
+} from "@wibestyle/shared-types";
 import { ApiError } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
@@ -42,6 +48,8 @@ export default function TryOnLinkScreen() {
   const [url, setUrl] = useState("");
   const [product, setProduct] = useState<ProductPreview | null>(null);
   const [size, setSize] = useState("M");
+  const [scenePreset, setScenePreset] = useState<TryOnScenePreset>("auto");
+  const [customScene, setCustomScene] = useState("");
   const [sizeAdvice, setSizeAdvice] = useState<SizeAdvice | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +67,7 @@ export default function TryOnLinkScreen() {
       setUrl(normalizedUrl);
       const payload = await api.parseLink(normalizedUrl);
       setProduct(payload.product);
-      setSize(payload.product.suggestedSize ?? payload.product.sizes[0] ?? "M");
+      setSize(payload.product.suggestedSize ?? payload.product.sizes[0] ?? "");
       setStep(1);
     } catch (err) {
       setError(
@@ -96,7 +104,11 @@ export default function TryOnLinkScreen() {
     setLoading(true);
     setError(null);
     try {
-      const sessionPayload = await api.createLinkTryOnSession(product.productUrl, size);
+      const sessionPayload = await api.createLinkTryOnSession(
+        product.productUrl,
+        product.sizes.length > 0 ? size : undefined,
+        { scenePreset, customScene: scenePreset === "custom" ? customScene : undefined },
+      );
       await api.generateTryOn(sessionPayload.session.id);
       await refreshProfile();
       router.replace(`/try-on/result/${sessionPayload.session.id}`);
@@ -154,7 +166,7 @@ export default function TryOnLinkScreen() {
               </Text>
               <Text style={styles.sizeLabel}>Размер</Text>
               <View style={styles.sizeRow}>
-                {(product.sizes.length ? product.sizes : ["S", "M", "L", "XL"]).map((item) => (
+                {product.sizes.map((item) => (
                   <Pressable
                     key={item}
                     style={[styles.sizePill, size === item && styles.sizePillActive]}
@@ -167,8 +179,30 @@ export default function TryOnLinkScreen() {
                   </Pressable>
                 ))}
               </View>
+              {product.sizes.length === 0 ? (
+                <Text style={styles.advice}>Магазин не отдал список размеров. Примерку можно запустить без выбора размера.</Text>
+              ) : null}
               {sizeAdvice?.warnings.length ? (
                 <Text style={styles.advice}>{formatSizeAdvice(sizeAdvice)}</Text>
+              ) : null}
+              <Text style={styles.sizeLabel}>Сцена и поза</Text>
+              <View style={styles.sizeRow}>
+                {[...TRY_ON_SCENE_PRESETS, { id: "custom" as const, label: "Свой вариант", description: "Опишите сцену сами" }].map((item) => (
+                  <Pressable
+                    key={item.id}
+                    style={[styles.scenePill, scenePreset === item.id && styles.sizePillActive]}
+                    onPress={() => setScenePreset(item.id)}
+                  >
+                    <Text style={[styles.sizeText, scenePreset === item.id && styles.sizeTextActive]}>{item.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {scenePreset === "custom" ? (
+                <TextField
+                  placeholder="Например: светлая студия, поза немного боком"
+                  value={customScene}
+                  onChangeText={setCustomScene}
+                />
               ) : null}
               <Button label="Запустить AI-примерку" loading={loading} onPress={() => setStep(2)} />
               <Button label="Назад" variant="ghost" onPress={() => setStep(0)} />
@@ -265,6 +299,15 @@ const styles = StyleSheet.create({
   },
   sizePill: {
     minWidth: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    alignItems: "center",
+  },
+  scenePill: {
+    minWidth: 76,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: radius.md,

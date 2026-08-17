@@ -379,6 +379,28 @@ export type TryOnSessionStatus = "draft" | "generating" | "ready" | "failed";
 
 export type TryOnSourceType = "marketplace_link" | "garment_photo" | "gallery_upload";
 
+export type TryOnScenePreset =
+  | "auto"
+  | "studio_front"
+  | "city_walk"
+  | "cafe_turn"
+  | "park_walk"
+  | "evening_event"
+  | "custom";
+
+export const TRY_ON_SCENE_PRESETS: Array<{
+  id: Exclude<TryOnScenePreset, "custom">;
+  label: string;
+  description: string;
+}> = [
+  { id: "auto", label: "Авто", description: "Программа подберёт сцену под вещь" },
+  { id: "studio_front", label: "Студия", description: "Спокойный фон и поза лицом" },
+  { id: "city_walk", label: "Город", description: "Уличный образ в движении" },
+  { id: "cafe_turn", label: "Кафе", description: "Поворот 3/4, хорошо видно посадку" },
+  { id: "park_walk", label: "Парк", description: "Естественный свет и полный рост" },
+  { id: "evening_event", label: "Вечер", description: "Нарядная сцена с премиальным светом" },
+];
+
 export type TryOnErrorCode =
   | "PRODUCT_PARSE_FAILED"
   | "MARKETPLACE_UNSUPPORTED"
@@ -404,6 +426,8 @@ export type TryOnSessionRecord = {
   status: TryOnSessionStatus;
   visibility: "private" | "unlisted" | "public";
   selectedSize?: string;
+  scenePreset?: TryOnScenePreset;
+  customScene?: string;
   garmentCategory?: string;
   sizeWarning?: TryOnErrorCode;
   errorCode?: TryOnErrorCode;
@@ -511,6 +535,8 @@ export type SizeAdvice = {
   warnings: string[];
   reasons: string[];
   reviewSignals?: string[];
+  /** Reserved for future review-summary sizing: +1 means take one size up, -1 one size down. */
+  reviewSizeShift?: number;
 };
 
 export type FavoriteRecord = {

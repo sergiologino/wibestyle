@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 
 public record CreateLinkTryOnSessionRequest(
         @NotBlank String url,
-        String selectedSize
+        String selectedSize,
+        String scenePreset,
+        String customScene
 ) {
 }

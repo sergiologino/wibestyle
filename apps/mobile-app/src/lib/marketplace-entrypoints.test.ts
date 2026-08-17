@@ -14,6 +14,7 @@ describe("mobile marketplace try-on entry points", () => {
     const linkScreen = readFileSync(join(process.cwd(), "app", "try-on", "link.tsx"), "utf8");
     expect(hub).toContain('href: "/try-on/link"');
     expect(linkScreen).toContain("api.parseLink(normalizedUrl)");
-    expect(linkScreen).toContain("api.createLinkTryOnSession(product.productUrl, size)");
+    expect(linkScreen).toContain("api.createLinkTryOnSession(");
+    expect(linkScreen).toContain("scenePreset");
   });
 });

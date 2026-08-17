@@ -1,5 +1,6 @@
 import type { WibeStyleApiClient } from "@wibestyle/api-client";
 import { ApiError } from "@wibestyle/api-client";
+import type { TryOnScenePreset } from "@wibestyle/shared-types";
 
 export type RNFile = {
   uri: string;
@@ -89,10 +90,13 @@ export function createMobileUploadHelpers(
       sourceType: "garment_photo" | "gallery_upload" = "gallery_upload",
       selectedSize?: string,
       productTitle?: string,
+      scene?: { scenePreset?: TryOnScenePreset; customScene?: string },
     ) {
       const extra: Record<string, string> = { category, sourceType };
       if (selectedSize) extra.selectedSize = selectedSize;
       if (productTitle) extra.productTitle = productTitle;
+      if (scene?.scenePreset) extra.scenePreset = scene.scenePreset;
+      if (scene?.customScene) extra.customScene = scene.customScene;
       return uploadMultipart<{ session: { id: string } }>(
         baseUrl,
         "/api/v1/try-on/sessions/photo",

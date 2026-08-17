@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -81,7 +82,13 @@ public class TryOnService {
     }
 
     @Transactional
-    public Map<String, Object> createLinkSession(UUID userId, String url, String selectedSize) {
+    public Map<String, Object> createLinkSession(
+            UUID userId,
+            String url,
+            String selectedSize,
+            String scenePreset,
+            String customScene
+    ) {
         AvatarSnapshotEntity snapshot = requireTryOnProfileReady(userId);
         String extractedUrl = MarketplaceUrlNormalizer.extract(url);
         MarketplaceAdapter adapter;
@@ -110,6 +117,7 @@ public class TryOnService {
                 now
         );
         applyProduct(session, product, selectedSize);
+        applySceneSelection(session, scenePreset, customScene);
         tryOnSessionRepository.save(session);
         userActivityService.recordTryOn(userId);
         try {
@@ -136,7 +144,9 @@ public class TryOnService {
             String category,
             TryOnSourceType sourceType,
             String selectedSize,
-            String productTitle
+            String productTitle,
+            String scenePreset,
+            String customScene
     ) throws IOException {
         AvatarSnapshotEntity snapshot = requireTryOnProfileReady(userId);
         if (photo == null || photo.isEmpty()) {
@@ -179,6 +189,7 @@ public class TryOnService {
         session.setProductBrand("Фото из галереи");
         session.setProductSizes(serializeSizes(DEFAULT_PHOTO_SIZES));
         session.setSelectedSize(resolveSelectedSize(selectedSize, DEFAULT_PHOTO_SIZES));
+        applySceneSelection(session, scenePreset, customScene);
         tryOnSessionRepository.save(session);
         userActivityService.recordTryOn(userId);
 
@@ -385,7 +396,14 @@ public class TryOnService {
 
     private String resolveSelectedSize(String selectedSize, List<String> availableSizes) {
         if (selectedSize != null && !selectedSize.isBlank()) {
-            return selectedSize;
+            String normalized = selectedSize.trim();
+            if (availableSizes == null || availableSizes.isEmpty()) {
+                return normalized;
+            }
+            return availableSizes.stream()
+                    .filter(size -> sizeMatches(size, normalized))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(TryOnErrorCodes.SIZE_NOT_AVAILABLE));
         }
         if (availableSizes != null && !availableSizes.isEmpty()) {
             return availableSizes.contains("M") ? "M" : availableSizes.get(0);
@@ -397,10 +415,55 @@ public class TryOnService {
         if (selectedSize == null || availableSizes == null || availableSizes.isEmpty()) {
             return null;
         }
-        if (!availableSizes.contains(selectedSize)) {
+        if (availableSizes.stream().noneMatch(size -> sizeMatches(size, selectedSize))) {
             return TryOnErrorCodes.SIZE_NOT_AVAILABLE;
         }
         return null;
+    }
+
+    private static boolean sizeMatches(String available, String requested) {
+        if (available == null || requested == null) {
+            return false;
+        }
+        String left = normalizeSizeToken(available);
+        String right = normalizeSizeToken(requested);
+        if (left.equals(right)) {
+            return true;
+        }
+        for (String token : left.split("/")) {
+            if (token.trim().equals(right)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String normalizeSizeToken(String value) {
+        return value.trim().replaceAll("\\s+", "").toUpperCase(Locale.ROOT);
+    }
+
+    private void applySceneSelection(TryOnSessionEntity session, String scenePreset, String customScene) {
+        session.setScenePreset(normalizeScenePreset(scenePreset));
+        session.setCustomScene(normalizeCustomScene(customScene));
+    }
+
+    private static String normalizeScenePreset(String value) {
+        if (value == null || value.isBlank()) {
+            return "auto";
+        }
+        String normalized = value.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_\\-]", "");
+        if (normalized.isBlank()) {
+            return "auto";
+        }
+        return normalized.length() > 32 ? normalized.substring(0, 32) : normalized;
+    }
+
+    private static String normalizeCustomScene(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().replaceAll("\\s+", " ");
+        return normalized.length() > 512 ? normalized.substring(0, 512) : normalized;
     }
 
     private String serializeSizes(List<String> sizes) {
@@ -462,6 +525,8 @@ public class TryOnService {
         map.put("status", session.getStatus().name().toLowerCase());
         map.put("visibility", session.getVisibility());
         map.put("selectedSize", session.getSelectedSize());
+        map.put("scenePreset", session.getScenePreset());
+        map.put("customScene", session.getCustomScene());
         map.put("garmentCategory", session.getGarmentCategory());
         map.put("garmentPromptProfile", session.getGarmentPromptProfile());
         map.put("garmentCoverageLevel", session.getGarmentCoverageLevel());

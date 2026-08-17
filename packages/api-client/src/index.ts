@@ -22,6 +22,7 @@ import type {
   SubscriptionPlan,
   TryOnResult,
   TryOnHistoryItem,
+  TryOnScenePreset,
   TryOnSessionRecord,
   UpdateProfilePayload,
   UserEntitlements,
@@ -474,10 +475,19 @@ export class WibeStyleApiClient {
     });
   }
 
-  createLinkTryOnSession(url: string, selectedSize?: string) {
+  createLinkTryOnSession(
+    url: string,
+    selectedSize?: string,
+    scene?: { scenePreset?: TryOnScenePreset; customScene?: string },
+  ) {
     return this.request<{ session: TryOnSessionRecord; product: ProductPreview }>("/api/v1/try-on/sessions/link", {
       method: "POST",
-      body: JSON.stringify({ url: extractMarketplaceUrl(url), selectedSize }),
+      body: JSON.stringify({
+        url: extractMarketplaceUrl(url),
+        selectedSize,
+        scenePreset: scene?.scenePreset,
+        customScene: scene?.customScene,
+      }),
     });
   }
 
@@ -487,6 +497,7 @@ export class WibeStyleApiClient {
     sourceType: "garment_photo" | "gallery_upload" = "gallery_upload",
     selectedSize?: string,
     productTitle?: string,
+    scene?: { scenePreset?: TryOnScenePreset; customScene?: string },
   ) {
     const body = new FormData();
     body.append("photo", file);
@@ -497,6 +508,12 @@ export class WibeStyleApiClient {
     }
     if (productTitle) {
       body.append("productTitle", productTitle);
+    }
+    if (scene?.scenePreset) {
+      body.append("scenePreset", scene.scenePreset);
+    }
+    if (scene?.customScene) {
+      body.append("customScene", scene.customScene);
     }
     return this.request<{ session: TryOnSessionRecord }>("/api/v1/try-on/sessions/photo", {
       method: "POST",

@@ -5,7 +5,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, StepIndicator } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
-import type { GarmentCategory, ProductPreview } from "@wibestyle/shared-types";
+import type { GarmentCategory, ProductPreview, TryOnScenePreset } from "@wibestyle/shared-types";
+import { TRY_ON_SCENE_PRESETS } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import ProductPreviewImage from "@/components/try-on/ProductPreviewImage";
 import { canStartGeneration } from "@/lib/onboarding-flow";
@@ -33,6 +34,8 @@ export default function PhotoTryOnClient() {
   const [garmentTitle, setGarmentTitle] = useState("");
   const [classificationSource, setClassificationSource] = useState<"ai" | "fallback" | null>(null);
   const [size, setSize] = useState("M");
+  const [scenePreset, setScenePreset] = useState<TryOnScenePreset>("auto");
+  const [customScene, setCustomScene] = useState("");
   const [loading, setLoading] = useState(false);
   const [classifying, setClassifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +146,10 @@ export default function PhotoTryOnClient() {
         "gallery_upload",
         size,
         garmentTitle || product.title,
+        {
+          scenePreset,
+          customScene: scenePreset === "custom" ? customScene : undefined,
+        },
       );
       const generated = await api.generateTryOn(created.session.id);
       await refreshProfile();
@@ -267,6 +274,34 @@ export default function PhotoTryOnClient() {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className="mt-6 border-t border-[#ffd1ed] pt-6">
+                <h3 className="text-display-md text-lg">Где примерить?</h3>
+                <p className="mt-1 text-sm font-normal text-[#6d6273]">
+                  Выберите сцену и позу для результата.
+                </p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {[...TRY_ON_SCENE_PRESETS, { id: "custom" as const, label: "Свой вариант", description: "Опишите сцену сами" }].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`rounded-2xl border px-4 py-3 text-left transition ${scenePreset === item.id ? "border-[#ff1fa2] bg-[#fff0f8]" : "border-[#ffd1ed] bg-white"}`}
+                      onClick={() => setScenePreset(item.id)}
+                    >
+                      <span className="block text-sm font-medium text-[#302637]">{item.label}</span>
+                      <span className="mt-1 block text-xs font-normal text-[#6d6273]">{item.description}</span>
+                    </button>
+                  ))}
+                </div>
+                {scenePreset === "custom" ? (
+                  <textarea
+                    className="mt-3 min-h-24 w-full rounded-2xl border border-[#ffd1ed] px-4 py-3 text-sm font-normal outline-none focus:border-[#ff1fa2]"
+                    maxLength={512}
+                    placeholder="Например: светлая примерочная, поза немного боком, полный рост"
+                    value={customScene}
+                    onChange={(event) => setCustomScene(event.target.value)}
+                  />
+                ) : null}
               </div>
             </div>
           </div>
