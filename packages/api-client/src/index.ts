@@ -72,6 +72,36 @@ export type AiProviderErrorMappingPayload = Pick<
   "errorText" | "description" | "enabled"
 >;
 
+export type ManualPushAudience = "all" | "paid" | "wibe" | "elite" | "trial";
+
+export type ManualPushCampaign = {
+  id: string;
+  title: string;
+  body: string;
+  actionUrl?: string | null;
+  audience: ManualPushAudience;
+  status: "scheduled" | "sending" | "sent" | "cancelled";
+  scheduledAt: string;
+  targetedUsers: number;
+  queuedUsers: number;
+  acceptedUsers: number;
+  errorUsers: number;
+  noDeviceUsers: number;
+  lastError?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+};
+
+export type ManualPushPayload = {
+  title: string;
+  body: string;
+  audience: ManualPushAudience;
+  scheduledAt: string;
+  actionUrl?: string;
+};
+
 export type DeviceAuthInfo = {
   hash: string;
   previousRegistrationOnDevice: boolean;
@@ -1383,6 +1413,20 @@ export class WibeStyleApiClient {
     return this.request<void>(`/api/v1/admin/ai-provider-errors/${id}`, {
       method: "DELETE",
       headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  listAdminManualPushes(adminKey: string) {
+    return this.request<ManualPushCampaign[]>("/api/v1/admin/manual-pushes", {
+      headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  createAdminManualPush(adminKey: string, payload: ManualPushPayload) {
+    return this.request<ManualPushCampaign>("/api/v1/admin/manual-pushes", {
+      method: "POST",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
     });
   }
 }

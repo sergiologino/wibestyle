@@ -21,6 +21,13 @@ export const adminSections = [
     href: "/referrals",
   },
   {
+    id: "manual-pushes",
+    title: "Push-рассылки",
+    description: "Ручные уведомления по сегментам: все, trial, Wibe, Elite и платные пользователи.",
+    status: "Ready",
+    href: "/manual-pushes",
+  },
+  {
     id: "promo",
     title: "Промокоды",
     description: "Создание кодов, лимиты регистраций, ссылки для VK и отмена.",

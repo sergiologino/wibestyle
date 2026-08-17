@@ -26,27 +26,39 @@ public class ExpoPushService {
         this.restClient = RestClient.builder().build();
     }
 
-    public void send(UUID userId, String title, String body, String actionUrl) {
-        if (!properties.isEnabled()) return;
+    public int send(UUID userId, String title, String body, String actionUrl) {
+        if (!properties.isEnabled()) return 0;
+        int sent = 0;
         for (PushDeviceEntity device : deviceRepository.findByUserIdAndProviderAndEnabledTrue(userId, "expo")) {
-            try {
-                Map<String, Object> payload = new LinkedHashMap<>();
-                payload.put("to", device.getExpoPushToken());
-                payload.put("title", title);
-                payload.put("body", body);
-                payload.put("sound", "default");
-                payload.put("channelId", "subscription");
-                payload.put("data", actionUrl == null ? Map.of() : Map.of("actionUrl", actionUrl));
-                var request = restClient.post().uri(properties.getExpoApiUrl())
-                        .header("Accept", "application/json")
-                        .header("Accept-Encoding", "gzip, deflate");
-                if (properties.getAccessToken() != null && !properties.getAccessToken().isBlank()) {
-                    request = request.header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getAccessToken());
-                }
-                request.body(payload).retrieve().toBodilessEntity();
-            } catch (RuntimeException ex) {
-                log.warn("Expo push delivery request failed for device {}: {}", device.getId(), ex.getMessage());
+            if (sendDevice(device, title, body, actionUrl)) {
+                sent++;
             }
+        }
+        return sent;
+    }
+
+    public boolean sendDevice(PushDeviceEntity device, String title, String body, String actionUrl) {
+        if (!properties.isEnabled()) return false;
+        try {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("to", device.getExpoPushToken());
+            payload.put("title", title);
+            payload.put("body", body);
+            payload.put("sound", "default");
+            payload.put("channelId", "subscription");
+            payload.put("ttl", 604800);
+            payload.put("data", actionUrl == null ? Map.of() : Map.of("actionUrl", actionUrl));
+            var request = restClient.post().uri(properties.getExpoApiUrl())
+                    .header("Accept", "application/json")
+                    .header("Accept-Encoding", "gzip, deflate");
+            if (properties.getAccessToken() != null && !properties.getAccessToken().isBlank()) {
+                request = request.header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getAccessToken());
+            }
+            request.body(payload).retrieve().toBodilessEntity();
+            return true;
+        } catch (RuntimeException ex) {
+            log.warn("Expo push delivery request failed for device {}: {}", device.getId(), ex.getMessage());
+            return false;
         }
     }
 }

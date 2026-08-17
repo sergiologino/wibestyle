@@ -35,44 +35,60 @@ public class RuStorePushService {
         String url = properties.getRustoreApiBaseUrl().replaceAll("/$", "")
                 + "/v1/projects/" + properties.getRustoreProjectId() + "/messages:send";
         for (PushDeviceEntity device : deviceRepository.findByUserIdAndProviderAndEnabledTrue(userId, "rustore")) {
-            try {
-                Map<String, Object> notification = new LinkedHashMap<>();
-                notification.put("title", title);
-                notification.put("body", body);
-
-                Map<String, Object> androidNotification = new LinkedHashMap<>(notification);
-                androidNotification.put("channel_id", "subscription");
-                if (actionUrl != null && !actionUrl.isBlank()) {
-                    androidNotification.put("click_action", "wibestyle://" + actionUrl.replaceFirst("^/", ""));
-                    androidNotification.put("click_action_type", 1);
-                }
-
-                Map<String, Object> android = new LinkedHashMap<>();
-                android.put("ttl", "604800s");
-                android.put("notification", androidNotification);
-
-                Map<String, String> data = actionUrl == null || actionUrl.isBlank()
-                        ? Map.of()
-                        : Map.of("actionUrl", actionUrl);
-
-                Map<String, Object> message = new LinkedHashMap<>();
-                message.put("token", device.getExpoPushToken());
-                message.put("notification", notification);
-                message.put("android", android);
-                message.put("data", data);
-
-                restClient.post()
-                        .uri(url)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getRustoreServiceToken())
-                        .header(HttpHeaders.CONTENT_TYPE, "application/json")
-                        .body(Map.of("message", message))
-                        .retrieve()
-                        .toBodilessEntity();
+            if (sendDevice(device, title, body, actionUrl, url)) {
                 sent++;
-            } catch (RuntimeException ex) {
-                log.warn("RuStore push delivery request failed for device {}: {}", device.getId(), ex.getMessage());
             }
         }
         return sent;
+    }
+
+    public boolean sendDevice(PushDeviceEntity device, String title, String body, String actionUrl) {
+        if (!properties.isRustoreConfigured()) {
+            return false;
+        }
+        String url = properties.getRustoreApiBaseUrl().replaceAll("/$", "")
+                + "/v1/projects/" + properties.getRustoreProjectId() + "/messages:send";
+        return sendDevice(device, title, body, actionUrl, url);
+    }
+
+    private boolean sendDevice(PushDeviceEntity device, String title, String body, String actionUrl, String url) {
+        try {
+            Map<String, Object> notification = new LinkedHashMap<>();
+            notification.put("title", title);
+            notification.put("body", body);
+
+            Map<String, Object> androidNotification = new LinkedHashMap<>(notification);
+            androidNotification.put("channel_id", "subscription");
+            if (actionUrl != null && !actionUrl.isBlank()) {
+                androidNotification.put("click_action", "wibestyle://" + actionUrl.replaceFirst("^/", ""));
+                androidNotification.put("click_action_type", 1);
+            }
+
+            Map<String, Object> android = new LinkedHashMap<>();
+            android.put("ttl", "604800s");
+            android.put("notification", androidNotification);
+
+            Map<String, String> data = actionUrl == null || actionUrl.isBlank()
+                    ? Map.of()
+                    : Map.of("actionUrl", actionUrl);
+
+            Map<String, Object> message = new LinkedHashMap<>();
+            message.put("token", device.getExpoPushToken());
+            message.put("notification", notification);
+            message.put("android", android);
+            message.put("data", data);
+
+            restClient.post()
+                    .uri(url)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getRustoreServiceToken())
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .body(Map.of("message", message))
+                    .retrieve()
+                    .toBodilessEntity();
+            return true;
+        } catch (RuntimeException ex) {
+            log.warn("RuStore push delivery request failed for device {}: {}", device.getId(), ex.getMessage());
+            return false;
+        }
     }
 }
