@@ -15,6 +15,7 @@ import { addPushResponseListener, addRuStorePushResponseListener } from "@/lib/p
 import * as Linking from "expo-linking";
 import { captureVisitorIdFromUrl, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
 import { initializeMyTracker } from "@/lib/mytracker";
+import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
 
 function PushNotificationObserver() {
   const router = useRouter();
@@ -88,6 +89,7 @@ export default function RootLayout() {
           <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
           <Stack.Screen name="settings" options={{ presentation: "card" }} />
         </Stack>
+        <TelegramChannelButton floating />
       </SessionProvider>
     </GestureHandlerRootView>
   );

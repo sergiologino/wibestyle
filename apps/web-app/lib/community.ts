@@ -1,8 +1,20 @@
+function normalizeChannelUrl(raw?: string): string | null {
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed.replace(/\/$/, "") : null;
+}
+
 export function telegramChannelUrl(): string | null {
-  const raw = (process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_URL ?? "https://t.me/vibestyle_channel").trim();
-  return raw ? raw.replace(/\/$/, "") : null;
+  return normalizeChannelUrl(process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_URL ?? "https://t.me/vibestyle_channel");
 }
 
 export function telegramChannelName(): string {
-  return process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_NAME?.trim() || "Я на стиле. Поддержка";
+  return process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_NAME?.trim() || "Telegram";
+}
+
+export function maxChannelUrl(): string | null {
+  return normalizeChannelUrl(process.env.NEXT_PUBLIC_MAX_CHANNEL_URL);
+}
+
+export function maxChannelName(): string {
+  return process.env.NEXT_PUBLIC_MAX_CHANNEL_NAME?.trim() || "MAX";
 }

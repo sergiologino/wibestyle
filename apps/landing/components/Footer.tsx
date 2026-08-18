@@ -1,10 +1,11 @@
 import Link from "next/link";
 import HashLink from "@/components/HashLink";
 import { siteConfig } from "@/lib/site";
-import { telegramChannelName, telegramChannelUrl } from "@/lib/community";
+import { maxChannelUrl, telegramChannelUrl } from "@/lib/community";
 
 export default function Footer() {
   const telegramUrl = telegramChannelUrl();
+  const maxUrl = maxChannelUrl();
 
   return (
     <footer className="footer">
@@ -13,7 +14,7 @@ export default function Footer() {
           <Link className="brand footer-brand" href="/">
             <span className="spark">✦</span> Я на стиле
           </Link>
-          <p>AI-примерочная одежды с маркетплейсов.</p>
+          <p>Примерочная одежды с маркетплейсов.</p>
         </div>
         <div>
           <b>Навигация</b>
@@ -24,7 +25,7 @@ export default function Footer() {
         <div>
           <b>Приложение</b>
           <Link href={siteConfig.appUrl}>Веб-версия</Link>
-          <Link href="/ai-primerka">AI-примерка</Link>
+          <Link href="/ai-primerka">Примерка</Link>
         </div>
         <div>
           <b>Поддержка</b>
@@ -38,10 +39,17 @@ export default function Footer() {
           <a href="mailto:admin@altacod.com">admin@altacod.com</a>
           {telegramUrl ? (
             <a className="footer-telegram" href={telegramUrl} rel="noopener noreferrer" target="_blank">
-              Telegram: {telegramChannelName()} ↗
+              Пишите в Telegram ↗
             </a>
           ) : (
-            <p className="footer-legal footer-legal-muted">Telegram-канал</p>
+            <p className="footer-legal footer-legal-muted">Telegram</p>
+          )}
+          {maxUrl ? (
+            <a className="footer-telegram" href={maxUrl} rel="noopener noreferrer" target="_blank">
+              Пишите в MAX ↗
+            </a>
+          ) : (
+            <p className="footer-legal footer-legal-muted">MAX</p>
           )}
         </div>
       </div>

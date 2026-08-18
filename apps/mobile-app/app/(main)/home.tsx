@@ -8,7 +8,6 @@ import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
-import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { Pressable, Text } from "react-native";
 import { getAppBaseUrl } from "@/lib/config";
@@ -175,9 +174,6 @@ export default function HomeScreen() {
               <Feather name="image" size={19} color={theme.colors.muted} />
               <Text style={[styles.tryOnActionText, { color: theme.colors.muted }]}>По фото</Text>
             </Pressable>
-          </View>
-          <View style={styles.actions}>
-            <TelegramChannelButton />
           </View>
         </Card>
 

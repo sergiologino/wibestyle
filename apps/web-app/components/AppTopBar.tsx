@@ -121,7 +121,7 @@ export default function AppTopBar() {
                 <Share2 size={17} strokeWidth={1.7} aria-hidden />
               </button>
             ) : null}
-            {sessionReady && isAuthenticated ? (
+            {sessionReady ? (
               <TelegramChannelButton compact className="hidden lg:inline-flex" />
             ) : null}
             {sessionReady && isAuthenticated && profile && !isPaidSubscription(profile) ? (
@@ -183,6 +183,13 @@ export default function AppTopBar() {
             );
           })}
         </nav>
+      ) : null}
+      {sessionReady ? (
+        <TelegramChannelButton
+          compact
+          iconOnly
+          className="fixed bottom-[86px] right-4 z-50 size-12 rounded-full border-[#ffd1ed] bg-white text-[#ff1fa2] shadow-[0_16px_40px_rgba(58,12,82,0.18)] md:hidden"
+        />
       ) : null}
       <OverlayModal
         ariaLabel="Поделиться приложением"
