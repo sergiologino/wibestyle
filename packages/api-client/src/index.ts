@@ -1044,6 +1044,18 @@ export class WibeStyleApiClient {
     });
   }
 
+  updateAdminPromoCode(
+    adminKey: string,
+    promoId: string,
+    payload: { discountPercent: number; maxUses: number; expiresAt: string; label?: string },
+  ) {
+    return this.request<{ promo: PromoCodeRecord }>(`/api/v1/admin/promo-codes/${promoId}`, {
+      method: "PATCH",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
+  }
+
   generateAdminPromoCode(adminKey: string) {
     return this.request<{ code: string }>("/api/v1/admin/promo-codes/generate-code", {
       method: "POST",

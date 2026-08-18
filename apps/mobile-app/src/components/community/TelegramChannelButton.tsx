@@ -104,7 +104,8 @@ function SupportAction({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    justifyContent: "flex-end",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "rgba(48,38,55,0.36)",
     padding: spacing.lg,
   },
@@ -124,6 +125,8 @@ const styles = StyleSheet.create({
     ...shadows.button,
   },
   sheet: {
+    width: "100%",
+    maxWidth: 420,
     gap: spacing.lg,
     borderRadius: radius.xl,
     backgroundColor: colors.white,

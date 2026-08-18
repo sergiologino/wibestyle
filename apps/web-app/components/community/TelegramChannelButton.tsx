@@ -41,7 +41,7 @@ export default function TelegramChannelButton({ compact = false, iconOnly = fals
 
       {open ? (
         <div
-          className="fixed inset-0 z-[120] flex items-end justify-center bg-[#302637]/35 px-4 pb-4 pt-16 backdrop-blur-sm sm:items-center sm:pb-16"
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-[#302637]/35 p-4 backdrop-blur-sm"
           role="presentation"
           onMouseDown={() => setOpen(false)}
         >
@@ -49,7 +49,7 @@ export default function TelegramChannelButton({ compact = false, iconOnly = fals
             role="dialog"
             aria-modal="true"
             aria-label="Каналы поддержки"
-            className="w-full max-w-sm rounded-[30px] border border-[#ffd1ed] bg-white p-5 shadow-[0_24px_80px_rgba(58,12,82,0.24)]"
+            className="max-h-[calc(100vh-32px)] w-full max-w-sm overflow-y-auto rounded-[30px] border border-[#ffd1ed] bg-white p-5 shadow-[0_24px_80px_rgba(58,12,82,0.24)]"
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">

@@ -120,6 +120,30 @@ public class PromoService {
         return Map.of("promo", toPromoMap(entity));
     }
 
+    @Transactional
+    public Map<String, Object> updatePromo(UUID promoId, int discountPercent, int maxUses, Instant expiresAt, String label) {
+        PromoCodeEntity promo = promoCodeRepository.findById(promoId)
+                .orElseThrow(() -> new IllegalArgumentException("PROMO_NOT_FOUND"));
+        if (discountPercent < 1 || discountPercent > 90) {
+            throw new IllegalArgumentException("PROMO_INVALID_DISCOUNT");
+        }
+        if (maxUses < 1 || maxUses < promo.getUsesCount()) {
+            throw new IllegalArgumentException("PROMO_INVALID_MAX_USES");
+        }
+        if (expiresAt == null) {
+            throw new IllegalArgumentException("PROMO_INVALID_EXPIRY");
+        }
+
+        Instant now = Instant.now();
+        promo.setDiscountPercent(discountPercent);
+        promo.setMaxUses(maxUses);
+        promo.setExpiresAt(expiresAt);
+        promo.setLabel(label == null || label.isBlank() ? null : label.trim());
+        promoCodeRepository.save(promo);
+        userProfileRepository.updatePromoDiscountForActivePromo(promo.getId(), discountPercent, now);
+        return Map.of("promo", toPromoMap(promo));
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> listPromos() {
         List<Map<String, Object>> items = promoCodeRepository.findAll().stream()
