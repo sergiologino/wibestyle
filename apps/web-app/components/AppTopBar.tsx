@@ -48,7 +48,10 @@ export default function AppTopBar() {
       if (cancelled) return;
       const readyAvatars = items.filter((item) => item.status === "READY");
       setHasReadyAvatar(readyAvatars.length > 0);
-      const activeAvatar = readyAvatars.find((item) => item.id === profile?.activeAvatarId) ?? readyAvatars.find((item) => item.active);
+      const activeAvatar =
+        readyAvatars.find((item) => item.id === profile?.activeAvatarId)
+        ?? readyAvatars.find((item) => item.active)
+        ?? readyAvatars[0];
       setAvatarPhotoPath(activeAvatar?.photoProcessedUrl ?? activeAvatar?.photoOriginalUrl ?? null);
     }).catch(() => {
       if (!cancelled) {

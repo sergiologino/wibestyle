@@ -12,8 +12,9 @@ describe("missing avatar flow", () => {
     expect(topBar).toContain("AvatarRequiredNotice compact");
     expect(topBar).toContain("hasReadyAvatar === false");
     expect(homeGate).not.toContain("getNextOnboardingRoute");
-    expect(tryOnGate).not.toContain("tryOnSetupRedirect");
-    expect(tryOnGate).toContain("pointer-events-none");
+    expect(tryOnGate).not.toContain("pointer-events-none");
+    expect(tryOnGate).toContain("Перед запуском примерки");
+    expect(tryOnGate).toContain("tryOnSetupMessage(setupIssue)");
   });
 
   it("opens first-avatar upload directly in profile", () => {
