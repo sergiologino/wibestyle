@@ -10,6 +10,7 @@ describe("missing avatar flow", () => {
 
   it("keeps browsing available and places a global link to avatar setup", () => {
     expect(topBar).toContain("AvatarRequiredNotice compact");
+    expect(topBar).toContain("hasReadyAvatar === false");
     expect(homeGate).not.toContain("getNextOnboardingRoute");
     expect(tryOnGate).not.toContain("tryOnSetupRedirect");
     expect(tryOnGate).toContain("pointer-events-none");

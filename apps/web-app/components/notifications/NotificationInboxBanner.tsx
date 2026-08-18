@@ -13,10 +13,18 @@ export default function NotificationInboxBanner() {
   useEffect(() => {
     if (!accessToken) return;
     let active = true;
-    void api.getNotifications().then(({ items }) => {
-      if (active) setNotification(items.find((item) => !item.read) ?? null);
-    }).catch(() => undefined);
-    return () => { active = false; };
+    let timer: ReturnType<typeof setInterval> | null = null;
+    async function load() {
+      await api.getNotifications().then(({ items }) => {
+        if (active) setNotification(items.find((item) => !item.read) ?? null);
+      }).catch(() => undefined);
+    }
+    void load();
+    timer = setInterval(() => void load(), 60_000);
+    return () => {
+      active = false;
+      if (timer) clearInterval(timer);
+    };
   }, [accessToken, api]);
 
   if (!notification) return null;

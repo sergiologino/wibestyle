@@ -12,6 +12,7 @@ import { isPaidSubscription } from "@/lib/billing-plan";
 import TelegramChannelButton from "@/components/community/TelegramChannelButton";
 import OverlayModal from "@/components/ui/OverlayModal";
 import AvatarRequiredNotice from "@/components/avatar/AvatarRequiredNotice";
+import NotificationInboxBanner from "@/components/notifications/NotificationInboxBanner";
 
 const nav = [
   { href: "/home", label: "Главная", icon: Home },
@@ -29,6 +30,7 @@ export default function AppTopBar() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [avatarPhotoPath, setAvatarPhotoPath] = useState<string | null>(null);
+  const [hasReadyAvatar, setHasReadyAvatar] = useState<boolean | null>(null);
   const isAuthenticated = isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt });
   const avatarUrl = useAuthenticatedBlob(avatarPhotoPath);
 
@@ -36,17 +38,23 @@ export default function AppTopBar() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   useEffect(() => {
-    if (!isAuthenticated || !profile?.activeAvatarId) {
+    if (!isAuthenticated) {
       setAvatarPhotoPath(null);
+      setHasReadyAvatar(null);
       return;
     }
     let cancelled = false;
     void api.listAvatars().then(({ items }) => {
       if (cancelled) return;
-      const activeAvatar = items.find((item) => item.id === profile.activeAvatarId);
+      const readyAvatars = items.filter((item) => item.status === "READY");
+      setHasReadyAvatar(readyAvatars.length > 0);
+      const activeAvatar = readyAvatars.find((item) => item.id === profile?.activeAvatarId) ?? readyAvatars.find((item) => item.active);
       setAvatarPhotoPath(activeAvatar?.photoProcessedUrl ?? activeAvatar?.photoOriginalUrl ?? null);
     }).catch(() => {
-      if (!cancelled) setAvatarPhotoPath(null);
+      if (!cancelled) {
+        setAvatarPhotoPath(null);
+        setHasReadyAvatar(null);
+      }
     });
     return () => {
       cancelled = true;
@@ -158,7 +166,12 @@ export default function AppTopBar() {
           </div>
         </div>
       </header>
-      {sessionReady && isAuthenticated && profile && !profile.activeAvatarId ? <AvatarRequiredNotice compact /> : null}
+      {sessionReady && isAuthenticated && profile && !profile.activeAvatarId && hasReadyAvatar === false ? <AvatarRequiredNotice compact /> : null}
+      {sessionReady && isAuthenticated ? (
+        <div className="mx-auto mt-3 w-full max-w-6xl px-4 md:px-8">
+          <NotificationInboxBanner />
+        </div>
+      ) : null}
       {sessionReady && isAuthenticated ? (
         <nav
           aria-label="Основная навигация"

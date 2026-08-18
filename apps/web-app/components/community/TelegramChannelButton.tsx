@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { HelpCircle, MessageCircle, Send, X } from "lucide-react";
 import { maxChannelUrl, telegramChannelUrl } from "@/lib/community";
 import { trackAppMarketingEvent } from "@/lib/marketing/visitor";
@@ -39,7 +40,7 @@ export default function TelegramChannelButton({ compact = false, iconOnly = fals
         {iconOnly ? null : <span className="truncate">{buttonLabel}</span>}
       </button>
 
-      {open ? (
+      {open && typeof document !== "undefined" ? createPortal(
         <div
           className="fixed inset-0 z-[120] flex items-center justify-center bg-[#302637]/35 p-4 backdrop-blur-sm"
           role="presentation"
@@ -87,7 +88,8 @@ export default function TelegramChannelButton({ compact = false, iconOnly = fals
               ) : null}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </>
   );
