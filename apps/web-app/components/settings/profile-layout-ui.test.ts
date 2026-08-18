@@ -30,4 +30,10 @@ describe("profile layout", () => {
     expect(profile).toContain("normalizedDisplayName");
     expect(profile).toContain("Укажите имя (никнейм)");
   });
+
+  it("persists profile changes that only touch anthropometry or display fields", () => {
+    const provider = readFileSync(join(process.cwd(), "components", "providers", "AppSessionProvider.tsx"), "utf8");
+    expect(provider).toContain("profileSignature(prev.profile) === profileSignature(synced.profile)");
+    expect(provider).not.toContain("prev.profile?.activeAvatarId === synced.profile?.activeAvatarId");
+  });
 });
