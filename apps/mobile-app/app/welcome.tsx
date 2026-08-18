@@ -61,7 +61,7 @@ export default function WelcomeScreen() {
 
   function skipOnboarding() {
     completeOnboardingStep("welcome");
-    router.replace("/auth?next=/paywall");
+    router.replace(`/auth?next=${encodeURIComponent("/(main)/profile")}`);
   }
 
   function nextSlide() {

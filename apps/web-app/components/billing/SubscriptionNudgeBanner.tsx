@@ -26,13 +26,13 @@ export default function SubscriptionNudgeBanner({ level, trialLeft }: Props) {
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-eyebrow text-[#ff1fa2]">Подписка WibeStyle</p>
+          <p className="text-eyebrow text-[#ff1fa2]">{urgent ? "Trial почти закончился" : "Подписка WibeStyle"}</p>
           <h2 className="text-display-md mt-2 text-2xl md:text-3xl">{copy.title}</h2>
           <p className="text-body mt-2 max-w-xl">{copy.body}</p>
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
           <Link href="/paywall">
-            <Button size="md">{urgent ? "Выбрать тариф" : "Смотреть тарифы"}</Button>
+            <Button size="md">{urgent ? "Продолжить без паузы" : "Смотреть тарифы"}</Button>
           </Link>
           {!urgent ? (
             <Link href="/paywall?plan=wibe&period=annual">

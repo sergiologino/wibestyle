@@ -12,9 +12,10 @@ describe("web onboarding parity", () => {
     expect(media).not.toContain("object-cover");
   });
 
-  it("routes skip and trial through registration to paywall", () => {
+  it("routes trial to paywall and skip to avatar setup", () => {
     expect(welcome).toContain('authUrl.searchParams.set("next", "/paywall")');
-    expect(welcome).toContain('activeIndex === 0 ? openTrial()');
+    expect(welcome).toContain('authUrl.searchParams.set("next", "/settings")');
+    expect(welcome).toContain('activeIndex === 0 ? skipOnboarding()');
     expect(welcome).toContain('activeIndex === 0 ? "Пропустить"');
   });
 });

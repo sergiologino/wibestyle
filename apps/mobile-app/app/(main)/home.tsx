@@ -72,6 +72,7 @@ export default function HomeScreen() {
     profile?.plan === "trial"
       ? profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0)
       : profile?.planGenerationsLeft ?? null;
+  const showLastTrialNudge = profile?.plan === "trial" && gensLeft === 1;
   const publishedVerb = profile?.gender === "male" ? "публиковал" : "публиковала";
   const greetingName = profile?.displayName?.trim() || "пользователь";
 
@@ -121,6 +122,16 @@ export default function HomeScreen() {
                   void api.markNotificationRead(id);
                 }}
               />
+            </View>
+          </Card>
+        ) : null}
+        {showLastTrialNudge ? (
+          <Card style={styles.lastTrialCard}>
+            <Eyebrow>Trial почти закончился</Eyebrow>
+            <SectionTitle>Осталась последняя бесплатная примерка</SectionTitle>
+            <BodyText>Самое время выбрать тариф: после этой примерки trial закончится, а с Wibe можно продолжать примерять без паузы.</BodyText>
+            <View style={styles.lastTrialActions}>
+              <Button label="Продолжить без паузы" onPress={() => router.push("/paywall")} />
             </View>
           </Card>
         ) : null}
@@ -299,6 +310,13 @@ const styles = StyleSheet.create({
   },
   notificationCard: { borderColor: colors.violet },
   notificationActions: { marginTop: spacing.md, gap: spacing.sm },
+  lastTrialCard: {
+    borderColor: colors.pink,
+    backgroundColor: colors.pinkBg,
+  },
+  lastTrialActions: {
+    marginTop: spacing.md,
+  },
   avatarCta: {
     alignSelf: "flex-start",
     marginTop: spacing.md,

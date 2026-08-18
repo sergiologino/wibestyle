@@ -142,8 +142,14 @@ export default function ProfileSettingsClient() {
     setSaving(true);
     setError(null);
     setMessage(null);
+    const normalizedDisplayName = displayName.trim();
+    if (!normalizedDisplayName) {
+      setError("Укажите имя (никнейм)");
+      setSaving(false);
+      return;
+    }
     const payload: UpdateProfilePayload = {
-      displayName: displayName.trim() || undefined,
+      displayName: normalizedDisplayName,
       gender: gender || undefined,
       interfacePalette,
       heightCm: heightCm ? Number(heightCm) : undefined,
@@ -230,7 +236,7 @@ export default function ProfileSettingsClient() {
         </div>
       </section>
 
-      <Card>
+      <Card className="order-[50]">
         <p className={sectionTitleClassName}>Избранное</p>
         <p className={`mt-1 ${mutedTextClassName}`}>Сохранённые вещи и быстрый возврат к понравившимся примеркам.</p>
         <Link className="mt-4 inline-block" href="/favorites">
@@ -240,7 +246,7 @@ export default function ProfileSettingsClient() {
         </Link>
       </Card>
 
-      <Card>
+      <Card className="order-[40]">
         <p className={sectionTitleClassName}>Подписка</p>
         {profile ? (
           <div className="mt-3 space-y-2 text-sm text-[#6d6273]">
@@ -292,7 +298,7 @@ export default function ProfileSettingsClient() {
         </Link>
       </Card>
 
-      <Card>
+      <Card className="order-[10]">
         <div className="grid gap-6">
           <div>
             <p className={sectionTitleClassName}>Основной аватар</p>
@@ -312,9 +318,9 @@ export default function ProfileSettingsClient() {
         </div>
       </Card>
 
-      {profile?.activeAvatarId ? <Card className="p-4 sm:p-5"><AvatarManager activeAvatarId={profile.activeAvatarId} showFeaturedAvatar={false} /></Card> : null}
+      {profile?.activeAvatarId ? <Card className="order-[11] p-4 sm:p-5"><AvatarManager activeAvatarId={profile.activeAvatarId} showFeaturedAvatar={false} /></Card> : null}
 
-      <Card>
+      <Card className="order-[20]">
         <form className="grid gap-6" onSubmit={onSave}>
           <div>
             <p className={sectionTitleClassName}>Данные профиля</p>
@@ -323,8 +329,14 @@ export default function ProfileSettingsClient() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <FieldLabel>
-              Имя для отображения
-              <FieldInput maxLength={80} value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+              Имя (Никнейм)
+              <FieldInput
+                className="border-[#ff8fcf] bg-[#fff4fb] shadow-[0_0_0_3px_rgba(255,31,162,0.08)]"
+                maxLength={80}
+                required
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+              />
             </FieldLabel>
             <FieldLabel>
               Пол
@@ -364,7 +376,7 @@ export default function ProfileSettingsClient() {
         {message ? <p className="mt-3 text-sm font-normal text-[#782cff]">{message}</p> : null}
       </Card>
 
-      <Card>
+      <Card className="order-[60]">
         <p className={sectionTitleClassName}>Палитра интерфейса</p>
         <p className={`mt-1 ${mutedTextClassName}`}>
           Выбери цветовую гамму приложения. Текущая розово-фиолетовая остается доступной.
@@ -402,7 +414,7 @@ export default function ProfileSettingsClient() {
         </div>
       </Card>
 
-      <Card>
+      <Card className="order-[70]">
         <h2 className="text-xl font-semibold text-[#c01278]">Удалить аккаунт</h2>
         <p className={`mt-2 ${mutedTextClassName}`}>
           Безвозвратно удалятся профиль, аватары, примерки, посты и медиа. Это действие нельзя отменить.
@@ -419,13 +431,13 @@ export default function ProfileSettingsClient() {
         </form>
       </Card>
 
-      {error ? <p className="text-sm font-normal text-[#ff1fa2]">{error}</p> : null}
+      {error ? <p className="order-[80] text-sm font-normal text-[#ff1fa2]">{error}</p> : null}
 
-      <Link href="/home" className="text-sm font-medium text-[#ff1fa2]">
+      <Link href="/home" className="order-[90] text-sm font-medium text-[#ff1fa2]">
         ← На главную
       </Link>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-normal text-[#9a8f99]">
+      <div className="order-[100] flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-normal text-[#9a8f99]">
         <a className="text-[#ff1fa2]" href={legalLinks.privacy} target="_blank" rel="noreferrer">
           Политика конфиденциальности
         </a>
