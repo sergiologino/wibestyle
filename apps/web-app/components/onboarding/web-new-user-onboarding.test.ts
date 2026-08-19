@@ -7,9 +7,11 @@ describe("web new user onboarding routing", () => {
     const welcome = readFileSync(join(process.cwd(), "components", "onboarding", "WelcomeClient.tsx"), "utf8");
     const provider = readFileSync(join(process.cwd(), "components", "providers", "AppSessionProvider.tsx"), "utf8");
     const sync = readFileSync(join(process.cwd(), "lib", "session-onboarding.ts"), "utf8");
+    const flow = readFileSync(join(process.cwd(), "lib", "onboarding-flow.ts"), "utf8");
     expect(welcome).toContain("onboarding.welcomeSeen || onboarding.avatarComplete");
-    expect(welcome).toContain("if (onboarding.authComplete)");
-    expect(welcome).toContain('advanceOnboarding(onboarding, "welcome")');
+    expect(welcome).toContain("function skipOnboarding()");
+    expect(welcome).toContain('router.push("/settings")');
+    expect(flow).toContain('return "/welcome"');
     expect(provider).toContain("...sessionRef.current.onboarding");
     expect(provider).not.toContain("welcomeSeen: true,");
     expect(sync).toContain("if (!profile.activeAvatarId)");

@@ -189,6 +189,10 @@ function withSyncedOnboarding(session: AppSession): AppSession {
   };
 }
 
+function profileSignature(profile: UserProfile | null): string {
+  return JSON.stringify(profile ?? null);
+}
+
 
 
 export function AppSessionProvider({ children }: { children: React.ReactNode }) {
@@ -224,14 +228,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
       && prev.refreshToken === synced.refreshToken
       && prev.accessTokenExpiresAt === synced.accessTokenExpiresAt
       && prev.phone === synced.phone
-      && prev.profile?.userId === synced.profile?.userId
-      && prev.profile?.plan === synced.profile?.plan
-      && prev.profile?.activeAvatarId === synced.profile?.activeAvatarId
-      && prev.profile?.interfacePalette === synced.profile?.interfacePalette
-      && prev.profile?.trialGenerationsLeft === synced.profile?.trialGenerationsLeft
-      && prev.profile?.trialVideoGenerationsLeft === synced.profile?.trialVideoGenerationsLeft
-      && prev.profile?.planGenerationsLeft === synced.profile?.planGenerationsLeft
-      && prev.profile?.bonusGenerationsLeft === synced.profile?.bonusGenerationsLeft
+      && profileSignature(prev.profile) === profileSignature(synced.profile)
       && prev.onboarding.step === synced.onboarding.step
       && prev.onboarding.authComplete === synced.onboarding.authComplete
       && prev.onboarding.avatarComplete === synced.onboarding.avatarComplete

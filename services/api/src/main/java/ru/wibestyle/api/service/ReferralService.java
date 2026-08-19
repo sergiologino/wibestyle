@@ -43,15 +43,25 @@ public class ReferralService {
 
     @Transactional
     public void captureNewUser(UUID userId, String referralCode) {
+        ReferralAccountEntity account = ensureAccount(userId);
         if (referralCode == null || referralCode.isBlank()) return;
         ReferralAccountEntity referrer = accountRepository.findByReferralCodeIgnoreCase(referralCode.trim()).orElse(null);
         if (referrer == null || referrer.getUserId().equals(userId)) return;
-        ReferralAccountEntity account = ensureAccount(userId);
         if (account.getReferredByUserId() == null) {
             account.setReferredByUserId(referrer.getUserId());
             account.setReferredAt(Instant.now());
             accountRepository.save(account);
         }
+    }
+
+    @Transactional
+    public ReferralAccountEntity ensureAccountForUser(UUID userId) {
+        return ensureAccount(userId);
+    }
+
+    @Transactional
+    public String referralCodeForUser(UUID userId) {
+        return ensureAccount(userId).getReferralCode();
     }
 
     @Transactional

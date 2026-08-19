@@ -5,8 +5,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button, Card, StepIndicator } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
-import type { ProductPreview, SizeAdvice } from "@wibestyle/shared-types";
-import { extractMarketplaceUrl, isFeatureEnabled } from "@wibestyle/shared-types";
+import type { ProductPreview, SizeAdvice, TryOnScenePreset } from "@wibestyle/shared-types";
+import { TRY_ON_SCENE_PRESETS, extractMarketplaceUrl, isFeatureEnabled } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import ProductPreviewImage from "@/components/try-on/ProductPreviewImage";
 import { canStartGeneration } from "@/lib/onboarding-flow";
@@ -51,6 +51,8 @@ export default function LinkTryOnClient() {
   const [url, setUrl] = useState("");
   const [product, setProduct] = useState<ProductPreview | null>(null);
   const [size, setSize] = useState("M");
+  const [scenePreset, setScenePreset] = useState<TryOnScenePreset>("auto");
+  const [customScene, setCustomScene] = useState("");
   const [sizeAdvice, setSizeAdvice] = useState<SizeAdvice | null>(null);
   const [loading, setLoading] = useState(false);
   const [parsePhase, setParsePhase] = useState<ParseLinkPhase | null>(null);
@@ -109,7 +111,7 @@ export default function LinkTryOnClient() {
       const parsed = await api.parseLink(normalizedUrl);
       setProduct(parsed.product);
       const initialSize = parsed.product.suggestedSize
-        ?? (parsed.product.sizes.includes("M") ? "M" : parsed.product.sizes[0] ?? "M");
+        ?? (parsed.product.sizes.includes("M") ? "M" : parsed.product.sizes[0] ?? "");
       setSize(initialSize);
       setStep(1);
     } catch (err) {
@@ -148,7 +150,7 @@ export default function LinkTryOnClient() {
       return;
     }
 
-    if (!product || !size || !product.sizes.includes(size)) {
+    if (!product || (product.sizes.length > 0 && (!size || !product.sizes.includes(size)))) {
       setError("Выберите размер перед запуском примерки");
       return;
     }
@@ -162,7 +164,14 @@ export default function LinkTryOnClient() {
     setLoading(true);
     setError(null);
     try {
-      const created = await api.createLinkTryOnSession(product.productUrl, size);
+      const created = await api.createLinkTryOnSession(
+        product.productUrl,
+        product.sizes.length > 0 ? size : undefined,
+        {
+          scenePreset,
+          customScene: scenePreset === "custom" ? customScene : undefined,
+        },
+      );
       const generated = await api.generateTryOn(created.session.id);
       await refreshProfile();
       if (generated.session.status === "failed") {
@@ -259,21 +268,27 @@ export default function LinkTryOnClient() {
               {step >= 1 ? (
                 <div className="mt-6 border-t border-[#ffd1ed] pt-6">
                   <h3 className="text-display-md text-lg">Какой размер примерить?</h3>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {product.sizes.map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${size === item ? "bg-[#ff1fa2] text-white" : "border border-[#ffd1ed] bg-white text-[#6d6273]"}`}
-                        onClick={() => {
-                          setSize(item);
-                          void loadSizeAdvice(item);
-                        }}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
+                  {product.sizes.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {product.sizes.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${size === item ? "bg-[#ff1fa2] text-white" : "border border-[#ffd1ed] bg-white text-[#6d6273]"}`}
+                          onClick={() => {
+                            setSize(item);
+                            void loadSizeAdvice(item);
+                          }}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-4 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm font-normal text-[#6d6273]">
+                      Магазин не отдал список размеров. Примерку можно запустить без выбора размера.
+                    </p>
+                  )}
                   {sizeAdvice && sizeAdvice.status === "warning" ? (
                     <div className="mt-4 rounded-2xl border border-[#ffb347] bg-[#fffaf3] px-4 py-3">
                       <p className="text-sm font-normal text-[#302637]">{formatSizeAdvice(sizeAdvice)}</p>
@@ -293,6 +308,35 @@ export default function LinkTryOnClient() {
                   ) : null}
                 </div>
               ) : null}
+
+              <div className="mt-6 border-t border-[#ffd1ed] pt-6">
+                <h3 className="text-display-md text-lg">Где примерить?</h3>
+                <p className="mt-1 text-sm font-normal text-[#6d6273]">
+                  Выберите сцену и позу. Это влияет только на фон и постановку кадра.
+                </p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {[...TRY_ON_SCENE_PRESETS, { id: "custom" as const, label: "Свой вариант", description: "Опишите сцену сами" }].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`rounded-2xl border px-4 py-3 text-left transition ${scenePreset === item.id ? "border-[#ff1fa2] bg-[#fff0f8]" : "border-[#ffd1ed] bg-white"}`}
+                      onClick={() => setScenePreset(item.id)}
+                    >
+                      <span className="block text-sm font-medium text-[#302637]">{item.label}</span>
+                      <span className="mt-1 block text-xs font-normal text-[#6d6273]">{item.description}</span>
+                    </button>
+                  ))}
+                </div>
+                {scenePreset === "custom" ? (
+                  <textarea
+                    className="mt-3 min-h-24 w-full rounded-2xl border border-[#ffd1ed] px-4 py-3 text-sm font-normal outline-none focus:border-[#ff1fa2]"
+                    maxLength={512}
+                    placeholder="Например: светлая примерочная, поза немного боком, полный рост"
+                    value={customScene}
+                    onChange={(event) => setCustomScene(event.target.value)}
+                  />
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -309,7 +353,7 @@ export default function LinkTryOnClient() {
           {step >= 1 && sessionReady && isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
             <Button
               className="mt-6"
-              disabled={loading || !size || !product.sizes.includes(size)}
+              disabled={loading || (product.sizes.length > 0 && (!size || !product.sizes.includes(size)))}
               size="md"
               onClick={startGeneration}
             >

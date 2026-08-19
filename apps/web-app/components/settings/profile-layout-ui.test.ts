@@ -20,4 +20,20 @@ describe("profile layout", () => {
     expect(avatars).toContain("relative w-full max-w-[280px]");
     expect(avatars).toContain("aspect-[3/4]");
   });
+
+  it("prioritizes avatar and anthropometry above subscription and favorites", () => {
+    expect(profile).toContain('<Card className="order-[10]">');
+    expect(profile).toContain('<Card className="order-[20]">');
+    expect(profile).toContain('<Card className="order-[40]">');
+    expect(profile).toContain('<Card className="order-[50]">');
+    expect(profile).toContain("Имя (Никнейм)");
+    expect(profile).toContain("normalizedDisplayName");
+    expect(profile).toContain("Укажите имя (никнейм)");
+  });
+
+  it("persists profile changes that only touch anthropometry or display fields", () => {
+    const provider = readFileSync(join(process.cwd(), "components", "providers", "AppSessionProvider.tsx"), "utf8");
+    expect(provider).toContain("profileSignature(prev.profile) === profileSignature(synced.profile)");
+    expect(provider).not.toContain("prev.profile?.activeAvatarId === synced.profile?.activeAvatarId");
+  });
 });

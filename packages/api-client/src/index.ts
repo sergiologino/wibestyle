@@ -22,6 +22,7 @@ import type {
   SubscriptionPlan,
   TryOnResult,
   TryOnHistoryItem,
+  TryOnScenePreset,
   TryOnSessionRecord,
   UpdateProfilePayload,
   UserEntitlements,
@@ -70,6 +71,36 @@ export type AiProviderErrorMappingPayload = Pick<
   AiProviderErrorMappingRecord,
   "errorText" | "description" | "enabled"
 >;
+
+export type ManualPushAudience = "all" | "paid" | "wibe" | "elite" | "trial";
+
+export type ManualPushCampaign = {
+  id: string;
+  title: string;
+  body: string;
+  actionUrl?: string | null;
+  audience: ManualPushAudience;
+  status: "scheduled" | "sending" | "sent" | "cancelled";
+  scheduledAt: string;
+  targetedUsers: number;
+  queuedUsers: number;
+  acceptedUsers: number;
+  errorUsers: number;
+  noDeviceUsers: number;
+  lastError?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+};
+
+export type ManualPushPayload = {
+  title: string;
+  body: string;
+  audience: ManualPushAudience;
+  scheduledAt: string;
+  actionUrl?: string;
+};
 
 export type DeviceAuthInfo = {
   hash: string;
@@ -474,10 +505,19 @@ export class WibeStyleApiClient {
     });
   }
 
-  createLinkTryOnSession(url: string, selectedSize?: string) {
+  createLinkTryOnSession(
+    url: string,
+    selectedSize?: string,
+    scene?: { scenePreset?: TryOnScenePreset; customScene?: string },
+  ) {
     return this.request<{ session: TryOnSessionRecord; product: ProductPreview }>("/api/v1/try-on/sessions/link", {
       method: "POST",
-      body: JSON.stringify({ url: extractMarketplaceUrl(url), selectedSize }),
+      body: JSON.stringify({
+        url: extractMarketplaceUrl(url),
+        selectedSize,
+        scenePreset: scene?.scenePreset,
+        customScene: scene?.customScene,
+      }),
     });
   }
 
@@ -487,6 +527,7 @@ export class WibeStyleApiClient {
     sourceType: "garment_photo" | "gallery_upload" = "gallery_upload",
     selectedSize?: string,
     productTitle?: string,
+    scene?: { scenePreset?: TryOnScenePreset; customScene?: string },
   ) {
     const body = new FormData();
     body.append("photo", file);
@@ -497,6 +538,12 @@ export class WibeStyleApiClient {
     }
     if (productTitle) {
       body.append("productTitle", productTitle);
+    }
+    if (scene?.scenePreset) {
+      body.append("scenePreset", scene.scenePreset);
+    }
+    if (scene?.customScene) {
+      body.append("customScene", scene.customScene);
     }
     return this.request<{ session: TryOnSessionRecord }>("/api/v1/try-on/sessions/photo", {
       method: "POST",
@@ -997,6 +1044,18 @@ export class WibeStyleApiClient {
     });
   }
 
+  updateAdminPromoCode(
+    adminKey: string,
+    promoId: string,
+    payload: { discountPercent: number; maxUses: number; expiresAt: string; label?: string },
+  ) {
+    return this.request<{ promo: PromoCodeRecord }>(`/api/v1/admin/promo-codes/${promoId}`, {
+      method: "PATCH",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
+    });
+  }
+
   generateAdminPromoCode(adminKey: string) {
     return this.request<{ code: string }>("/api/v1/admin/promo-codes/generate-code", {
       method: "POST",
@@ -1366,6 +1425,20 @@ export class WibeStyleApiClient {
     return this.request<void>(`/api/v1/admin/ai-provider-errors/${id}`, {
       method: "DELETE",
       headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  listAdminManualPushes(adminKey: string) {
+    return this.request<ManualPushCampaign[]>("/api/v1/admin/manual-pushes", {
+      headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  createAdminManualPush(adminKey: string, payload: ManualPushPayload) {
+    return this.request<ManualPushCampaign>("/api/v1/admin/manual-pushes", {
+      method: "POST",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify(payload),
     });
   }
 }

@@ -79,7 +79,9 @@ const config: ExpoConfig = {
     appUrl: process.env.EXPO_PUBLIC_APP_URL ?? "https://app.vibestyle.art",
     myTrackerSdkKey: process.env.EXPO_PUBLIC_MYTRACKER_SDK_KEY ?? "",
     telegramChannelUrl: process.env.EXPO_PUBLIC_TELEGRAM_CHANNEL_URL ?? "https://t.me/vibestyle_channel",
-    telegramChannelName: process.env.EXPO_PUBLIC_TELEGRAM_CHANNEL_NAME ?? "Я на стиле. Поддержка",
+    telegramChannelName: process.env.EXPO_PUBLIC_TELEGRAM_CHANNEL_NAME ?? "Telegram",
+    maxChannelUrl: process.env.EXPO_PUBLIC_MAX_CHANNEL_URL ?? "",
+    maxChannelName: process.env.EXPO_PUBLIC_MAX_CHANNEL_NAME ?? "MAX",
     eas: {
       projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? "wibestyle-mobile-local",
     },

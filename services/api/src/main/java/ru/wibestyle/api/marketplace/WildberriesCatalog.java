@@ -76,7 +76,9 @@ public class WildberriesCatalog {
         String productUrl = productPageUrl == null || productPageUrl.isBlank()
                 ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
                 : productPageUrl;
-        List<String> galleryUrls = fetchGalleryPhotoUrls(productUrl, article);
+        ProductPageData page = fetchProductPageData(productUrl, article);
+        List<String> galleryUrls = page.galleryPhotoUrls();
+        List<String> pageSizes = page.sizes();
 
         Optional<WildberriesBasketResolver.ResolvedBasketCard> resolved = basketResolver.resolveCard(article);
         if (resolved.isPresent()) {
@@ -85,7 +87,7 @@ public class WildberriesCatalog {
             long part = article / 1_000;
             String productJson = fetchProductJsonText(basketCard.host(), vol, part, article);
             ProductSizeChart chart = sizeChartExtractor.extract(productUrl, basketCard.card(), productJson);
-            WbProductCard card = parseCard(article, basketCard.host(), basketCard.card(), chart);
+            WbProductCard card = parseCard(article, basketCard.host(), basketCard.card(), chart, pageSizes);
             if (!galleryUrls.isEmpty()) {
                 return Optional.of(withImageUrl(card, galleryUrls.get(0), galleryUrls.size()));
             }
@@ -93,17 +95,18 @@ public class WildberriesCatalog {
         }
 
         if (!galleryUrls.isEmpty()) {
-            return Optional.of(fromPageGallery(article, galleryUrls));
+            return Optional.of(fromPageGallery(article, galleryUrls, pageSizes));
         }
 
-        return fetchFromCardApi(article);
+        return fetchFromCardApi(article, productUrl, pageSizes);
     }
 
     private Optional<WbProductCard> fetchFromPageGallery(long article, String productPageUrl) {
         String pageUrl = productPageUrl == null || productPageUrl.isBlank()
                 ? "https://www.wildberries.ru/catalog/" + article + "/detail.aspx"
                 : productPageUrl;
-        List<String> galleryUrls = fetchGalleryPhotoUrls(pageUrl, article);
+        ProductPageData page = fetchProductPageData(pageUrl, article);
+        List<String> galleryUrls = page.galleryPhotoUrls();
         if (galleryUrls.isEmpty()) {
             return Optional.empty();
         }
@@ -113,26 +116,30 @@ public class WildberriesCatalog {
                 "Brand Look",
                 4290,
                 galleryUrls.get(0),
-                List.of("XS", "S", "M", "L", "XL"),
+                page.sizes(),
                 ProductSizeChart.empty(),
                 galleryUrls.size()
         ));
     }
 
-    private WbProductCard fromPageGallery(long article, List<String> galleryUrls) {
+    private WbProductCard fromPageGallery(long article, List<String> galleryUrls, List<String> pageSizes) {
         return new WbProductCard(
                 Long.toString(article),
                 "РўРѕРІР°СЂ Wildberries",
                 "Brand Look",
                 4290,
                 galleryUrls.get(0),
-                List.of("XS", "S", "M", "L", "XL"),
+                pageSizes,
                 ProductSizeChart.empty(),
                 galleryUrls.size()
         );
     }
 
     Optional<WbProductCard> fetchFromCardApi(long article) {
+        return fetchFromCardApi(article, "https://www.wildberries.ru/catalog/" + article + "/detail.aspx", List.of());
+    }
+
+    Optional<WbProductCard> fetchFromCardApi(long article, String productUrl, List<String> pageSizes) {
         String url = "https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1257786&spp=30&nm=" + article;
         try {
             JsonNode response = restClient.get().uri(url).retrieve().body(JsonNode.class);
@@ -163,7 +170,7 @@ public class WildberriesCatalog {
 
             List<String> sizes = parseCardApiSizes(product);
             if (sizes.isEmpty()) {
-                sizes = List.of("XS", "S", "M", "L", "XL");
+                sizes = pageSizes == null ? List.of() : pageSizes;
             }
 
             int photoCount = resolvePhotoCount(product, null);
@@ -293,14 +300,27 @@ public class WildberriesCatalog {
     }
 
     private List<String> fetchGalleryPhotoUrls(String productPageUrl, long article) {
+        return fetchProductPageData(productPageUrl, article).galleryPhotoUrls();
+    }
+
+    private ProductPageData fetchProductPageData(String productPageUrl, long article) {
         if (productPageUrl == null || productPageUrl.isBlank()) {
-            return List.of();
+            return ProductPageData.empty();
         }
         try {
             String html = pageRestClient.get().uri(productPageUrl).retrieve().body(String.class);
-            return WildberriesGalleryExtractor.extractPhotoUrls(html, article);
+            return new ProductPageData(
+                    WildberriesGalleryExtractor.extractPhotoUrls(html, article),
+                    WildberriesSizeExtractor.extractSizes(html)
+            );
         } catch (RestClientException ignored) {
-            return List.of();
+            return ProductPageData.empty();
+        }
+    }
+
+    private record ProductPageData(List<String> galleryPhotoUrls, List<String> sizes) {
+        private static ProductPageData empty() {
+            return new ProductPageData(List.of(), List.of());
         }
     }
 
@@ -361,7 +381,13 @@ public class WildberriesCatalog {
         return buildImageUrl(article, host);
     }
 
-    private WbProductCard parseCard(long article, String host, JsonNode card, ProductSizeChart sizeChart) {
+    private WbProductCard parseCard(
+            long article,
+            String host,
+            JsonNode card,
+            ProductSizeChart sizeChart,
+            List<String> pageSizes
+    ) {
         String title = text(card, "imt_name", "Лёгкое платье миди");
         String brand = card.path("selling").path("brand_name").asText("Brand Look");
         int priceRub = card.path("salePriceU").asInt(0);
@@ -374,9 +400,9 @@ public class WildberriesCatalog {
             priceRub = 4290;
         }
 
-        List<String> sizes = parseSizes(card);
+        List<String> sizes = pageSizes == null || pageSizes.isEmpty() ? parseSizes(card) : pageSizes;
         if (sizes.isEmpty()) {
-            sizes = List.of("XS", "S", "M", "L", "XL");
+            sizes = List.of();
         }
 
         int photoCount = resolvePhotoCount(null, card);

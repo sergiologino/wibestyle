@@ -20,13 +20,13 @@ export function subscriptionNudgeCopy(level: SubscriptionNudgeLevel, trialLeft: 
   switch (level) {
     case "urgent":
       return {
-        title: "Последняя бесплатная примерка",
-        body: "Оформи Wibe — 20 генераций в месяц, без ограничений trial.",
+        title: "Осталась последняя бесплатная примерка",
+        body: "Самое время выбрать тариф: после этой примерки trial закончится, а с Wibe можно продолжать примерять без паузы.",
       };
     case "medium":
       return {
         title: `Осталось ${trialLeft} бесплатных примерок`,
-        body: "Годовой Wibe со скидкой 20% — примеряй с WB и Ozon без лимита trial.",
+        body: "Подключи Wibe заранее — примеряй с WB и Ozon без паузы после trial.",
       };
     case "soft":
       return {

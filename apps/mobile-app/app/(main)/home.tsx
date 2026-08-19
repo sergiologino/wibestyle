@@ -8,7 +8,6 @@ import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
-import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { Pressable, Text } from "react-native";
 import { getAppBaseUrl } from "@/lib/config";
@@ -73,6 +72,7 @@ export default function HomeScreen() {
     profile?.plan === "trial"
       ? profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0)
       : profile?.planGenerationsLeft ?? null;
+  const showLastTrialNudge = profile?.plan === "trial" && gensLeft === 1;
   const publishedVerb = profile?.gender === "male" ? "публиковал" : "публиковала";
   const greetingName = profile?.displayName?.trim() || "пользователь";
 
@@ -122,6 +122,16 @@ export default function HomeScreen() {
                   void api.markNotificationRead(id);
                 }}
               />
+            </View>
+          </Card>
+        ) : null}
+        {showLastTrialNudge ? (
+          <Card style={styles.lastTrialCard}>
+            <Eyebrow>Trial почти закончился</Eyebrow>
+            <SectionTitle>Осталась последняя бесплатная примерка</SectionTitle>
+            <BodyText>Самое время выбрать тариф: после этой примерки trial закончится, а с Wibe можно продолжать примерять без паузы.</BodyText>
+            <View style={styles.lastTrialActions}>
+              <Button label="Продолжить без паузы" onPress={() => router.push("/paywall")} />
             </View>
           </Card>
         ) : null}
@@ -175,9 +185,6 @@ export default function HomeScreen() {
               <Feather name="image" size={19} color={theme.colors.muted} />
               <Text style={[styles.tryOnActionText, { color: theme.colors.muted }]}>По фото</Text>
             </Pressable>
-          </View>
-          <View style={styles.actions}>
-            <TelegramChannelButton />
           </View>
         </Card>
 
@@ -303,6 +310,13 @@ const styles = StyleSheet.create({
   },
   notificationCard: { borderColor: colors.violet },
   notificationActions: { marginTop: spacing.md, gap: spacing.sm },
+  lastTrialCard: {
+    borderColor: colors.pink,
+    backgroundColor: colors.pinkBg,
+  },
+  lastTrialActions: {
+    marginTop: spacing.md,
+  },
   avatarCta: {
     alignSelf: "flex-start",
     marginTop: spacing.md,

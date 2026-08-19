@@ -10,13 +10,17 @@ describe("missing avatar flow", () => {
 
   it("keeps browsing available and places a global link to avatar setup", () => {
     expect(topBar).toContain("AvatarRequiredNotice compact");
+    expect(topBar).toContain("hasReadyAvatar === false");
     expect(homeGate).not.toContain("getNextOnboardingRoute");
-    expect(tryOnGate).not.toContain("tryOnSetupRedirect");
-    expect(tryOnGate).toContain("pointer-events-none");
+    expect(tryOnGate).not.toContain("pointer-events-none");
+    expect(tryOnGate).toContain("api.listAvatars()");
+    expect(tryOnGate).toContain('avatar.status === "READY" && avatar.active');
+    expect(tryOnGate).toContain("tryOnSetupMessage(setupIssue)");
   });
 
-  it("opens first-avatar upload directly in profile", () => {
+  it("opens first-avatar upload directly in profile only after avatars are loaded", () => {
     expect(avatarManager).toContain("needsFirstAvatar");
+    expect(avatarManager).toContain("!loading && !activeAvatarId && readyAvatarCount === 0");
     expect(avatarManager).toContain("adding || needsFirstAvatar");
     expect(avatarManager).toContain("Добавить фото");
     expect(avatarManager).not.toContain("Добавьте фото ниже");

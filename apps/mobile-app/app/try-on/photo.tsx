@@ -5,9 +5,11 @@ import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { Feather } from "@expo/vector-icons";
 import { ApiError } from "@wibestyle/api-client";
+import { TRY_ON_SCENE_PRESETS, type TryOnScenePreset } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
 import { canStartGeneration } from "@/lib/onboarding-flow";
 import { preparePickedImageForUpload } from "@/lib/image-upload";
 import type { RNFile } from "@/lib/mobile-api";
@@ -29,6 +31,8 @@ export default function TryOnPhotoScreen() {
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [category, setCategory] = useState("dress");
   const [title, setTitle] = useState("");
+  const [scenePreset, setScenePreset] = useState<TryOnScenePreset>("auto");
+  const [customScene, setCustomScene] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,6 +86,7 @@ export default function TryOnPhotoScreen() {
         "gallery_upload",
         undefined,
         title || undefined,
+        { scenePreset, customScene: scenePreset === "custom" ? customScene : undefined },
       );
       await api.generateTryOn(sessionPayload.session.id);
       await refreshProfile();
@@ -129,6 +134,26 @@ export default function TryOnPhotoScreen() {
             </Pressable>
           ))}
         </View>
+
+        <Text style={styles.label}>Сцена и поза</Text>
+        <View style={styles.categories}>
+          {[...TRY_ON_SCENE_PRESETS, { id: "custom" as const, label: "Свой вариант", description: "Опишите сцену сами" }].map((item) => (
+            <Pressable
+              key={item.id}
+              style={[styles.catPill, scenePreset === item.id && styles.catPillActive]}
+              onPress={() => setScenePreset(item.id)}
+            >
+              <Text style={[styles.catText, scenePreset === item.id && styles.catTextActive]}>{item.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {scenePreset === "custom" ? (
+          <TextField
+            placeholder="Например: светлая студия, поза немного боком"
+            value={customScene}
+            onChangeText={setCustomScene}
+          />
+        ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Button label="Запустить AI-примерку" loading={loading} onPress={generate} />

@@ -34,6 +34,8 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 wibestyle:
+  app:
+    public-url: ${WIBESTYLE_APP_PUBLIC_URL:https://app.vibestyle.art}
   mail:
     enabled: ${WIBESTYLE_MAIL_ENABLED:false}
     from: ${WIBESTYLE_MAIL_FROM:noreply@vibestyle.art}

@@ -23,8 +23,11 @@ export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor
   );
 }
 
-export const FieldInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function FieldInput(props, ref) {
-  return <input ref={ref} className={fieldClassName} {...props} />;
+export const FieldInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function FieldInput(
+  { className, ...props },
+  ref,
+) {
+  return <input ref={ref} className={`${fieldClassName}${className ? ` ${className}` : ""}`} {...props} />;
 });
 
 export function FieldSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {

@@ -21,7 +21,6 @@ import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
-import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { interfacePalettes, useAppTheme } from "@/theme/palettes";
 import { legalLinks } from "@/lib/legal-links";
@@ -226,7 +225,6 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
             ) : null}
           </View>
           <View style={styles.profileActions}>
-            <TelegramChannelButton />
             <Button label="Выйти из профиля" variant="secondary" onPress={handleLogout} />
           </View>
         </Card>

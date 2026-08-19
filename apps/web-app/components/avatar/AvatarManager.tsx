@@ -228,6 +228,7 @@ export default function AvatarManager({ activeAvatarId, showFeaturedAvatar = tru
   const [featuredAvatarId, setFeaturedAvatarId] = useState<string | null>(activeAvatarId ?? null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const autoAddPhotoRef = useRef<File | null>(null);
+  const autoActivateFallbackRef = useRef<string | null>(null);
 
   async function reload() {
     setLoading(true);
@@ -250,6 +251,29 @@ export default function AvatarManager({ activeAvatarId, showFeaturedAvatar = tru
       setFeaturedAvatarId(activeAvatarId);
     }
   }, [activeAvatarId]);
+
+  useEffect(() => {
+    if (loading || activeAvatarId || avatars.some((avatar) => avatar.status === "READY" && avatar.active)) {
+      return;
+    }
+    const fallbackReadyAvatar = avatars.find((avatar) => avatar.status === "READY");
+    if (!fallbackReadyAvatar || autoActivateFallbackRef.current === fallbackReadyAvatar.id) {
+      return;
+    }
+    autoActivateFallbackRef.current = fallbackReadyAvatar.id;
+    let cancelled = false;
+    void api.activateAvatar(fallbackReadyAvatar.id)
+      .then(async () => {
+        if (cancelled) return;
+        setFeaturedAvatarId(fallbackReadyAvatar.id);
+        await refreshProfile();
+        if (!cancelled) await reload();
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [activeAvatarId, api, avatars, loading, refreshProfile]);
 
   useEffect(() => {
     if (!newPhoto) {
@@ -454,7 +478,7 @@ export default function AvatarManager({ activeAvatarId, showFeaturedAvatar = tru
 
   const readyAvatarCount = avatars.filter((avatar) => avatar.status === "READY").length;
   const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
-  const needsFirstAvatar = !activeAvatarId && readyAvatarCount === 0;
+  const needsFirstAvatar = !loading && !activeAvatarId && readyAvatarCount === 0;
   const visibleAvatars = avatars.filter((avatar) => avatar.status === "READY");
   const addingNewAvatar = adding && !pendingAvatar && !enhancementAvatar;
   const avatarReviewFlow = addingNewAvatar || Boolean(pendingAvatar) || Boolean(enhancementAvatar);

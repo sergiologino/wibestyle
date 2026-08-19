@@ -620,7 +620,7 @@ public class OzonCatalog {
             if (priceRub <= 0) {
                 priceRub = 0;
             }
-            List<String> sizeList = sizes.isEmpty() ? List.of("XS", "S", "M", "L", "XL") : new ArrayList<>(sizes);
+            List<String> sizeList = sizes.isEmpty() ? List.of() : new ArrayList<>(sizes);
             return Optional.of(new OzonProductCard(
                     productId == null ? slug : productId,
                     slug,

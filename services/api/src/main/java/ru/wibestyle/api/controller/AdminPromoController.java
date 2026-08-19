@@ -3,6 +3,7 @@ package ru.wibestyle.api.controller;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.wibestyle.api.config.AdminProperties;
 import ru.wibestyle.api.dto.CreatePromoRequest;
+import ru.wibestyle.api.dto.UpdatePromoRequest;
 import ru.wibestyle.api.service.PromoService;
 import ru.wibestyle.api.support.AdminSupport;
 
@@ -53,6 +55,22 @@ public class AdminPromoController {
     public Map<String, Object> generateCode(@RequestHeader(value = "X-Admin-Key", required = false) String adminKey) {
         AdminSupport.requireAdminKey(adminKey, adminProperties);
         return Map.of("code", promoService.generateUniqueCode());
+    }
+
+    @PatchMapping("/{promoId}")
+    public Map<String, Object> update(
+            @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
+            @PathVariable UUID promoId,
+            @Valid @RequestBody UpdatePromoRequest request
+    ) {
+        AdminSupport.requireAdminKey(adminKey, adminProperties);
+        return promoService.updatePromo(
+                promoId,
+                request.discountPercent(),
+                request.maxUses(),
+                request.expiresAt(),
+                request.label()
+        );
     }
 
     @PostMapping("/{promoId}/revoke")

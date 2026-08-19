@@ -40,8 +40,6 @@ public class AuthService {
     private final Map<String, EmailOtpChallenge> emailChallenges = new ConcurrentHashMap<>();
     private final Map<String, Instant> lastStartByPhone = new ConcurrentHashMap<>();
     private final Map<String, Instant> lastStartByEmail = new ConcurrentHashMap<>();
-    private final Map<String, Object> verifiedPhoneLocks = new ConcurrentHashMap<>();
-
     public AuthService(
             UserRepository userRepository,
             ProfileService profileService,
@@ -177,33 +175,29 @@ public class AuthService {
         if (normalizedPhone.length() < 10 || normalizedPhone.length() > 15) {
             throw new IllegalArgumentException("INVALID_PHONE");
         }
-        Object lock = verifiedPhoneLocks.computeIfAbsent(normalizedPhone, ignored -> new Object());
+        Object lock = normalizedPhone.intern();
         synchronized (lock) {
+            boolean isNewUser = userRepository.findByPhone(normalizedPhone).isEmpty();
+            UserEntity user = userRepository.findByPhone(normalizedPhone)
+                    .orElseGet(() -> userRepository.saveAndFlush(
+                            new UserEntity(UUID.randomUUID(), normalizedPhone, Instant.now())
+                    ));
+            profileService.ensureProfile(user.getId());
+            if (isNewUser) referralService.captureNewUser(user.getId(), referralCode);
             try {
-                boolean isNewUser = userRepository.findByPhone(normalizedPhone).isEmpty();
-                UserEntity user = userRepository.findByPhone(normalizedPhone)
-                        .orElseGet(() -> userRepository.saveAndFlush(
-                                new UserEntity(UUID.randomUUID(), normalizedPhone, Instant.now())
-                        ));
-                profileService.ensureProfile(user.getId());
-                if (isNewUser) referralService.captureNewUser(user.getId(), referralCode);
-                try {
-                    marketingAttributionService.attachUserToVisitor(user.getId(), visitorId, isNewUser);
-                } catch (RuntimeException ex) {
-                    log.warn("Marketing attribution did not attach during SMS authentication", ex);
-                }
-                DeviceTrustService.DeviceRegistrationResult deviceResult =
-                        deviceTrustService.recordAuthentication(user.getId(), deviceId, isNewUser);
-
-                Map<String, Object> promoResult = Map.of("redeemed", false);
-                if (promoCode != null && !promoCode.isBlank()) {
-                    promoResult = promoService.redeemForUser(user.getId(), promoCode);
-                }
-
-                return issueTokens(user, isNewUser, promoResult, deviceResult);
-            } finally {
-                verifiedPhoneLocks.remove(normalizedPhone, lock);
+                marketingAttributionService.attachUserToVisitor(user.getId(), visitorId, isNewUser);
+            } catch (RuntimeException ex) {
+                log.warn("Marketing attribution did not attach during SMS authentication", ex);
             }
+            DeviceTrustService.DeviceRegistrationResult deviceResult =
+                    deviceTrustService.recordAuthentication(user.getId(), deviceId, isNewUser);
+
+            Map<String, Object> promoResult = Map.of("redeemed", false);
+            if (promoCode != null && !promoCode.isBlank()) {
+                promoResult = promoService.redeemForUser(user.getId(), promoCode);
+            }
+
+            return issueTokens(user, isNewUser, promoResult, deviceResult);
         }
     }
 
@@ -228,6 +222,7 @@ public class AuthService {
         UserEntity user = userRepository.findByEmailIgnoreCase(challenge.email())
                 .orElseGet(() -> userRepository.saveAndFlush(UserEntity.createWithEmail(UUID.randomUUID(), challenge.email(), Instant.now())));
         profileService.ensureProfile(user.getId());
+        if (isNewUser) referralService.ensureAccountForUser(user.getId());
 
         Map<String, Object> promoResult = Map.of("redeemed", false);
         if (promoCode != null && !promoCode.isBlank()) {

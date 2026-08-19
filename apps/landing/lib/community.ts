@@ -10,5 +10,13 @@ export function telegramChannelUrl(): string | null {
 }
 
 export function telegramChannelName(): string {
-  return process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_NAME?.trim() || "Я на стиле. Поддержка";
+  return process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_NAME?.trim() || "Telegram";
+}
+
+export function maxChannelUrl(): string | null {
+  return normalizeTelegramChannelUrl(process.env.NEXT_PUBLIC_MAX_CHANNEL_URL);
+}
+
+export function maxChannelName(): string {
+  return process.env.NEXT_PUBLIC_MAX_CHANNEL_NAME?.trim() || "MAX";
 }

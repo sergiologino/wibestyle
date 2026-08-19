@@ -378,6 +378,46 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void profileUpdatePersistsAnthropometryInMeResponse() throws Exception {
+        String accessToken = authenticate("+79992223341");
+
+        mockMvc.perform(put("/api/v1/profile")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "displayName": "Анна",
+                                  "gender": "female",
+                                  "heightCm": 170,
+                                  "bustCm": 90,
+                                  "waistCm": 70,
+                                  "hipsCm": 98,
+                                  "clothingSize": "M",
+                                  "shoeSizeEu": 38
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.displayName").value("Анна"))
+                .andExpect(jsonPath("$.profile.gender").value("female"))
+                .andExpect(jsonPath("$.profile.anthropometry.heightCm").value(170))
+                .andExpect(jsonPath("$.profile.anthropometry.bustCm").value(90))
+                .andExpect(jsonPath("$.profile.anthropometry.waistCm").value(70))
+                .andExpect(jsonPath("$.profile.anthropometry.hipsCm").value(98));
+
+        mockMvc.perform(get("/api/v1/me")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.displayName").value("Анна"))
+                .andExpect(jsonPath("$.profile.gender").value("female"))
+                .andExpect(jsonPath("$.profile.anthropometry.heightCm").value(170))
+                .andExpect(jsonPath("$.profile.anthropometry.bustCm").value(90))
+                .andExpect(jsonPath("$.profile.anthropometry.waistCm").value(70))
+                .andExpect(jsonPath("$.profile.anthropometry.hipsCm").value(98))
+                .andExpect(jsonPath("$.profile.anthropometry.clothingSize").value("M"))
+                .andExpect(jsonPath("$.profile.anthropometry.shoeSizeEu").value(38));
+    }
+
+    @Test
     void avatarFlowCreatesSnapshot() throws Exception {
         String accessToken = authenticate("+79992223344");
 

@@ -49,7 +49,13 @@ public class TryOnController {
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @Valid @RequestBody CreateLinkTryOnSessionRequest request
     ) {
-        return tryOnService.createLinkSession(requireUserId(authorization), request.url(), request.selectedSize());
+        return tryOnService.createLinkSession(
+                requireUserId(authorization),
+                request.url(),
+                request.selectedSize(),
+                request.scenePreset(),
+                request.customScene()
+        );
     }
 
     @PostMapping("/photo")
@@ -59,7 +65,9 @@ public class TryOnController {
             @RequestParam(defaultValue = "other") String category,
             @RequestParam(defaultValue = "gallery_upload") String sourceType,
             @RequestParam(required = false) String selectedSize,
-            @RequestParam(required = false) String productTitle
+            @RequestParam(required = false) String productTitle,
+            @RequestParam(required = false) String scenePreset,
+            @RequestParam(required = false) String customScene
     ) throws IOException {
         TryOnSourceType parsedSourceType = parseSourceType(sourceType);
         return tryOnService.createPhotoSession(
@@ -68,7 +76,9 @@ public class TryOnController {
                 category,
                 parsedSourceType,
                 selectedSize,
-                productTitle
+                productTitle,
+                scenePreset,
+                customScene
         );
     }
 

@@ -50,7 +50,8 @@ export default function AvatarPrivacyPreview({
   const [remoteBlobUrl, setRemoteBlobUrl] = useState<string | null>(null);
 
   const displayUrl = localPreviewUrl ?? remoteBlobUrl;
-  const showSelectHint = Boolean(onSelectPhoto && !displayUrl && !processing);
+  const waitingForRemotePhoto = Boolean(remotePhotoPath && accessToken && !localPreviewUrl && !remoteBlobUrl);
+  const showSelectHint = Boolean(onSelectPhoto && !displayUrl && !waitingForRemotePhoto && !processing);
 
   useEffect(() => {
     if (localPreviewUrl || !remotePhotoPath || !accessToken) {
@@ -100,6 +101,10 @@ export default function AvatarPrivacyPreview({
             />
             {privacy.hideFace ? <div aria-hidden className="avatar-preview-face-mask" /> : null}
           </>
+        ) : waitingForRemotePhoto ? (
+          <div className="flex min-h-[320px] w-full items-center justify-center px-5 text-center text-sm text-[#6d6273]">
+            Загружаем фото аватара…
+          </div>
         ) : (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -72,8 +72,16 @@ public class PromoCodeEntity {
         return discountPercent;
     }
 
+    public void setDiscountPercent(int discountPercent) {
+        this.discountPercent = discountPercent;
+    }
+
     public int getMaxUses() {
         return maxUses;
+    }
+
+    public void setMaxUses(int maxUses) {
+        this.maxUses = maxUses;
     }
 
     public int getUsesCount() {
@@ -88,6 +96,10 @@ public class PromoCodeEntity {
         return expiresAt;
     }
 
+    public void setExpiresAt(Instant expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
     public Instant getRevokedAt() {
         return revokedAt;
     }
@@ -98,6 +110,10 @@ public class PromoCodeEntity {
 
     public String getLabel() {
         return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     public Instant getCreatedAt() {

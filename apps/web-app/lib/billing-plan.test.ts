@@ -29,6 +29,8 @@ describe("billing-plan", () => {
 
   it("builds nudge copy", () => {
     expect(subscriptionNudgeCopy("medium", 2).title).toContain("2");
+    expect(subscriptionNudgeCopy("urgent", 1).title).toContain("последняя бесплатная примерка");
+    expect(subscriptionNudgeCopy("urgent", 1).body).not.toContain("генерац");
   });
 
   it("detects external yookassa redirect", () => {

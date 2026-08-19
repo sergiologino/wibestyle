@@ -64,6 +64,12 @@ public class TryOnSessionEntity {
     @Column(name = "selected_size", length = 16)
     private String selectedSize;
 
+    @Column(name = "scene_preset", length = 32)
+    private String scenePreset;
+
+    @Column(name = "custom_scene", length = 512)
+    private String customScene;
+
     @Column(name = "garment_category", length = 32)
     private String garmentCategory;
 
@@ -269,6 +275,22 @@ public class TryOnSessionEntity {
 
     public void setSelectedSize(String selectedSize) {
         this.selectedSize = selectedSize;
+    }
+
+    public String getScenePreset() {
+        return scenePreset;
+    }
+
+    public void setScenePreset(String scenePreset) {
+        this.scenePreset = scenePreset;
+    }
+
+    public String getCustomScene() {
+        return customScene;
+    }
+
+    public void setCustomScene(String customScene) {
+        this.customScene = customScene;
     }
 
     public String getGarmentCategory() {

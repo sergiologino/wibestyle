@@ -86,6 +86,7 @@ public class SizeAdviceService {
 
         String status = warnings.isEmpty() ? "ok" : "warning";
         double confidence = warnings.isEmpty() ? 0.82 : 0.64;
+        int reviewSizeShift = futureReviewSizeShift(reviewSignals);
         String recommendedSize = fit.recommendedSize() != null
                 ? fit.recommendedSize()
                 : recommendSize(profile, request.availableSizes(), request.selectedSize());
@@ -98,7 +99,17 @@ public class SizeAdviceService {
         advice.put("warnings", warnings);
         advice.put("reasons", reasons);
         advice.put("reviewSignals", reviewSignals);
+        advice.put("reviewSizeShift", reviewSizeShift);
         return Map.of("advice", advice);
+    }
+
+    /**
+     * Reserved integration point for review-summary sizing.
+     * Later: runs_small => +1 available-size step, runs_large => -1 step.
+     * For now signals are visible in the response but do not change recommendation.
+     */
+    private static int futureReviewSizeShift(List<String> reviewSignals) {
+        return 0;
     }
 
     private ProductSizeChart resolveProductSizeChart(SizeAdviceRequest request) {

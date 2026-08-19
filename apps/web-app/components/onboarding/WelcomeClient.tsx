@@ -77,9 +77,26 @@ export default function WelcomeClient() {
 
   function openTrial() {
     completeOnboardingStep("welcome");
+    if (onboarding.authComplete) {
+      router.push("/paywall");
+      return;
+    }
     const authUrl = new URL("/auth", window.location.origin);
     authUrl.searchParams.set("next", "/paywall");
     authUrl.searchParams.set("promo", promoCode ?? FIRST_100_PROMO_CODE);
+    if (referralCode) authUrl.searchParams.set("ref", referralCode);
+    router.push(`${authUrl.pathname}${authUrl.search}`);
+  }
+
+  function skipOnboarding() {
+    completeOnboardingStep("welcome");
+    if (onboarding.authComplete) {
+      router.push("/settings");
+      return;
+    }
+    const authUrl = new URL("/auth", window.location.origin);
+    authUrl.searchParams.set("next", "/settings");
+    if (promoCode) authUrl.searchParams.set("promo", promoCode);
     if (referralCode) authUrl.searchParams.set("ref", referralCode);
     router.push(`${authUrl.pathname}${authUrl.search}`);
   }
@@ -172,7 +189,7 @@ export default function WelcomeClient() {
                   size="lg"
                   variant="secondary"
                   className="w-full sm:w-auto"
-                  onClick={() => (activeIndex === 0 ? openTrial() : setActiveIndex((value) => value - 1))}
+                  onClick={() => (activeIndex === 0 ? skipOnboarding() : setActiveIndex((value) => value - 1))}
                 >
                   {activeIndex === 0 ? "Пропустить" : "Назад"}
                 </Button>
