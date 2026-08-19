@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@wibestyle/ui";
@@ -14,20 +14,53 @@ type TryOnGateClientProps = {
 
 export default function TryOnGateClient({ children }: TryOnGateClientProps) {
   const pathname = usePathname();
-  const { accessToken, refreshToken, profile, accessTokenExpiresAt } = useAppSession();
+  const { api, accessToken, refreshToken, profile, accessTokenExpiresAt } = useAppSession();
   const { sessionReady, verified, checking } = useRequireAuthenticatedSession({ returnPath: pathname });
-  const setupIssue = useMemo(() => resolveTryOnSetupIssue({
+  const profileSetupIssue = useMemo(() => resolveTryOnSetupIssue({
       accessToken,
       refreshToken,
       profile,
       accessTokenExpiresAt,
     }), [accessToken, accessTokenExpiresAt, profile, refreshToken]);
+  const [hasActiveReadyAvatar, setHasActiveReadyAvatar] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!sessionReady || !verified || profileSetupIssue !== "avatar") {
+      setHasActiveReadyAvatar(null);
+      return;
+    }
+    let cancelled = false;
+    setHasActiveReadyAvatar(null);
+    void api.listAvatars()
+      .then(({ items }) => {
+        if (cancelled) return;
+        setHasActiveReadyAvatar(items.some((avatar) => avatar.status === "READY" && avatar.active));
+      })
+      .catch(() => {
+        if (!cancelled) setHasActiveReadyAvatar(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, profileSetupIssue, sessionReady, verified]);
+
+  const setupIssue = profileSetupIssue === "avatar" && hasActiveReadyAvatar ? null : profileSetupIssue;
 
   if (!sessionReady || checking || !verified) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
         <Card>
           <p className="text-body">Проверяем профиль для примерки…</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (profileSetupIssue === "avatar" && hasActiveReadyAvatar === null) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-16">
+        <Card>
+          <p className="text-body">Проверяем основной аватар для примерки…</p>
         </Card>
       </div>
     );

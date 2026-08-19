@@ -454,7 +454,7 @@ export default function AvatarManager({ activeAvatarId, showFeaturedAvatar = tru
 
   const readyAvatarCount = avatars.filter((avatar) => avatar.status === "READY").length;
   const atAvatarLimit = readyAvatarCount >= MAX_AVATARS_PER_USER;
-  const needsFirstAvatar = !activeAvatarId && readyAvatarCount === 0;
+  const needsFirstAvatar = !loading && !activeAvatarId && readyAvatarCount === 0;
   const visibleAvatars = avatars.filter((avatar) => avatar.status === "READY");
   const addingNewAvatar = adding && !pendingAvatar && !enhancementAvatar;
   const avatarReviewFlow = addingNewAvatar || Boolean(pendingAvatar) || Boolean(enhancementAvatar);
