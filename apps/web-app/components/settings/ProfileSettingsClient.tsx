@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button, Card } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type { BillingSubscription, InterfacePalette, UpdateProfilePayload } from "@wibestyle/shared-types";
-import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
+import { useAppSession } from "@/components/providers/AppSessionProvider";
 import AvatarManager from "@/components/avatar/AvatarManager";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
 import AnthropometryFields from "@/components/profile/AnthropometryFields";
@@ -61,7 +61,7 @@ export default function ProfileSettingsClient() {
   const [shoeSizeEu, setShoeSizeEu] = useState("");
   const [hideFace, setHideFace] = useState(false);
   const [activeAvatarPhotoPath, setActiveAvatarPhotoPath] = useState<string | null>(null);
-  const [activeAvatarPreviewUrl, setActiveAvatarPreviewUrl] = useState<string | null>(null);
+  const [activeAvatarPhotoLoading, setActiveAvatarPhotoLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState("");
@@ -114,23 +114,24 @@ export default function ProfileSettingsClient() {
   useEffect(() => {
     if (!accessToken || !profile?.activeAvatarId) {
       setActiveAvatarPhotoPath(null);
+      setActiveAvatarPhotoLoading(false);
       return;
     }
     let cancelled = false;
+    setActiveAvatarPhotoLoading(true);
     void api.listAvatars().then(({ items }) => {
       if (cancelled) return;
       const active = items.find((item) => item.id === profile.activeAvatarId);
       setActiveAvatarPhotoPath(active?.photoProcessedUrl ?? active?.photoOriginalUrl ?? null);
+    }).catch(() => {
+      if (!cancelled) setActiveAvatarPhotoPath(null);
+    }).finally(() => {
+      if (!cancelled) setActiveAvatarPhotoLoading(false);
     });
     return () => {
       cancelled = true;
     };
   }, [accessToken, api, profile?.activeAvatarId]);
-
-  const activeAvatarBlobUrl = useAuthenticatedBlob(activeAvatarPhotoPath);
-  useEffect(() => {
-    setActiveAvatarPreviewUrl(activeAvatarBlobUrl);
-  }, [activeAvatarBlobUrl]);
 
   function onLogout() {
     logout();
@@ -304,14 +305,19 @@ export default function ProfileSettingsClient() {
             <p className={sectionTitleClassName}>Основной аватар</p>
             <p className={`mt-1 ${mutedTextClassName}`}>Текущий образ для примерки и настройки приватности.</p>
           </div>
-          {profile?.activeAvatarId ? (
+          {profile?.activeAvatarId && activeAvatarPhotoPath ? (
             <AvatarPrivacyPreview
-              localPreviewUrl={activeAvatarPreviewUrl}
+              accessToken={accessToken}
+              remotePhotoPath={activeAvatarPhotoPath}
               privacy={{ hideFace, hideBackground: false, hideFeatures: false }}
               onPrivacyChange={(next) => {
                 if (next.hideFace !== undefined) setHideFace(next.hideFace);
               }}
             />
+          ) : profile?.activeAvatarId && activeAvatarPhotoLoading ? (
+            <div className="rounded-[28px] border border-[#f0dce8] bg-[#fff8fd] p-5 text-sm text-[#6d6273]">
+              Загружаем основной аватар…
+            </div>
           ) : (
             <AvatarManager activeAvatarId={profile?.activeAvatarId} />
           )}

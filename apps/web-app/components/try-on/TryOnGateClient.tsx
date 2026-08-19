@@ -14,7 +14,7 @@ type TryOnGateClientProps = {
 
 export default function TryOnGateClient({ children }: TryOnGateClientProps) {
   const pathname = usePathname();
-  const { api, accessToken, refreshToken, profile, accessTokenExpiresAt } = useAppSession();
+  const { api, accessToken, refreshToken, profile, accessTokenExpiresAt, refreshProfile } = useAppSession();
   const { sessionReady, verified, checking } = useRequireAuthenticatedSession({ returnPath: pathname });
   const profileSetupIssue = useMemo(() => resolveTryOnSetupIssue({
       accessToken,
@@ -32,9 +32,23 @@ export default function TryOnGateClient({ children }: TryOnGateClientProps) {
     let cancelled = false;
     setHasActiveReadyAvatar(null);
     void api.listAvatars()
-      .then(({ items }) => {
+      .then(async ({ items }) => {
         if (cancelled) return;
-        setHasActiveReadyAvatar(items.some((avatar) => avatar.status === "READY" && avatar.active));
+        const activeReadyAvatar = items.find((avatar) => avatar.status === "READY" && avatar.active);
+        if (activeReadyAvatar) {
+          setHasActiveReadyAvatar(true);
+          return;
+        }
+        const fallbackReadyAvatar = items.find((avatar) => avatar.status === "READY");
+        if (!fallbackReadyAvatar) {
+          setHasActiveReadyAvatar(false);
+          return;
+        }
+        await api.activateAvatar(fallbackReadyAvatar.id);
+        if (cancelled) return;
+        await refreshProfile();
+        if (cancelled) return;
+        setHasActiveReadyAvatar(true);
       })
       .catch(() => {
         if (!cancelled) setHasActiveReadyAvatar(false);
@@ -42,7 +56,7 @@ export default function TryOnGateClient({ children }: TryOnGateClientProps) {
     return () => {
       cancelled = true;
     };
-  }, [api, profileSetupIssue, sessionReady, verified]);
+  }, [api, profileSetupIssue, refreshProfile, sessionReady, verified]);
 
   const setupIssue = profileSetupIssue === "avatar" && hasActiveReadyAvatar ? null : profileSetupIssue;
 
