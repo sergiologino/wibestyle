@@ -76,4 +76,25 @@ public class AdminGalleryController {
         AdminActions.audit(adminAuditService, adminKey, adminProperties, request, "delete", "gallery_post", postId.toString(), null);
         return response;
     }
+
+    @PostMapping("/duplicates/cleanup")
+    public Map<String, Object> cleanupDuplicatePosts(
+            @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
+            @RequestParam(defaultValue = "true") boolean dryRun,
+            HttpServletRequest request
+    ) {
+        AdminSupport.requireAdminKey(adminKey, adminProperties);
+        Map<String, Object> response = galleryModerationService.cleanupDuplicateTryOnPosts(dryRun);
+        AdminActions.audit(
+                adminAuditService,
+                adminKey,
+                adminProperties,
+                request,
+                dryRun ? "preview_duplicate_cleanup" : "cleanup_duplicates",
+                "gallery_post",
+                "try_on_duplicates",
+                response.toString()
+        );
+        return response;
+    }
 }

@@ -1089,6 +1089,47 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void adminCleanupGalleryDuplicatesKeepsBestPost() throws Exception {
+        String phone = "+79990007790";
+        authenticate(phone);
+        UUID userId = jdbcTemplate.queryForObject("select id from users where phone = ?", UUID.class, phone);
+        UUID sessionId = UUID.randomUUID();
+        UUID oldPrivatePostId = UUID.randomUUID();
+        UUID publicPostId = UUID.randomUUID();
+        UUID hiddenPostId = UUID.randomUUID();
+
+        jdbcTemplate.update("""
+                insert into try_on_sessions (
+                    id, user_id, source_type, status, visibility, after_image_url, created_at, updated_at
+                ) values (?, ?, 'MARKETPLACE_LINK', 'READY', 'private', '/after.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, sessionId, userId);
+        insertGalleryPost(oldPrivatePostId, userId, sessionId, "old-private", "private", "PUBLIC", 0, 0);
+        insertGalleryPost(publicPostId, userId, sessionId, "public-best", "public", "PUBLIC", 2, 1);
+        insertGalleryPost(hiddenPostId, userId, sessionId, "hidden", "public", "HIDDEN", 20, 20);
+
+        mockMvc.perform(post("/api/v1/admin/gallery/duplicates/cleanup?dryRun=true")
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dryRun").value(true))
+                .andExpect(jsonPath("$.duplicateGroups").value(1))
+                .andExpect(jsonPath("$.postsToDelete").value(2))
+                .andExpect(jsonPath("$.deletedPosts").value(0))
+                .andExpect(jsonPath("$.groups[0].keptPostId").value(publicPostId.toString()));
+        assertEquals(3, jdbcTemplate.queryForObject("select count(*) from gallery_posts where try_on_session_id = ?", Integer.class, sessionId));
+
+        mockMvc.perform(post("/api/v1/admin/gallery/duplicates/cleanup?dryRun=false")
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dryRun").value(false))
+                .andExpect(jsonPath("$.duplicateGroups").value(1))
+                .andExpect(jsonPath("$.postsToDelete").value(2))
+                .andExpect(jsonPath("$.deletedPosts").value(2));
+
+        assertEquals(1, jdbcTemplate.queryForObject("select count(*) from gallery_posts where try_on_session_id = ?", Integer.class, sessionId));
+        assertEquals(1, jdbcTemplate.queryForObject("select count(*) from gallery_posts where id = ?", Integer.class, publicPostId));
+    }
+
+    @Test
     void listMyTryOnSessionsReturnsReadyHistory() throws Exception {
         String accessToken = authenticate("+79990008900");
         activateAvatar(accessToken);
@@ -1247,6 +1288,25 @@ class ApiIntegrationTest {
                     privacy_features_hidden, quality_score, pipeline_version, created_at
                 ) values (?, ?, ?, 168, 92, 72, 98, 38, 'M', ?, false, false, false, 0.95, 'v1', CURRENT_TIMESTAMP)
                 """, snapshotId, avatarId, userId, processedPath);
+    }
+
+    private void insertGalleryPost(
+            UUID postId,
+            UUID userId,
+            UUID sessionId,
+            String slug,
+            String visibility,
+            String moderationStatus,
+            int likes,
+            int comments
+    ) {
+        jdbcTemplate.update("""
+                insert into gallery_posts (
+                    id, user_id, slug, title, image_url, try_on_session_id, visibility,
+                    moderation_status, product_link_visible, product_visibility, media_type,
+                    like_count, comment_count, created_at, updated_at
+                ) values (?, ?, ?, 'Look', '/after.jpg', ?, ?, ?, true, 'SHOW_PRODUCT_LINK', 'image', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, postId, userId, slug, sessionId, visibility, moderationStatus, likes, comments);
     }
 
     private String createDraftAvatar(String accessToken) throws Exception {

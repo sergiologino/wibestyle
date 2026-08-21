@@ -33,6 +33,8 @@ public interface GalleryPostRepository extends JpaRepository<GalleryPostEntity, 
 
     java.util.List<GalleryPostEntity> findAllByTryOnSessionIdOrderByCreatedAtDesc(UUID tryOnSessionId);
 
+    List<GalleryPostEntity> findByTryOnSessionIdIsNotNullOrderByCreatedAtDesc();
+
     Optional<GalleryPostEntity> findFirstByUserIdAndTryOnSessionIdAndMediaTypeOrderByCreatedAtDesc(
             UUID userId,
             UUID tryOnSessionId,

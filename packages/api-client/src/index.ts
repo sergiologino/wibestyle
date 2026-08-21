@@ -1160,6 +1160,26 @@ export class WibeStyleApiClient {
     );
   }
 
+  cleanupAdminGalleryDuplicates(adminKey: string, dryRun = true) {
+    return this.request<{
+      dryRun: boolean;
+      duplicateGroups: number;
+      postsToDelete: number;
+      deletedPosts: number;
+      groups: {
+        userId: string;
+        tryOnSessionId: string;
+        mediaType: string;
+        keptPostId: string;
+        deletedPostIds: string[];
+        totalInGroup: number;
+      }[];
+    }>(
+      `/api/v1/admin/gallery/duplicates/cleanup?dryRun=${dryRun ? "true" : "false"}`,
+      { method: "POST", headers: { "X-Admin-Key": adminKey } },
+    );
+  }
+
   listAdminAuditLogs(adminKey: string) {
     return this.request<{ items: { action: string; entityType: string; createdAt: string }[] }>(
       "/api/v1/admin/audit",

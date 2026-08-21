@@ -62,6 +62,32 @@ class TryOnScenePromptBuilderTest {
         )).isEqualTo("sportswear");
     }
 
+    @Test
+    void addsWinterOutdoorContextForFurCoats() {
+        TryOnSessionEntity session = session("jacket", "outerwear", "Норковая шуба");
+        when(settingsService.isTryOnScenesEnabled()).thenReturn(true);
+        when(settingsService.isTryOnPoseChangeEnabled()).thenReturn(true);
+        when(settingsService.getTryOnScenePrompts()).thenReturn(Map.of(
+                "outerwear", "a city park",
+                "default", "a neutral street"
+        ));
+
+        String prompt = new TryOnScenePromptBuilder(settingsService).build(session);
+
+        assertThat(prompt).contains("snowy winter");
+        assertThat(prompt).contains("avoid summer greenery");
+    }
+
+    @Test
+    void addsOvercastCoolSeasonContextForRaincoats() {
+        String context = TryOnScenePromptBuilder.seasonalContext(
+                session("jacket", "outerwear", "Женский тренч плащ")
+        );
+
+        assertThat(context).contains("overcast autumn or cool spring");
+        assertThat(context).contains("avoid hot summer scenery");
+    }
+
     private static TryOnSessionEntity session(String category, String profile, String title) {
         TryOnSessionEntity session = new TryOnSessionEntity(
                 UUID.randomUUID(),

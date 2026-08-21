@@ -26,6 +26,7 @@ public class TryOnScenePromptBuilder {
         }
 
         String location = resolveSelectedLocation(session);
+        String seasonalContext = seasonalContext(session);
         String pose = settingsService.isTryOnPoseChangeEnabled()
                 ? """
                   You may slightly change the customer's pose to a natural catalog or lifestyle pose appropriate for this location.
@@ -39,10 +40,11 @@ public class TryOnScenePromptBuilder {
                 This directive overrides any earlier request for a neutral studio background, original background, calm stance or original pose.
                 Place the customer in: %s.
                 %s
+                %s
                 Preserve the exact face, hair, age impression, body shape and anthropometry from image1.
                 Preserve the exact garment color, cut, material, print and details from image2.
                 Photorealistic premium fashion photography, coherent lighting and shadows, vertical 3:4 framing, PG-safe styling.
-                """.formatted(location, pose).trim().replaceAll("\\s+", " ");
+                """.formatted(location, seasonalContext, pose).trim().replaceAll("\\s+", " ");
     }
 
     private String resolveSelectedLocation(TryOnSessionEntity session) {
@@ -139,6 +141,41 @@ public class TryOnScenePromptBuilder {
             return "evening";
         }
         return "casual";
+    }
+
+    static String seasonalContext(TryOnSessionEntity session) {
+        String category = GarmentClassification.normalizeCategory(session.getGarmentCategory());
+        String profile = GarmentClassification.normalizePromptProfile(
+                session.getGarmentPromptProfile(),
+                session.getGarmentCategory()
+        );
+        String title = session.getProductTitle() == null ? "" : session.getProductTitle();
+        String haystack = (category + " " + profile + " " + title).toLowerCase(Locale.ROOT);
+
+        if ("outerwear".equals(profile) || "jacket".equals(category)) {
+            if (matchesAny(haystack,
+                    "fur", "fur coat", "shearling", "down jacket", "puffer", "parka",
+                    "шуб", "мех", "дублен", "пухов", "парка")) {
+                return "Seasonal environment rule: if the scene is outdoors, use a coherent snowy winter setting with cold natural light; avoid summer greenery, beach, hot-weather or blooming-garden backgrounds.";
+            }
+            if (matchesAny(haystack,
+                    "raincoat", "trench", "mac coat", "waterproof",
+                    "плащ", "тренч", "дождев")) {
+                return "Seasonal environment rule: if the scene is outdoors, use an overcast autumn or cool spring setting, slightly damp pavement if appropriate; avoid hot summer scenery and snow unless the product clearly looks winter-only.";
+            }
+            if (matchesAny(haystack,
+                    "coat", "overcoat", "wool coat",
+                    "пальто", "полупальто")) {
+                return "Seasonal environment rule: if the scene is outdoors, use a cool autumn, early spring, or light winter city/park setting; avoid bright summer greenery and beach backgrounds.";
+            }
+            return "Seasonal environment rule: if the scene is outdoors, match weather to the outerwear warmth; warm jackets/coats need cool-season surroundings, never a hot summer landscape.";
+        }
+        if (matchesAny(haystack,
+                "summer", "linen", "sundress", "beach", "swimwear",
+                "летн", "лён", "лен ", "сарафан", "пляж", "купальн")) {
+            return "Seasonal environment rule: if the scene is outdoors, use warm spring or summer surroundings appropriate for lightweight clothing.";
+        }
+        return "Seasonal environment rule: if the scene is outdoors, choose weather and season that naturally match the garment weight and use-case.";
     }
 
     private static boolean matchesAny(String haystack, String... needles) {

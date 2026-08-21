@@ -9,11 +9,15 @@ import ru.wibestyle.api.repository.GalleryPostRepository;
 import ru.wibestyle.api.repository.GalleryReportRepository;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class GalleryModerationService {
@@ -76,6 +80,49 @@ public class GalleryModerationService {
     }
 
     @Transactional
+    public Map<String, Object> cleanupDuplicateTryOnPosts(boolean dryRun) {
+        List<GalleryPostEntity> posts = galleryPostRepository.findByTryOnSessionIdIsNotNullOrderByCreatedAtDesc();
+        Map<String, List<GalleryPostEntity>> groups = posts.stream()
+                .collect(Collectors.groupingBy(
+                        this::duplicateKey,
+                        LinkedHashMap::new,
+                        Collectors.toCollection(ArrayList::new)
+                ));
+
+        List<Map<String, Object>> duplicateGroups = new ArrayList<>();
+        List<GalleryPostEntity> toDelete = new ArrayList<>();
+        groups.values().stream()
+                .filter(group -> group.size() > 1)
+                .forEach(group -> {
+                    GalleryPostEntity keep = group.stream().max(duplicateKeeperComparator()).orElseThrow();
+                    List<GalleryPostEntity> duplicates = group.stream()
+                            .filter(post -> !post.getId().equals(keep.getId()))
+                            .toList();
+                    toDelete.addAll(duplicates);
+                    duplicateGroups.add(Map.of(
+                            "userId", keep.getUserId().toString(),
+                            "tryOnSessionId", keep.getTryOnSessionId().toString(),
+                            "mediaType", normalizeMediaType(keep.getMediaType()),
+                            "keptPostId", keep.getId().toString(),
+                            "deletedPostIds", duplicates.stream().map(post -> post.getId().toString()).toList(),
+                            "totalInGroup", group.size()
+                    ));
+                });
+
+        if (!dryRun && !toDelete.isEmpty()) {
+            galleryPostRepository.deleteAll(toDelete);
+        }
+
+        return Map.of(
+                "dryRun", dryRun,
+                "duplicateGroups", duplicateGroups.size(),
+                "postsToDelete", toDelete.size(),
+                "deletedPosts", dryRun ? 0 : toDelete.size(),
+                "groups", duplicateGroups
+        );
+    }
+
+    @Transactional
     public Map<String, Object> hidePost(UUID postId) {
         GalleryPostEntity post = galleryPostRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("POST_NOT_FOUND"));
@@ -107,6 +154,36 @@ public class GalleryModerationService {
         map.put("userId", post.getUserId().toString());
         map.put("createdAt", post.getCreatedAt().toString());
         return map;
+    }
+
+    private String duplicateKey(GalleryPostEntity post) {
+        return post.getUserId() + ":" + post.getTryOnSessionId() + ":" + normalizeMediaType(post.getMediaType());
+    }
+
+    private static String normalizeMediaType(String mediaType) {
+        return mediaType == null || mediaType.isBlank() ? "image" : mediaType;
+    }
+
+    private static Comparator<GalleryPostEntity> duplicateKeeperComparator() {
+        return Comparator
+                .comparingInt(GalleryModerationService::moderationRank)
+                .thenComparingInt(GalleryModerationService::visibilityRank)
+                .thenComparingInt(GalleryPostEntity::getLikeCount)
+                .thenComparingInt(GalleryPostEntity::getCommentCount)
+                .thenComparing(GalleryPostEntity::getCreatedAt);
+    }
+
+    private static int visibilityRank(GalleryPostEntity post) {
+        return switch (post.getVisibility()) {
+            case "public" -> 3;
+            case "unlisted" -> 2;
+            case "private" -> 1;
+            default -> 0;
+        };
+    }
+
+    private static int moderationRank(GalleryPostEntity post) {
+        return "HIDDEN".equals(post.getModerationStatus()) ? 0 : 1;
     }
 
     private Map<String, Object> toReportMap(GalleryReportEntity report) {

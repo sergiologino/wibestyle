@@ -31,6 +31,21 @@ type GalleryModerationPost = {
   createdAt: string;
 };
 
+type GalleryDuplicateCleanupResult = {
+  dryRun: boolean;
+  duplicateGroups: number;
+  postsToDelete: number;
+  deletedPosts: number;
+  groups: {
+    userId: string;
+    tryOnSessionId: string;
+    mediaType: string;
+    keptPostId: string;
+    deletedPostIds: string[];
+    totalInGroup: number;
+  }[];
+};
+
 const statusFilters = ["", "open", "resolved"] as const;
 
 const reasonLabels: Record<string, string> = {
@@ -52,6 +67,8 @@ export default function AdminGalleryPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [actionPostId, setActionPostId] = useState<string | null>(null);
+  const [duplicatesLoading, setDuplicatesLoading] = useState(false);
+  const [duplicateCleanup, setDuplicateCleanup] = useState<GalleryDuplicateCleanupResult | null>(null);
 
   const api = createAdminApi();
 
@@ -125,6 +142,39 @@ export default function AdminGalleryPage() {
     }
   }
 
+  async function onPreviewDuplicates() {
+    setDuplicatesLoading(true);
+    setError(null);
+    try {
+      const result = await api.cleanupAdminGalleryDuplicates(adminKey, true);
+      setDuplicateCleanup(result);
+    } catch {
+      setError("Не удалось проверить дубли галереи");
+    } finally {
+      setDuplicatesLoading(false);
+    }
+  }
+
+  async function onCleanupDuplicates() {
+    if (!duplicateCleanup || duplicateCleanup.postsToDelete === 0) {
+      return;
+    }
+    if (!window.confirm(`Удалить ${duplicateCleanup.postsToDelete} дублей галереи? Будут сохранены лучшие посты в каждой группе.`)) {
+      return;
+    }
+    setDuplicatesLoading(true);
+    setError(null);
+    try {
+      const result = await api.cleanupAdminGalleryDuplicates(adminKey, false);
+      setDuplicateCleanup(result);
+      await loadPosts(adminKey);
+    } catch {
+      setError("Не удалось удалить дубли галереи");
+    } finally {
+      setDuplicatesLoading(false);
+    }
+  }
+
   function postImageUrl(post: GalleryModerationPost) {
     if (!post.publicImageUrl) return null;
     return `${apiBaseUrl()}${post.publicImageUrl}`;
@@ -159,6 +209,53 @@ export default function AdminGalleryPage() {
             </Button>
           ))}
         </div>
+      ) : null}
+
+      {tab === "posts" ? (
+        <Card className="border border-[#ffd1ed] bg-[#fff8fd]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="font-black text-[#302637]">Очистка дублей галереи</p>
+              <p className="mt-1 text-sm font-bold text-[#6d6273]">
+                Проверяет одинаковые публикации одной примерки у одного пользователя. Оставляет лучший пост, остальные удаляет.
+              </p>
+              {duplicateCleanup ? (
+                <p className="mt-2 text-sm font-bold text-[#302637]">
+                  Найдено групп: {duplicateCleanup.duplicateGroups}. К удалению: {duplicateCleanup.postsToDelete}.
+                  {!duplicateCleanup.dryRun ? ` Удалено: ${duplicateCleanup.deletedPosts}.` : ""}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" disabled={duplicatesLoading} onClick={() => void onPreviewDuplicates()}>
+                {duplicatesLoading ? "Проверяем…" : "Проверить дубли"}
+              </Button>
+              <Button
+                size="sm"
+                disabled={duplicatesLoading || !duplicateCleanup || duplicateCleanup.postsToDelete === 0}
+                onClick={() => void onCleanupDuplicates()}
+              >
+                Удалить дубли
+              </Button>
+            </div>
+          </div>
+          {duplicateCleanup && duplicateCleanup.groups.length > 0 ? (
+            <details className="mt-3 text-xs font-bold text-[#6d6273]">
+              <summary className="cursor-pointer text-[#782cff]">Показать группы дублей</summary>
+              <div className="mt-2 grid gap-2">
+                {duplicateCleanup.groups.slice(0, 20).map((group) => (
+                  <div key={`${group.userId}:${group.tryOnSessionId}:${group.mediaType}`} className="rounded-2xl bg-white p-3">
+                    <p>user: {group.userId}</p>
+                    <p>session: {group.tryOnSessionId}</p>
+                    <p>media: {group.mediaType} · всего: {group.totalInGroup}</p>
+                    <p>оставить: {group.keptPostId}</p>
+                    <p>удалить: {group.deletedPostIds.join(", ")}</p>
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null}
+        </Card>
       ) : null}
 
       {error ? <p className="font-bold text-[#ff1fa2]">{error}</p> : null}
