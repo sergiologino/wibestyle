@@ -25,6 +25,10 @@ export default function AdminSettingsPage() {
   const [tryOnScenesEnabled, setTryOnScenesEnabled] = useState(true);
   const [tryOnPoseChangeEnabled, setTryOnPoseChangeEnabled] = useState(true);
   const [tryOnScenePrompts, setTryOnScenePrompts] = useState<Record<string, string>>({});
+  const [mobileAndroidLatestVersion, setMobileAndroidLatestVersion] = useState("1.0.0");
+  const [mobileAndroidMinSupportedVersion, setMobileAndroidMinSupportedVersion] = useState("1.0.0");
+  const [mobileAndroidUpdateUrl, setMobileAndroidUpdateUrl] = useState("https://www.rustore.ru/catalog/app/ru.vibestyle.app");
+  const [mobileAndroidForceUpdate, setMobileAndroidForceUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -36,6 +40,10 @@ export default function AdminSettingsPage() {
     setTryOnScenesEnabled(data.tryOnScenesEnabled);
     setTryOnPoseChangeEnabled(data.tryOnPoseChangeEnabled);
     setTryOnScenePrompts(data.tryOnScenePrompts);
+    setMobileAndroidLatestVersion(data.mobileAndroidLatestVersion);
+    setMobileAndroidMinSupportedVersion(data.mobileAndroidMinSupportedVersion);
+    setMobileAndroidUpdateUrl(data.mobileAndroidUpdateUrl);
+    setMobileAndroidForceUpdate(data.mobileAndroidForceUpdate);
   }, [api]);
 
   useEffect(() => {
@@ -54,11 +62,19 @@ export default function AdminSettingsPage() {
         tryOnScenesEnabled,
         tryOnPoseChangeEnabled,
         tryOnScenePrompts,
+        mobileAndroidLatestVersion,
+        mobileAndroidMinSupportedVersion,
+        mobileAndroidUpdateUrl,
+        mobileAndroidForceUpdate,
       });
       setBlockGoogleOAuth(data.blockGoogleOAuth);
       setTryOnScenesEnabled(data.tryOnScenesEnabled);
       setTryOnPoseChangeEnabled(data.tryOnPoseChangeEnabled);
       setTryOnScenePrompts(data.tryOnScenePrompts);
+      setMobileAndroidLatestVersion(data.mobileAndroidLatestVersion);
+      setMobileAndroidMinSupportedVersion(data.mobileAndroidMinSupportedVersion);
+      setMobileAndroidUpdateUrl(data.mobileAndroidUpdateUrl);
+      setMobileAndroidForceUpdate(data.mobileAndroidForceUpdate);
       setSaved(true);
     } catch {
       setError("Не удалось сохранить настройки");
@@ -93,6 +109,56 @@ export default function AdminSettingsPage() {
         </Button>
         {saved ? <p className="mt-3 font-bold text-[#782cff]">Сохранено</p> : null}
         {error ? <p className="mt-3 font-bold text-[#ff1fa2]">{error}</p> : null}
+      </Card>
+
+      <Card>
+        <h2 className="text-xl font-black">Мобильное приложение</h2>
+        <p className="mt-2 text-sm font-bold text-[#6d6273]">
+          После публикации новой версии в RuStore укажите её здесь. Старые установленные приложения покажут окно обновления при запуске или возврате в приложение.
+        </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="grid gap-1 text-sm font-black text-[#302637]">
+            Актуальная Android-версия
+            <input
+              className="rounded-xl border border-[#ffd1ed] px-3 py-2 font-normal"
+              placeholder="1.0.1"
+              value={mobileAndroidLatestVersion}
+              onChange={(event) => setMobileAndroidLatestVersion(event.target.value)}
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-black text-[#302637]">
+            Минимально поддерживаемая Android-версия
+            <input
+              className="rounded-xl border border-[#ffd1ed] px-3 py-2 font-normal"
+              placeholder="1.0.0"
+              value={mobileAndroidMinSupportedVersion}
+              onChange={(event) => setMobileAndroidMinSupportedVersion(event.target.value)}
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-black text-[#302637] md:col-span-2">
+            Ссылка на RuStore
+            <input
+              className="rounded-xl border border-[#ffd1ed] px-3 py-2 font-normal"
+              placeholder="https://www.rustore.ru/catalog/app/ru.vibestyle.app"
+              value={mobileAndroidUpdateUrl}
+              onChange={(event) => setMobileAndroidUpdateUrl(event.target.value)}
+            />
+          </label>
+        </div>
+        <label className="mt-4 flex items-center gap-3 font-bold text-[#302637]">
+          <input
+            type="checkbox"
+            checked={mobileAndroidForceUpdate}
+            onChange={(event) => setMobileAndroidForceUpdate(event.target.checked)}
+          />
+          Требовать обновление без возможности закрыть окно
+        </label>
+        <p className="mt-2 text-xs font-bold text-[#6d6273]">
+          Мягкое обновление показывается, если установленная версия ниже актуальной. Жёсткое — если версия ниже минимальной или включён этот чекбокс.
+        </p>
+        <Button className="mt-4" disabled={loading || !configured} onClick={() => void onSave()}>
+          {loading ? "Сохраняем…" : "Сохранить настройки мобильной версии"}
+        </Button>
       </Card>
 
       <Card>

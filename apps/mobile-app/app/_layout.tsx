@@ -16,6 +16,7 @@ import * as Linking from "expo-linking";
 import { captureVisitorIdFromUrl, trackMobileMarketingEvent } from "@/lib/marketing-visitor";
 import { initializeMyTracker } from "@/lib/mytracker";
 import { TelegramChannelButton } from "@/components/community/TelegramChannelButton";
+import AppUpdatePrompt from "@/components/AppUpdatePrompt";
 
 function PushNotificationObserver() {
   const router = useRouter();
@@ -74,6 +75,7 @@ export default function RootLayout() {
       <SessionProvider>
         <PushNotificationObserver />
         <MarketingVisitorObserver />
+        <AppUpdatePrompt />
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
           <Stack.Screen name="index" />

@@ -102,6 +102,15 @@ export type ManualPushPayload = {
   actionUrl?: string;
 };
 
+export type AppConfig = {
+  android: {
+    latestVersion: string;
+    minSupportedVersion: string;
+    updateUrl: string;
+    forceUpdate: boolean;
+  };
+};
+
 export type DeviceAuthInfo = {
   hash: string;
   previousRegistrationOnDevice: boolean;
@@ -429,6 +438,10 @@ export class WibeStyleApiClient {
       profile: UserProfile;
       entitlements?: UserEntitlements;
     }>("/api/v1/me");
+  }
+
+  getAppConfig() {
+    return this.request<AppConfig>("/api/v1/app/config");
   }
 
   getProfile() {
@@ -1329,6 +1342,10 @@ export class WibeStyleApiClient {
       tryOnScenesEnabled: boolean;
       tryOnPoseChangeEnabled: boolean;
       tryOnScenePrompts: Record<string, string>;
+      mobileAndroidLatestVersion: string;
+      mobileAndroidMinSupportedVersion: string;
+      mobileAndroidUpdateUrl: string;
+      mobileAndroidForceUpdate: boolean;
     }>("/api/v1/admin/settings", {
       headers: { "X-Admin-Key": adminKey },
     });
@@ -1339,12 +1356,20 @@ export class WibeStyleApiClient {
     tryOnScenesEnabled?: boolean;
     tryOnPoseChangeEnabled?: boolean;
     tryOnScenePrompts?: Record<string, string>;
+    mobileAndroidLatestVersion?: string;
+    mobileAndroidMinSupportedVersion?: string;
+    mobileAndroidUpdateUrl?: string;
+    mobileAndroidForceUpdate?: boolean;
   }) {
     return this.request<{
       blockGoogleOAuth: boolean;
       tryOnScenesEnabled: boolean;
       tryOnPoseChangeEnabled: boolean;
       tryOnScenePrompts: Record<string, string>;
+      mobileAndroidLatestVersion: string;
+      mobileAndroidMinSupportedVersion: string;
+      mobileAndroidUpdateUrl: string;
+      mobileAndroidForceUpdate: boolean;
     }>("/api/v1/admin/settings", {
       method: "PATCH",
       headers: { "X-Admin-Key": adminKey },

@@ -168,16 +168,6 @@ public class GalleryService {
     @Transactional
     public Map<String, Object> create(UUID userId, CreateGalleryPostRequest request) {
         Instant now = Instant.now();
-        String slug = buildSlug(request.title());
-        GalleryPostEntity post = new GalleryPostEntity(
-                UUID.randomUUID(),
-                userId,
-                slug,
-                normalizeVisibility(request.visibility()),
-                "PUBLIC",
-                now,
-                now
-        );
 
         if (request.tryOnSessionId() != null) {
             TryOnSessionEntity session = tryOnSessionRepository.findByIdAndUserId(request.tryOnSessionId(), userId)
@@ -185,9 +175,33 @@ public class GalleryService {
             if (session.getStatus() != TryOnSessionStatus.READY) {
                 throw new IllegalArgumentException("SESSION_NOT_READY");
             }
+            String mediaType = resolveGalleryMediaType(request.mediaType(), session);
+            var existing = galleryPostRepository.findFirstByUserIdAndTryOnSessionIdAndMediaTypeOrderByCreatedAtDesc(
+                    userId,
+                    session.getId(),
+                    mediaType
+            );
+            if (existing.isPresent()) {
+                GalleryPostEntity post = existing.get();
+                updateExistingTryOnPost(post, request, session, mediaType, now);
+                galleryPostRepository.save(post);
+                userActivityService.recordGallery(userId);
+                return Map.of("post", toMap(post, false, resolveAuthorName(userId)));
+            }
+
+            String slug = buildSlug(request.title());
+            GalleryPostEntity post = new GalleryPostEntity(
+                    UUID.randomUUID(),
+                    userId,
+                    slug,
+                    normalizeVisibility(request.visibility()),
+                    "PUBLIC",
+                    now,
+                    now
+            );
             post.setTryOnSessionId(session.getId());
             post.setImageUrl(session.getAfterImageUrl());
-            post.setMediaType(resolveGalleryMediaType(request.mediaType(), session));
+            post.setMediaType(mediaType);
             if ("video".equals(post.getMediaType())) {
                 post.setVideoUrl(session.getAfterVideoUrl());
             }
@@ -195,28 +209,31 @@ public class GalleryService {
             post.setMarketplace(session.getMarketplace());
             post.setProductUrl(session.getProductUrl());
             post.setProductTitle(session.getProductTitle());
+            applyGalleryOptions(post, request);
+            galleryPostRepository.save(post);
+            userActivityService.recordGallery(userId);
+            return Map.of("post", toMap(post, false, resolveAuthorName(userId)));
         } else {
+            String slug = buildSlug(request.title());
+            GalleryPostEntity post = new GalleryPostEntity(
+                    UUID.randomUUID(),
+                    userId,
+                    slug,
+                    normalizeVisibility(request.visibility()),
+                    "PUBLIC",
+                    now,
+                    now
+            );
             post.setTitle(request.title());
             post.setImageUrl(request.imageUrl());
             post.setMarketplace(request.marketplace());
             post.setProductUrl(request.productUrl());
             post.setProductTitle(request.productTitle());
+            applyGalleryOptions(post, request);
+            galleryPostRepository.save(post);
+            userActivityService.recordGallery(userId);
+            return Map.of("post", toMap(post, false, resolveAuthorName(userId)));
         }
-
-        post.setDescription(request.description());
-        if (request.productLinkVisible() != null) {
-            post.setProductLinkVisible(request.productLinkVisible());
-        }
-        if (request.productVisibility() != null) {
-            post.setProductVisibility(request.productVisibility());
-        }
-        if (request.eliteFrame() != null) {
-            post.setEliteFrame(request.eliteFrame());
-        }
-
-        galleryPostRepository.save(post);
-        userActivityService.recordGallery(userId);
-        return Map.of("post", toMap(post, false, resolveAuthorName(userId)));
     }
 
     @Transactional
@@ -387,6 +404,47 @@ public class GalleryService {
             return "video";
         }
         return "image";
+    }
+
+    private void updateExistingTryOnPost(
+            GalleryPostEntity post,
+            CreateGalleryPostRequest request,
+            TryOnSessionEntity session,
+            String mediaType,
+            Instant now
+    ) {
+        post.setVisibility(resolveUpdatedVisibility(post.getVisibility(), request.visibility()));
+        post.setImageUrl(session.getAfterImageUrl());
+        post.setMediaType(mediaType);
+        post.setVideoUrl("video".equals(mediaType) ? session.getAfterVideoUrl() : null);
+        post.setTitle(request.title() != null ? request.title() : defaultTitle(session));
+        post.setMarketplace(session.getMarketplace());
+        post.setProductUrl(session.getProductUrl());
+        post.setProductTitle(session.getProductTitle());
+        post.setModerationStatus("PUBLIC");
+        post.setUpdatedAt(now);
+        applyGalleryOptions(post, request);
+    }
+
+    private void applyGalleryOptions(GalleryPostEntity post, CreateGalleryPostRequest request) {
+        post.setDescription(request.description());
+        if (request.productLinkVisible() != null) {
+            post.setProductLinkVisible(request.productLinkVisible());
+        }
+        if (request.productVisibility() != null) {
+            post.setProductVisibility(request.productVisibility());
+        }
+        if (request.eliteFrame() != null) {
+            post.setEliteFrame(request.eliteFrame());
+        }
+    }
+
+    private static String resolveUpdatedVisibility(String currentVisibility, String requestedVisibility) {
+        String normalized = normalizeVisibility(requestedVisibility);
+        if ("public".equals(currentVisibility) && "unlisted".equals(normalized)) {
+            return "public";
+        }
+        return normalized;
     }
 
     private static boolean isPubliclyReadable(GalleryPostEntity post) {

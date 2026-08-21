@@ -46,6 +46,12 @@ public class AdminSettingsController {
                 request.tryOnPoseChangeEnabled(),
                 request.tryOnScenePrompts()
         );
+        platformSettingsService.updateMobileAndroidSettings(
+                request.mobileAndroidLatestVersion(),
+                request.mobileAndroidMinSupportedVersion(),
+                request.mobileAndroidUpdateUrl(),
+                request.mobileAndroidForceUpdate()
+        );
         return platformSettingsService.snapshot();
     }
 }

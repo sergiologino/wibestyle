@@ -6,6 +6,10 @@ public record UpdatePlatformSettingsRequest(
         Boolean blockGoogleOAuth,
         Boolean tryOnScenesEnabled,
         Boolean tryOnPoseChangeEnabled,
-        Map<String, String> tryOnScenePrompts
+        Map<String, String> tryOnScenePrompts,
+        String mobileAndroidLatestVersion,
+        String mobileAndroidMinSupportedVersion,
+        String mobileAndroidUpdateUrl,
+        Boolean mobileAndroidForceUpdate
 ) {
 }
