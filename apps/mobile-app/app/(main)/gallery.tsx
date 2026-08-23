@@ -6,12 +6,24 @@ import type { GalleryPost } from "@wibestyle/shared-types";
 import { Feather } from "@expo/vector-icons";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
-import { BodyText, DisplayTitle, Eyebrow } from "@/components/ui/Button";
+import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { Image } from "expo-image";
 import { AppVideoPlayer } from "@/components/media/VideoPlayer";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
 import { buildGalleryImageSources } from "@/lib/mobile-api";
+
+const GALLERY_LOAD_TIMEOUT_MS = 20000;
+
+function withGalleryTimeout<T>(promise: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Gallery request timeout")), GALLERY_LOAD_TIMEOUT_MS);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
 
 function GalleryPostImage({
   post,
@@ -57,6 +69,7 @@ export default function GalleryScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [visiblePostIds, setVisiblePostIds] = useState<Set<string>>(() => new Set());
   const [appIsActive, setAppIsActive] = useState(AppState.currentState === "active");
   const apiBaseUrl = getApiBaseUrl();
@@ -66,10 +79,18 @@ export default function GalleryScreen() {
   }).current;
 
   const load = useCallback(async () => {
-    const payload = await api.listGalleryPosts({ limit: 20 });
-    setPosts(payload.items);
-    setCursor(payload.nextCursor ?? null);
-    setHasMore(payload.hasMore);
+    try {
+      const payload = await withGalleryTimeout(api.listGalleryPosts({ limit: 20 }));
+      setPosts(payload.items);
+      setCursor(payload.nextCursor ?? null);
+      setHasMore(payload.hasMore);
+      setError(null);
+    } catch {
+      setPosts([]);
+      setCursor(null);
+      setHasMore(false);
+      setError("Не удалось загрузить галерею. Проверьте интернет и попробуйте ещё раз.");
+    }
   }, [api]);
 
   useEffect(() => {
@@ -89,18 +110,24 @@ export default function GalleryScreen() {
 
   async function onRefresh() {
     setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    try {
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   async function loadMore() {
     if (!cursor || !hasMore || loadingMore || loading) return;
     setLoadingMore(true);
     try {
-      const payload = await api.listGalleryPosts({ limit: 20, cursor });
+      const payload = await withGalleryTimeout(api.listGalleryPosts({ limit: 20, cursor }));
       setPosts((prev) => [...prev, ...payload.items]);
       setCursor(payload.nextCursor ?? null);
       setHasMore(payload.hasMore);
+      setError(null);
+    } catch {
+      setError("Не удалось загрузить следующие образы. Попробуйте ещё раз.");
     } finally {
       setLoadingMore(false);
     }
@@ -126,6 +153,12 @@ export default function GalleryScreen() {
         onEndReached={() => void loadMore()}
         viewabilityConfig={viewabilityConfig}
         onViewableItemsChanged={onViewableItemsChanged}
+        ListHeaderComponent={error ? (
+          <View style={styles.errorCard}>
+            <BodyText>{error}</BodyText>
+            <Button label="Повторить" variant="secondary" size="sm" onPress={() => void load()} />
+          </View>
+        ) : null}
         renderItem={({ item }) => {
           const videoPath = item.mediaType === "video" ? item.publicVideoUrl ?? item.videoUrl : null;
           return (
@@ -177,6 +210,15 @@ const styles = StyleSheet.create({
   },
   row: {
     gap: spacing.md,
+  },
+  errorCard: {
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
   },
   card: {
     flex: 1,

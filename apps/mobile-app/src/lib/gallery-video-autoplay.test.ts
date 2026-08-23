@@ -15,6 +15,14 @@ describe("mobile gallery video autoplay", () => {
     expect(gallery).toContain('contentFit="cover"');
   });
 
+  it("does not leave the gallery on an endless spinner when loading fails", () => {
+    const gallery = readFileSync(join(process.cwd(), "app", "(main)", "gallery.tsx"), "utf8");
+    expect(gallery).toContain("GALLERY_LOAD_TIMEOUT_MS = 20000");
+    expect(gallery).toContain("withGalleryTimeout(api.listGalleryPosts");
+    expect(gallery).toContain("Не удалось загрузить галерею");
+    expect(gallery).toContain('label="Повторить"');
+  });
+
   it("retries a failed gallery thumbnail through the owner's result URL", () => {
     const gallery = readFileSync(join(process.cwd(), "app", "(main)", "gallery.tsx"), "utf8");
     expect(gallery).toContain("buildGalleryImageSources");
