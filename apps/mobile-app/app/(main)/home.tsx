@@ -186,6 +186,19 @@ export default function HomeScreen() {
               <Text style={[styles.tryOnActionText, { color: theme.colors.muted }]}>По фото</Text>
             </Pressable>
           </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Примерить стрижку или причёску"
+            style={({ pressed }) => [styles.hairAction, pressed && styles.tryOnActionPressed]}
+            onPress={() => router.push("/hairstyles" as never)}
+          >
+            <Feather name="scissors" size={18} color={theme.colors.primaryDark} />
+            <View style={styles.hairCopy}>
+              <Text style={[styles.hairTitle, { color: theme.colors.primaryDark }]}>Примерить стрижку или причёску</Text>
+              <Text style={[styles.hairSubtitle, { color: theme.colors.muted }]}>Отдельный портрет, подборка без повторов</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={theme.colors.primaryDark} />
+          </Pressable>
         </Card>
 
         <View style={styles.section}>
@@ -314,6 +327,22 @@ const styles = StyleSheet.create({
     borderColor: colors.pink,
     backgroundColor: colors.pinkBg,
   },
+  hairAction: {
+    marginTop: spacing.sm,
+    minHeight: 54,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+    backgroundColor: colors.pinkBg,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+  },
+  hairCopy: { flex: 1, gap: 2 },
+  hairTitle: { fontFamily: "Manrope_600SemiBold", fontSize: 13 },
+  hairSubtitle: { fontFamily: "Manrope_400Regular", fontSize: 11 },
   lastTrialActions: {
     marginTop: spacing.md,
   },

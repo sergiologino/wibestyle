@@ -119,6 +119,18 @@ export function createMobileUploadHelpers(
         file,
       );
     },
+    createHairstyleTryOn(file: RNFile, styleId: string) {
+      return uploadMultipart<{ afterImageUrl: string }>(
+        baseUrl,
+        "/api/v1/hairstyles/try-on",
+        getAccessToken,
+        getDeviceId,
+        onUnauthorized,
+        "portrait",
+        file,
+        { styleId },
+      );
+    },
   };
 }
 

@@ -12,6 +12,8 @@ import { AppVideoPlayer } from "@/components/media/VideoPlayer";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
 import { buildGalleryImageSources } from "@/lib/mobile-api";
+import { readHairstyleHistory, type HairstyleHistoryItem } from "@/lib/hairstyle-history";
+import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 
 const GALLERY_LOAD_TIMEOUT_MS = 20000;
 
@@ -62,7 +64,7 @@ function GalleryPostImage({
 export default function GalleryScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
-  const { api, accessToken } = useSession();
+  const { api, accessToken, profile } = useSession();
   const [posts, setPosts] = useState<GalleryPost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -72,6 +74,8 @@ export default function GalleryScreen() {
   const [error, setError] = useState<string | null>(null);
   const [visiblePostIds, setVisiblePostIds] = useState<Set<string>>(() => new Set());
   const [appIsActive, setAppIsActive] = useState(AppState.currentState === "active");
+  const [tab, setTab] = useState<"clothes" | "hairstyles">("clothes");
+  const [hairstyles, setHairstyles] = useState<HairstyleHistoryItem[]>([]);
   const apiBaseUrl = getApiBaseUrl();
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 70 }).current;
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
@@ -108,6 +112,11 @@ export default function GalleryScreen() {
     }
   }, [isFocused]);
 
+  useEffect(() => {
+    if (!isFocused || !profile?.userId) return;
+    void readHairstyleHistory(profile.userId).then(setHairstyles);
+  }, [isFocused, profile?.userId]);
+
   async function onRefresh() {
     setRefreshing(true);
     try {
@@ -138,8 +147,27 @@ export default function GalleryScreen() {
       <View style={styles.header}>
         <Eyebrow>Сообщество</Eyebrow>
         <DisplayTitle>Галерея образов</DisplayTitle>
-        <BodyText>Вдохновляйся примерками других и делись своими.</BodyText>
+        <BodyText>{tab === "clothes" ? "Вдохновляйся примерками одежды других и делись своими." : "Твои сохранённые примерки стрижек и причёсок."}</BodyText>
       </View>
+      <View style={styles.tabs}>
+        <Pressable style={[styles.tab, tab === "clothes" && styles.tabActive]} onPress={() => setTab("clothes")}><Text style={[styles.tabText, tab === "clothes" && styles.tabTextActive]}>Одежда</Text></Pressable>
+        <Pressable style={[styles.tab, tab === "hairstyles" && styles.tabActive]} onPress={() => setTab("hairstyles")}><Text style={[styles.tabText, tab === "hairstyles" && styles.tabTextActive]}>Причёски</Text></Pressable>
+      </View>
+      {tab === "hairstyles" ? (
+        <FlatList
+          data={hairstyles}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => profile?.userId ? void readHairstyleHistory(profile.userId).then(setHairstyles) : undefined} tintColor={colors.pink} />}
+          ListEmptyComponent={<View style={styles.emptyHair}><BodyText>Здесь появятся результаты примерок волос.</BodyText><Button label="Выбрать причёску" variant="secondary" onPress={() => router.push("/hairstyles" as never)} /></View>}
+          renderItem={({ item }) => <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={() => router.push(`/hairstyles/result?styleId=${item.styleId}&imagePath=${encodeURIComponent(item.imagePath)}` as never)}>
+            <AuthenticatedImage path={item.imagePath} accessToken={accessToken} style={styles.image} />
+            <View style={styles.meta}><Text style={styles.title} numberOfLines={2}>{item.title}</Text><View style={styles.stats}><Feather name="scissors" size={12} color={colors.muted} /><Text style={styles.statText}>Примерка волос</Text></View></View>
+          </Pressable>}
+        />
+      ) : (
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
@@ -193,6 +221,7 @@ export default function GalleryScreen() {
           );
         }}
       />
+      )}
     </Screen>
   );
 }
@@ -211,6 +240,11 @@ const styles = StyleSheet.create({
   row: {
     gap: spacing.md,
   },
+  tabs: { flexDirection: "row", marginHorizontal: spacing.lg, marginTop: spacing.md, padding: 4, backgroundColor: colors.pinkBg, borderRadius: radius.lg, gap: 4 },
+  tab: { flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: radius.md },
+  tabActive: { backgroundColor: colors.white },
+  tabText: { fontFamily: "Manrope_500Medium", fontSize: 13, color: colors.muted },
+  tabTextActive: { color: colors.pink },
   errorCard: {
     marginBottom: spacing.md,
     padding: spacing.md,
@@ -259,6 +293,7 @@ const styles = StyleSheet.create({
   empty: {
     paddingHorizontal: spacing.lg,
   },
+  emptyHair: { paddingHorizontal: spacing.lg, gap: spacing.md, alignItems: "flex-start" },
   footerLoader: {
     paddingVertical: spacing.lg,
   },
