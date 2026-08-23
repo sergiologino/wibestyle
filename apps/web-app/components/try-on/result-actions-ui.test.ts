@@ -16,4 +16,14 @@ describe("try-on result actions", () => {
     expect(source).toContain("<span>Примерить ещё одну вещь</span>");
     expect(source).toContain('href="/try-on"');
   });
+
+  it("toggles gallery publishing and supports owner unpublish", () => {
+    expect(source).toContain("api.listMyGalleryPosts()");
+    expect(source).toContain("api.deleteMyGalleryPost");
+    expect(source).toContain("galleryPostFor");
+    expect(source).toContain("Показать в галерее");
+    expect(source).toContain("Убрать из галереи");
+    expect(source).toContain("Убрать фото");
+    expect(source).toContain("Убрать видео");
+  });
 });

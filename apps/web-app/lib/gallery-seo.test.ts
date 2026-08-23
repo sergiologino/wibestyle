@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GalleryPost } from "@wibestyle/shared-types";
-import { buildPublicPostMetadata, buildPublicPostOpenGraphImageUrl } from "./gallery-seo";
+import { buildPublicPostMetadata, buildPublicPostOpenGraphImageUrl, fetchGalleryPostBySlug } from "./gallery-seo";
 
 const samplePost: GalleryPost = {
   id: "post-1",
@@ -39,5 +39,17 @@ describe("buildPublicPostMetadata", () => {
       secureUrl: "https://app.vibestyle.art/p/look-abc/opengraph-image",
     });
     expect(metadata.robots).toMatchObject({ index: false });
+  });
+});
+
+describe("fetchGalleryPostBySlug", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns null instead of crashing the public page when API fetch fails", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network"));
+
+    await expect(fetchGalleryPostBySlug("look-abc")).resolves.toBeNull();
   });
 });

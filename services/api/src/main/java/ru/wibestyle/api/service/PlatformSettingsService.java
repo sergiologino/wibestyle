@@ -20,6 +20,12 @@ public class PlatformSettingsService {
     public static final String TRY_ON_SCENES_ENABLED_KEY = "try_on_scenes_enabled";
     public static final String TRY_ON_POSE_CHANGE_ENABLED_KEY = "try_on_pose_change_enabled";
     public static final String TRY_ON_SCENE_PROMPTS_KEY = "try_on_scene_prompts";
+    public static final String MOBILE_ANDROID_LATEST_VERSION_KEY = "mobile_android_latest_version";
+    public static final String MOBILE_ANDROID_MIN_SUPPORTED_VERSION_KEY = "mobile_android_min_supported_version";
+    public static final String MOBILE_ANDROID_UPDATE_URL_KEY = "mobile_android_update_url";
+    public static final String MOBILE_ANDROID_FORCE_UPDATE_KEY = "mobile_android_force_update";
+    public static final String DEFAULT_ANDROID_VERSION = "1.0.0";
+    public static final String DEFAULT_ANDROID_UPDATE_URL = "https://www.rustore.ru/catalog/app/ru.vibestyle.app";
 
     private static final Set<String> SCENE_KEYS = Set.of(
             "outerwear", "office", "casual", "homewear", "sleepwear",
@@ -65,6 +71,22 @@ public class PlatformSettingsService {
         return result;
     }
 
+    public String getMobileAndroidLatestVersion() {
+        return getString(MOBILE_ANDROID_LATEST_VERSION_KEY, DEFAULT_ANDROID_VERSION);
+    }
+
+    public String getMobileAndroidMinSupportedVersion() {
+        return getString(MOBILE_ANDROID_MIN_SUPPORTED_VERSION_KEY, DEFAULT_ANDROID_VERSION);
+    }
+
+    public String getMobileAndroidUpdateUrl() {
+        return getString(MOBILE_ANDROID_UPDATE_URL_KEY, DEFAULT_ANDROID_UPDATE_URL);
+    }
+
+    public boolean isMobileAndroidForceUpdate() {
+        return getBoolean(MOBILE_ANDROID_FORCE_UPDATE_KEY, false);
+    }
+
     @Transactional
     public void setBlockGoogleOAuth(boolean block) {
         setValue(BLOCK_GOOGLE_OAUTH_KEY, Boolean.toString(block));
@@ -103,18 +125,63 @@ public class PlatformSettingsService {
         }
     }
 
+    @Transactional
+    public void updateMobileAndroidSettings(
+            String latestVersion,
+            String minSupportedVersion,
+            String updateUrl,
+            Boolean forceUpdate
+    ) {
+        if (latestVersion != null) {
+            setValue(MOBILE_ANDROID_LATEST_VERSION_KEY, normalizeVersion(latestVersion));
+        }
+        if (minSupportedVersion != null) {
+            setValue(MOBILE_ANDROID_MIN_SUPPORTED_VERSION_KEY, normalizeVersion(minSupportedVersion));
+        }
+        if (updateUrl != null) {
+            String normalized = updateUrl.trim();
+            if (!normalized.startsWith("https://")) {
+                throw new IllegalArgumentException("MOBILE_UPDATE_URL_INVALID");
+            }
+            setValue(MOBILE_ANDROID_UPDATE_URL_KEY, normalized);
+        }
+        if (forceUpdate != null) {
+            setValue(MOBILE_ANDROID_FORCE_UPDATE_KEY, Boolean.toString(forceUpdate));
+        }
+    }
+
     public Map<String, Object> snapshot() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("blockGoogleOAuth", isBlockGoogleOAuth());
         result.put("tryOnScenesEnabled", isTryOnScenesEnabled());
         result.put("tryOnPoseChangeEnabled", isTryOnPoseChangeEnabled());
         result.put("tryOnScenePrompts", getTryOnScenePrompts());
+        result.put("mobileAndroidLatestVersion", getMobileAndroidLatestVersion());
+        result.put("mobileAndroidMinSupportedVersion", getMobileAndroidMinSupportedVersion());
+        result.put("mobileAndroidUpdateUrl", getMobileAndroidUpdateUrl());
+        result.put("mobileAndroidForceUpdate", isMobileAndroidForceUpdate());
         return result;
+    }
+
+    public Map<String, Object> mobileAppConfig() {
+        Map<String, Object> android = new LinkedHashMap<>();
+        android.put("latestVersion", getMobileAndroidLatestVersion());
+        android.put("minSupportedVersion", getMobileAndroidMinSupportedVersion());
+        android.put("updateUrl", getMobileAndroidUpdateUrl());
+        android.put("forceUpdate", isMobileAndroidForceUpdate());
+        return Map.of("android", android);
     }
 
     private boolean getBoolean(String key, boolean defaultValue) {
         return platformSettingRepository.findById(key)
                 .map(setting -> Boolean.parseBoolean(setting.getValue()))
+                .orElse(defaultValue);
+    }
+
+    private String getString(String key, String defaultValue) {
+        return platformSettingRepository.findById(key)
+                .map(PlatformSettingEntity::getValue)
+                .filter(value -> value != null && !value.isBlank())
                 .orElse(defaultValue);
     }
 
@@ -132,6 +199,14 @@ public class PlatformSettingsService {
                 .filter(line -> !line.isBlank())
                 .reduce((left, right) -> left + "\n" + right)
                 .orElse("");
+    }
+
+    private static String normalizeVersion(String value) {
+        String normalized = value.trim();
+        if (!normalized.matches("\\d+(?:\\.\\d+){0,3}")) {
+            throw new IllegalArgumentException("MOBILE_VERSION_INVALID");
+        }
+        return normalized;
     }
 
     private static Map<String, String> defaultScenePrompts() {

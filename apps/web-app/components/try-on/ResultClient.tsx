@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card, ShareCard } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
-import type { SeasonHitVideoStatus, TryOnResult, TryOnSessionRecord } from "@wibestyle/shared-types";
+import type { GalleryPost, SeasonHitVideoStatus, TryOnResult, TryOnSessionRecord } from "@wibestyle/shared-types";
 import TryOnReviewForm from "@/components/try-on/TryOnReviewForm";
 import { TryOnBeforeAfter, TryOnResultVideo } from "@/components/try-on/TryOnResultImages";
 import TryOnProductBanner from "@/components/try-on/TryOnProductBanner";
@@ -42,6 +42,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [showProductLink, setShowProductLink] = useState(true);
   const [galleryPostSlug, setGalleryPostSlug] = useState<string | null>(null);
+  const [galleryPosts, setGalleryPosts] = useState<GalleryPost[]>([]);
   const [videoStatus, setVideoStatus] = useState<SeasonHitVideoStatus>("none");
   const [afterVideoUrl, setAfterVideoUrl] = useState<string | null>(null);
   const [videoGenerating, setVideoGenerating] = useState(false);
@@ -178,6 +179,22 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     };
   }, [api, sessionId, videoStatus]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void api.listMyGalleryPosts()
+      .then(({ items }) => {
+        if (!cancelled) {
+          setGalleryPosts(items.filter((post) => post.tryOnSessionId === sessionId));
+        }
+      })
+      .catch(() => {
+        /* ignore — gallery button stays in initial state */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, sessionId]);
+
   const fallbackSlug = useMemo(() => sessionId.replace(/-/g, "").slice(0, 12), [sessionId]);
   const productTitle = result?.product?.title ?? "Look из галереи";
   const productUrl = result?.product?.productUrl;
@@ -189,6 +206,9 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   const product = result?.product;
   const selectedSize = result?.selectedSize ?? session?.selectedSize;
   const favoriteKey = product && canFavoriteTryOnProduct(product) ? favoriteProductKey(product) : null;
+  const galleryPostFor = (mediaType: "image" | "video") =>
+    galleryPosts.find((post) => (post.mediaType ?? "image") === mediaType);
+  const publicImageGalleryPost = galleryPostFor("image");
 
   useEffect(() => {
     if (!favoriteKey) {
@@ -251,7 +271,22 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       mediaType: hasVideo ? mediaType : "image",
     });
     setGalleryPostSlug(created.post.slug);
+    setGalleryPosts((posts) => {
+      const savedMediaType = created.post.mediaType ?? (hasVideo ? mediaType : "image");
+      return [
+        ...posts.filter((post) => (post.mediaType ?? "image") !== savedMediaType),
+        created.post,
+      ];
+    });
     return created.post;
+  }
+
+  async function removeFromGallery(post: GalleryPost) {
+    await api.deleteMyGalleryPost(post.id);
+    setGalleryPosts((posts) => posts.filter((item) => item.id !== post.id));
+    if (galleryPostSlug === post.slug) {
+      setGalleryPostSlug(null);
+    }
   }
 
   function flashSuccess(setter: (state: FeedbackState) => void) {
@@ -272,7 +307,13 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     setShowSavePicker(false);
     setSaveFeedback("loading");
     try {
-      await saveToGallery(visibility, mediaType);
+      const normalizedMediaType = hasVideo ? mediaType : "image";
+      const existingPost = visibility === "public" ? galleryPostFor(normalizedMediaType) : undefined;
+      if (existingPost) {
+        await removeFromGallery(existingPost);
+      } else {
+        await saveToGallery(visibility, normalizedMediaType);
+      }
       flashSuccess(setSaveFeedback);
     } catch {
       setSaveFeedback("idle");
@@ -554,10 +595,10 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
           ) : null}
           <FeedbackActionButton
             feedbackState={saveFeedback}
-            successLabel="Сохранено!"
+            successLabel="Готово!"
             onClick={() => openSavePicker("public")}
           >
-            Сохранить в галерею
+            {publicImageGalleryPost ? "Убрать из галереи" : "Показать в галерее"}
           </FeedbackActionButton>
           <FeedbackActionButton
             feedbackState={shareFeedback}
@@ -588,7 +629,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
           <Card className="animate-[fadeInUp_0.25s_ease-out]">
             <p className="text-eyebrow">Сохранение</p>
             <h2 className="text-display mt-2 text-2xl">Что сохранить в галерею?</h2>
-            <p className="text-body mt-2 text-sm">Выбери одно — фото или видео.</p>
+            <p className="text-body mt-2 text-sm">Выбери, что показать или убрать.</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
@@ -596,8 +637,10 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
                 onClick={() => void performSave(pendingSaveVisibility, "image")}
               >
                 <span className="text-2xl" aria-hidden>📷</span>
-                <p className="mt-2 font-medium text-[#302637]">Фото</p>
-                <p className="mt-1 text-sm font-normal text-[#6d6273]">Look с плашкой и QR</p>
+                <p className="mt-2 font-medium text-[#302637]">{galleryPostFor("image") ? "Убрать фото" : "Фото"}</p>
+                <p className="mt-1 text-sm font-normal text-[#6d6273]">
+                  {galleryPostFor("image") ? "Фото исчезнет из галереи" : "Look с плашкой и QR"}
+                </p>
               </button>
               <button
                 type="button"
@@ -605,8 +648,10 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
                 onClick={() => void performSave(pendingSaveVisibility, "video")}
               >
                 <span className="text-2xl" aria-hidden>🎬</span>
-                <p className="mt-2 font-medium text-[#302637]">Видео</p>
-                <p className="mt-1 text-sm font-normal text-[#6d6273]">Видео с плашкой и QR</p>
+                <p className="mt-2 font-medium text-[#302637]">{galleryPostFor("video") ? "Убрать видео" : "Видео"}</p>
+                <p className="mt-1 text-sm font-normal text-[#6d6273]">
+                  {galleryPostFor("video") ? "Видео исчезнет из галереи" : "Видео с плашкой и QR"}
+                </p>
               </button>
             </div>
           </Card>

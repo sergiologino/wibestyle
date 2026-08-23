@@ -70,6 +70,7 @@ export default function AuthScreen() {
       setCode("");
       setNowMs(Date.now());
       setResendAvailableAt(Date.now() + (result.resendIn ?? DEFAULT_OTP_RESEND_SECONDS) * 1_000);
+      void refreshCaptcha().catch(() => undefined);
       void trackMobileMarketingEvent("signup_started", { method: "sms_otp" });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось отправить код. Попробуйте ещё раз.");
@@ -179,6 +180,23 @@ export default function AuthScreen() {
               <Text style={styles.deliveryHint}>
                 Код обычно приходит в течение минуты. Он действует 5 минут.
               </Text>
+              {resendSecondsLeft === 0 ? (
+                <View style={styles.captchaBox}>
+                  <Text style={styles.captchaQuestion}>Проверка: {captcha?.question ?? "Загружаем…"}</Text>
+                  <Text style={styles.captchaHint}>Решите пример — так мы защищаем отправку SMS от ботов.</Text>
+                  <View style={styles.captchaRow}>
+                    <View style={styles.captchaInput}>
+                      <TextField
+                        placeholder="Ответ"
+                        value={captchaAnswer}
+                        onChangeText={(value) => setCaptchaAnswer(value.replace(/\D/g, "").slice(0, 2))}
+                        keyboardType="number-pad"
+                      />
+                    </View>
+                    <Button label="Другой" size="sm" variant="secondary" disabled={loading} onPress={() => void refreshCaptcha()} />
+                  </View>
+                </View>
+              ) : null}
               <Button
                 label={resendSecondsLeft > 0 ? `Отправить ещё раз через ${formatCountdown(resendSecondsLeft)}` : "Отправить код ещё раз"}
                 variant="secondary"

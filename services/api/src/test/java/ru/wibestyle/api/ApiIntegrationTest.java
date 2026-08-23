@@ -26,6 +26,7 @@ import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -34,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import ru.wibestyle.api.service.AuthService;
+import ru.wibestyle.api.storage.BlobStorage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -53,6 +55,9 @@ class ApiIntegrationTest {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private BlobStorage blobStorage;
 
     @Test
     void healthEndpointReturnsOk() throws Exception {
@@ -743,8 +748,9 @@ class ApiIntegrationTest {
 
     @Test
     void galleryPostFromTryOnSession() throws Exception {
-        String accessToken = authenticate("+79986675544");
-        activateAvatar(accessToken);
+        String phone = "+79986675544";
+        String accessToken = authenticate(phone);
+        prepareReadyTryOnProfile(phone);
 
         String sessionBody = mockMvc.perform(post("/api/v1/try-on/sessions/link")
                         .header("Authorization", "Bearer " + accessToken)
@@ -773,9 +779,38 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.post.slug").exists());
 
+        mockMvc.perform(post("/api/v1/gallery/posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tryOnSessionId": "%s",
+                                  "visibility": "public",
+                                  "productLinkVisible": true
+                                }
+                                """.formatted(sessionId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.post.slug").exists());
+
         mockMvc.perform(get("/api/v1/gallery/posts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items.length()").value(1));
+
+        String mineBody = mockMvc.perform(get("/api/v1/gallery/posts/mine")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andReturn().getResponse().getContentAsString();
+        String postId = objectMapper.readTree(mineBody).get("items").get(0).get("id").asText();
+
+        mockMvc.perform(delete("/api/v1/gallery/posts/" + postId)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deleted").value(true));
+
+        mockMvc.perform(get("/api/v1/gallery/posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0));
     }
 
     @Test
@@ -1054,6 +1089,47 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void adminCleanupGalleryDuplicatesKeepsBestPost() throws Exception {
+        String phone = "+79990007790";
+        authenticate(phone);
+        UUID userId = jdbcTemplate.queryForObject("select id from users where phone = ?", UUID.class, phone);
+        UUID sessionId = UUID.randomUUID();
+        UUID oldPrivatePostId = UUID.randomUUID();
+        UUID publicPostId = UUID.randomUUID();
+        UUID hiddenPostId = UUID.randomUUID();
+
+        jdbcTemplate.update("""
+                insert into try_on_sessions (
+                    id, user_id, source_type, status, visibility, after_image_url, created_at, updated_at
+                ) values (?, ?, 'MARKETPLACE_LINK', 'READY', 'private', '/after.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, sessionId, userId);
+        insertGalleryPost(oldPrivatePostId, userId, sessionId, "old-private", "private", "PUBLIC", 0, 0);
+        insertGalleryPost(publicPostId, userId, sessionId, "public-best", "public", "PUBLIC", 2, 1);
+        insertGalleryPost(hiddenPostId, userId, sessionId, "hidden", "public", "HIDDEN", 20, 20);
+
+        mockMvc.perform(post("/api/v1/admin/gallery/duplicates/cleanup?dryRun=true")
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dryRun").value(true))
+                .andExpect(jsonPath("$.duplicateGroups").value(1))
+                .andExpect(jsonPath("$.postsToDelete").value(2))
+                .andExpect(jsonPath("$.deletedPosts").value(0))
+                .andExpect(jsonPath("$.groups[0].keptPostId").value(publicPostId.toString()));
+        assertEquals(3, jdbcTemplate.queryForObject("select count(*) from gallery_posts where try_on_session_id = ?", Integer.class, sessionId));
+
+        mockMvc.perform(post("/api/v1/admin/gallery/duplicates/cleanup?dryRun=false")
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dryRun").value(false))
+                .andExpect(jsonPath("$.duplicateGroups").value(1))
+                .andExpect(jsonPath("$.postsToDelete").value(2))
+                .andExpect(jsonPath("$.deletedPosts").value(2));
+
+        assertEquals(1, jdbcTemplate.queryForObject("select count(*) from gallery_posts where try_on_session_id = ?", Integer.class, sessionId));
+        assertEquals(1, jdbcTemplate.queryForObject("select count(*) from gallery_posts where id = ?", Integer.class, publicPostId));
+    }
+
+    @Test
     void listMyTryOnSessionsReturnsReadyHistory() throws Exception {
         String accessToken = authenticate("+79990008900");
         activateAvatar(accessToken);
@@ -1181,6 +1257,56 @@ class ApiIntegrationTest {
                 .getContentAsString();
 
         return objectMapper.readTree(verifyBody).get("accessToken").asText();
+    }
+
+    private void prepareReadyTryOnProfile(String phone) throws Exception {
+        UUID userId = jdbcTemplate.queryForObject("select id from users where phone = ?", UUID.class, phone);
+        UUID avatarId = UUID.randomUUID();
+        UUID snapshotId = UUID.randomUUID();
+        String processedPath = blobStorage.put(
+                "test/avatars/" + userId + "/" + avatarId + "/processed.jpg",
+                new ByteArrayInputStream(samplePhotoBytes())
+        );
+
+        jdbcTemplate.update("""
+                update user_profiles
+                set display_name = ?, gender = ?, height_cm = ?, bust_cm = ?, waist_cm = ?, hips_cm = ?,
+                    shoe_size_eu = ?, clothing_size = ?, updated_at = CURRENT_TIMESTAMP
+                where user_id = ?
+                """, "Test User", "female", 168, 92, 72, 98, 38, "M", userId);
+        jdbcTemplate.update("""
+                insert into avatars (
+                    id, user_id, status, active, photo_processed_path,
+                    privacy_face_hidden, privacy_background_hidden, privacy_features_hidden,
+                    pipeline_version, exif_removed, created_at, updated_at
+                ) values (?, ?, 'READY', true, ?, false, false, false, 'v1', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, avatarId, userId, processedPath);
+        jdbcTemplate.update("""
+                insert into avatar_snapshots (
+                    id, avatar_id, user_id, height_cm, bust_cm, waist_cm, hips_cm, shoe_size_eu,
+                    clothing_size, processed_image_path, privacy_face_hidden, privacy_background_hidden,
+                    privacy_features_hidden, quality_score, pipeline_version, created_at
+                ) values (?, ?, ?, 168, 92, 72, 98, 38, 'M', ?, false, false, false, 0.95, 'v1', CURRENT_TIMESTAMP)
+                """, snapshotId, avatarId, userId, processedPath);
+    }
+
+    private void insertGalleryPost(
+            UUID postId,
+            UUID userId,
+            UUID sessionId,
+            String slug,
+            String visibility,
+            String moderationStatus,
+            int likes,
+            int comments
+    ) {
+        jdbcTemplate.update("""
+                insert into gallery_posts (
+                    id, user_id, slug, title, image_url, try_on_session_id, visibility,
+                    moderation_status, product_link_visible, product_visibility, media_type,
+                    like_count, comment_count, created_at, updated_at
+                ) values (?, ?, ?, 'Look', '/after.jpg', ?, ?, ?, true, 'SHOW_PRODUCT_LINK', 'image', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, postId, userId, slug, sessionId, visibility, moderationStatus, likes, comments);
     }
 
     private String createDraftAvatar(String accessToken) throws Exception {

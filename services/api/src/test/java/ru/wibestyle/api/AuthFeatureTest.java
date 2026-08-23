@@ -130,6 +130,32 @@ class AuthFeatureTest {
     }
 
     @Test
+    void appConfigExposesMobileUpdateSettings() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/settings")
+                        .header("X-Admin-Key", "test-admin-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "mobileAndroidLatestVersion": "1.0.2",
+                                  "mobileAndroidMinSupportedVersion": "1.0.1",
+                                  "mobileAndroidUpdateUrl": "https://www.rustore.ru/catalog/app/ru.vibestyle.app",
+                                  "mobileAndroidForceUpdate": true
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mobileAndroidLatestVersion").value("1.0.2"))
+                .andExpect(jsonPath("$.mobileAndroidMinSupportedVersion").value("1.0.1"))
+                .andExpect(jsonPath("$.mobileAndroidForceUpdate").value(true));
+
+        mockMvc.perform(get("/api/v1/app/config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.android.latestVersion").value("1.0.2"))
+                .andExpect(jsonPath("$.android.minSupportedVersion").value("1.0.1"))
+                .andExpect(jsonPath("$.android.updateUrl").value("https://www.rustore.ru/catalog/app/ru.vibestyle.app"))
+                .andExpect(jsonPath("$.android.forceUpdate").value(true));
+    }
+
+    @Test
     void googleOAuthStartRejectedWhenBlocked() throws Exception {
         jdbcTemplate.update("UPDATE platform_settings SET setting_value = 'true' WHERE setting_key = 'block_google_oauth'");
 

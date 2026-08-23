@@ -18,16 +18,26 @@ export default function GalleryClient() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("grid");
 
   useEffect(() => {
     let active = true;
+    setError(null);
     api.listGalleryPosts({ limit: GALLERY_PAGE_SIZE })
       .then((payload) => {
         if (active) {
           setPosts(payload.items);
           setCursor(payload.nextCursor ?? null);
           setHasMore(payload.hasMore);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPosts([]);
+          setCursor(null);
+          setHasMore(false);
+          setError("Не удалось загрузить галерею. Проверьте соединение и попробуйте ещё раз.");
         }
       })
       .finally(() => {
@@ -46,6 +56,9 @@ export default function GalleryClient() {
       setPosts((prev) => [...prev, ...payload.items]);
       setCursor(payload.nextCursor ?? null);
       setHasMore(payload.hasMore);
+      setError(null);
+    } catch {
+      setError("Не удалось загрузить следующую страницу галереи. Попробуйте ещё раз.");
     } finally {
       setLoadingMore(false);
     }
@@ -64,7 +77,7 @@ export default function GalleryClient() {
     const isVideo = post.mediaType === "video" && Boolean(videoSrc);
     if (isVideo) {
       return (
-        <div className="relative h-full w-full">
+        <div className="pointer-events-none relative h-full w-full">
           <video
             src={videoSrc}
             poster={imageSrc || undefined}
@@ -82,9 +95,13 @@ export default function GalleryClient() {
       );
     }
     if (imageSrc) {
-      return <img src={imageSrc} alt={post.title} className={className} decoding="async" loading="lazy" />;
+      return <img src={imageSrc} alt={post.title} className={`${className} pointer-events-none`} decoding="async" loading="lazy" />;
     }
     return <div className="flex h-full items-center justify-center text-sm font-normal text-[#6d6273]">Нет фото</div>;
+  }
+
+  function postHref(post: GalleryPost) {
+    return post.publicUrl?.startsWith("/p/") ? post.publicUrl : `/p/${post.slug}`;
   }
 
   return (
@@ -118,10 +135,16 @@ export default function GalleryClient() {
         </Card>
       ) : null}
 
+      {!loading && error ? (
+        <Card>
+          <p className="text-body">{error}</p>
+        </Card>
+      ) : null}
+
       {view === "grid" ? (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {posts.map((post) => {
-            const href = post.publicUrl ?? `/p/${post.slug}`;
+            const href = postHref(post);
             return (
               <Link
                 key={post.id}
@@ -142,7 +165,7 @@ export default function GalleryClient() {
       ) : (
         <div className="grid gap-4">
           {posts.map((post) => {
-            const href = post.publicUrl ?? `/p/${post.slug}`;
+            const href = postHref(post);
             return (
               <Card key={post.id}>
                 <div className="grid gap-4 md:grid-cols-[180px_1fr]">
@@ -177,7 +200,7 @@ export default function GalleryClient() {
         </div>
       )}
 
-      {!loading && posts.length === 0 ? (
+      {!loading && !error && posts.length === 0 ? (
         <Card>
           <p className="text-body">
             Пока нет public-постов. Поделись результатом примерки — он появится здесь.

@@ -10,11 +10,15 @@ export async function fetchGalleryPostBySlug(slug: string): Promise<{
   post: GalleryPost;
   comments: { id: string; body: string; createdAt: string }[];
 } | null> {
-  const response = await fetch(`${apiBaseUrl()}/api/v1/gallery/posts/slug/${encodeURIComponent(slug)}`, {
-    next: { revalidate: 120 },
-  });
-  if (!response.ok) return null;
-  return response.json();
+  try {
+    const response = await fetch(`${apiBaseUrl()}/api/v1/gallery/posts/slug/${encodeURIComponent(slug)}`, {
+      next: { revalidate: 120 },
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
 
 export function buildPublicPostShareTitle(post: GalleryPost) {

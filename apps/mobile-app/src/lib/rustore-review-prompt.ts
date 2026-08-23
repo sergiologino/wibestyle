@@ -7,8 +7,8 @@ export const RUSTORE_REVIEW_URL = `https://www.rustore.ru/catalog/app/${RUSTORE_
 export const REVIEW_PROMPT_STORAGE_KEY = "wibestyle.rustore.reviewPrompt.v1";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const COOLDOWN_MS = 30 * DAY_MS;
-const NEGATIVE_COOLDOWN_MS = 30 * DAY_MS;
+const COOLDOWN_MS = 14 * DAY_MS;
+const NEGATIVE_COOLDOWN_MS = 14 * DAY_MS;
 const MAX_COUNTED_SESSIONS = 50;
 
 export type ReviewFeedbackReason =

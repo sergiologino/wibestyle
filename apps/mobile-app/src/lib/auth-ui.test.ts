@@ -14,6 +14,8 @@ describe("mobile auth screen", () => {
     expect(source).toContain("keyboardType=\"phone-pad\"");
     expect(source).toContain("textContentType=\"oneTimeCode\"");
     expect(source).toContain("result.resendIn");
+    expect(source).toContain("void refreshCaptcha().catch(() => undefined)");
+    expect(source).toContain("resendSecondsLeft === 0");
     expect(source).toContain("Отправить ещё раз через");
     expect(source).toContain("resolvePostAuthRoute");
     expect(source).not.toContain("WebBrowser.openAuthSessionAsync");
