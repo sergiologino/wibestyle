@@ -9,7 +9,7 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import TryOnHistoryGrid from "@/components/home/TryOnHistoryGrid";
 import SubscriptionNudgeBanner from "@/components/billing/SubscriptionNudgeBanner";
 import { isPaidSubscription, subscriptionNudgeLevel } from "@/lib/billing-plan";
-import { ImageIcon, Link2 } from "lucide-react";
+import { ImageIcon, Link2, Scissors } from "lucide-react";
 
 export default function HomeDashboardClient() {
   const searchParams = useSearchParams();
@@ -131,6 +131,7 @@ export default function HomeDashboardClient() {
             <span>Примерить по фото</span>
           </Link>
         </div>
+        <Link href="/hairstyles" className="mt-3 flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--pink-soft)] bg-[var(--pink-bg)] px-4 py-3 text-sm font-medium text-[var(--pink-dark)]"><Scissors size={18} aria-hidden />Примерить стрижку или причёску</Link>
         <div className="mt-4 flex flex-wrap gap-3">
           {!isPaidSubscription(profile) ? (
             <Link href="/paywall"><Button size="md" variant="ghost">Тарифы</Button></Link>

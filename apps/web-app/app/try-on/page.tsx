@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Camera, Link2, Sparkles } from "lucide-react";
+import { Camera, Link2, Sparkles, Scissors } from "lucide-react";
 import { Button, Card } from "@wibestyle/ui";
 import TryOnGateClient from "@/components/try-on/TryOnGateClient";
 
@@ -12,6 +12,7 @@ const tryOnOptions = [
     icon: Link2,
     variant: "primary" as const,
   },
+  { href: "/hairstyles", title: "Стрижки и причёски", description: "Выбери образец и примерь его на отдельном портрете крупным планом.", cta: "Выбрать причёску", icon: Scissors, variant: "secondary" as const },
   {
     href: "/try-on/photo",
     title: "Фото из галереи",
@@ -42,7 +43,7 @@ export default function TryOnHubPage() {
             </div>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           {tryOnOptions.map((option) => {
             const Icon = option.icon;
             return (
