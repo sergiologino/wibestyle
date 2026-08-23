@@ -13,6 +13,15 @@ describe("marketplace try-on entry points", () => {
     expect(home).not.toContain("bg-[var(--pink)] p-5");
   });
 
+  it("shows published reviews on the authenticated home below try-on history", () => {
+    const home = readFileSync(join(process.cwd(), "components", "home", "HomeDashboardClient.tsx"), "utf8");
+
+    expect(home).toContain("PublishedReview");
+    expect(home).toContain("api.listPublishedReviews()");
+    expect(home).toContain("<h2 className=\"text-display-md text-3xl\">Отзывы</h2>");
+    expect(home).toContain('{"★".repeat(review.rating)}');
+  });
+
   it("keeps the link scenario on the try-on hub", () => {
     const hub = readFileSync(join(process.cwd(), "app", "try-on", "page.tsx"), "utf8");
     expect(hub).toContain('href: "/try-on/link"');

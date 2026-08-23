@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button, Card } from "@wibestyle/ui";
-import type { TryOnHistoryItem } from "@wibestyle/shared-types";
+import type { PublishedReview, TryOnHistoryItem } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import TryOnHistoryGrid from "@/components/home/TryOnHistoryGrid";
 import SubscriptionNudgeBanner from "@/components/billing/SubscriptionNudgeBanner";
@@ -20,6 +20,7 @@ export default function HomeDashboardClient() {
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
   const [historyHasMore, setHistoryHasMore] = useState(false);
   const [celebration, setCelebration] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<PublishedReview[]>([]);
 
   useEffect(() => {
     const subscribed = searchParams.get("subscribed");
@@ -41,6 +42,24 @@ export default function HomeDashboardClient() {
       .finally(() => {
         if (active) {
           setHistoryLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [api]);
+
+  useEffect(() => {
+    let active = true;
+    api.listPublishedReviews()
+      .then((payload) => {
+        if (active) {
+          setReviews(payload.items.slice(0, 3));
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setReviews([]);
         }
       });
     return () => {
@@ -135,6 +154,26 @@ export default function HomeDashboardClient() {
           </div>
         ) : null}
       </section>
+
+      {reviews.length > 0 ? (
+        <section className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-display-md text-3xl">Отзывы</h2>
+            <p className="text-body mt-2">Что пишут пользователи после примерок.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {reviews.map((review) => (
+              <Card key={review.id} className="flex h-full flex-col gap-3">
+                <p className="text-xl text-[#ff1fa2]" aria-label={`Оценка ${review.rating} из 5`}>
+                  {"★".repeat(review.rating)}
+                </p>
+                <p className="text-body flex-1 text-sm">{review.body}</p>
+                <p className="text-sm font-black text-[#302637]">{review.displayName}</p>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
