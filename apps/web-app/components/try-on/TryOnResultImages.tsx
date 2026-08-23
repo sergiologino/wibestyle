@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import type { KeyboardEvent, PointerEvent, TouchEvent } from "react";
 import clsx from "clsx";
 import { Download, Maximize2 } from "lucide-react";
 import ApiImage from "@/components/media/ApiImage";
@@ -29,10 +30,64 @@ export function TryOnBeforeAfter({
   className,
 }: TryOnBeforeAfterProps) {
   const [position, setPosition] = useState(52);
+  const sliderRef = useRef<HTMLDivElement | null>(null);
+
+  function updatePosition(clientX: number) {
+    const rect = sliderRef.current?.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return;
+    const next = ((clientX - rect.left) / rect.width) * 100;
+    setPosition(Math.max(0, Math.min(100, Math.round(next))));
+  }
+
+  function onPointerDown(event: PointerEvent<HTMLDivElement>) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    updatePosition(event.clientX);
+  }
+
+  function onPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (event.buttons !== 1 && event.pointerType !== "touch") return;
+    updatePosition(event.clientX);
+  }
+
+  function onTouchMove(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.touches[0];
+    if (!touch) return;
+    event.preventDefault();
+    updatePosition(touch.clientX);
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      setPosition((current) => Math.max(0, current - 2));
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setPosition((current) => Math.min(100, current + 2));
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setPosition(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      setPosition(100);
+    }
+  }
 
   return (
     <div className={clsx("relative w-full", className)}>
-      <div className={mediaFrameClass}>
+      <div
+        ref={sliderRef}
+        aria-label="Сравнение до и после"
+        aria-valuemax={100}
+        aria-valuemin={0}
+        aria-valuenow={position}
+        className={clsx(mediaFrameClass, "cursor-ew-resize select-none touch-none")}
+        role="slider"
+        tabIndex={0}
+        onKeyDown={onKeyDown}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onTouchMove={onTouchMove}
+      >
         <ApiImage alt="После" className={tryOnImageClass} src={afterSrc} />
         <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}>
           <ApiImage alt="До" className={tryOnImageClass} src={beforeSrc} />
@@ -40,15 +95,6 @@ export function TryOnBeforeAfter({
         <div
           className="absolute inset-y-0 w-1 bg-white shadow-[0_0_18px_rgba(255,31,162,0.55)]"
           style={{ left: `calc(${position}% - 2px)` }}
-        />
-        <input
-          aria-label="Сравнение до и после"
-          className="absolute inset-0 z-10 w-full cursor-ew-resize opacity-0"
-          max={100}
-          min={0}
-          type="range"
-          value={position}
-          onChange={(event) => setPosition(Number(event.target.value))}
         />
         <span className="absolute bottom-2 left-2 rounded-full bg-white/92 px-2 py-0.5 text-[10px] font-medium leading-4 text-[#ff1fa2] shadow-sm sm:bottom-4 sm:left-4 sm:px-3 sm:py-1 sm:text-xs sm:leading-normal">
           До
