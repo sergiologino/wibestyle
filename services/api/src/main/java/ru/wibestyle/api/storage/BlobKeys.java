@@ -35,6 +35,7 @@ public final class BlobKeys {
     public static String hairstyleResult(UUID userId, UUID resultId) {
         return userId + "/hairstyles/" + resultId + "/after.jpg";
     }
+    public static String hairstylePortrait(UUID userId) { return userId + "/hairstyles/portrait.jpg"; }
 
     public static String mediaAsset(UUID userId, UUID assetId, String extension) {
         return userId + "/media/" + assetId + extension;
