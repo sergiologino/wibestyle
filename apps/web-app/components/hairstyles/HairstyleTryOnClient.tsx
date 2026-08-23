@@ -13,7 +13,7 @@ const styles = [
 ] as const;
 const labels = { all: "Все", short: "Короткие", medium: "Средние", long: "Длинные", styling: "Укладки" };
 type Filter = keyof typeof labels;
-const asset = (id: string) => `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/assets/hairstyles/${id === "smooth-bob" ? "smooth-bob.webp" : id === "a-bob" ? "a-bob.webp" : id === "soft-pixie" ? "soft-pixie.webp" : id === "french-bob" ? "french-bob.webp" : id === "slip-lob" ? "slip-lob.webp" : id === "italian-bob" ? "italian-bob.webp" : id === "asym-bob" ? "asym-bob.webp" : id === "hidden-layers" ? "hidden-layers.webp" : id === "long-layers-curtain" ? "long-layers-curtain.webp" : id === "u-cut" ? "u-cut.webp" : id === "soft-wolf" ? "soft-wolf.webp" : id === "butterfly" ? "butterfly.jpg" : id === "glass-hair" ? "glass-hair.jpg" : "sleek-ponytail.jpg"}`;
+const asset = (id: string) => `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1/hairstyles/${id}/image`;
 export default function HairstyleTryOnClient() {
  const { api, ensureSession } = useAppSession(); const [filter,setFilter]=useState<Filter>("all"), [selected,setSelected]=useState<typeof styles[number]|null>(null), [file,setFile]=useState<File|null>(null), [loading,setLoading]=useState(false), [result,setResult]=useState<string|null>(null), [error,setError]=useState<string|null>(null);
  const list=useMemo(()=>styles.filter(s=>filter==="all"||s[3]===filter),[filter]);

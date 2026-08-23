@@ -596,3 +596,7 @@
 ## 2026-08-04 (Avatar privacy default)
 - New avatars keep the face visible by default in web and mobile flows. A user may still explicitly enable face hiding.
 - Flyway `V38__avatar_face_privacy_default.sql` changes database defaults for future profiles and avatars only; existing privacy choices are retained.
+# 2026-08-23 — Managed hairstyle try-on catalogue
+
+- Added a dedicated identity-locked hairstyle image-edit prompt; the reference is never an identity source.
+- Migrated the initial curated 20 non-duplicate images to persistent storage at `data/storage/catalog/hairstyles/` for catalogue seeding.

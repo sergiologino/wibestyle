@@ -7,6 +7,9 @@ import ru.wibestyle.api.service.HairstyleCatalog;
 @Component
 public class HairstylePromptBuilder {
     public String build(HairstyleCatalog.Style style) {
+        return build(style.prompt());
+    }
+    public String build(String directive) {
         return """
                 TASK: virtual hairstyle try-on on a single close-up portrait.
                 INPUT RULES: image 1 is the customer portrait and is the sole identity source. Image 2 is hairstyle reference only; never copy its face, body, skin, clothes, background, camera angle, or lighting.
@@ -14,6 +17,6 @@ public class HairstylePromptBuilder {
                 EDIT SCOPE: modify only hair pixels, including existing hair, bangs, parting and hairline. Keep the natural hairline believable. Do not create hats, veils, headbands, text, watermarks, collages, extra people, hands, mirrors, or salon tools.
                 STYLE TO APPLY: %s.
                 QUALITY: photorealistic professional salon preview; physically plausible hair density and strands; preserve natural flyaways where appropriate; consistent shadows, colour temperature and sharpness. The result must be one square portrait.
-                """.formatted(style.prompt());
+                """.formatted(directive);
     }
 }

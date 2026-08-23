@@ -429,3 +429,9 @@
 
 ## Этап 01 — выполнен ранее
 - Monorepo foundation, Spring Boot, Flyway V1.
+## Managed hairstyle catalogue (2026-08-23)
+
+- Hairstyle references are product data, not frontend assets. Source photos live in persistent blob storage under `catalog/hairstyles/`.
+- Each entry has a title, description, type (`short`, `medium`, `long`, `styling`), hairdresser instruction, constrained AI directive, sort order and active flag.
+- Admin is the single editing surface; web and mobile fetch the same active catalogue, so editorial changes need no client release.
+- Hair try-on uses a separate close-up portrait and an identity-locked prompt: only hair pixels may change.

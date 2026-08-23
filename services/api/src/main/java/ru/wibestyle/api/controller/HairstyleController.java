@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import ru.wibestyle.api.service.HairstyleCatalog;
 import ru.wibestyle.api.service.HairstyleTryOnService;
+import ru.wibestyle.api.repository.HairstyleCatalogRepository;
 import ru.wibestyle.api.storage.BlobKeys;
 import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.support.AuthSupport;
@@ -21,9 +22,10 @@ import java.util.UUID;
 
 @RestController @RequestMapping("/api/v1/hairstyles")
 public class HairstyleController {
-    private final HairstyleTryOnService service; private final BlobStorage storage;
-    public HairstyleController(HairstyleTryOnService service, BlobStorage storage) { this.service = service; this.storage = storage; }
-    @GetMapping("/catalog") public Map<String, Object> catalog() { return Map.of("items", HairstyleCatalog.STYLES); }
+    private final HairstyleTryOnService service; private final BlobStorage storage; private final HairstyleCatalogRepository catalog;
+    public HairstyleController(HairstyleTryOnService service, BlobStorage storage, HairstyleCatalogRepository catalog) { this.service = service; this.storage = storage; this.catalog=catalog; }
+    @GetMapping("/catalog") public Map<String, Object> catalog() { return Map.of("items", catalog.findByActiveTrueOrderBySortOrderAsc().stream().map(s -> Map.of("id",s.getSlug(),"title",s.getTitle(),"description",s.getDescription(),"type",s.getHairType(),"masterNote",s.getMasterNote(),"imageUrl","/api/v1/hairstyles/"+s.getSlug()+"/image")).toList()); }
+    @GetMapping("/{slug}/image") public ResponseEntity<Resource> image(@PathVariable String slug) throws Exception { var style=catalog.findBySlug(slug).filter(s->s.isActive()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND)); Path p=storage.resolveLocalFile(style.getImagePath()); return ResponseEntity.ok().contentType(MediaType.parseMediaType(Files.probeContentType(p))).body(new FileSystemResource(p)); }
     @PostMapping(value = "/try-on", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Map<String, Object> tryOn(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestParam("portrait") MultipartFile portrait, @RequestParam String styleId) throws Exception { return service.generate(user(authorization), portrait, styleId); }
     @GetMapping("/results/{resultId}/after-photo")
