@@ -320,11 +320,9 @@ export default function ProfileSettingsClient() {
               Загружаем основной аватар…
             </div>
           ) : (
-            <>
-              <AvatarManager activeAvatarId={profile?.activeAvatarId} />
-              <HairstylePortraitManager />
-            </>
+            <AvatarManager activeAvatarId={profile?.activeAvatarId} />
           )}
+          <HairstylePortraitManager />
         </div>
       </Card>
 
