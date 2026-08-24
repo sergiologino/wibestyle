@@ -1057,9 +1057,21 @@ export class WibeStyleApiClient {
     });
   }
 
-  createHairstyleTryOn(portrait: File, styleId: string) {
+  getHairstylePortrait() {
+    return this.request<{ exists: boolean; imageUrl?: string }>("/api/v1/profile/hairstyle-portrait");
+  }
+
+  uploadHairstylePortrait(portrait: File) {
     const body = new FormData();
     body.append("portrait", portrait);
+    return this.request<{ exists: boolean; imageUrl: string }>("/api/v1/profile/hairstyle-portrait", { method: "POST", body });
+  }
+
+  createHairstyleTryOn(portrait: File | null, styleId: string) {
+    const body = new FormData();
+    if (portrait) {
+      body.append("portrait", portrait);
+    }
     body.append("styleId", styleId);
     return this.request<{
       id: string;

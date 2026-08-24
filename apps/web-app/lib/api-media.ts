@@ -28,6 +28,9 @@ export function isProtectedApiMediaUrl(src?: string | null) {
   if (pathname.startsWith("/api/v1/avatars/") && pathname.includes("/photo")) {
     return true;
   }
+  if (pathname === "/api/v1/profile/hairstyle-portrait/image") {
+    return true;
+  }
   if (!pathname.startsWith("/api/v1/try-on/sessions/")) {
     return false;
   }

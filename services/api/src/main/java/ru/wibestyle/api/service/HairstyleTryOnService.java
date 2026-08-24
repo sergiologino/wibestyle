@@ -10,6 +10,7 @@ import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.domain.TryOnSessionStatus;
 import ru.wibestyle.api.domain.TryOnSourceType;
 import ru.wibestyle.api.repository.TryOnSessionRepository;
+import ru.wibestyle.api.storage.BlobKeys;
 import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.repository.HairstyleCatalogRepository;
 
@@ -27,11 +28,9 @@ public class HairstyleTryOnService {
     public HairstyleTryOnService(NoteappAiClient aiClient, AiIntegrationProperties ai, BlobStorage storage, HairstylePromptBuilder promptBuilder, HairstyleCatalogRepository catalog, TryOnSessionRepository sessions, UserActivityService userActivityService) { this.aiClient = aiClient; this.ai = ai; this.storage = storage; this.promptBuilder = promptBuilder; this.catalog=catalog; this.sessions=sessions; this.userActivityService=userActivityService; }
     @Transactional
     public Map<String, Object> generate(UUID userId, MultipartFile portrait, String styleId) throws IOException {
-        if (portrait == null || portrait.isEmpty()) throw new IllegalArgumentException("PORTRAIT_REQUIRED");
-        if (portrait.getSize() > MAX_PORTRAIT_BYTES) throw new IllegalArgumentException("PORTRAIT_TOO_LARGE");
         if (!ai.isNoteappConfigured()) throw new IllegalArgumentException("HAIRSTYLE_AI_NOT_CONFIGURED");
         var style = catalog.findBySlug(styleId).filter(s -> s.isActive()).orElseThrow(() -> new IllegalArgumentException("HAIRSTYLE_NOT_FOUND"));
-        byte[] portraitBytes = portrait.getBytes();
+        byte[] portraitBytes = resolvePortraitBytes(userId, portrait);
         String portraitBase64 = Base64.getEncoder().encodeToString(portraitBytes);
         String referenceBase64;
         referenceBase64 = Base64.getEncoder().encodeToString(storage.readBytes(style.getImagePath()));
@@ -63,5 +62,16 @@ public class HairstyleTryOnService {
                 "beforeImageUrl", session.getBeforeImageUrl(),
                 "afterImageUrl", session.getAfterImageUrl()
         );
+    }
+
+    private byte[] resolvePortraitBytes(UUID userId, MultipartFile portrait) throws IOException {
+        if (portrait != null && !portrait.isEmpty()) {
+            if (portrait.getSize() > MAX_PORTRAIT_BYTES) throw new IllegalArgumentException("PORTRAIT_TOO_LARGE");
+            storage.put(BlobKeys.hairstylePortrait(userId), portrait.getInputStream());
+            return portrait.getBytes();
+        }
+        String storedPortrait = BlobKeys.hairstylePortrait(userId);
+        if (!storage.exists(storedPortrait)) throw new IllegalArgumentException("PORTRAIT_REQUIRED");
+        return storage.readBytes(storedPortrait);
     }
 }

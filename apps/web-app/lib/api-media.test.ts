@@ -10,6 +10,7 @@ describe("isProtectedApiMediaUrl", () => {
     expect(isProtectedApiMediaUrl("/api/v1/try-on/sessions/s1/download?type=video")).toBe(true);
     expect(isProtectedApiMediaUrl("https://api.vibestyle.art/api/v1/try-on/sessions/s1/download?type=image")).toBe(true);
     expect(isProtectedApiMediaUrl("/api/v1/try-on/sessions/s1/garment-photo")).toBe(true);
+    expect(isProtectedApiMediaUrl("/api/v1/profile/hairstyle-portrait/image")).toBe(true);
   });
 
   it("detects private avatar photos but leaves public gallery and marketplace media public", () => {
