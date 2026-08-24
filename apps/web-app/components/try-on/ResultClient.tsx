@@ -196,10 +196,11 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
   }, [api, sessionId]);
 
   const fallbackSlug = useMemo(() => sessionId.replace(/-/g, "").slice(0, 12), [sessionId]);
-  const productTitle = result?.product?.title ?? "Look из галереи";
+  const isHairstyle = session?.sourceType === "hairstyle";
+  const productTitle = result?.product?.title ?? (isHairstyle ? "AI-причёска" : "Look из галереи");
   const productUrl = result?.product?.productUrl;
   const postSlug = galleryPostSlug ?? fallbackSlug;
-  const hasVideo = videoStatus === "ready" && afterVideoUrl;
+  const hasVideo = !isHairstyle && videoStatus === "ready" && afterVideoUrl;
   const landingUrl = landingSiteUrl();
   const siteBrand = brandDomain();
   const shareAppBase = appBaseUrl();
@@ -265,8 +266,8 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     const created = await api.createGalleryPost({
       tryOnSessionId: sessionId,
       visibility,
-      productLinkVisible: showProductLink,
-      productVisibility: showProductLink ? "SHOW_PRODUCT_LINK" : "HIDE_PRODUCT_LINK",
+      productLinkVisible: isHairstyle ? false : showProductLink,
+      productVisibility: isHairstyle || !showProductLink ? "HIDE_PRODUCT_LINK" : "SHOW_PRODUCT_LINK",
       eliteFrame: result?.eliteFrame,
       mediaType: hasVideo ? mediaType : "image",
     });
@@ -452,7 +453,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10">
       <div>
         <p className="text-eyebrow">Готово</p>
-        <h1 className="text-display mt-2 text-4xl">Смотри, как смотрится на тебе</h1>
+        <h1 className="text-display mt-2 text-4xl">{isHairstyle ? "Смотри причёску до и после" : "Смотри, как смотрится на тебе"}</h1>
       </div>
 
       {result.styleCompliment ? (
@@ -479,7 +480,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         </Card>
       ) : null}
 
-      {product && shouldShowProductBanner(product, selectedSize) ? (
+      {!isHairstyle && product && shouldShowProductBanner(product, selectedSize) ? (
         <TryOnProductBanner product={product} selectedSize={selectedSize} />
       ) : null}
 
@@ -560,14 +561,16 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       ) : null}
 
       <Card>
-        <label className="mb-4 flex items-center gap-3 font-normal text-[#302637]">
-          <input
-            checked={showProductLink}
-            type="checkbox"
-            onChange={(event) => setShowProductLink(event.target.checked)}
-          />
-          Показывать, где взяла одежду
-        </label>
+        {!isHairstyle ? (
+          <label className="mb-4 flex items-center gap-3 font-normal text-[#302637]">
+            <input
+              checked={showProductLink}
+              type="checkbox"
+              onChange={(event) => setShowProductLink(event.target.checked)}
+            />
+            Показывать, где взяла одежду
+          </label>
+        ) : null}
 
         {product && canFavoriteTryOnProduct(product) ? (
           <div className="mb-3">
@@ -581,7 +584,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         ) : null}
 
         <div className="flex flex-wrap gap-3">
-          {!hasVideo && videoStatus !== "generating" ? (
+          {!isHairstyle && !hasVideo && videoStatus !== "generating" ? (
             <button
               type="button"
               aria-label="Сделать видео из результата примерки"
@@ -609,7 +612,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
             Отправить подруге
           </FeedbackActionButton>
         </div>
-        {!hasVideo && videoStatus !== "generating" ? (
+        {!isHairstyle && !hasVideo && videoStatus !== "generating" ? (
           <p className="text-body mt-3 text-sm">
             В trial доступно одно бесплатное видео. В Elite можно создавать видео к каждой примерке.
             Подходящая локация подбирается автоматически.
@@ -661,12 +664,12 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       <TryOnReviewForm api={api} sessionId={sessionId} />
 
       <Link
-        href="/try-on"
+        href={isHairstyle ? "/hairstyles" : "/try-on"}
         data-testid="try-on-again"
         className="inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-2xl border border-[#ffd1ed] bg-[#fff4fb]/75 px-5 py-2.5 text-sm font-medium text-[#782cff] shadow-[0_6px_18px_rgba(58,12,82,0.05)] transition hover:border-[#ffb8e4] hover:bg-[#fff0f8] active:scale-[0.98]"
       >
         <Plus size={18} aria-hidden />
-        <span>Примерить ещё одну вещь</span>
+        <span>{isHairstyle ? "Выбрать другую причёску" : "Примерить ещё одну вещь"}</span>
       </Link>
     </div>
   );

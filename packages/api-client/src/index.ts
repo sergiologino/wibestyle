@@ -1061,7 +1061,13 @@ export class WibeStyleApiClient {
     const body = new FormData();
     body.append("portrait", portrait);
     body.append("styleId", styleId);
-    return this.request<{ id: string; styleId: string; afterImageUrl: string }>("/api/v1/hairstyles/try-on", { method: "POST", body });
+    return this.request<{
+      id: string;
+      session?: Pick<TryOnSessionRecord, "id" | "sourceType" | "status">;
+      styleId: string;
+      beforeImageUrl: string;
+      afterImageUrl: string;
+    }>("/api/v1/hairstyles/try-on", { method: "POST", body });
   }
 
   updateAdminPromoCode(

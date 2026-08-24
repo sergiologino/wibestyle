@@ -137,6 +137,20 @@ public class TryOnController {
         return serveStoredFile(storedPath);
     }
 
+    @GetMapping("/{sessionId}/before-photo")
+    public ResponseEntity<Resource> beforePhoto(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID sessionId
+    ) throws IOException {
+        UUID userId = requireUserId(authorization);
+        tryOnService.requireSession(userId, sessionId);
+        String storedPath = blobStorage.keyTryOnResult(userId, sessionId, "before");
+        if (!blobStorage.exists(storedPath)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found");
+        }
+        return serveStoredFile(storedPath);
+    }
+
     @GetMapping("/{sessionId}/after-video")
     public ResponseEntity<Resource> afterVideo(
             @RequestHeader(value = "Authorization", required = false) String authorization,
@@ -195,6 +209,7 @@ public class TryOnController {
     private static TryOnSourceType parseSourceType(String sourceType) {
         return switch (sourceType) {
             case "garment_photo" -> TryOnSourceType.GARMENT_PHOTO;
+            case "hairstyle" -> TryOnSourceType.HAIRSTYLE;
             case "gallery_upload" -> TryOnSourceType.GALLERY_UPLOAD;
             default -> TryOnSourceType.GALLERY_UPLOAD;
         };

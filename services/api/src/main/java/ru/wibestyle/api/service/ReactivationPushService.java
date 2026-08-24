@@ -115,7 +115,7 @@ public class ReactivationPushService {
     private String chooseActionUrl(UUID userId, String fallback) {
         return tryOnSessionRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
                 .map(TryOnSessionEntity::getSourceType)
-                .map(source -> source == TryOnSourceType.MARKETPLACE_LINK ? "/try-on/link" : "/try-on/photo")
+                .map(source -> source == TryOnSourceType.MARKETPLACE_LINK ? "/try-on/link" : source == TryOnSourceType.HAIRSTYLE ? "/hairstyles" : "/try-on/photo")
                 .orElse(fallback == null || fallback.isBlank() ? "/try-on" : fallback);
     }
 }

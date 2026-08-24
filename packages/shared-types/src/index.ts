@@ -377,7 +377,7 @@ export type CreateAvatarPayload = {
 
 export type TryOnSessionStatus = "draft" | "generating" | "ready" | "failed";
 
-export type TryOnSourceType = "marketplace_link" | "garment_photo" | "gallery_upload";
+export type TryOnSourceType = "marketplace_link" | "garment_photo" | "gallery_upload" | "hairstyle";
 
 export type TryOnScenePreset =
   | "auto"
@@ -518,7 +518,7 @@ export type TryOnHistoryItem = {
   marketplace?: string;
   afterImageUrl?: string;
   selectedSize?: string;
-  sourceType?: "marketplace_link" | "garment_photo" | "gallery_upload";
+  sourceType?: TryOnSourceType;
   createdAt?: string;
 };
 
