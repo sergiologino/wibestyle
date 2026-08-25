@@ -8,6 +8,7 @@
 - Hairstyle catalogue seeding now backfills all mobile styles on existing databases, including bixie, pixie-bob, micro-bob, long-curtain and pixie-diagonal image records.
 - Web `ApiImage` resolves public hairstyle API images against the API origin; hairstyle reference images remain managed catalogue data in database-backed storage.
 - Web performance hotfix: public gallery loads through an unauthenticated fast fetch with an 8s timeout, the home dashboard requests 6 try-on history cards initially, and shared API images use lazy async decoding.
+- Added stale-first feed caching for web/mobile personal try-on history and public gallery lists. Added HTTP cache headers for hairstyle catalogue images, public gallery media and private try-on media; mobile images use disk cache policy.
 
 ## 2026-08-24 (Paywall monthly default and promo recovery)
 - Changed billing default selection from annual Wibe to monthly Wibe in API, web and mobile paywall UI.

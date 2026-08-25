@@ -12,10 +12,13 @@ import { AppVideoPlayer } from "@/components/media/VideoPlayer";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
 import { buildGalleryImageSources } from "@/lib/mobile-api";
+import { readFeedCache, writeFeedCache } from "@/lib/feed-cache";
 import { readHairstyleHistory, type HairstyleHistoryItem } from "@/lib/hairstyle-history";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 
 const GALLERY_LOAD_TIMEOUT_MS = 20000;
+const GALLERY_PAGE_SIZE = 10;
+const GALLERY_CACHE_KEY = "wibestyle:mobile:gallery:public:v1";
 
 function withGalleryTimeout<T>(promise: Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -52,6 +55,7 @@ function GalleryPostImage({
       style={styles.image}
       contentFit="cover"
       transition={200}
+      cachePolicy="disk"
       onError={() => {
         if (!useFallback && sources.fallback) {
           setUseFallback(true);
@@ -83,16 +87,30 @@ export default function GalleryScreen() {
   }).current;
 
   const load = useCallback(async () => {
+    const cached = await readFeedCache<{
+      items: GalleryPost[];
+      nextCursor?: string | null;
+      hasMore: boolean;
+    }>(GALLERY_CACHE_KEY);
+    if (cached) {
+      setPosts(cached.items);
+      setCursor(cached.nextCursor ?? null);
+      setHasMore(cached.hasMore);
+      setLoading(false);
+    }
     try {
-      const payload = await withGalleryTimeout(api.listGalleryPosts({ limit: 20 }));
+      const payload = await withGalleryTimeout(api.listGalleryPosts({ limit: GALLERY_PAGE_SIZE }));
       setPosts(payload.items);
       setCursor(payload.nextCursor ?? null);
       setHasMore(payload.hasMore);
       setError(null);
+      await writeFeedCache(GALLERY_CACHE_KEY, payload);
     } catch {
-      setPosts([]);
-      setCursor(null);
-      setHasMore(false);
+      if (!cached) {
+        setPosts([]);
+        setCursor(null);
+        setHasMore(false);
+      }
       setError("Не удалось загрузить галерею. Проверьте интернет и попробуйте ещё раз.");
     }
   }, [api]);
@@ -130,7 +148,7 @@ export default function GalleryScreen() {
     if (!cursor || !hasMore || loadingMore || loading) return;
     setLoadingMore(true);
     try {
-      const payload = await withGalleryTimeout(api.listGalleryPosts({ limit: 20, cursor }));
+      const payload = await withGalleryTimeout(api.listGalleryPosts({ limit: GALLERY_PAGE_SIZE, cursor }));
       setPosts((prev) => [...prev, ...payload.items]);
       setCursor(payload.nextCursor ?? null);
       setHasMore(payload.hasMore);

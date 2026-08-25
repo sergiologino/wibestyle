@@ -8,6 +8,9 @@ describe("gallery pagination", () => {
     expect(source).toContain("const GALLERY_PAGE_SIZE = 10");
     expect(source).toContain("const GALLERY_TIMEOUT_MS = 8000");
     expect(source).toContain("listPublicGalleryPosts");
+    expect(source).toContain("readFeedCache");
+    expect(source).toContain("writeFeedCache");
+    expect(source).toContain("GALLERY_CACHE_KEY");
     expect(source).toContain("apiBaseUrl()");
     expect(source).not.toContain("api.listGalleryPosts({ limit: GALLERY_PAGE_SIZE })");
     expect(source).toContain("limit: GALLERY_PAGE_SIZE");

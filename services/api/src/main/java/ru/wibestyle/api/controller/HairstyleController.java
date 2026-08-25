@@ -2,6 +2,7 @@ package ru.wibestyle.api.controller;
 
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,9 +20,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @RestController @RequestMapping("/api/v1/hairstyles")
 public class HairstyleController {
+    private static final CacheControl PUBLIC_CATALOG_CACHE = CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic();
+    private static final CacheControl PRIVATE_RESULT_CACHE = CacheControl.maxAge(7, TimeUnit.DAYS).cachePrivate();
     private final HairstyleTryOnService service; private final BlobStorage storage; private final HairstyleCatalogRepository catalog;
     public HairstyleController(HairstyleTryOnService service, BlobStorage storage, HairstyleCatalogRepository catalog) { this.service = service; this.storage = storage; this.catalog=catalog; }
     @GetMapping("/catalog") public Map<String, Object> catalog() { return Map.of("items", catalog.findByActiveTrueOrderBySortOrderAsc().stream().map(s -> Map.of("id",s.getSlug(),"title",s.getTitle(),"description",s.getDescription(),"type",s.getHairType(),"masterNote",s.getMasterNote(),"imageUrl","/api/v1/hairstyles/"+s.getSlug()+"/image")).toList()); }
@@ -32,6 +36,7 @@ public class HairstyleController {
         }
         Path path = storage.resolveLocalFile(style.getImagePath());
         return ResponseEntity.ok()
+                .cacheControl(PUBLIC_CATALOG_CACHE)
                 .contentType(mediaType(path))
                 .body(new FileSystemResource(path));
     }
@@ -42,7 +47,7 @@ public class HairstyleController {
         UUID userId = user(authorization); String key = BlobKeys.hairstyleResult(userId, resultId);
         if (!storage.exists(key)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found");
         Path path = storage.resolveLocalFile(key); String contentType = Files.probeContentType(path);
-        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=hairstyle.jpg").contentType(contentType == null ? MediaType.IMAGE_JPEG : MediaType.parseMediaType(contentType)).body(new FileSystemResource(path));
+        return ResponseEntity.ok().cacheControl(PRIVATE_RESULT_CACHE).header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=hairstyle.jpg").contentType(contentType == null ? MediaType.IMAGE_JPEG : MediaType.parseMediaType(contentType)).body(new FileSystemResource(path));
     }
     private UUID user(String header) { try { return AuthSupport.requireUserId(header); } catch (IllegalArgumentException e) { throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized", e); } }
 

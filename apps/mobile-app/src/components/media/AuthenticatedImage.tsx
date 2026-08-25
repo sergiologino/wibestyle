@@ -33,6 +33,7 @@ export function AuthenticatedImage({
       style={style}
       contentFit={contentFit}
       transition={200}
+      cachePolicy="disk"
       placeholder={{ blurhash: "L6PZfSi_.AyE_3t7t7R**0o#DgR4" }}
     />
   );

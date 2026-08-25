@@ -47,5 +47,7 @@ class HairstyleControllerTest {
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getHeaders().getContentType().toString()).isEqualTo("image/webp");
+        assertThat(response.getHeaders().getCacheControl()).contains("max-age=604800");
+        assertThat(response.getHeaders().getCacheControl()).contains("public");
     }
 }

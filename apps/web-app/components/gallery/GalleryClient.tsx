@@ -7,10 +7,12 @@ import type { GalleryPost } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import ReportPostButton from "@/components/gallery/ReportPostButton";
 import { apiBaseUrl, resolveGalleryImageUrl, resolveGalleryVideoUrl } from "@/lib/api-media";
+import { readFeedCache, writeFeedCache } from "@/lib/feed-cache";
 
 type ViewMode = "grid" | "list";
 const GALLERY_PAGE_SIZE = 10;
 const GALLERY_TIMEOUT_MS = 8000;
+const GALLERY_CACHE_KEY = "wibestyle:web:gallery:public:v1";
 
 async function listPublicGalleryPosts(options?: { limit?: number; cursor?: string | null }) {
   const params = new URLSearchParams();
@@ -45,12 +47,20 @@ export default function GalleryClient() {
   useEffect(() => {
     let active = true;
     setError(null);
+    const cached = readFeedCache<{ items: GalleryPost[]; nextCursor?: string | null; hasMore: boolean }>(GALLERY_CACHE_KEY);
+    if (cached) {
+      setPosts(cached.items);
+      setCursor(cached.nextCursor ?? null);
+      setHasMore(cached.hasMore);
+      setLoading(false);
+    }
     listPublicGalleryPosts({ limit: GALLERY_PAGE_SIZE })
       .then((payload) => {
         if (active) {
           setPosts(payload.items);
           setCursor(payload.nextCursor ?? null);
           setHasMore(payload.hasMore);
+          writeFeedCache(GALLERY_CACHE_KEY, payload);
         }
       })
       .catch(() => {

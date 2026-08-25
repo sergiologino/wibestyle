@@ -3,6 +3,7 @@ package ru.wibestyle.api.controller;
 import jakarta.validation.Valid;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,10 +31,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/v1/try-on/sessions")
 public class TryOnController {
+    private static final CacheControl PRIVATE_MEDIA_CACHE = CacheControl.maxAge(7, TimeUnit.DAYS).cachePrivate();
 
     private final TryOnService tryOnService;
     private final BlobStorage blobStorage;
@@ -165,6 +168,7 @@ public class TryOnController {
         Path path = blobStorage.resolveLocalFile(storedPath);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"season-hit.mp4\"")
+                .cacheControl(PRIVATE_MEDIA_CACHE)
                 .contentType(MediaType.parseMediaType("video/mp4"))
                 .body(new FileSystemResource(path));
     }
@@ -194,6 +198,7 @@ public class TryOnController {
         MediaType mediaType = contentType == null ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(contentType);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName() + "\"")
+                .cacheControl(PRIVATE_MEDIA_CACHE)
                 .contentType(mediaType)
                 .body(new FileSystemResource(path));
     }

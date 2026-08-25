@@ -9,10 +9,12 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import TryOnHistoryGrid from "@/components/home/TryOnHistoryGrid";
 import SubscriptionNudgeBanner from "@/components/billing/SubscriptionNudgeBanner";
 import { isPaidSubscription, subscriptionNudgeLevel } from "@/lib/billing-plan";
+import { readFeedCache, writeFeedCache } from "@/lib/feed-cache";
 import { ImageIcon, Link2, Scissors } from "lucide-react";
 
 const INITIAL_HISTORY_LIMIT = 6;
 const HISTORY_PAGE_SIZE = 12;
+const homeHistoryCacheKey = (userId: string) => `wibestyle:web:home-history:${userId}:v1`;
 
 export default function HomeDashboardClient() {
   const searchParams = useSearchParams();
@@ -34,12 +36,29 @@ export default function HomeDashboardClient() {
 
   useEffect(() => {
     let active = true;
+    const userId = profile?.userId;
+    if (userId) {
+      const cached = readFeedCache<{
+        items: TryOnHistoryItem[];
+        nextCursor?: string | null;
+        hasMore: boolean;
+      }>(homeHistoryCacheKey(userId));
+      if (cached) {
+        setHistory(cached.items);
+        setHistoryCursor(cached.nextCursor ?? null);
+        setHistoryHasMore(cached.hasMore);
+        setHistoryLoading(false);
+      }
+    }
     api.listMyTryOnSessions({ limit: INITIAL_HISTORY_LIMIT })
       .then((historyPayload) => {
         if (active) {
           setHistory(historyPayload.items);
           setHistoryCursor(historyPayload.nextCursor ?? null);
           setHistoryHasMore(historyPayload.hasMore);
+          if (userId) {
+            writeFeedCache(homeHistoryCacheKey(userId), historyPayload);
+          }
         }
       })
       .finally(() => {
@@ -50,7 +69,7 @@ export default function HomeDashboardClient() {
     return () => {
       active = false;
     };
-  }, [api]);
+  }, [api, profile?.userId]);
 
   useEffect(() => {
     let active = true;

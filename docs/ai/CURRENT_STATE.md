@@ -395,6 +395,7 @@
 - Mobile hairstyle sample images use backend `/hairstyles/{slug}/image` endpoints; API startup backfills missing catalogue rows so older databases expose every mobile style preview.
 - Web public hairstyle previews are rendered through absolute API URLs; hairstyle reference images remain in database-backed storage, not bundled in application code.
 - Web gallery uses a public unauthenticated fetch path with timeout; home loads a small first page of personal try-on history and lazy-loads image-heavy cards.
+- Web/mobile home and gallery use stale-first list caches with a 6-hour TTL, then refresh in the background. Private try-on media is served with private 7-day HTTP cache, hairstyle catalogue images with public 7-day cache, and public gallery media with public 1-hour cache.
 
 ## План каталога цветов волос
 - Цвет выбирается отдельным шагом после выбора причёски; default tile: `Не менять цвет`.

@@ -12,6 +12,9 @@ describe("marketplace try-on entry points", () => {
     expect(home).toContain("const INITIAL_HISTORY_LIMIT = 6");
     expect(home).toContain("const HISTORY_PAGE_SIZE = 12");
     expect(home).toContain("api.listMyTryOnSessions({ limit: INITIAL_HISTORY_LIMIT })");
+    expect(home).toContain("readFeedCache");
+    expect(home).toContain("writeFeedCache");
+    expect(home).toContain("homeHistoryCacheKey");
     expect(home).toContain("sm:grid-cols-2");
     expect(home).not.toContain("bg-[var(--pink)] p-5");
   });
