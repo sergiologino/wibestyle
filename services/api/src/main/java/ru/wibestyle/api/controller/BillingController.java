@@ -65,6 +65,14 @@ public class BillingController {
         return promoService.validate(request.code());
     }
 
+    @PostMapping("/promo/apply")
+    public Map<String, Object> applyPromo(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @Valid @RequestBody ValidatePromoRequest request
+    ) {
+        return promoService.redeemForUser(AuthSupport.requireUserId(authorization), request.code());
+    }
+
     @PostMapping("/subscribe")
     public Map<String, Object> subscribe(
             @RequestHeader(value = "Authorization", required = false) String authorization,

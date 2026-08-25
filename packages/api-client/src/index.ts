@@ -742,6 +742,13 @@ export class WibeStyleApiClient {
     });
   }
 
+  applyPromo(code: string) {
+    return this.request<{ redeemed: boolean; promo?: PromoCodeRecord }>("/api/v1/billing/promo/apply", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+  }
+
   subscribe(plan: SubscriptionPlan, period: BillingPeriod) {
     return this.request<{
       status: string;

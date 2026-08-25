@@ -77,7 +77,7 @@ public class BillingService {
         Map<String, Object> response = new HashMap<>();
         response.put("items", items);
         response.put("annualDiscountPercent", billingProperties.getAnnualDiscountPercent());
-        response.put("defaultSelection", Map.of("plan", "wibe", "period", "annual"));
+        response.put("defaultSelection", Map.of("plan", "wibe", "period", "monthly"));
         response.put("promoDiscountPercent", promoDiscount);
         response.put("paymentProvider", activeProvider());
         response.put("recurringAvailable", billingProperties.getYookassa().isRecurringEnabled());

@@ -53,12 +53,22 @@ public class PromoService {
         Instant now = Instant.now();
         assertPromoUsable(promo, now);
 
-        if (redemptionRepository.existsByPromoCodeIdAndUserId(promo.getId(), userId)) {
-            throw new IllegalArgumentException("PROMO_ALREADY_USED");
-        }
-
         UserProfileEntity profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
+
+        if (promo.getId().equals(profile.getActivePromoCodeId())) {
+            return Map.of("redeemed", false, "promo", toPromoMap(promo));
+        }
+
+        if (redemptionRepository.existsByPromoCodeIdAndUserId(promo.getId(), userId)) {
+            if (profile.getActivePromoCodeId() == null) {
+                profile.setActivePromoCodeId(promo.getId());
+                profile.setPromoDiscountPercent(promo.getDiscountPercent());
+                profile.setUpdatedAt(now);
+                userProfileRepository.save(profile);
+            }
+            return Map.of("redeemed", false, "promo", toPromoMap(promo));
+        }
 
         if (profile.getActivePromoCodeId() != null) {
             throw new IllegalArgumentException("PROMO_ALREADY_APPLIED");

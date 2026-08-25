@@ -12,9 +12,11 @@ describe("mobile paywall UI contract", () => {
     expect(paywall).toContain('router.replace("/auth")');
   });
 
-  it("recommends annual Elite and lists its differentiated benefits", () => {
-    expect(paywall).toContain('plan: "elite"');
-    expect(paywall).toContain("Рекомендуем годовой Elite");
+  it("defaults to monthly Wibe and lists Elite differentiated benefits", () => {
+    expect(paywall).toContain('plan: "wibe"');
+    expect(paywall).toContain('period: "monthly"');
+    expect(paywall).toContain("Рекомендуем месячный Wibe");
+    expect(paywall).toContain("setSelected(payload.defaultSelection)");
     expect(paywall).toContain("Видео к любой примерке");
     expect(paywall).toContain("Более точная обработка");
     expect(paywall).toContain("Приоритетная поддержка");

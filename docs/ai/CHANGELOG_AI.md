@@ -1,5 +1,12 @@
 # AI Changelog
 
+## 2026-08-24 (Paywall monthly default and promo recovery)
+- Changed billing default selection from annual Wibe to monthly Wibe in API, web and mobile paywall UI.
+- Added authenticated `POST /billing/promo/apply`; web paywall now applies a pending/URL promo before loading prices, so `FIRST100` survives OAuth/deep-link flows that did not redeem it during registration.
+- Pending web promo storage moved to localStorage with sessionStorage fallback/migration.
+- Promo redemption is idempotent for the same user/code and can restore an active promo on the profile when a redemption row already exists.
+- Documented the planned hair-color catalog step for hairstyle try-on; no color catalog implementation yet.
+
 ## 2026-08-09 (Recurring-payment terms)
 - Added a dedicated public-terms section for recurring payments and auto-renewal. It documents explicit opt-in, charging cadence and price, the three-day notice, self-service cancellation, and up-to-three failed-charge attempts.
 - The production recurring feature flag remains off pending written YooKassa approval; this change does not activate any automatic payments.

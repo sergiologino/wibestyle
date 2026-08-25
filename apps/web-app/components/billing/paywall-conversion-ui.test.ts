@@ -11,6 +11,12 @@ describe("paywall conversion UI", () => {
     expect(paywall).toContain("line-through");
   });
 
+  it("defaults to monthly Wibe and applies a pending promo before loading prices", () => {
+    expect(paywall).toContain('useState<BillingPeriod>("monthly")');
+    expect(paywall).toContain("capturePromoFromSearchParams(searchParams) ?? readPendingPromo()");
+    expect(paywall).toContain("await api.applyPromo(pendingPromo)");
+  });
+
   it("does not offer recurring payments until the backend confirms availability", () => {
     expect(paywall).toContain('paymentProvider === "yookassa" && recurringAvailable');
     expect(paywall).toContain("savePaymentMethod: recurringAvailable && savePaymentMethod");
