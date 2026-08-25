@@ -6,6 +6,7 @@
 - Missing hairstyle portrait on mobile routes the user to profile/settings.
 - Mobile hairstyle generation opens the shared try-on result screen for before/after comparison and downloads.
 - Hairstyle catalogue seeding now backfills all mobile styles on existing databases, including bixie, pixie-bob, micro-bob, long-curtain and pixie-diagonal image records.
+- Web `ApiImage` resolves public hairstyle API images against the API origin; hairstyle reference images remain managed catalogue data in database-backed storage.
 
 ## 2026-08-24 (Paywall monthly default and promo recovery)
 - Changed billing default selection from annual Wibe to monthly Wibe in API, web and mobile paywall UI.

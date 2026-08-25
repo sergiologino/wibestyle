@@ -25,7 +25,16 @@ public class HairstyleController {
     private final HairstyleTryOnService service; private final BlobStorage storage; private final HairstyleCatalogRepository catalog;
     public HairstyleController(HairstyleTryOnService service, BlobStorage storage, HairstyleCatalogRepository catalog) { this.service = service; this.storage = storage; this.catalog=catalog; }
     @GetMapping("/catalog") public Map<String, Object> catalog() { return Map.of("items", catalog.findByActiveTrueOrderBySortOrderAsc().stream().map(s -> Map.of("id",s.getSlug(),"title",s.getTitle(),"description",s.getDescription(),"type",s.getHairType(),"masterNote",s.getMasterNote(),"imageUrl","/api/v1/hairstyles/"+s.getSlug()+"/image")).toList()); }
-    @GetMapping("/{slug}/image") public ResponseEntity<Resource> image(@PathVariable String slug) throws Exception { var style=catalog.findBySlug(slug).filter(s->s.isActive()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND)); Path p=storage.resolveLocalFile(style.getImagePath()); return ResponseEntity.ok().contentType(MediaType.parseMediaType(Files.probeContentType(p))).body(new FileSystemResource(p)); }
+    @GetMapping("/{slug}/image") public ResponseEntity<Resource> image(@PathVariable String slug) throws Exception {
+        var style = catalog.findBySlug(slug).filter(s -> s.isActive()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!storage.exists(style.getImagePath())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        Path path = storage.resolveLocalFile(style.getImagePath());
+        return ResponseEntity.ok()
+                .contentType(mediaType(path))
+                .body(new FileSystemResource(path));
+    }
     @PostMapping(value = "/try-on", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Map<String, Object> tryOn(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestParam(value = "portrait", required = false) MultipartFile portrait, @RequestParam String styleId) throws Exception { return service.generate(user(authorization), portrait, styleId); }
     @GetMapping("/results/{resultId}/after-photo")
@@ -36,4 +45,19 @@ public class HairstyleController {
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=hairstyle.jpg").contentType(contentType == null ? MediaType.IMAGE_JPEG : MediaType.parseMediaType(contentType)).body(new FileSystemResource(path));
     }
     private UUID user(String header) { try { return AuthSupport.requireUserId(header); } catch (IllegalArgumentException e) { throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized", e); } }
+
+    private static MediaType mediaType(Path path) throws Exception {
+        String contentType = Files.probeContentType(path);
+        if (contentType != null && !contentType.isBlank()) {
+            return MediaType.parseMediaType(contentType);
+        }
+        String fileName = path.getFileName().toString().toLowerCase();
+        if (fileName.endsWith(".webp")) {
+            return MediaType.parseMediaType("image/webp");
+        }
+        if (fileName.endsWith(".png")) {
+            return MediaType.IMAGE_PNG;
+        }
+        return MediaType.IMAGE_JPEG;
+    }
 }

@@ -393,6 +393,7 @@
 - If the profile portrait is missing, mobile shows a warning and routes the user to profile/settings for upload.
 - Generated mobile hairstyle results route to the shared `/try-on/result/{sessionId}` screen, so before/after and download actions match clothing try-on.
 - Mobile hairstyle sample images use backend `/hairstyles/{slug}/image` endpoints; API startup backfills missing catalogue rows so older databases expose every mobile style preview.
+- Web public hairstyle previews are rendered through absolute API URLs; hairstyle reference images remain in database-backed storage, not bundled in application code.
 
 ## План каталога цветов волос
 - Цвет выбирается отдельным шагом после выбора причёски; default tile: `Не менять цвет`.
