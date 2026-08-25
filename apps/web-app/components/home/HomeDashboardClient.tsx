@@ -11,6 +11,9 @@ import SubscriptionNudgeBanner from "@/components/billing/SubscriptionNudgeBanne
 import { isPaidSubscription, subscriptionNudgeLevel } from "@/lib/billing-plan";
 import { ImageIcon, Link2, Scissors } from "lucide-react";
 
+const INITIAL_HISTORY_LIMIT = 6;
+const HISTORY_PAGE_SIZE = 12;
+
 export default function HomeDashboardClient() {
   const searchParams = useSearchParams();
   const { api, profile } = useAppSession();
@@ -31,7 +34,7 @@ export default function HomeDashboardClient() {
 
   useEffect(() => {
     let active = true;
-    api.listMyTryOnSessions({ limit: 24 })
+    api.listMyTryOnSessions({ limit: INITIAL_HISTORY_LIMIT })
       .then((historyPayload) => {
         if (active) {
           setHistory(historyPayload.items);
@@ -71,7 +74,7 @@ export default function HomeDashboardClient() {
     if (!historyCursor || historyLoadingMore) return;
     setHistoryLoadingMore(true);
     try {
-      const payload = await api.listMyTryOnSessions({ limit: 24, cursor: historyCursor });
+      const payload = await api.listMyTryOnSessions({ limit: HISTORY_PAGE_SIZE, cursor: historyCursor });
       setHistory((prev) => [...prev, ...payload.items]);
       setHistoryCursor(payload.nextCursor ?? null);
       setHistoryHasMore(payload.hasMore);

@@ -27,7 +27,7 @@ export default function ApiImage({ src, alt, className }: ApiImageProps) {
 
   if (!protectedMedia && isDirectPublicImageSrc(src)) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img alt={alt} className={className} src={directSrc} />;
+    return <img alt={alt} className={className} decoding="async" loading="lazy" src={directSrc} />;
   }
 
   if (!blobUrl) {
@@ -35,5 +35,5 @@ export default function ApiImage({ src, alt, className }: ApiImageProps) {
   }
 
   // eslint-disable-next-line @next/next/no-img-element
-  return <img alt={alt} className={className} src={blobUrl} />;
+  return <img alt={alt} className={className} decoding="async" loading="lazy" src={blobUrl} />;
 }
