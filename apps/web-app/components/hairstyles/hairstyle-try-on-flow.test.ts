@@ -9,6 +9,8 @@ describe("hairstyle try-on flow", () => {
     expect(source).toContain('data-testid="hairstyle-tile-gallery"');
     expect(source).toContain("grid-cols-3");
     expect(source).toContain("chooseStyle(style)");
+    expect(source).toContain('const asset = (id: string) => `/api/v1/hairstyles/${id}/image`');
+    expect(source).toContain("Стилист по прическам");
   });
 
   it("shows a portrait block after style selection and starts try-on from it", () => {

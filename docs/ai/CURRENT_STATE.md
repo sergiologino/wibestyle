@@ -387,6 +387,13 @@
 - `/settings` — профиль, privacy, удаление аккаунта
 - `/paywall` → месячный Wibe по умолчанию; применяет pending/URL promo перед загрузкой цен; YooKassa redirect/return или mock payment; сохранение способа оплаты только по явному согласию
 
+## Mobile hairstyle portrait
+- Mobile profile contains the same dedicated hairstyle portrait block as web profile.
+- Hairstyle try-on on mobile no longer uploads a portrait on the style screen; it checks `/profile/hairstyle-portrait` and sends only `styleId` to `/hairstyles/try-on`.
+- If the profile portrait is missing, mobile shows a warning and routes the user to profile/settings for upload.
+- Generated mobile hairstyle results route to the shared `/try-on/result/{sessionId}` screen, so before/after and download actions match clothing try-on.
+- Mobile hairstyle sample images use backend `/hairstyles/{slug}/image` endpoints; API startup backfills missing catalogue rows so older databases expose every mobile style preview.
+
 ## План каталога цветов волос
 - Цвет выбирается отдельным шагом после выбора причёски; default tile: `Не менять цвет`.
 - Каталог должен хранить `slug`, название, семейство цвета, фото-превью, AI-директиву, sort order и active flag.

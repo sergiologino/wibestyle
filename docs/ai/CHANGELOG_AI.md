@@ -1,5 +1,12 @@
 # AI Changelog
 
+## 2026-08-25 (Mobile hairstyle portrait parity)
+- Added the dedicated hairstyle portrait upload block to the mobile profile.
+- Mobile hairstyle try-on now uses the backend profile portrait and sends only `styleId`; the style screen no longer asks for a second portrait upload.
+- Missing hairstyle portrait on mobile routes the user to profile/settings.
+- Mobile hairstyle generation opens the shared try-on result screen for before/after comparison and downloads.
+- Hairstyle catalogue seeding now backfills all mobile styles on existing databases, including bixie, pixie-bob, micro-bob, long-curtain and pixie-diagonal image records.
+
 ## 2026-08-24 (Paywall monthly default and promo recovery)
 - Changed billing default selection from annual Wibe to monthly Wibe in API, web and mobile paywall UI.
 - Added authenticated `POST /billing/promo/apply`; web paywall now applies a pending/URL promo before loading prices, so `FIRST100` survives OAuth/deep-link flows that did not redeem it during registration.

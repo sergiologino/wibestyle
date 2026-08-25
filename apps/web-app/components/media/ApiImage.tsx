@@ -12,6 +12,7 @@ type ApiImageProps = {
 function isDirectPublicImageSrc(src: string) {
   return (
     src.startsWith("/assets/") ||
+    (src.startsWith("/api/v1/hairstyles/") && src.split(/[?#]/, 1)[0].endsWith("/image")) ||
     src.startsWith("http://") ||
     src.startsWith("https://") ||
     src.startsWith("blob:") ||

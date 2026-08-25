@@ -23,7 +23,7 @@ import {
   favoriteProductKey,
   shouldShowProductBanner,
 } from "@/lib/try-on-product";
-import { Clapperboard, Plus } from "lucide-react";
+import { Clapperboard, Download, Plus } from "lucide-react";
 
 const POLL_MS = 2000;
 /** ~3 minutes — aligned with backend AI timeout */
@@ -495,6 +495,29 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
 
         {hasVideo && afterVideoUrl ? (
           <TryOnResultVideo eliteFrame={result.eliteFrame} src={afterVideoUrl} downloadBusy={downloadBusy} onDownloadClick={() => void onDownloadVideo()} />
+        ) : null}
+      </div>
+
+      <div className="mx-auto flex w-full max-w-4xl flex-wrap justify-center gap-3" data-testid="try-on-download-actions">
+        <button
+          type="button"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-[#ffd1ed] bg-white px-5 py-2.5 text-sm font-medium text-[#302637] shadow-[0_6px_18px_rgba(58,12,82,0.05)] transition hover:border-[#ffb8e4] hover:text-[#ff1fa2] active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
+          disabled={downloadBusy}
+          onClick={() => void onDownloadResult()}
+        >
+          <Download size={17} aria-hidden />
+          <span>{downloadBusy ? "Готовим файл…" : "Скачать фото"}</span>
+        </button>
+        {hasVideo && afterVideoUrl ? (
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-[#ffd1ed] bg-white px-5 py-2.5 text-sm font-medium text-[#302637] shadow-[0_6px_18px_rgba(58,12,82,0.05)] transition hover:border-[#ffb8e4] hover:text-[#ff1fa2] active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
+            disabled={downloadBusy}
+            onClick={() => void onDownloadVideo()}
+          >
+            <Download size={17} aria-hidden />
+            <span>{downloadBusy ? "Готовим файл…" : "Скачать видео"}</span>
+          </button>
         ) : null}
       </div>
 

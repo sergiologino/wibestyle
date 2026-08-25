@@ -14,8 +14,8 @@ async function uploadMultipart<T>(
   getAccessToken: () => string | null,
   getDeviceId: (() => string | null) | undefined,
   onUnauthorized: (() => Promise<boolean>) | undefined,
-  fieldName: string,
-  file: RNFile,
+  fieldName: string | null,
+  file: RNFile | null,
   extraFields?: Record<string, string>,
   allowRetry = true,
 ): Promise<T> {
@@ -30,7 +30,9 @@ async function uploadMultipart<T>(
   }
 
   const body = new FormData();
-  body.append(fieldName, file as unknown as Blob);
+  if (fieldName && file) {
+    body.append(fieldName, file as unknown as Blob);
+  }
   if (extraFields) {
     for (const [key, value] of Object.entries(extraFields)) {
       body.append(key, value);
@@ -84,6 +86,17 @@ export function createMobileUploadHelpers(
         file,
       );
     },
+    uploadHairstylePortrait(file: RNFile) {
+      return uploadMultipart<{ exists: boolean; imageUrl: string }>(
+        baseUrl,
+        "/api/v1/profile/hairstyle-portrait",
+        getAccessToken,
+        getDeviceId,
+        onUnauthorized,
+        "portrait",
+        file,
+      );
+    },
     createPhotoTryOnSession(
       file: RNFile,
       category: string,
@@ -119,14 +132,14 @@ export function createMobileUploadHelpers(
         file,
       );
     },
-    createHairstyleTryOn(file: RNFile, styleId: string) {
-      return uploadMultipart<{ afterImageUrl: string }>(
+    createHairstyleTryOn(file: RNFile | null, styleId: string) {
+      return uploadMultipart<{ id: string; session?: { id: string }; beforeImageUrl: string; afterImageUrl: string }>(
         baseUrl,
         "/api/v1/hairstyles/try-on",
         getAccessToken,
         getDeviceId,
         onUnauthorized,
-        "portrait",
+        file ? "portrait" : null,
         file,
         { styleId },
       );
@@ -142,7 +155,9 @@ export function resolveApiPath(baseUrl: string, path: string): string {
 }
 
 export function isProtectedApiImagePath(path: string): boolean {
-  return path.includes("/api/") && !path.includes("/api/v1/marketplaces/");
+  return path.includes("/api/")
+    && !path.includes("/api/v1/marketplaces/")
+    && !(path.includes("/api/v1/hairstyles/") && path.includes("/image"));
 }
 
 export function buildProductImageSource(

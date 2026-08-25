@@ -5,12 +5,14 @@ import { Image } from "expo-image";
 import { Feather } from "@expo/vector-icons";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, DisplayTitle, Eyebrow } from "@/components/ui/Button";
-import { getApiBaseUrl } from "@/lib/config";
+import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
+import { buildProductImageSource } from "@/lib/mobile-api";
 import { HAIRSTYLES, HAIRSTYLE_LENGTH_LABELS, type HairstyleLength } from "@/lib/hairstyle-catalog";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
 type Filter = HairstyleLength | "all";
 const filters: Filter[] = ["all", "short", "medium", "long", "styling"];
+const hairstyleImagePath = (styleId: string) => `/api/v1/hairstyles/${styleId}/image`;
 
 export default function HairstyleCatalogScreen() {
   const router = useRouter();
@@ -23,9 +25,9 @@ export default function HairstyleCatalogScreen() {
         <Pressable style={sheet.back} onPress={() => router.back()} accessibilityLabel="Назад">
           <Feather name="arrow-left" size={22} color={colors.black} />
         </Pressable>
-        <Eyebrow>AI-примерка волос</Eyebrow>
+        <Eyebrow>Стилист по прическам</Eyebrow>
         <DisplayTitle>Какой образ примерим?</DisplayTitle>
-        <BodyText>Выбери идею, затем загрузи отдельный портрет крупным планом. Аватар для одежды останется прежним.</BodyText>
+        <BodyText>Выбери идею. Для примерки используем портрет из профиля, аватар для одежды останется прежним.</BodyText>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={sheet.filters}>
           {filters.map((item) => (
@@ -38,7 +40,7 @@ export default function HairstyleCatalogScreen() {
         <View style={sheet.grid}>
           {styles.map((style) => (
             <Pressable key={style.id} style={({ pressed }) => [sheet.card, pressed && sheet.cardPressed]} onPress={() => router.push(`/hairstyles/portrait?styleId=${style.id}` as never)}>
-              <Image source={{ uri: `${getApiBaseUrl()}${style.imagePath}` }} style={sheet.image} contentFit="cover" transition={120} />
+              <Image source={buildProductImageSource(getApiBaseUrl(), hairstyleImagePath(style.id), null, getAppBaseUrl())} style={sheet.image} contentFit="cover" transition={120} />
               <View style={sheet.cardCopy}>
                 <Text style={sheet.title}>{style.title}</Text>
                 <Text style={sheet.description} numberOfLines={3}>{style.description}</Text>

@@ -31,7 +31,7 @@ const SAVED_PORTRAIT_URL = "/api/v1/profile/hairstyle-portrait/image";
 type Filter = keyof typeof labels;
 type HairstyleStyle = typeof styles[number];
 
-const asset = (id: string) => `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1/hairstyles/${id}/image`;
+const asset = (id: string) => `/api/v1/hairstyles/${id}/image`;
 
 export default function HairstyleTryOnClient() {
   const router = useRouter();
@@ -108,7 +108,7 @@ export default function HairstyleTryOnClient() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-8 md:px-8">
       <div>
-        <p className="text-eyebrow">AI-примерка волос</p>
+        <p className="text-eyebrow">Стилист по прическам</p>
         <h1 className="text-display mt-2 text-3xl md:text-4xl">Стрижки и причёски</h1>
         <p className="text-body mt-2 max-w-2xl">Выберите пример. После выбора откроется крупное превью с запуском примерки.</p>
       </div>
@@ -116,7 +116,7 @@ export default function HairstyleTryOnClient() {
       {selected ? (
         <Card>
           <div className="grid gap-5 md:grid-cols-[minmax(180px,300px)_1fr]">
-            <img src={asset(selected[0])} alt={selected[1]} className="mx-auto aspect-[4/5] w-full max-w-[300px] rounded-[22px] object-cover" />
+            <ApiImage src={asset(selected[0])} alt={selected[1]} className="mx-auto aspect-[4/5] w-full max-w-[300px] rounded-[22px] object-cover" />
             <div className="flex flex-col">
               <p className="text-eyebrow">Выбрано</p>
               <h2 className="text-display-md mt-2 text-2xl">{selected[1]}</h2>
@@ -203,7 +203,7 @@ export default function HairstyleTryOnClient() {
                 onClick={() => chooseStyle(style)}
                 className="overflow-hidden rounded-2xl border border-[#ffd1ed] bg-white text-left transition hover:border-[#ff1fa2] hover:shadow-[0_8px_22px_rgba(255,31,162,0.12)]"
               >
-                <img src={asset(style[0])} alt={style[1]} className="aspect-[4/5] w-full object-cover" />
+                <ApiImage src={asset(style[0])} alt={style[1]} className="aspect-[4/5] w-full object-cover" />
                 <span className="block min-h-12 px-2 py-2 text-[11px] font-medium leading-4 text-[#302637] sm:text-xs">{style[1]}</span>
               </button>
             ))}

@@ -11,10 +11,20 @@ describe("hairstyle try-on", () => {
   });
 
   it("uses a dedicated close-up portrait rather than the clothing avatar", () => {
+    const catalogue = readFileSync(join(process.cwd(), "app", "hairstyles", "index.tsx"), "utf8");
     const portrait = readFileSync(join(process.cwd(), "app", "hairstyles", "portrait.tsx"), "utf8");
-    expect(portrait).toContain("от макушки до плеч");
-    expect(portrait).toContain("createHairstyleTryOn");
+    const profile = readFileSync(join(process.cwd(), "src", "components", "profile", "ProfileEditor.tsx"), "utf8");
+    const manager = readFileSync(join(process.cwd(), "src", "components", "profile", "HairstylePortraitManager.tsx"), "utf8");
+    expect(catalogue).toContain('const hairstyleImagePath = (styleId: string) => `/api/v1/hairstyles/${styleId}/image`');
+    expect(catalogue).toContain("buildProductImageSource(getApiBaseUrl(), hairstyleImagePath(style.id), null, getAppBaseUrl())");
+    expect(portrait).toContain("buildProductImageSource(getApiBaseUrl(), hairstyleImagePath(selectedStyle.id), null, getAppBaseUrl())");
+    expect(manager).toContain("от макушки до плеч");
+    expect(manager).toContain("uploadHairstylePortrait");
+    expect(profile).toContain("HairstylePortraitManager");
+    expect(portrait).toContain("uploads.createHairstyleTryOn(null, selectedStyle.id)");
+    expect(portrait).toContain("Загрузить портрет в профиле");
+    expect(portrait).toContain("router.replace(`/try-on/result/${sessionId}`)");
     expect(portrait).toContain("не меняет аватар одежды");
-    expect(portrait).toContain("saveHairstylePortrait");
+    expect(portrait).not.toContain("saveHairstylePortrait");
   });
 });
