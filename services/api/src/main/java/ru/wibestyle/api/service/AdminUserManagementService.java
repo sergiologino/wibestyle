@@ -122,6 +122,7 @@ public class AdminUserManagementService {
         map.put("email", user.getEmail());
         map.put("login", user.getLogin());
         map.put("primaryAuth", user.getPrimaryAuth());
+        map.put("stylistFocusGroup", user.isStylistFocusGroup());
         map.put("createdAt", user.getCreatedAt().toString());
         map.put("avatarUploadAttempts", avatarRepository.countByUserIdAndStatusNot(user.getId(), AvatarStatus.DELETED));
         map.put("avatarFailedAttempts", avatarRepository.countByUserIdAndStatusIn(user.getId(), FAILED_AVATAR_STATUSES));
@@ -162,6 +163,15 @@ public class AdminUserManagementService {
             });
         });
         return map;
+    }
+
+    @Transactional
+    public Map<String, Object> updateStylistFocusGroup(UUID userId, boolean enabled) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        user.setStylistFocusGroup(enabled);
+        userRepository.save(user);
+        return toUserSummary(user);
     }
 
     private static String adminAvatarPhotoUrl(UUID userId, AvatarEntity avatar, String variant) {

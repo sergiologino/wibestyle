@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Camera, Link2, Sparkles, Scissors } from "lucide-react";
 import { Button, Card } from "@wibestyle/ui";
 import TryOnGateClient from "@/components/try-on/TryOnGateClient";
+import StylistEntryCard from "@/components/try-on/StylistEntryCard";
 
 const tryOnOptions = [
   {
@@ -44,6 +45,7 @@ export default function TryOnHubPage() {
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
+          <StylistEntryCard />
           {tryOnOptions.map((option) => {
             const Icon = option.icon;
             return (

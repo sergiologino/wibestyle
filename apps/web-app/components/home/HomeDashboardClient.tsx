@@ -10,7 +10,7 @@ import TryOnHistoryGrid from "@/components/home/TryOnHistoryGrid";
 import SubscriptionNudgeBanner from "@/components/billing/SubscriptionNudgeBanner";
 import { isPaidSubscription, subscriptionNudgeLevel } from "@/lib/billing-plan";
 import { readFeedCache, writeFeedCache } from "@/lib/feed-cache";
-import { ImageIcon, Link2, Scissors } from "lucide-react";
+import { ImageIcon, Link2, Scissors, WandSparkles } from "lucide-react";
 
 const INITIAL_HISTORY_LIMIT = 6;
 const HISTORY_PAGE_SIZE = 12;
@@ -136,6 +136,16 @@ export default function HomeDashboardClient() {
               : "Подписка активна — примеряй без ограничений trial."}
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {profile?.stylistAvailable ? (
+            <Link
+              href="/stylist"
+              data-testid="stylist-primary"
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-[var(--pink-soft)] bg-[var(--pink-bg)] px-4 py-3 font-medium text-[var(--pink-dark)] shadow-[0_6px_18px_var(--shadow-accent)] transition hover:-translate-y-0.5 hover:border-[var(--pink)] sm:col-span-2"
+            >
+              <WandSparkles size={19} aria-hidden />
+              <span>Подобрать образ под событие</span>
+            </Link>
+          ) : null}
           <Link
             href="/try-on/link"
             data-testid="marketplace-try-on-primary"

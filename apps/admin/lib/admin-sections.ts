@@ -78,8 +78,8 @@ export const adminSections = [
   },
   {
     id: "ai-prompts",
-    title: "Промпт примерки",
-    description: "Редактирование базовой русской части запроса к Grok (JSON с товаром дописывает система).",
+    title: "AI-промпты",
+    description: "Редактирование текстовых частей промптов для примерки, стилиста и анализа аватара.",
     status: "Ready",
     href: "/ai-prompts",
   },

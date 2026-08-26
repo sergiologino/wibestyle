@@ -120,12 +120,14 @@ wibestyle:
     # Leave unset locally — StorageRootResolver finds wibestyle/data/storage via data/storage/.gitkeep
     root: ${WIBESTYLE_STORAGE_ROOT:}
   features:
+    stylist-focus-group-only: ${WIBESTYLE_STYLIST_FOCUS_GROUP_ONLY:true}
     flags:
       videoTryOn: true
       multiItemTryOn: false
       search: true
       sizeAdvisory: true
       eliteFrame: false
+      stylist: true
       futureStylist: false
       futureMakeup: false
       futureHairstyle: false
@@ -140,6 +142,8 @@ wibestyle:
     virtual-try-on-network: ${WIBESTYLE_AI_TRYON_NETWORK:wibestyle-vton}
     season-video-network: ${WIBESTYLE_AI_SEASON_VIDEO_NETWORK:wibestyle-season-video}
     size-compliment-network: ${WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK:openai-gpt4o-mini}
+    stylist-trends-network: ${WIBESTYLE_AI_STYLIST_TRENDS_NETWORK:${WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK:openai-gpt4o-mini}}
+    stylist-image-network: ${WIBESTYLE_AI_STYLIST_IMAGE_NETWORK:${WIBESTYLE_AI_TRYON_NETWORK:wibestyle-vton}}
     avatar-enhance-network: ${WIBESTYLE_AI_AVATAR_ENHANCE_NETWORK:wibestyle-avatar-enhance}
     webhook-secret: ${WIBESTYLE_AI_WEBHOOK_SECRET:}
 

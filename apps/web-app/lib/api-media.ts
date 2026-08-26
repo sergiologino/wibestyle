@@ -37,6 +37,9 @@ export function isProtectedApiMediaUrl(src?: string | null) {
   if (pathname.startsWith("/api/v1/hair-colors/") && pathname.endsWith("/image")) {
     return false;
   }
+  if (pathname.startsWith("/api/v1/stylist/looks/") && pathname.endsWith("/preview")) {
+    return true;
+  }
   if (!pathname.startsWith("/api/v1/try-on/sessions/")) {
     return false;
   }

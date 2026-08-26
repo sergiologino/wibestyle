@@ -32,6 +32,10 @@ public final class BlobKeys {
         return userId + "/try-on/" + sessionId + "/season-hit.mp4";
     }
 
+    public static String stylistVariantPreview(UUID userId, UUID sessionId, String variantKey) {
+        return userId + "/stylist/" + sessionId + "/" + variantKey + ".jpg";
+    }
+
     public static String hairstyleResult(UUID userId, UUID resultId) {
         return userId + "/hairstyles/" + resultId + "/after.jpg";
     }

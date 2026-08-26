@@ -35,6 +35,8 @@ public interface BlobStorage {
 
     String storeTryOnVideo(UUID userId, UUID sessionId, InputStream input) throws IOException;
 
+    String storeStylistVariantPreview(UUID userId, UUID sessionId, String variantKey, InputStream input) throws IOException;
+
     String storeMediaAsset(UUID userId, UUID assetId, String extension, InputStream input) throws IOException;
 
     String keyTryOnResult(UUID userId, UUID sessionId, String variant);

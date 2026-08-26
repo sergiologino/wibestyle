@@ -268,6 +268,24 @@ public class AdminUserController {
         }
     }
 
+    @PatchMapping("/{userId}/stylist-focus-group")
+    public Map<String, Object> updateStylistFocusGroup(
+            @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable UUID userId,
+            @RequestBody Map<String, Boolean> request
+    ) {
+        AdminSupport.AdminActor actor = requireManageUsers(adminKey, authorization);
+        boolean enabled = Boolean.TRUE.equals(request.get("enabled"));
+        try {
+            Map<String, Object> result = adminUserManagementService.updateStylistFocusGroup(userId, enabled);
+            adminAuditService.record(actor.id(), "stylist_focus_group", "user", userId.toString(), null, Boolean.toString(enabled));
+            return result;
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
     @PostMapping("/{userId}/impersonate")
     public Map<String, Object> impersonate(
             @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,

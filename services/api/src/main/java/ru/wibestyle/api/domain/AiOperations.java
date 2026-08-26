@@ -9,4 +9,5 @@ public final class AiOperations {
     public static final String AVATAR_PREPROCESSING = "AVATAR_PREPROCESSING";
     public static final String VIRTUAL_TRY_ON_PHOTO = "VIRTUAL_TRY_ON_PHOTO";
     public static final String VIRTUAL_TRY_ON_VIDEO = "VIRTUAL_TRY_ON_VIDEO";
+    public static final String STYLIST_PREVIEW = "STYLIST_PREVIEW";
 }

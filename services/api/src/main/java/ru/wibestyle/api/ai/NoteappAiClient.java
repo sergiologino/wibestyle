@@ -220,6 +220,61 @@ public class NoteappAiClient {
         }
     }
 
+    public ProcessResult generateStylistPreview(
+            String networkName,
+            String externalUserId,
+            String prompt,
+            String avatarImageBase64,
+            Map<String, String> metadata
+    ) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("prompt", prompt);
+        payload.put("personImageBase64", avatarImageBase64);
+        payload.put("image1Base64", avatarImageBase64);
+        payload.put("image1Role", "customer avatar; preserve identity, face, hair, skin tone, height, body proportions and pose");
+        payload.put("inputImageOrder", "image1 is the user's full-body avatar and identity/body source");
+        payload.put("output_format", "jpeg");
+        payload.put("input_fidelity", "high");
+        payload.put("settings", Map.of("width", 1024, "height", 1365, "aspectRatio", "3:4"));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", requireExternalUserId(externalUserId));
+        body.put("networkName", networkName);
+        body.put("requestType", "image_generation");
+        body.put("payload", payload);
+        body.put("metadata", metadata == null ? Map.of() : metadata);
+
+        try {
+            JsonNode response = restClient.post()
+                    .uri("/api/ai/process")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-API-Key", properties.getApiKey())
+                    .header("Cache-Control", "no-store")
+                    .body(body)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
+                return ProcessResult.failed("AI_GENERATION_FAILED", extractErrorMessage(response, "Stylist preview generation failed"));
+            }
+            String requestId = response.path("requestId").asText(null);
+            String networkUsed = response.path("networkUsed").asText(null);
+            long executionTimeMs = response.path("executionTimeMs").asLong(0);
+            String provider = response.path("response").path("provider").asText(null);
+            ImageResult image = extractImageResult(response.path("response"));
+            byte[] bytes = image == null ? null : image.bytes();
+            if ((bytes == null || bytes.length == 0) && image != null && image.sourceUrl() != null) {
+                bytes = downloadImageBytes(image.sourceUrl());
+            }
+            if (bytes == null || bytes.length == 0) {
+                return ProcessResult.failed("AI_GENERATION_FAILED", "Stylist preview generation returned no image");
+            }
+            return ProcessResult.success(requestId, provider != null ? provider : networkUsed, executionTimeMs, null, bytes);
+        } catch (RestClientException ex) {
+            return ProcessResult.failed("AI_GENERATION_FAILED", extractExceptionMessage(ex));
+        }
+    }
+
     static Map<String, Object> buildHairstylePayload(
             String prompt,
             String portraitBase64,

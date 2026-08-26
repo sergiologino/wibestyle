@@ -6,6 +6,7 @@ export type FeatureFlag =
   | "search"
   | "sizeAdvisory"
   | "eliteFrame"
+  | "stylist"
   | "futureStylist"
   | "futureMakeup"
   | "futureHairstyle";
@@ -16,6 +17,7 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureFlag, boolean> = {
   search: false,
   sizeAdvisory: false,
   eliteFrame: false,
+  stylist: false,
   futureStylist: false,
   futureMakeup: false,
   futureHairstyle: false,
@@ -163,6 +165,8 @@ export type UserProfile = {
   subscriptionExpiresAt?: string;
   promoDiscountPercent?: number;
   activeAvatarId?: string;
+  stylistFocusGroup?: boolean;
+  stylistAvailable?: boolean;
 };
 
 export type ReferralReward = {
@@ -525,6 +529,48 @@ export type TryOnHistoryItem = {
 export type SearchResultItem = ProductPreview & {
   description?: string;
   rating?: number;
+};
+
+export type StylistPreset = {
+  id: string;
+  title: string;
+  description: string;
+};
+
+export type StylistProductCandidate = {
+  id: string;
+  marketplace: "wildberries" | "ozon" | "other";
+  title: string;
+  brand?: string;
+  priceRub?: number;
+  imageUrl?: string;
+  productUrl: string;
+};
+
+export type StylistVariant = {
+  id: "classic" | "modern" | "rebel" | string;
+  title: string;
+  summary: string;
+  stylistComment: string;
+  productSearchStatus?: "demo" | "ready" | "empty" | "failed" | string;
+  productSearchQuery?: string | null;
+  previewStatus?: "queued" | "generating" | "ready" | "failed" | "skipped" | string;
+  tryOnPreviewUrl?: string | null;
+  errorCode?: string | null;
+  products: StylistProductCandidate[];
+};
+
+export type StylistLookResponse = {
+  sessionId?: string;
+  status?: "generating" | "ready" | "failed" | string;
+  preset: StylistPreset;
+  avatarAnalysis: string;
+  trendNote: string;
+  selectedVariantId?: string | null;
+  variants: StylistVariant[];
+  imageGenerationConfigured: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type SizeAdvice = {
