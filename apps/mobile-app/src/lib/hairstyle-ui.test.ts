@@ -17,11 +17,14 @@ describe("hairstyle try-on", () => {
     const manager = readFileSync(join(process.cwd(), "src", "components", "profile", "HairstylePortraitManager.tsx"), "utf8");
     expect(catalogue).toContain('const hairstyleImagePath = (styleId: string) => `/api/v1/hairstyles/${styleId}/image`');
     expect(catalogue).toContain("buildProductImageSource(getApiBaseUrl(), hairstyleImagePath(style.id), null, getAppBaseUrl())");
-    expect(portrait).toContain("buildProductImageSource(getApiBaseUrl(), hairstyleImagePath(selectedStyle.id), null, getAppBaseUrl())");
+    expect(catalogue).toContain("api.getHairColorCatalog");
+    expect(catalogue).toContain("color.imageUrl");
+    expect(catalogue).toContain("colorId");
+    expect(catalogue).toContain("Запустить примерку");
+    expect(portrait).toContain("uploads.createHairstyleTryOn(null, style?.id ?? null, colorId ?? null)");
     expect(manager).toContain("от макушки до плеч");
     expect(manager).toContain("uploadHairstylePortrait");
     expect(profile).toContain("HairstylePortraitManager");
-    expect(portrait).toContain("uploads.createHairstyleTryOn(null, selectedStyle.id)");
     expect(portrait).toContain("Загрузить портрет в профиле");
     expect(portrait).toContain("router.replace(`/try-on/result/${sessionId}`)");
     expect(portrait).toContain("не меняет аватар одежды");

@@ -91,6 +91,46 @@ class NoteappAiClientTest {
     }
 
     @Test
+    void hairstylePayloadIncludesHairColorAsThirdReferenceWhenProvided() {
+        Map<String, Object> payload = NoteappAiClient.buildHairstylePayload(
+                "prompt",
+                "portrait-base64",
+                "style-base64",
+                "color-base64"
+        );
+
+        assertThat(payload).containsEntry("personImageBase64", "portrait-base64");
+        assertThat(payload).containsEntry("image2Base64", "style-base64");
+        assertThat(payload).containsEntry("hairColorImageBase64", "color-base64");
+        assertThat(payload).containsEntry("image3Base64", "color-base64");
+        assertThat(payload.get("inputImageOrder").toString()).contains("image3 is hair-color texture reference only");
+
+        Object images = payload.get("images");
+        assertThat(images).isInstanceOf(List.class);
+        List<?> list = (List<?>) images;
+        assertThat(list).hasSize(3);
+        Map<?, ?> image3 = (Map<?, ?>) list.get(2);
+        assertThat(image3.get("label")).isEqualTo("image3");
+        assertThat(image3.get("base64Field")).isEqualTo("hairColorImageBase64");
+        assertThat(image3.containsKey("base64")).isFalse();
+    }
+
+    @Test
+    void hairstylePayloadKeepsColorOnlyCompatibleWithTwoImages() {
+        Map<String, Object> payload = NoteappAiClient.buildHairstylePayload(
+                "prompt",
+                "portrait-base64",
+                "color-base64",
+                null
+        );
+
+        assertThat(payload).containsEntry("image2Base64", "color-base64");
+        assertThat(payload).doesNotContainKey("image3Base64");
+        assertThat(payload).doesNotContainKey("hairColorImageBase64");
+        assertThat(payload.get("inputImageOrder").toString()).contains("image2 is the selected hairstyle or hair-color reference only");
+    }
+
+    @Test
     void extractsProviderErrorFieldUsedByContentModerationResponses() throws Exception {
         var response = objectMapper.readTree("""
                 {"status":"error","error":"Generated image rejected by content moderation."}

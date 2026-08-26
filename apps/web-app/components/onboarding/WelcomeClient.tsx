@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Check, Heart, Sparkles } from "lucide-react";
 import { Button } from "@wibestyle/ui";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { advanceOnboarding, getNextOnboardingRoute } from "@/lib/onboarding-flow";
-import { FIRST_100_PROMO_CODE, onboardingSlides } from "@/lib/onboarding-copy";
+import { onboardingSlides } from "@/lib/onboarding-copy";
 import { capturePromoFromSearchParams, savePendingPromo } from "@/lib/promo-storage";
 import { OnboardingMedia } from "@/components/onboarding/OnboardingMedia";
 
@@ -32,11 +32,8 @@ export default function WelcomeClient() {
 
   const activeSlide = onboardingSlides[activeIndex];
   const referralCode = searchParams.get("ref");
-  const promoCode = useMemo(() => {
-    const explicitPromo = searchParams.get("promo");
-    if (explicitPromo) return explicitPromo;
-    return FIRST_100_PROMO_CODE;
-  }, [searchParams]);
+  const promoCode = useMemo(() => searchParams.get("promo"), [searchParams]);
+  const replayOnboarding = searchParams.get("replay") === "1";
 
   useEffect(() => {
     const captured = capturePromoFromSearchParams(searchParams);
@@ -46,13 +43,17 @@ export default function WelcomeClient() {
   }, [promoCode, searchParams]);
 
   useEffect(() => {
-    if (onboarding.welcomeSeen || onboarding.avatarComplete) {
+    if (!replayOnboarding && (onboarding.welcomeSeen || onboarding.avatarComplete)) {
       router.replace(getNextOnboardingRoute(onboarding));
     }
-  }, [onboarding, router]);
+  }, [onboarding, replayOnboarding, router]);
 
   function goAuth(next = "/auth") {
     completeOnboardingStep("welcome");
+    if (replayOnboarding && onboarding.authComplete) {
+      router.push("/settings");
+      return;
+    }
     if (onboarding.authComplete) {
       router.push(getNextOnboardingRoute(advanceOnboarding(onboarding, "welcome")));
       return;
@@ -73,19 +74,6 @@ export default function WelcomeClient() {
       return;
     }
     goAuth("/auth");
-  }
-
-  function openTrial() {
-    completeOnboardingStep("welcome");
-    if (onboarding.authComplete) {
-      router.push("/paywall");
-      return;
-    }
-    const authUrl = new URL("/auth", window.location.origin);
-    authUrl.searchParams.set("next", "/paywall");
-    authUrl.searchParams.set("promo", promoCode ?? FIRST_100_PROMO_CODE);
-    if (referralCode) authUrl.searchParams.set("ref", referralCode);
-    router.push(`${authUrl.pathname}${authUrl.search}`);
   }
 
   function skipOnboarding() {
@@ -132,11 +120,6 @@ export default function WelcomeClient() {
                   </span>
                   {activeIndex + 1} / {onboardingSlides.length}
                 </div>
-                {promoCode ? (
-                  <span className="rounded-full border border-[#ffb8a5] bg-white px-3 py-1 text-xs font-medium text-[#8b3c2c]">
-                    Промокод {promoCode}
-                  </span>
-                ) : null}
               </div>
 
               <h1 className="mt-7 text-4xl font-light leading-[0.98] tracking-[-0.04em] text-[#14101a] md:text-6xl">
@@ -176,15 +159,9 @@ export default function WelcomeClient() {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                {activeSlide.cta === "trial" ? (
-                  <Button size="lg" className="w-full" onClick={openTrial}>
-                    Подключить trial
-                  </Button>
-                ) : (
-                  <Button size="lg" className="w-full" onClick={nextSlide}>
-                    Дальше
-                  </Button>
-                )}
+                <Button size="lg" className="w-full" onClick={nextSlide}>
+                  Дальше
+                </Button>
                 <Button
                   size="lg"
                   variant="secondary"

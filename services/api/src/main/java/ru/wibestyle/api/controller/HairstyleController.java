@@ -28,7 +28,7 @@ public class HairstyleController {
     private static final CacheControl PRIVATE_RESULT_CACHE = CacheControl.maxAge(7, TimeUnit.DAYS).cachePrivate();
     private final HairstyleTryOnService service; private final BlobStorage storage; private final HairstyleCatalogRepository catalog;
     public HairstyleController(HairstyleTryOnService service, BlobStorage storage, HairstyleCatalogRepository catalog) { this.service = service; this.storage = storage; this.catalog=catalog; }
-    @GetMapping("/catalog") public Map<String, Object> catalog() { return Map.of("items", catalog.findByActiveTrueOrderBySortOrderAsc().stream().map(s -> Map.of("id",s.getSlug(),"title",s.getTitle(),"description",s.getDescription(),"type",s.getHairType(),"masterNote",s.getMasterNote(),"imageUrl","/api/v1/hairstyles/"+s.getSlug()+"/image")).toList()); }
+    @GetMapping("/catalog") public Map<String, Object> catalog() { return Map.of("items", catalog.findByActiveTrueOrderBySortOrderAsc().stream().map(s -> Map.of("id",s.getSlug(),"title",s.getTitle(),"description",s.getDescription(),"type",s.getHairType(),"masterNote",s.getMasterNote(),"imageUrl","/api/v1/hairstyles/"+s.getSlug()+"/image?v="+s.getUpdatedAt().toEpochMilli())).toList()); }
     @GetMapping("/{slug}/image") public ResponseEntity<Resource> image(@PathVariable String slug) throws Exception {
         var style = catalog.findBySlug(slug).filter(s -> s.isActive()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!storage.exists(style.getImagePath())) {
@@ -41,7 +41,7 @@ public class HairstyleController {
                 .body(new FileSystemResource(path));
     }
     @PostMapping(value = "/try-on", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Map<String, Object> tryOn(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestParam(value = "portrait", required = false) MultipartFile portrait, @RequestParam String styleId) throws Exception { return service.generate(user(authorization), portrait, styleId); }
+    public Map<String, Object> tryOn(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestParam(value = "portrait", required = false) MultipartFile portrait, @RequestParam(value = "styleId", required = false) String styleId, @RequestParam(value = "colorId", required = false) String colorId) throws Exception { return service.generate(user(authorization), portrait, styleId, colorId); }
     @GetMapping("/results/{resultId}/after-photo")
     public ResponseEntity<Resource> result(@RequestHeader(value = "Authorization", required = false) String authorization, @PathVariable UUID resultId) throws Exception {
         UUID userId = user(authorization); String key = BlobKeys.hairstyleResult(userId, resultId);
@@ -51,7 +51,7 @@ public class HairstyleController {
     }
     private UUID user(String header) { try { return AuthSupport.requireUserId(header); } catch (IllegalArgumentException e) { throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized", e); } }
 
-    private static MediaType mediaType(Path path) throws Exception {
+    static MediaType mediaType(Path path) throws Exception {
         String contentType = Files.probeContentType(path);
         if (contentType != null && !contentType.isBlank()) {
             return MediaType.parseMediaType(contentType);

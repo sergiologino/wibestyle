@@ -46,6 +46,21 @@ Profile UI preference: `profile.interfacePalette` is one of `vibe`, `pistachio`,
 
 `GET /try-on/sessions/{id}` result включает `styleCompliment` (опционально) — короткий post-try-on комментарий стилиста. Текст генерируется через noteapp chat network (`WIBESTYLE_AI_SIZE_COMPLIMENT_NETWORK`, по умолчанию `openai-gpt4o-mini`) по prompt table key `tryon.result_compliment_ru`; при недоступности AI используется безопасный шаблон.
 
+## Hairstyle & Hair Color
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/hairstyles/catalog` | Каталог причесок из БД; `imageUrl` указывает на storage-backed превью |
+| GET | `/hairstyles/{slug}/image` | Public preview image, `Cache-Control: public, max-age=604800` |
+| GET | `/hair-colors/catalog` | Каталог цветов волос из БД; элементы содержат `sourceBrand`, `sourceUrl`, `attributionText` |
+| GET | `/hair-colors/{slug}/image` | Public hair color texture image из storage, `Cache-Control: public, max-age=604800` |
+| GET/POST | `/profile/hairstyle-portrait` | Проверка и загрузка отдельного портрета для примерки волос |
+| POST | `/hairstyles/try-on` | Multipart form: optional `portrait`, optional `styleId`, optional `colorId`; нужен хотя бы `styleId` или `colorId` |
+
+`POST /hairstyles/try-on` поддерживает три сценария: прическа+цвет, только прическа, только цвет. Если `portrait` не передан, backend использует портрет из профиля. При выборе прически и цвета backend передает в AI три изображения: `image1` = портрет пользователя, `image2` = reference прически, `image3` = reference цвета волос. При выборе только цвета цветовой reference остается `image2` для совместимости. Результат возвращает `beforeImageUrl` и `afterImageUrl`, которые обслуживаются как owner-only media with `Cache-Control: private, max-age=604800`.
+
+Цветовой каталог использует публичные полноразмерные текстуры волос Garnier, а не изображения коробок, рекламные баннеры, таблицы результата и не маленькие swatch-превью. Клиенты обязаны показывать атрибуцию из `attributionText` и ссылку `sourceUrl` под палитрой цветов. Изображения не хранятся в коде: они должны быть загружены в production storage через `scripts/download-garnier-hair-colors.mjs`. В текущем официальном источнике активный каталог содержит 27 оттенков с валидными текстурами.
+
 ## Search, Favorites, Gallery
 
 | Method | Path |

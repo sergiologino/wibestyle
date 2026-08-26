@@ -2,31 +2,32 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-describe("hairstyle try-on flow", () => {
+describe("hairstyle and hair color try-on flow", () => {
   const source = readFileSync(join(process.cwd(), "components", "hairstyles", "HairstyleTryOnClient.tsx"), "utf8");
 
-  it("shows a compact tile gallery before style selection", () => {
+  it("supports choosing hairstyle and hair color independently", () => {
     expect(source).toContain('data-testid="hairstyle-tile-gallery"');
-    expect(source).toContain("grid-cols-3");
-    expect(source).toContain("chooseStyle(style)");
-    expect(source).toContain('const asset = (id: string) => `/api/v1/hairstyles/${id}/image`');
-    expect(source).toContain("Стилист по прическам");
+    expect(source).toContain('data-testid="hair-color-tile-gallery"');
+    expect(source).toContain("selectedStyleId");
+    expect(source).toContain("selectedColorId");
+    expect(source).toContain("Не менять");
+    expect(source).toContain("Выберите причёску, цвет волос или оба пункта");
   });
 
-  it("shows a portrait block after style selection and starts try-on from it", () => {
+  it("uses the profile portrait only and keeps a single start action", () => {
     expect(source).toContain('data-testid="hairstyle-portrait-block"');
     expect(source).toContain('data-testid="hairstyle-try-on-start"');
-    expect(source).toContain("Портрет для примерки");
     expect(source).toContain("Используем портрет из профиля");
     expect(source).toContain("Перейти в профиль");
-    expect(source).toContain("Примерить эту причёску");
+    expect(source).toContain("Запустить примерку");
     expect(source).not.toContain('type="file"');
     expect(source).not.toContain("onPortraitChange");
   });
 
-  it("routes generated hairstyles through the shared before-after result screen", () => {
-    expect(source).toContain("api.createHairstyleTryOn");
-    expect(source).toContain("api.createHairstyleTryOn(null, selected[0])");
+  it("loads Garnier color catalogue and sends optional style/color ids to the API", () => {
+    expect(source).toContain("api.getHairColorCatalog");
+    expect(source).toContain("api.createHairstyleTryOn(null, selectedStyleId, selectedColorId)");
+    expect(source).toContain("Каталог Garnier");
     expect(source).toContain("router.push(`/try-on/result/${result.session?.id ?? result.id}`)");
   });
 });

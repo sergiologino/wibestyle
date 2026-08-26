@@ -6,10 +6,11 @@ describe("mobile welcome UI", () => {
   const source = readFileSync(join(process.cwd(), "app", "welcome.tsx"), "utf8");
   const copy = readFileSync(join(process.cwd(), "src", "lib", "onboarding-copy.ts"), "utf8");
 
-  it("uses result-photo mp4 on the result slide", () => {
+  it("uses mp4 assets on the link and result slides", () => {
+    expect(source).toContain('require("../assets/onboarding/slides/link-product-video.mp4")');
     expect(source).toContain('require("../assets/onboarding/slides/result-photo.mp4")');
     expect(source).toContain("<VideoView");
-    expect(source).toContain('slide.asset === "result"');
+    expect(source).toContain("slide.video");
   });
 
   it("keeps onboarding compact and removes the redundant slide/tag", () => {
@@ -29,10 +30,19 @@ describe("mobile welcome UI", () => {
     expect(source).toContain("upload-photo.webp");
     expect(source).toContain("flow-photo.webp");
     expect(source).toContain("future-photo.webp");
-    expect(source).toContain("paywall-photo.webp");
+    expect(source).toContain("app-intro-photo.png");
+    expect(source).toContain("hair-color-photo.png");
+    expect(source).toContain("share-social-photo.png");
   });
 
-  it("routes the trial CTA through registration before paywall", () => {
-    expect(source).toContain('router.replace("/auth?next=/paywall")');
+  it("does not route a trial CTA from onboarding", () => {
+    expect(source).not.toContain('router.replace("/auth?next=/paywall")');
+    expect(source).not.toContain("Подключить trial");
+  });
+
+  it("supports replaying onboarding for an authenticated profile", () => {
+    expect(source).toContain("useLocalSearchParams");
+    expect(source).toContain('searchParams.replay === "1"');
+    expect(source).toContain('router.replace("/(main)/profile")');
   });
 });

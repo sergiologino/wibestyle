@@ -180,7 +180,7 @@ export default function GalleryScreen() {
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => profile?.userId ? void readHairstyleHistory(profile.userId).then(setHairstyles) : undefined} tintColor={colors.pink} />}
           ListEmptyComponent={<View style={styles.emptyHair}><BodyText>Здесь появятся результаты примерок волос.</BodyText><Button label="Выбрать причёску" variant="secondary" onPress={() => router.push("/hairstyles" as never)} /></View>}
-          renderItem={({ item }) => <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={() => router.push(`/hairstyles/result?styleId=${item.styleId}&imagePath=${encodeURIComponent(item.imagePath)}` as never)}>
+          renderItem={({ item }) => <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={() => router.push(`/hairstyles/result?styleId=${item.styleId}&colorId=${item.colorId ?? ""}&imagePath=${encodeURIComponent(item.imagePath)}` as never)}>
             <AuthenticatedImage path={item.imagePath} accessToken={accessToken} style={styles.image} />
             <View style={styles.meta}><Text style={styles.title} numberOfLines={2}>{item.title}</Text><View style={styles.stats}><Feather name="scissors" size={12} color={colors.muted} /><Text style={styles.statText}>Примерка волос</Text></View></View>
           </Pressable>}

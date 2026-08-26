@@ -132,8 +132,8 @@ export function createMobileUploadHelpers(
         file,
       );
     },
-    createHairstyleTryOn(file: RNFile | null, styleId: string) {
-      return uploadMultipart<{ id: string; session?: { id: string }; beforeImageUrl: string; afterImageUrl: string }>(
+    createHairstyleTryOn(file: RNFile | null, styleId: string | null, colorId?: string | null) {
+      return uploadMultipart<{ id: string; session?: { id: string }; styleId?: string; colorId?: string; beforeImageUrl: string; afterImageUrl: string }>(
         baseUrl,
         "/api/v1/hairstyles/try-on",
         getAccessToken,
@@ -141,7 +141,7 @@ export function createMobileUploadHelpers(
         onUnauthorized,
         file ? "portrait" : null,
         file,
-        { styleId },
+        { ...(styleId ? { styleId } : {}), ...(colorId ? { colorId } : {}) },
       );
     },
   };
@@ -157,7 +157,8 @@ export function resolveApiPath(baseUrl: string, path: string): string {
 export function isProtectedApiImagePath(path: string): boolean {
   return path.includes("/api/")
     && !path.includes("/api/v1/marketplaces/")
-    && !(path.includes("/api/v1/hairstyles/") && path.includes("/image"));
+    && !(path.includes("/api/v1/hairstyles/") && path.includes("/image"))
+    && !(path.includes("/api/v1/hair-colors/") && path.includes("/image"));
 }
 
 export function buildProductImageSource(

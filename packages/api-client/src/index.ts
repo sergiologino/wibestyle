@@ -1074,16 +1074,37 @@ export class WibeStyleApiClient {
     return this.request<{ exists: boolean; imageUrl: string }>("/api/v1/profile/hairstyle-portrait", { method: "POST", body });
   }
 
-  createHairstyleTryOn(portrait: File | null, styleId: string) {
+  getHairColorCatalog() {
+    return this.request<{
+      items: Array<{
+        id: string;
+        title: string;
+        family: string;
+        description: string;
+        imageUrl: string;
+        sourceBrand: string;
+        sourceUrl: string;
+        attributionText: string;
+      }>;
+    }>("/api/v1/hair-colors/catalog");
+  }
+
+  createHairstyleTryOn(portrait: File | null, styleId: string | null, colorId?: string | null) {
     const body = new FormData();
     if (portrait) {
       body.append("portrait", portrait);
     }
-    body.append("styleId", styleId);
+    if (styleId) {
+      body.append("styleId", styleId);
+    }
+    if (colorId) {
+      body.append("colorId", colorId);
+    }
     return this.request<{
       id: string;
       session?: Pick<TryOnSessionRecord, "id" | "sourceType" | "status">;
-      styleId: string;
+      styleId?: string;
+      colorId?: string;
       beforeImageUrl: string;
       afterImageUrl: string;
     }>("/api/v1/hairstyles/try-on", { method: "POST", body });

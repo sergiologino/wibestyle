@@ -193,18 +193,10 @@ public class NoteappAiClient {
             String externalUserId,
             String portraitBase64,
             String referenceBase64,
+            String colorReferenceBase64,
             String prompt
     ) {
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("prompt", prompt);
-        payload.put("personImageBase64", portraitBase64);
-        payload.put("image1Base64", portraitBase64);
-        payload.put("garmentImageBase64", referenceBase64);
-        payload.put("image2Base64", referenceBase64);
-        payload.put("inputImageOrder", "image1 is the user's portrait and identity source; image2 is hairstyle reference only");
-        payload.put("output_format", "jpeg");
-        payload.put("input_fidelity", "high");
-        payload.put("settings", Map.of("width", 1024, "height", 1024));
+        Map<String, Object> payload = buildHairstylePayload(prompt, portraitBase64, referenceBase64, colorReferenceBase64);
         Map<String, Object> body = new HashMap<>();
         body.put("userId", requireExternalUserId(externalUserId));
         body.put("networkName", networkName);
@@ -226,6 +218,71 @@ public class NoteappAiClient {
         } catch (RestClientException ex) {
             throw new IllegalArgumentException("HAIRSTYLE_GENERATION_FAILED", ex);
         }
+    }
+
+    static Map<String, Object> buildHairstylePayload(
+            String prompt,
+            String portraitBase64,
+            String referenceBase64,
+            String colorReferenceBase64
+    ) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("prompt", prompt);
+        payload.put("personImageBase64", portraitBase64);
+        payload.put("image1Base64", portraitBase64);
+        payload.put("image1Role", "customer_portrait_identity_source_preserve_all_non_hair_pixels");
+        payload.put("garmentImageBase64", referenceBase64);
+        payload.put("image2Base64", referenceBase64);
+        payload.put("image2Role", colorReferenceBase64 == null
+                ? "selected_reference_hairstyle_or_hair_color_only_ignore_identity"
+                : "hairstyle_reference_shape_length_bangs_parting_only_ignore_identity_and_color_when_conflicting");
+        if (colorReferenceBase64 != null && !colorReferenceBase64.isBlank()) {
+            payload.put("hairColorImageBase64", colorReferenceBase64);
+            payload.put("image3Base64", colorReferenceBase64);
+            payload.put("image3Role", "hair_color_texture_reference_only_ignore_shape_identity_face_body_background");
+        }
+        payload.put("inputImageOrder", colorReferenceBase64 == null
+                ? "image1 is the user's portrait and identity source; image2 is the selected hairstyle or hair-color reference only"
+                : "image1 is the user's portrait and identity source; image2 is hairstyle shape reference only; image3 is hair-color texture reference only");
+        payload.put("images", colorReferenceBase64 == null
+                ? List.of(
+                Map.of(
+                        "label", "image1",
+                        "field", "personImageBase64",
+                        "role", "customer portrait; preserve face, skin, pose, clothes, background and all non-hair pixels",
+                        "base64Field", "personImageBase64"
+                ),
+                Map.of(
+                        "label", "image2",
+                        "field", "garmentImageBase64",
+                        "role", "selected hairstyle or hair-color reference only; ignore identity and non-hair details",
+                        "base64Field", "garmentImageBase64"
+                )
+        )
+                : List.of(
+                Map.of(
+                        "label", "image1",
+                        "field", "personImageBase64",
+                        "role", "customer portrait; preserve face, skin, pose, clothes, background and all non-hair pixels",
+                        "base64Field", "personImageBase64"
+                ),
+                Map.of(
+                        "label", "image2",
+                        "field", "garmentImageBase64",
+                        "role", "hairstyle shape, length, bangs and parting reference only; ignore identity and color if image3 conflicts",
+                        "base64Field", "garmentImageBase64"
+                ),
+                Map.of(
+                        "label", "image3",
+                        "field", "hairColorImageBase64",
+                        "role", "hair-color texture reference only; ignore hairstyle shape, face, body, clothes and background",
+                        "base64Field", "hairColorImageBase64"
+                )
+        ));
+        payload.put("output_format", "jpeg");
+        payload.put("input_fidelity", "high");
+        payload.put("settings", Map.of("width", 1024, "height", 1024));
+        return payload;
     }
 
     private byte[] downloadImageBytes(String imageUrl) {

@@ -21,6 +21,11 @@ describe("profile layout", () => {
     expect(avatars).toContain("aspect-[3/4]");
   });
 
+  it("links back to the onboarding replay under the avatar block", () => {
+    expect(profile).toContain('href="/welcome?replay=1"');
+    expect(profile).toContain("Посмотреть онбординг");
+  });
+
   it("prioritizes avatar and anthropometry above subscription and favorites", () => {
     expect(profile).toContain('<Card className="order-[10]">');
     expect(profile).toContain('<Card className="order-[20]">');

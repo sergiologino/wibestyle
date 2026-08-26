@@ -7,6 +7,7 @@ describe("ApiImage", () => {
     const source = readFileSync(join(process.cwd(), "components", "media", "ApiImage.tsx"), "utf8");
 
     expect(source).toContain("resolveApiPath(src)");
+    expect(source).toContain('/api/v1/hair-colors/');
     expect(source).toContain('decoding="async"');
     expect(source).toContain('loading="lazy"');
   });
