@@ -1161,7 +1161,7 @@ details p { margin: 14px 0 0; color: var(--muted); font-weight: 700; line-height
     min-height: 54px;
     font-size: 17px;
   }
-  .hero-person-card { order: 3; max-width: 330px; min-height: 430px; justify-self: center; }
+  .hero-person-card { display: none; }
   .hero-person-card__image, .hero-person-card img { height: 430px; min-height: 430px; }
   .hero-collage {
     order: 1;
