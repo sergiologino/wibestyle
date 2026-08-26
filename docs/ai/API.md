@@ -57,7 +57,7 @@ Profile UI preference: `profile.interfacePalette` is one of `vibe`, `pistachio`,
 | GET/POST | `/profile/hairstyle-portrait` | Проверка и загрузка отдельного портрета для примерки волос |
 | POST | `/hairstyles/try-on` | Multipart form: optional `portrait`, optional `styleId`, optional `colorId`; нужен хотя бы `styleId` или `colorId` |
 
-`POST /hairstyles/try-on` поддерживает три сценария: прическа+цвет, только прическа, только цвет. Если `portrait` не передан, backend использует портрет из профиля. Результат возвращает `beforeImageUrl` и `afterImageUrl`, которые обслуживаются как owner-only media with `Cache-Control: private, max-age=604800`.
+`POST /hairstyles/try-on` поддерживает три сценария: прическа+цвет, только прическа, только цвет. Если `portrait` не передан, backend использует портрет из профиля. При выборе прически и цвета backend передает в AI три изображения: `image1` = портрет пользователя, `image2` = reference прически, `image3` = reference цвета волос. При выборе только цвета цветовой reference остается `image2` для совместимости. Результат возвращает `beforeImageUrl` и `afterImageUrl`, которые обслуживаются как owner-only media with `Cache-Control: private, max-age=604800`.
 
 Цветовой каталог использует публичные полноразмерные текстуры волос Garnier, а не изображения коробок, рекламные баннеры, таблицы результата и не маленькие swatch-превью. Клиенты обязаны показывать атрибуцию из `attributionText` и ссылку `sourceUrl` под палитрой цветов. Изображения не хранятся в коде: они должны быть загружены в production storage через `scripts/download-garnier-hair-colors.mjs`. В текущем официальном источнике активный каталог содержит 27 оттенков с валидными текстурами.
 

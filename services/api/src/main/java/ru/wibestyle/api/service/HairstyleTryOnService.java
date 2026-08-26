@@ -44,11 +44,21 @@ public class HairstyleTryOnService {
         if (style == null && color == null) throw new IllegalArgumentException("HAIR_CHANGE_REQUIRED");
         byte[] portraitBytes = resolvePortraitBytes(userId, portrait);
         String portraitBase64 = Base64.getEncoder().encodeToString(portraitBytes);
-        String referencePath = style != null ? style.getImagePath() : color.getImagePath();
-        String referenceBase64 = Base64.getEncoder().encodeToString(storage.readBytes(referencePath));
+        String primaryReferencePath = style != null ? style.getImagePath() : color.getImagePath();
+        String referenceBase64 = Base64.getEncoder().encodeToString(storage.readBytes(primaryReferencePath));
+        String colorReferenceBase64 = style != null && color != null
+                ? Base64.getEncoder().encodeToString(storage.readBytes(color.getImagePath()))
+                : null;
         String prompt = promptBuilder.build(style == null ? null : style.getAiDirective(), color == null ? null : color.getAiDirective());
         UUID sessionId = UUID.randomUUID();
-        NoteappAiClient.AvatarEnhancementResult result = aiClient.applyHairstyle(ai.getVirtualTryOnNetwork(), userId + ":hairstyle:" + sessionId, portraitBase64, referenceBase64, prompt);
+        NoteappAiClient.AvatarEnhancementResult result = aiClient.applyHairstyle(
+                ai.getVirtualTryOnNetwork(),
+                userId + ":hairstyle:" + sessionId,
+                portraitBase64,
+                referenceBase64,
+                colorReferenceBase64,
+                prompt
+        );
         storage.storeTryOnResult(userId, sessionId, "before", new ByteArrayInputStream(portraitBytes));
         storage.storeTryOnResult(userId, sessionId, "after", new ByteArrayInputStream(result.imageBytes()));
         Instant now = Instant.now();

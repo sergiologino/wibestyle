@@ -21,7 +21,7 @@ public class HairstylePromptBuilder {
                 : colorDirective;
         return """
                 TASK: virtual hairstyle try-on on a single close-up portrait.
-                INPUT RULES: image 1 is the customer portrait and is the sole identity source. Image 2 is an optional hairstyle or hair-color reference only; never copy its face, body, skin, clothes, background, camera angle, or lighting.
+                INPUT RULES: image 1 is the customer portrait and is the sole identity source. Image 2 is the primary selected reference: hairstyle reference when a hairstyle is selected, otherwise hair-color reference. Image 3, when present, is the selected hair-color reference only. Never copy face, body, skin, clothes, background, camera angle, or lighting from reference images.
                 IDENTITY LOCK (highest priority): preserve exactly the customer’s face, facial geometry, eye shape, eyebrows, nose, lips, skin texture and tone, age, expression, ethnicity, pose, head angle, shoulders, clothing, jewellery, background and camera framing. Do not beautify, retouch, age, slim, reshape, swap, crop, zoom, rotate, or alter any non-hair pixels.
                 EDIT SCOPE: modify only hair pixels, including existing hair, bangs, parting and hairline. Keep the natural hairline believable. Do not create hats, veils, headbands, text, watermarks, collages, extra people, hands, mirrors, or salon tools.
                 STYLE TO APPLY: %s.
