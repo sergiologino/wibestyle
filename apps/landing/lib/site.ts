@@ -1,8 +1,23 @@
+function normalizePublicUrl(value: string | undefined, fallback: string, defaultPath = ""): string {
+  const raw = value?.trim();
+  if (!raw) return fallback;
+
+  try {
+    const url = new URL(raw.startsWith("//") ? `https:${raw}` : /^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    if (defaultPath && url.pathname === "/") {
+      url.pathname = defaultPath;
+    }
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return fallback;
+  }
+}
+
 export const siteConfig = {
   name: "Я на стиле",
-  domain: process.env.NEXT_PUBLIC_SITE_URL ?? "https://yanastile.app",
-  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://app.vibestyle.art",
-  rustoreUrl: process.env.NEXT_PUBLIC_RUSTORE_URL?.trim() || "https://www.rustore.ru/catalog/app/ru.vibestyle.app",
+  domain: normalizePublicUrl(process.env.NEXT_PUBLIC_SITE_URL, "https://vibestyle.art"),
+  appUrl: normalizePublicUrl(process.env.NEXT_PUBLIC_APP_URL, "https://app.vibestyle.art/home", "/home"),
+  rustoreUrl: normalizePublicUrl(process.env.NEXT_PUBLIC_RUSTORE_URL, "https://www.rustore.ru/catalog/app/ru.vibestyle.app"),
   description:
     "Виртуальный персональный стилист и нейропримерочная с маркетплейсов: загрузи фото, вставь ссылку на товар и посмотри, как вещь преобразит твой образ до покупки.",
   locale: "ru_RU",
