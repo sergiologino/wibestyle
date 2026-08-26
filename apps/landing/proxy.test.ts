@@ -1,25 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { buildPublicHttpsUrl, shouldForceHttps } from "./proxy";
+import { proxy } from "./proxy";
 
 describe("landing proxy", () => {
-  it("forces HTTPS for public landing hosts behind a proxy", () => {
-    expect(shouldForceHttps("vibestyle.art", "http", "https:")).toBe(true);
-    expect(shouldForceHttps("www.vibestyle.art", null, "http:")).toBe(true);
-  });
+  it("does not issue app-level redirects for public hosts", () => {
+    const response = proxy({
+      headers: new Headers({ host: "vibestyle.art", "x-forwarded-proto": "https" }),
+      nextUrl: new URL("http://localhost:3000/"),
+    } as never);
 
-  it("does not redirect HTTPS requests forwarded to Next.js over internal HTTP", () => {
-    expect(shouldForceHttps("vibestyle.art", "https", "http:")).toBe(false);
-    expect(shouldForceHttps("vibestyle.art", "https,http", "http:")).toBe(false);
-  });
-
-  it("does not force HTTPS for local development hosts", () => {
-    expect(shouldForceHttps("localhost:3000", "http", "http:")).toBe(false);
-    expect(shouldForceHttps("127.0.0.1:3000", "http", "http:")).toBe(false);
-  });
-
-  it("builds HTTPS redirects from the public host, not the internal Next.js origin", () => {
-    expect(buildPublicHttpsUrl("vibestyle.art", "/ai-primerka", "?utm_source=test")).toBe(
-      "https://vibestyle.art/ai-primerka?utm_source=test",
-    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("strict-transport-security")).toContain("max-age=31536000");
   });
 });

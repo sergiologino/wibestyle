@@ -7,32 +7,8 @@ function normalizeHost(host: string | null): string {
   return (host ?? "").split(":")[0].toLowerCase();
 }
 
-export function buildPublicHttpsUrl(host: string, pathname: string, search: string): string {
-  return `https://${host}${pathname}${search}`;
-}
-
-function firstForwardedValue(value: string | null): string | null {
-  return value?.split(",")[0]?.trim().toLowerCase() || null;
-}
-
-export function shouldForceHttps(host: string | null, forwardedProto: string | null, protocol: string): boolean {
-  const normalizedHost = normalizeHost(host);
-  if (!PUBLIC_HOSTS.has(normalizedHost)) return false;
-
-  const publicProto = firstForwardedValue(forwardedProto);
-  if (publicProto) return publicProto === "http";
-
-  return protocol === "http:";
-}
-
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host");
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-
-  if (shouldForceHttps(host, forwardedProto, request.nextUrl.protocol)) {
-    const url = buildPublicHttpsUrl(host ?? request.nextUrl.host, request.nextUrl.pathname, request.nextUrl.search);
-    return NextResponse.redirect(url, 308);
-  }
 
   const response = NextResponse.next();
   if (PUBLIC_HOSTS.has(normalizeHost(host))) {
