@@ -7,6 +7,10 @@ function normalizeHost(host: string | null): string {
   return (host ?? "").split(":")[0].toLowerCase();
 }
 
+export function buildPublicHttpsUrl(host: string, pathname: string, search: string): string {
+  return `https://${host}${pathname}${search}`;
+}
+
 export function shouldForceHttps(host: string | null, forwardedProto: string | null, protocol: string): boolean {
   const normalizedHost = normalizeHost(host);
   if (!PUBLIC_HOSTS.has(normalizedHost)) return false;
@@ -18,8 +22,7 @@ export function proxy(request: NextRequest) {
   const forwardedProto = request.headers.get("x-forwarded-proto");
 
   if (shouldForceHttps(host, forwardedProto, request.nextUrl.protocol)) {
-    const url = request.nextUrl.clone();
-    url.protocol = "https:";
+    const url = buildPublicHttpsUrl(host ?? request.nextUrl.host, request.nextUrl.pathname, request.nextUrl.search);
     return NextResponse.redirect(url, 308);
   }
 
