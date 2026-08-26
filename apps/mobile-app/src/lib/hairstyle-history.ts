@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type HairstyleHistoryItem = { id: string; styleId: string; title: string; imagePath: string; createdAt: string };
+export type HairstyleHistoryItem = { id: string; styleId: string; colorId?: string | null; title: string; imagePath: string; createdAt: string };
 const key = (userId: string) => `wibestyle:hairstyle-history:${userId}`;
 
 export async function readHairstyleHistory(userId: string): Promise<HairstyleHistoryItem[]> {

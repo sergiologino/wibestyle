@@ -256,6 +256,32 @@ WIBESTYLE_STORAGE_ROOT=/data/wibestyle-media
 
 На сервере обязательно примонтировать persistent volume к `/data/wibestyle-media`, иначе аватары и результаты примерок потеряются при пересоздании контейнера/сервиса.
 
+Каталожные изображения тоже должны лежать в этом persistent volume, а не в коде. Для каталога цветов волос после деплоя API и подключения volume выполните из корня репозитория:
+
+```powershell
+$env:WIBESTYLE_STORAGE_ROOT="/data/wibestyle-media"
+node scripts\download-garnier-hair-colors.mjs
+```
+
+Скрипт загружает публичные полноразмерные текстуры волос Garnier в:
+
+```text
+/data/wibestyle-media/catalog/hair-colors/*.jpg
+```
+
+В текущем официальном каталоге Garnier пригодные полноразмерные текстуры есть не у всех товаров. Загрузчик сохраняет только чистые фото волос, отбрасывает упаковки, рекламные баннеры и таблицы результата, поэтому активный seed-каталог содержит 27 валидных оттенков.
+
+Flyway-миграция `V45__hair_color_catalog.sql` и seeder API создают записи БД со ссылками на эти storage paths. Если storage не заполнен, каталог цветов в UI загрузится, но превью по `/api/v1/hair-colors/{slug}/image` вернут `404`.
+
+Админка `/hairstyles` управляет двумя каталогами: прически и цвета волос. Текстовые поля хранятся в БД, а загруженные админом изображения пишутся в тот же persistent storage:
+
+```text
+/data/wibestyle-media/catalog/hairstyles/*
+/data/wibestyle-media/catalog/hair-colors/*
+```
+
+Отключение записи в админке меняет `active=false`, но не удаляет файл из storage, чтобы не ломать старые ссылки и историю примерок.
+
 Позже можно заменить на S3-совместимое хранилище, но код `s3` backend пока нужно отдельно проверить/дописать, если он потребуется.
 
 ### 4. Backend production env
@@ -341,6 +367,8 @@ EXPO_PUBLIC_LANDING_URL=https://vibestyle.art
 ## Coolify deploy
 
 Ниже схема для деплоя из monorepo без Dockerfile. В Coolify создайте один Project, затем ресурсы в таком порядке: PostgreSQL, API, web-app, landing, admin. При обычном обновлении сначала разверните API и дождитесь успешных Flyway-миграций/health-check, затем web-app; landing и admin можно разворачивать параллельно после API. Android/RuStore-сборку публикуйте последней. Redis можно добавить сразу, но сейчас refresh-token store использует JDBC, поэтому Redis не является обязательным для первого запуска.
+
+Для релиза подбора цвета волос деплоятся API, web-app и mobile app. Landing менять не нужно, если отдельно не менялись его тексты/маршрутизация.
 
 ### 1. PostgreSQL resource
 
@@ -549,12 +577,20 @@ Invoke-WebRequest https://admin.vibestyle.art -UseBasicParsing
 
 - регистрация по телефону или email;
 - загрузка avatar;
+- загрузка портрета для причесок в профиле;
+- открытие `/hairstyles`: превью причесок и цветов должны отображаться без авторизационных заголовков;
+- три сценария примерки волос: прическа+цвет, только прическа, только цвет;
+- результат примерки волос должен открываться с `before/after`;
 - открытие paywall;
 - создание YooKassa checkout;
 - webhook после тестовой оплаты;
 - доступность `/privacy` и `/terms` из landing, web-app и mobile.
 
-### 8. OAuth callbacks
+### 8. Media cache policy
+
+API отдает каталожные изображения причесок и цветов с `Cache-Control: public, max-age=604800`. Персональные изображения и видео примерок отдаются с `Cache-Control: private, max-age=604800`. Web и mobile дополнительно кешируют первые страницы личных примерок и галереи на клиенте на 6 часов, чтобы повторный вход не блокировался загрузкой старых данных.
+
+### 9. OAuth callbacks
 
 В Yandex/Google OAuth кабинетах callback должен вести на backend:
 
@@ -571,7 +607,7 @@ WIBESTYLE_OAUTH_WEB_CALLBACK=https://app.vibestyle.art/auth/oauth/callback
 WIBESTYLE_OAUTH_MOBILE_CALLBACK=wibestyle://auth/oauth/callback
 ```
 
-### 9. Что добавить для полноценного Docker production
+### 10. Что добавить для полноценного Docker production
 
 Если хотите раскатывать всё через Docker Compose, нужно добавить:
 

@@ -12,4 +12,11 @@ class HairstylePromptBuilderTest {
         assertThat(prompt).contains("sleek chin-length bob");
         assertThat(prompt).doesNotContain("garment");
     }
+
+    @Test
+    void supportsColorOnlyWithoutChangingHaircut() {
+        String prompt = new HairstylePromptBuilder().build(null, "change only hair color to cool ash blonde");
+
+        assertThat(prompt).contains("keep the customer's current haircut", "change only hair color to cool ash blonde");
+    }
 }

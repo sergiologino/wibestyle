@@ -22,8 +22,8 @@ export const adminSections = [
   },
   {
     id: "hairstyles",
-    title: "Причёски",
-    description: "Каталог референсов: фото в хранилище, описание, тип и AI-инструкция.",
+    title: "Причёски и цвета волос",
+    description: "Пополняемые каталоги референсов: фото в хранилище, описание, тип/семейство и AI-инструкция.",
     status: "Ready",
     href: "/hairstyles",
   },

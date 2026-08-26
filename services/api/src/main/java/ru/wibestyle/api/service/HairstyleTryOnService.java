@@ -12,29 +12,41 @@ import ru.wibestyle.api.domain.TryOnSourceType;
 import ru.wibestyle.api.repository.TryOnSessionRepository;
 import ru.wibestyle.api.storage.BlobKeys;
 import ru.wibestyle.api.storage.BlobStorage;
+import ru.wibestyle.api.domain.HairColorCatalogEntity;
+import ru.wibestyle.api.domain.HairstyleCatalogEntity;
+import ru.wibestyle.api.repository.HairColorCatalogRepository;
 import ru.wibestyle.api.repository.HairstyleCatalogRepository;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class HairstyleTryOnService {
     private static final int MAX_PORTRAIT_BYTES = 10 * 1024 * 1024;
-    private final NoteappAiClient aiClient; private final AiIntegrationProperties ai; private final BlobStorage storage; private final HairstylePromptBuilder promptBuilder; private final HairstyleCatalogRepository catalog; private final TryOnSessionRepository sessions; private final UserActivityService userActivityService;
-    public HairstyleTryOnService(NoteappAiClient aiClient, AiIntegrationProperties ai, BlobStorage storage, HairstylePromptBuilder promptBuilder, HairstyleCatalogRepository catalog, TryOnSessionRepository sessions, UserActivityService userActivityService) { this.aiClient = aiClient; this.ai = ai; this.storage = storage; this.promptBuilder = promptBuilder; this.catalog=catalog; this.sessions=sessions; this.userActivityService=userActivityService; }
+    private final NoteappAiClient aiClient; private final AiIntegrationProperties ai; private final BlobStorage storage; private final HairstylePromptBuilder promptBuilder; private final HairstyleCatalogRepository catalog; private final HairColorCatalogRepository colors; private final TryOnSessionRepository sessions; private final UserActivityService userActivityService;
+    public HairstyleTryOnService(NoteappAiClient aiClient, AiIntegrationProperties ai, BlobStorage storage, HairstylePromptBuilder promptBuilder, HairstyleCatalogRepository catalog, HairColorCatalogRepository colors, TryOnSessionRepository sessions, UserActivityService userActivityService) { this.aiClient = aiClient; this.ai = ai; this.storage = storage; this.promptBuilder = promptBuilder; this.catalog=catalog; this.colors=colors; this.sessions=sessions; this.userActivityService=userActivityService; }
     @Transactional
-    public Map<String, Object> generate(UUID userId, MultipartFile portrait, String styleId) throws IOException {
+    public Map<String, Object> generate(UUID userId, MultipartFile portrait, String styleId, String colorId) throws IOException {
         if (!ai.isNoteappConfigured()) throw new IllegalArgumentException("HAIRSTYLE_AI_NOT_CONFIGURED");
-        var style = catalog.findBySlug(styleId).filter(s -> s.isActive()).orElseThrow(() -> new IllegalArgumentException("HAIRSTYLE_NOT_FOUND"));
+        HairstyleCatalogEntity style = null;
+        HairColorCatalogEntity color = null;
+        if (styleId != null && !styleId.isBlank()) {
+            style = catalog.findBySlug(styleId).filter(s -> s.isActive()).orElseThrow(() -> new IllegalArgumentException("HAIRSTYLE_NOT_FOUND"));
+        }
+        if (colorId != null && !colorId.isBlank()) {
+            color = colors.findBySlug(colorId).filter(c -> c.isActive()).orElseThrow(() -> new IllegalArgumentException("HAIR_COLOR_NOT_FOUND"));
+        }
+        if (style == null && color == null) throw new IllegalArgumentException("HAIR_CHANGE_REQUIRED");
         byte[] portraitBytes = resolvePortraitBytes(userId, portrait);
         String portraitBase64 = Base64.getEncoder().encodeToString(portraitBytes);
-        String referenceBase64;
-        referenceBase64 = Base64.getEncoder().encodeToString(storage.readBytes(style.getImagePath()));
-        String prompt = promptBuilder.build(style.getAiDirective());
+        String referencePath = style != null ? style.getImagePath() : color.getImagePath();
+        String referenceBase64 = Base64.getEncoder().encodeToString(storage.readBytes(referencePath));
+        String prompt = promptBuilder.build(style == null ? null : style.getAiDirective(), color == null ? null : color.getAiDirective());
         UUID sessionId = UUID.randomUUID();
         NoteappAiClient.AvatarEnhancementResult result = aiClient.applyHairstyle(ai.getVirtualTryOnNetwork(), userId + ":hairstyle:" + sessionId, portraitBase64, referenceBase64, prompt);
         storage.storeTryOnResult(userId, sessionId, "before", new ByteArrayInputStream(portraitBytes));
@@ -42,26 +54,33 @@ public class HairstyleTryOnService {
         Instant now = Instant.now();
         TryOnSessionEntity session = new TryOnSessionEntity(sessionId, userId, null, TryOnSourceType.HAIRSTYLE, TryOnSessionStatus.READY, now, now);
         session.setMarketplace("other");
-        session.setProductTitle(style.getTitle());
-        session.setProductBrand("AI-причёска");
-        session.setProductImageUrl("/api/v1/hairstyles/" + style.getSlug() + "/image");
+        session.setProductTitle(title(style, color));
+        session.setProductBrand(color == null ? "AI-причёска" : "AI-причёска и цвет");
+        session.setProductImageUrl(style != null ? "/api/v1/hairstyles/" + style.getSlug() + "/image" : "/api/v1/hair-colors/" + color.getSlug() + "/image");
         session.setProductSizes("[]");
         session.setBeforeImageUrl("/api/v1/try-on/sessions/" + sessionId + "/before-photo");
         session.setAfterImageUrl("/api/v1/try-on/sessions/" + sessionId + "/after-photo");
-        session.setStyleCompliment(style.getMasterNote());
+        session.setStyleCompliment(note(style, color));
         sessions.save(session);
         userActivityService.recordTryOn(userId);
-        return Map.of(
-                "id", sessionId.toString(),
-                "session", Map.of(
-                        "id", sessionId.toString(),
-                        "sourceType", "hairstyle",
-                        "status", "ready"
-                ),
-                "styleId", style.getSlug(),
-                "beforeImageUrl", session.getBeforeImageUrl(),
-                "afterImageUrl", session.getAfterImageUrl()
-        );
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", sessionId.toString());
+        response.put("session", Map.of("id", sessionId.toString(), "sourceType", "hairstyle", "status", "ready"));
+        if (style != null) response.put("styleId", style.getSlug());
+        if (color != null) response.put("colorId", color.getSlug());
+        response.put("beforeImageUrl", session.getBeforeImageUrl());
+        response.put("afterImageUrl", session.getAfterImageUrl());
+        return response;
+    }
+
+    private static String title(HairstyleCatalogEntity style, HairColorCatalogEntity color) {
+        if (style != null && color != null) return style.getTitle() + " + " + color.getTitle();
+        return style != null ? style.getTitle() : color.getTitle();
+    }
+
+    private static String note(HairstyleCatalogEntity style, HairColorCatalogEntity color) {
+        if (style != null && color != null) return style.getMasterNote() + " Цвет: " + color.getDescription();
+        return style != null ? style.getMasterNote() : color.getDescription();
     }
 
     private byte[] resolvePortraitBytes(UUID userId, MultipartFile portrait) throws IOException {

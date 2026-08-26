@@ -81,6 +81,12 @@ describe("mobile-api helpers", () => {
     ).toEqual({ uri: "https://api.vibestyle.art/api/v1/hairstyles/smooth-bob/image" });
   });
 
+  it("keeps public hair color catalogue images unauthenticated", () => {
+    expect(
+      buildProductImageSource("https://api.vibestyle.art", "/api/v1/hair-colors/ash-blonde-7-1/image", "secret-token"),
+    ).toEqual({ uri: "https://api.vibestyle.art/api/v1/hair-colors/ash-blonde-7-1/image" });
+  });
+
   it("formats marketplace errors", () => {
     expect(formatMarketplaceLinkError("MARKETPLACE_UNSUPPORTED")).toContain("Wildberries");
   });

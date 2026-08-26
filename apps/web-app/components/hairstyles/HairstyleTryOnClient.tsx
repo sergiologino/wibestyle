@@ -29,7 +29,7 @@ const labels = { all: "Все", short: "Короткие", medium: "Средни
 const SAVED_PORTRAIT_URL = "/api/v1/profile/hairstyle-portrait/image";
 
 type Filter = keyof typeof labels;
-type HairstyleStyle = typeof styles[number];
+type HairColor = { id: string; title: string; family: string; description: string; imageUrl: string; sourceBrand: string; sourceUrl: string; attributionText: string };
 
 const asset = (id: string) => `/api/v1/hairstyles/${id}/image`;
 
@@ -37,27 +37,41 @@ export default function HairstyleTryOnClient() {
   const router = useRouter();
   const { api, ensureSession, sessionReady, accessToken, refreshToken, profile } = useAppSession();
   const [filter, setFilter] = useState<Filter>("all");
-  const [selected, setSelected] = useState<HairstyleStyle | null>(null);
+  const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
+  const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
+  const [colors, setColors] = useState<HairColor[]>([]);
   const [savedPortraitUrl, setSavedPortraitUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const list = useMemo(() => styles.filter((style) => filter === "all" || style[3] === filter), [filter]);
+  const selectedStyle = styles.find((style) => style[0] === selectedStyleId) ?? null;
+  const selectedColor = colors.find((color) => color.id === selectedColorId) ?? null;
   const authenticated = Boolean(accessToken || refreshToken || profile);
   const hasPortrait = Boolean(savedPortraitUrl);
+  const attribution = colors.find((color) => color.attributionText)?.attributionText;
+  const sourceUrl = colors.find((color) => color.sourceUrl)?.sourceUrl;
 
   useEffect(() => {
-    if (!sessionReady || !authenticated) {
-      return;
-    }
+    let cancelled = false;
+    void api.getHairColorCatalog()
+      .then((result) => {
+        if (!cancelled) setColors(result.items);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [api]);
+
+  useEffect(() => {
+    if (!sessionReady || !authenticated) return;
     let cancelled = false;
     void ensureSession().then((ok) => {
       if (!ok || cancelled) return;
       void api.getHairstylePortrait()
         .then((result) => {
-          if (!cancelled && result.exists) {
-            setSavedPortraitUrl(`${result.imageUrl ?? SAVED_PORTRAIT_URL}?v=${Date.now()}`);
-          }
+          if (!cancelled && result.exists) setSavedPortraitUrl(`${result.imageUrl ?? SAVED_PORTRAIT_URL}?v=${Date.now()}`);
         })
         .catch(() => undefined);
     });
@@ -66,40 +80,23 @@ export default function HairstyleTryOnClient() {
     };
   }, [api, authenticated, ensureSession, sessionReady]);
 
-  function chooseStyle(style: HairstyleStyle) {
-    setSelected(style);
-    setError(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
   async function run() {
-    if (!selected) {
-      setError("Выберите причёску из подборки");
-      return;
-    }
-    if (!hasPortrait) {
-      setError("Сначала загрузите портрет для причёсок в профиле.");
-      return;
-    }
-    if (!(await ensureSession())) {
-      setError("Войдите в аккаунт, чтобы примерить причёску.");
-      return;
-    }
+    if (!selectedStyleId && !selectedColorId) return setError("Выберите причёску, цвет волос или оба варианта.");
+    if (!hasPortrait) return setError("Сначала загрузите портрет для причёсок в профиле.");
+    if (!(await ensureSession())) return setError("Войдите в аккаунт, чтобы примерить образ.");
 
     setLoading(true);
     setError(null);
     try {
-      const result = await api.createHairstyleTryOn(null, selected[0]);
-      localStorage.setItem(
-        "wibestyle:hairstyles",
-        JSON.stringify([
-          { id: result.id, title: selected[1], imagePath: result.afterImageUrl, styleId: selected[0], createdAt: new Date().toISOString() },
-          ...JSON.parse(localStorage.getItem("wibestyle:hairstyles") ?? "[]"),
-        ].slice(0, 50)),
-      );
+      const result = await api.createHairstyleTryOn(null, selectedStyleId, selectedColorId);
+      const title = [selectedStyle?.[1], selectedColor?.title].filter(Boolean).join(" + ") || "Цвет волос";
+      localStorage.setItem("wibestyle:hairstyles", JSON.stringify([
+        { id: result.id, title, imagePath: result.afterImageUrl, styleId: selectedStyleId ?? "color-only", colorId: selectedColorId, createdAt: new Date().toISOString() },
+        ...JSON.parse(localStorage.getItem("wibestyle:hairstyles") ?? "[]"),
+      ].slice(0, 50)));
       router.push(`/try-on/result/${result.session?.id ?? result.id}`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось примерить причёску");
+      setError(err instanceof ApiError ? err.message : "Не удалось примерить образ");
     } finally {
       setLoading(false);
     }
@@ -109,119 +106,81 @@ export default function HairstyleTryOnClient() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-8 md:px-8">
       <div>
         <p className="text-eyebrow">Стилист по прическам</p>
-        <h1 className="text-display mt-2 text-3xl md:text-4xl">Стрижки и причёски</h1>
-        <p className="text-body mt-2 max-w-2xl">Выберите пример. После выбора откроется крупное превью с запуском примерки.</p>
+        <h1 className="text-display mt-2 text-3xl md:text-4xl">Примерка причёски и цвета волос</h1>
+        <p className="text-body mt-2 max-w-2xl">Выберите причёску, цвет волос или оба пункта. Если менять что-то не нужно, оставьте вариант «не менять».</p>
       </div>
 
-      {selected ? (
-        <Card>
-          <div className="grid gap-5 md:grid-cols-[minmax(180px,300px)_1fr]">
-            <ApiImage src={asset(selected[0])} alt={selected[1]} className="mx-auto aspect-[4/5] w-full max-w-[300px] rounded-[22px] object-cover" />
-            <div className="flex flex-col">
-              <p className="text-eyebrow">Выбрано</p>
-              <h2 className="text-display-md mt-2 text-2xl">{selected[1]}</h2>
-              <p className="text-body mt-2">{selected[2]}</p>
-              <div className="mt-4 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] p-4">
-                <p className="text-sm font-medium text-[#302637]">Рекомендация мастера</p>
-                <p className="mt-1 text-sm font-normal text-[#6d6273]">{selected[4]}</p>
-              </div>
-
-              <div className="mt-4 rounded-[22px] border border-[#ffd1ed] bg-white p-4" data-testid="hairstyle-portrait-block">
-                <h3 className="text-display-md text-lg">Портрет для примерки</h3>
-                {savedPortraitUrl ? (
-                  <div className="mt-3 flex items-center gap-3">
-                    <ApiImage src={savedPortraitUrl} alt="Сохранённый портрет для причёсок" className="size-20 rounded-xl object-cover" />
-                    <div>
-                      <p className="text-sm font-medium text-[#302637]">Используем портрет из профиля</p>
-                      <p className="mt-1 text-xs font-normal text-[#6d6273]">Портрет меняется в настройках профиля.</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-3 rounded-2xl border border-[#ffb8e4] bg-[#fff8fd] p-4">
-                    <p className="text-sm font-medium text-[#302637]">Портрет для причёсок не найден</p>
-                    <p className="mt-1 text-sm font-normal text-[#6d6273]">Загрузите крупный портрет от макушки до плеч в профиле, затем вернитесь к выбору причёски.</p>
-                    <Link
-                      href="/settings"
-                      className="mt-3 inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#ff1fa2] px-4 py-2.5 text-sm font-medium text-white"
-                    >
-                      Перейти в профиль
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              {sessionReady && !authenticated ? (
-                <p className="mt-4 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm font-normal text-[#6d6273]">
-                  Чтобы запустить примерку, войдите в аккаунт.
-                </p>
-              ) : null}
-
-              {error ? <p className="mt-3 text-sm font-normal text-[#c01278]">{error}</p> : null}
-
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  data-testid="hairstyle-try-on-start"
-                  disabled={!hasPortrait || loading}
-                  onClick={() => void run()}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#ff1fa2] px-6 py-3 text-sm font-medium text-white shadow-[0_10px_28px_rgba(255,31,162,0.28)] transition hover:bg-[#eb1692] active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-[#f3c5df] disabled:shadow-none"
-                >
-                  {loading ? <span aria-hidden className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : null}
-                  <span>{loading ? "Примеряем…" : "Примерить эту причёску"}</span>
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#ffd1ed] bg-[#fff4fb] px-6 py-3 text-sm font-medium text-[#782cff]"
-                  onClick={() => setSelected(null)}
-                >
-                  Посмотреть другую
-                </button>
-              </div>
-            </div>
+      <Card>
+        <div className="grid gap-4 md:grid-cols-[180px_1fr_auto] md:items-center" data-testid="hairstyle-portrait-block">
+          {savedPortraitUrl ? <ApiImage src={savedPortraitUrl} alt="Сохранённый портрет для причёсок" className="size-28 rounded-2xl object-cover" /> : <div className="flex size-28 items-center justify-center rounded-2xl bg-[#fff4fb] text-sm font-medium text-[#c01278]">Нет портрета</div>}
+          <div>
+            <h2 className="text-display-md text-xl">Портрет для примерки</h2>
+            <p className="text-body mt-1">{savedPortraitUrl ? "Используем портрет из профиля. На этом экране фото не загружается." : "Портрет для причёсок не найден. Загрузите крупный портрет от макушки до плеч в профиле."}</p>
           </div>
-        </Card>
-      ) : (
-        <>
+          {!savedPortraitUrl ? <Link href="/settings" className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#ff1fa2] px-4 text-sm font-medium text-white">Перейти в профиль</Link> : null}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex flex-col gap-4">
+          <div><p className="text-eyebrow">Шаг 1</p><h2 className="text-display-md mt-1 text-2xl">Причёска</h2></div>
           <div className="flex flex-wrap gap-2" aria-label="Фильтр причёсок">
-            {(Object.keys(labels) as Filter[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setFilter(key)}
-                className={`rounded-full px-4 py-2 text-sm font-medium ${filter === key ? "bg-[#ff1fa2] text-white" : "border border-[#ffd1ed] bg-white text-[#6d6273]"}`}
-              >
-                {labels[key]}
-              </button>
-            ))}
+            {(Object.keys(labels) as Filter[]).map((key) => <button key={key} type="button" onClick={() => setFilter(key)} className={`rounded-full px-4 py-2 text-sm font-medium ${filter === key ? "bg-[#ff1fa2] text-white" : "border border-[#ffd1ed] bg-white text-[#6d6273]"}`}>{labels[key]}</button>)}
           </div>
-
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6" data-testid="hairstyle-tile-gallery">
+            <ChoiceTile selected={!selectedStyleId} title="Не менять" description="Оставить текущую форму" onClick={() => setSelectedStyleId(null)} />
             {list.map((style) => (
-              <button
-                key={style[0]}
-                type="button"
-                onClick={() => chooseStyle(style)}
-                className="overflow-hidden rounded-2xl border border-[#ffd1ed] bg-white text-left transition hover:border-[#ff1fa2] hover:shadow-[0_8px_22px_rgba(255,31,162,0.12)]"
-              >
+              <button key={style[0]} type="button" onClick={() => { setSelectedStyleId(style[0]); setError(null); }} className={`overflow-hidden rounded-2xl border bg-white text-left transition ${selectedStyleId === style[0] ? "border-[#ff1fa2] ring-2 ring-[#ffd1ed]" : "border-[#ffd1ed] hover:border-[#ff1fa2]"}`}>
                 <ApiImage src={asset(style[0])} alt={style[1]} className="aspect-[4/5] w-full object-cover" />
                 <span className="block min-h-12 px-2 py-2 text-[11px] font-medium leading-4 text-[#302637] sm:text-xs">{style[1]}</span>
               </button>
             ))}
           </div>
-        </>
-      )}
+        </div>
+      </Card>
 
-      {loading ? (
-        <Card>
-          <h3 className="text-display-md text-xl">Готовим примерку причёски…</h3>
-          <p className="text-body mt-2">Сохраняем лицо и меняем только волосы.</p>
-          <div className="mt-6 h-2 overflow-hidden rounded-full bg-[#ffe4f5]">
-            <div className="h-full w-2/3 animate-pulse rounded-full bg-[#ff1fa2]" />
+      <Card>
+        <div className="flex flex-col gap-4">
+          <div><p className="text-eyebrow">Шаг 2</p><h2 className="text-display-md mt-1 text-2xl">Цвет волос</h2></div>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6" data-testid="hair-color-tile-gallery">
+            <ChoiceTile selected={!selectedColorId} title="Не менять" description="Оставить мой цвет" onClick={() => setSelectedColorId(null)} />
+            {colors.map((color) => (
+              <button key={color.id} type="button" onClick={() => { setSelectedColorId(color.id); setError(null); }} className={`overflow-hidden rounded-2xl border bg-white text-left transition ${selectedColorId === color.id ? "border-[#ff1fa2] ring-2 ring-[#ffd1ed]" : "border-[#ffd1ed] hover:border-[#ff1fa2]"}`}>
+                <ApiImage src={color.imageUrl} alt={color.title} className="aspect-[4/5] w-full object-cover" />
+                <span className="block min-h-12 px-2 py-2 text-[11px] font-medium leading-4 text-[#302637] sm:text-xs">{color.title}</span>
+              </button>
+            ))}
           </div>
-        </Card>
-      ) : null}
+          {attribution && sourceUrl ? <p className="text-xs font-normal text-[#6d6273]">{attribution} <a className="text-[#ff1fa2] underline" href={sourceUrl} target="_blank" rel="noreferrer">Каталог Garnier</a></p> : null}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <p className="text-eyebrow">Выбрано</p>
+            <h2 className="text-display-md mt-1 text-2xl">{[selectedStyle?.[1] ?? "Прическу не меняем", selectedColor?.title ?? "цвет не меняем"].join(" + ")}</h2>
+            <p className="text-body mt-2">{selectedStyle?.[4] ?? "Форма волос останется как на портрете."} {selectedColor?.description ?? "Цвет волос останется исходным."}</p>
+            {sessionReady && !authenticated ? <p className="mt-3 text-sm font-normal text-[#6d6273]">Чтобы запустить примерку, войдите в аккаунт.</p> : null}
+            {error ? <p className="mt-3 text-sm font-normal text-[#c01278]">{error}</p> : null}
+          </div>
+          <button type="button" data-testid="hairstyle-try-on-start" disabled={!hasPortrait || loading || (!selectedStyleId && !selectedColorId)} onClick={() => void run()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#ff1fa2] px-6 py-3 text-sm font-medium text-white shadow-[0_10px_28px_rgba(255,31,162,0.28)] transition hover:bg-[#eb1692] active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-[#f3c5df] disabled:shadow-none">
+            {loading ? <span aria-hidden className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : null}
+            <span>{loading ? "Примеряем…" : "Запустить примерку"}</span>
+          </button>
+        </div>
+      </Card>
 
       <Link href="/try-on" className="text-link text-sm">← К способам примерки</Link>
     </div>
+  );
+}
+
+function ChoiceTile({ selected, title, description, onClick }: { selected: boolean; title: string; description: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className={`flex aspect-[4/5] flex-col justify-end rounded-2xl border p-3 text-left transition ${selected ? "border-[#ff1fa2] bg-[#fff4fb] ring-2 ring-[#ffd1ed]" : "border-[#ffd1ed] bg-white hover:border-[#ff1fa2]"}`}>
+      <span className="text-sm font-medium text-[#302637]">{title}</span>
+      <span className="mt-1 text-[11px] font-normal leading-4 text-[#6d6273]">{description}</span>
+    </button>
   );
 }
