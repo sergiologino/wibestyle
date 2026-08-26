@@ -22,6 +22,14 @@ const OPTIONS = [
     icon: "camera" as const,
     href: "/try-on/photo",
   },
+  {
+    id: "hairstyles",
+    title: "Стрижки и причёски",
+    subtitle: "Выбери образец и примерь на отдельном портрете",
+    icon: "scissors" as const,
+    href: "/hairstyles",
+    badge: "Новое",
+  },
 ];
 
 export default function TryOnHubScreen() {
@@ -57,7 +65,7 @@ export default function TryOnHubScreen() {
         <Card style={styles.tip}>
           <Text style={styles.tipTitle}>Совет</Text>
           <BodyText>
-            Для лучшего результата используй фото в облегающей одежде и хорошем освещении.
+            Для одежды нужен аватар в полный рост. Для причёски приложение попросит отдельный портрет крупным планом.
           </BodyText>
         </Card>
       </ScrollView>

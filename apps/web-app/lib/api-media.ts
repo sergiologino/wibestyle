@@ -28,11 +28,18 @@ export function isProtectedApiMediaUrl(src?: string | null) {
   if (pathname.startsWith("/api/v1/avatars/") && pathname.includes("/photo")) {
     return true;
   }
+  if (pathname === "/api/v1/profile/hairstyle-portrait/image") {
+    return true;
+  }
+  if (pathname.startsWith("/api/v1/hairstyles/") && pathname.endsWith("/image")) {
+    return false;
+  }
   if (!pathname.startsWith("/api/v1/try-on/sessions/")) {
     return false;
   }
   return (
     pathname.endsWith("/garment-photo") ||
+    pathname.endsWith("/before-photo") ||
     pathname.endsWith("/after-photo") ||
     pathname.endsWith("/after-video") ||
     pathname.endsWith("/download")

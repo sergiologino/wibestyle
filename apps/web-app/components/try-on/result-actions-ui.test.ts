@@ -11,10 +11,18 @@ describe("try-on result actions", () => {
     expect(source).toContain("bg-[#782cff]");
   });
 
+  it("renders explicit download buttons below the result media", () => {
+    expect(source).toContain('data-testid="try-on-download-actions"');
+    expect(source).toContain("Скачать фото");
+    expect(source).toContain("Скачать видео");
+    expect(source).toContain("onClick={() => void onDownloadResult()}");
+    expect(source).toContain("onClick={() => void onDownloadVideo()}");
+  });
+
   it("renders try again as a primary action", () => {
     expect(source).toContain('data-testid="try-on-again"');
-    expect(source).toContain("<span>Примерить ещё одну вещь</span>");
-    expect(source).toContain('href="/try-on"');
+    expect(source).toContain('isHairstyle ? "Выбрать другую причёску" : "Примерить ещё одну вещь"');
+    expect(source).toContain('href={isHairstyle ? "/hairstyles" : "/try-on"}');
   });
 
   it("toggles gallery publishing and supports owner unpublish", () => {

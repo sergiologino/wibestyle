@@ -3,6 +3,7 @@ package ru.wibestyle.api.service;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,12 +35,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 public class GalleryService {
 
     private static final String DEFAULT_AUTHOR = "Участник WibeStyle";
+    private static final CacheControl PUBLIC_MEDIA_CACHE = CacheControl.maxAge(1, TimeUnit.HOURS).cachePublic();
 
     private final GalleryPostRepository galleryPostRepository;
     private final GalleryLikeRepository galleryLikeRepository;
@@ -157,6 +160,7 @@ public class GalleryService {
                 Resource resource = new FileSystemResource(path);
                 return ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"season-hit.mp4\"")
+                        .cacheControl(PUBLIC_MEDIA_CACHE)
                         .contentType(MediaType.parseMediaType("video/mp4"))
                         .body(resource);
             }
@@ -463,6 +467,7 @@ public class GalleryService {
         Resource resource = new FileSystemResource(path);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName() + "\"")
+                .cacheControl(PUBLIC_MEDIA_CACHE)
                 .contentType(mediaType)
                 .body(resource);
     }

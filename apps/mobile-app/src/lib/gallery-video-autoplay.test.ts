@@ -18,6 +18,9 @@ describe("mobile gallery video autoplay", () => {
   it("does not leave the gallery on an endless spinner when loading fails", () => {
     const gallery = readFileSync(join(process.cwd(), "app", "(main)", "gallery.tsx"), "utf8");
     expect(gallery).toContain("GALLERY_LOAD_TIMEOUT_MS = 20000");
+    expect(gallery).toContain("GALLERY_PAGE_SIZE = 10");
+    expect(gallery).toContain("readFeedCache");
+    expect(gallery).toContain("writeFeedCache");
     expect(gallery).toContain("withGalleryTimeout(api.listGalleryPosts");
     expect(gallery).toContain("Не удалось загрузить галерею");
     expect(gallery).toContain('label="Повторить"');
@@ -26,6 +29,7 @@ describe("mobile gallery video autoplay", () => {
   it("retries a failed gallery thumbnail through the owner's result URL", () => {
     const gallery = readFileSync(join(process.cwd(), "app", "(main)", "gallery.tsx"), "utf8");
     expect(gallery).toContain("buildGalleryImageSources");
+    expect(gallery).toContain('cachePolicy="disk"');
     expect(gallery).toContain("onError={() => {");
     expect(gallery).toContain("setUseFallback(true)");
   });

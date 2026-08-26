@@ -8,10 +8,15 @@ import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
+import { readFeedCache, writeFeedCache } from "@/lib/feed-cache";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { Pressable, Text } from "react-native";
 import { getAppBaseUrl } from "@/lib/config";
 import { useAppTheme } from "@/theme/palettes";
+
+const INITIAL_HISTORY_LIMIT = 6;
+const HISTORY_PAGE_SIZE = 12;
+const homeHistoryCacheKey = (userId: string) => `wibestyle:mobile:home-history:${userId}:v1`;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -33,12 +38,29 @@ export default function HomeScreen() {
         router.replace("/auth");
         return;
       }
+      const userId = profile?.userId;
+      if (userId) {
+        const cached = await readFeedCache<{
+          items: TryOnHistoryItem[];
+          nextCursor?: string | null;
+          hasMore: boolean;
+        }>(homeHistoryCacheKey(userId));
+        if (active && cached) {
+          setHistory(cached.items);
+          setHistoryCursor(cached.nextCursor ?? null);
+          setHistoryHasMore(cached.hasMore);
+          setLoading(false);
+        }
+      }
       try {
-        const historyPayload = await api.listMyTryOnSessions({ limit: 20 });
+        const historyPayload = await api.listMyTryOnSessions({ limit: INITIAL_HISTORY_LIMIT });
         if (active) {
           setHistory(historyPayload.items);
           setHistoryCursor(historyPayload.nextCursor ?? null);
           setHistoryHasMore(historyPayload.hasMore);
+          if (userId) {
+            await writeFeedCache(homeHistoryCacheKey(userId), historyPayload);
+          }
         }
         const [notifications, publishedReviews] = await Promise.all([
           api.getNotifications(),
@@ -53,13 +75,13 @@ export default function HomeScreen() {
     return () => {
       active = false;
     };
-  }, [api, ensureSession, router]));
+  }, [api, ensureSession, profile?.userId, router]));
 
   async function loadMoreHistory() {
     if (!historyCursor || historyLoadingMore) return;
     setHistoryLoadingMore(true);
     try {
-      const payload = await api.listMyTryOnSessions({ limit: 20, cursor: historyCursor });
+      const payload = await api.listMyTryOnSessions({ limit: HISTORY_PAGE_SIZE, cursor: historyCursor });
       setHistory((prev) => [...prev, ...payload.items]);
       setHistoryCursor(payload.nextCursor ?? null);
       setHistoryHasMore(payload.hasMore);
@@ -186,6 +208,19 @@ export default function HomeScreen() {
               <Text style={[styles.tryOnActionText, { color: theme.colors.muted }]}>По фото</Text>
             </Pressable>
           </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Примерить стрижку или причёску"
+            style={({ pressed }) => [styles.hairAction, pressed && styles.tryOnActionPressed]}
+            onPress={() => router.push("/hairstyles" as never)}
+          >
+            <Feather name="scissors" size={18} color={theme.colors.primaryDark} />
+            <View style={styles.hairCopy}>
+              <Text style={[styles.hairTitle, { color: theme.colors.primaryDark }]}>Примерить стрижку или причёску</Text>
+              <Text style={[styles.hairSubtitle, { color: theme.colors.muted }]}>Отдельный портрет, подборка без повторов</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={theme.colors.primaryDark} />
+          </Pressable>
         </Card>
 
         <View style={styles.section}>
@@ -314,6 +349,22 @@ const styles = StyleSheet.create({
     borderColor: colors.pink,
     backgroundColor: colors.pinkBg,
   },
+  hairAction: {
+    marginTop: spacing.sm,
+    minHeight: 54,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+    backgroundColor: colors.pinkBg,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+  },
+  hairCopy: { flex: 1, gap: 2 },
+  hairTitle: { fontFamily: "Manrope_600SemiBold", fontSize: 13 },
+  hairSubtitle: { fontFamily: "Manrope_400Regular", fontSize: 11 },
   lastTrialActions: {
     marginTop: spacing.md,
   },

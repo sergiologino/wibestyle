@@ -218,6 +218,7 @@ public class AdminUserSupportService {
             case MARKETPLACE_LINK -> "marketplace_link";
             case GARMENT_PHOTO -> "garment_photo";
             case GALLERY_UPLOAD -> "gallery_upload";
+            case HAIRSTYLE -> "hairstyle";
         };
     }
 }

@@ -9,6 +9,7 @@ import { ApiError } from "@wibestyle/api-client";
 import type { BillingPeriod, BillingPlanOffer, SubscriptionPlan } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { isExternalPaymentUrl, rememberCheckoutId } from "@/lib/billing-plan";
+import { capturePromoFromSearchParams, clearPendingPromo, readPendingPromo } from "@/lib/promo-storage";
 
 function formatRub(value: number) {
   return `${value.toLocaleString("ru-RU")} ₽`;
@@ -43,7 +44,7 @@ export default function PaywallClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { api } = useAppSession();
-  const [period, setPeriod] = useState<BillingPeriod>("annual");
+  const [period, setPeriod] = useState<BillingPeriod>("monthly");
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>("wibe");
   const [offers, setOffers] = useState<BillingPlanOffer[]>([]);
   const [annualDiscountPercent, setAnnualDiscountPercent] = useState(20);
@@ -62,9 +63,23 @@ export default function PaywallClient() {
   const isElitePerk = reason === "elite_perk";
 
   useEffect(() => {
-    const planParam = searchParams.get("plan");
-    const periodParam = searchParams.get("period");
-    void api.getBillingPlans().then((data) => {
+    let active = true;
+    async function loadPlans() {
+      const planParam = searchParams.get("plan");
+      const periodParam = searchParams.get("period");
+      const pendingPromo = capturePromoFromSearchParams(searchParams) ?? readPendingPromo();
+      if (pendingPromo) {
+        try {
+          await api.applyPromo(pendingPromo);
+          clearPendingPromo();
+        } catch (err) {
+          if (!(err instanceof ApiError && err.status === 401)) {
+            clearPendingPromo();
+          }
+        }
+      }
+      const data = await api.getBillingPlans();
+      if (!active) return;
       setOffers(data.items);
       setAnnualDiscountPercent(data.annualDiscountPercent);
       setPromoDiscountPercent(data.promoDiscountPercent);
@@ -76,7 +91,7 @@ export default function PaywallClient() {
         : null;
       if (isElitePerk) {
         setSelectedPlan("elite");
-        setPeriod(activeSubscriber?.billingPeriod ?? "annual");
+        setPeriod(activeSubscriber?.billingPeriod ?? data.defaultSelection.period);
       } else if (planParam === "wibe" || planParam === "elite") {
         setSelectedPlan(planParam);
         setPeriod(periodParam === "monthly" || periodParam === "annual" ? periodParam : data.defaultSelection.period);
@@ -96,7 +111,13 @@ export default function PaywallClient() {
         setSubscriptionActive(data.subscriber.subscriptionActive);
       }
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }
+    void loadPlans().catch(() => {
+      if (active) setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
   }, [api, isElitePerk, searchParams]);
 
   const currentOffer = useMemo(
@@ -221,7 +242,7 @@ export default function PaywallClient() {
               title="Wibe"
               selected={selectedPlan === "wibe"}
               accent="#ff1fa2"
-              recommended={period === "annual"}
+              recommended={period === "monthly"}
               price={wibeOffer ? formatRub(wibeOffer.priceRub) : "…"}
               basePrice={wibeOffer?.basePriceRub}
               monthly={wibeOffer?.monthlyEquivalentRub ? `~${formatRub(wibeOffer.monthlyEquivalentRub)}/мес` : undefined}

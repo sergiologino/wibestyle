@@ -385,7 +385,23 @@
 - `/search` — поиск + избранное (feature flag `search`)
 - `/favorites` — список сохранённых товаров
 - `/settings` — профиль, privacy, удаление аккаунта
-- `/paywall` → YooKassa redirect/return или mock payment; сохранение способа оплаты только по явному согласию
+- `/paywall` → месячный Wibe по умолчанию; применяет pending/URL promo перед загрузкой цен; YooKassa redirect/return или mock payment; сохранение способа оплаты только по явному согласию
+
+## Mobile hairstyle portrait
+- Mobile profile contains the same dedicated hairstyle portrait block as web profile.
+- Hairstyle try-on on mobile no longer uploads a portrait on the style screen; it checks `/profile/hairstyle-portrait` and sends only `styleId` to `/hairstyles/try-on`.
+- If the profile portrait is missing, mobile shows a warning and routes the user to profile/settings for upload.
+- Generated mobile hairstyle results route to the shared `/try-on/result/{sessionId}` screen, so before/after and download actions match clothing try-on.
+- Mobile hairstyle sample images use backend `/hairstyles/{slug}/image` endpoints; API startup backfills missing catalogue rows so older databases expose every mobile style preview.
+- Web public hairstyle previews are rendered through absolute API URLs; hairstyle reference images remain in database-backed storage, not bundled in application code.
+- Web gallery uses a public unauthenticated fetch path with timeout; home loads a small first page of personal try-on history and lazy-loads image-heavy cards.
+- Web/mobile home and gallery use stale-first list caches with a 6-hour TTL, then refresh in the background. Private try-on media is served with private 7-day HTTP cache, hairstyle catalogue images with public 7-day cache, and public gallery media with public 1-hour cache.
+
+## План каталога цветов волос
+- Цвет выбирается отдельным шагом после выбора причёски; default tile: `Не менять цвет`.
+- Каталог должен хранить `slug`, название, семейство цвета, фото-превью, AI-директиву, sort order и active flag.
+- Источники для ориентира: официальные shade charts L'Oréal Professionnel и Wella Digital Shade Chart. Для публичного продукта не копировать брендовые фото без проверки прав; безопаснее загрузить лицензированные/собственные превью в админке.
+- Prompt примерки причёски получает выбранную причёску и опциональную директиву цвета; если выбран default, цвет волос из портрета сохраняется.
 
 ## Ключевые пути
 - Session: `apps/web-app/components/providers/AppSessionProvider.tsx`
@@ -429,3 +445,9 @@
 
 ## Этап 01 — выполнен ранее
 - Monorepo foundation, Spring Boot, Flyway V1.
+## Managed hairstyle catalogue (2026-08-23)
+
+- Hairstyle references are product data, not frontend assets. Source photos live in persistent blob storage under `catalog/hairstyles/`.
+- Each entry has a title, description, type (`short`, `medium`, `long`, `styling`), hairdresser instruction, constrained AI directive, sort order and active flag.
+- Admin is the single editing surface; web and mobile fetch the same active catalogue, so editorial changes need no client release.
+- Hair try-on uses a separate close-up portrait and an identity-locked prompt: only hair pixels may change.

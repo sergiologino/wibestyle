@@ -1,0 +1,2 @@
+package ru.wibestyle.api.repository; import org.springframework.data.jpa.repository.JpaRepository; import ru.wibestyle.api.domain.HairstyleCatalogEntity; import java.util.*;
+public interface HairstyleCatalogRepository extends JpaRepository<HairstyleCatalogEntity,UUID>{ List<HairstyleCatalogEntity> findByActiveTrueOrderBySortOrderAsc(); List<HairstyleCatalogEntity> findAllByOrderBySortOrderAsc(); Optional<HairstyleCatalogEntity> findBySlug(String slug); }

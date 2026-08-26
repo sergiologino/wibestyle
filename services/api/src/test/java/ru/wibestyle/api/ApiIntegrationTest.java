@@ -814,11 +814,11 @@ class ApiIntegrationTest {
     }
 
     @Test
-    void billingPlansExposeWibeAnnualDefault() throws Exception {
+    void billingPlansExposeWibeMonthlyDefault() throws Exception {
         mockMvc.perform(get("/api/v1/billing/plans"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.defaultSelection.plan").value("wibe"))
-                .andExpect(jsonPath("$.defaultSelection.period").value("annual"))
+                .andExpect(jsonPath("$.defaultSelection.period").value("monthly"))
                 .andExpect(jsonPath("$.items[?(@.plan=='wibe' && @.period=='monthly')].generationsPerPeriod").value(20))
                 .andExpect(jsonPath("$.items[?(@.plan=='wibe' && @.period=='annual')].generationsPerPeriod").value(240))
                 .andExpect(jsonPath("$.items[?(@.plan=='elite' && @.period=='annual')].generationsPerPeriod").value(1200))
@@ -857,6 +857,19 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.profile.promoDiscountPercent").value(20));
 
         mockMvc.perform(get("/api/v1/billing/plans").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.promoDiscountPercent").value(20));
+
+        String accessTokenWithoutPromo = authenticate("+79991112201");
+        mockMvc.perform(post("/api/v1/billing/promo/apply")
+                        .header("Authorization", "Bearer " + accessTokenWithoutPromo)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"code\":\"VKTEST20\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.redeemed").value(true))
+                .andExpect(jsonPath("$.promo.code").value("VKTEST20"));
+
+        mockMvc.perform(get("/api/v1/billing/plans").header("Authorization", "Bearer " + accessTokenWithoutPromo))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.promoDiscountPercent").value(20));
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
-import { isProtectedApiMediaUrl } from "@/lib/api-media";
+import { isProtectedApiMediaUrl, resolveApiPath } from "@/lib/api-media";
 
 type ApiImageProps = {
   src: string;
@@ -12,6 +12,7 @@ type ApiImageProps = {
 function isDirectPublicImageSrc(src: string) {
   return (
     src.startsWith("/assets/") ||
+    (src.startsWith("/api/v1/hairstyles/") && src.split(/[?#]/, 1)[0].endsWith("/image")) ||
     src.startsWith("http://") ||
     src.startsWith("https://") ||
     src.startsWith("blob:") ||
@@ -22,10 +23,11 @@ function isDirectPublicImageSrc(src: string) {
 export default function ApiImage({ src, alt, className }: ApiImageProps) {
   const protectedMedia = isProtectedApiMediaUrl(src);
   const blobUrl = useAuthenticatedBlob(protectedMedia || !isDirectPublicImageSrc(src) ? src : null);
+  const directSrc = src.startsWith("/api/") ? (resolveApiPath(src) ?? src) : src;
 
   if (!protectedMedia && isDirectPublicImageSrc(src)) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img alt={alt} className={className} src={src} />;
+    return <img alt={alt} className={className} decoding="async" loading="lazy" src={directSrc} />;
   }
 
   if (!blobUrl) {
@@ -33,5 +35,5 @@ export default function ApiImage({ src, alt, className }: ApiImageProps) {
   }
 
   // eslint-disable-next-line @next/next/no-img-element
-  return <img alt={alt} className={className} src={blobUrl} />;
+  return <img alt={alt} className={className} decoding="async" loading="lazy" src={blobUrl} />;
 }

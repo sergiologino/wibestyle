@@ -17,6 +17,7 @@ import { ApiError } from "@wibestyle/api-client";
 import type { BillingSubscription, InterfacePalette, UpdateProfilePayload } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { AvatarManager } from "@/components/avatar/AvatarManager";
+import { HairstylePortraitManager } from "@/components/profile/HairstylePortraitManager";
 import { AnthropometryFields } from "@/components/profile/AnthropometryFields";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow, SectionTitle } from "@/components/ui/Button";
@@ -322,6 +323,10 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
             activeAvatarId={profile?.activeAvatarId}
             hideFace={hideFace}
           />
+        </Card>
+
+        <Card>
+          <HairstylePortraitManager />
         </Card>
 
         <Card>

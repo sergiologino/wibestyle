@@ -477,3 +477,9 @@ WIBESTYLE_AI_FALLBACK_TO_DEMO=false
 - [CURRENT_STATE.md](./CURRENT_STATE.md)
 - [API.md](./API.md)
 
+# Каталог причёсок: первый деплой
+
+Перед первым запуском API с миграцией `V43__hairstyle_catalog.sql` перенесите папку
+`data/storage/catalog/hairstyles/` в persistent volume API по пути
+`$WIBESTYLE_STORAGE_ROOT/catalog/hairstyles/`. После старта backend создаст записи
+каталога. В дальнейшем фото загружаются через админку; web/mobile обновлять не нужно.

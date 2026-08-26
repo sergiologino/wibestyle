@@ -8,6 +8,7 @@ import { ApiError } from "@wibestyle/api-client";
 import type { BillingSubscription, InterfacePalette, UpdateProfilePayload } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import AvatarManager from "@/components/avatar/AvatarManager";
+import HairstylePortraitManager from "@/components/hairstyles/HairstylePortraitManager";
 import AvatarPrivacyPreview from "@/components/avatar/AvatarPrivacyPreview";
 import AnthropometryFields from "@/components/profile/AnthropometryFields";
 import TelegramChannelButton from "@/components/community/TelegramChannelButton";
@@ -321,6 +322,7 @@ export default function ProfileSettingsClient() {
           ) : (
             <AvatarManager activeAvatarId={profile?.activeAvatarId} />
           )}
+          <HairstylePortraitManager />
         </div>
       </Card>
 

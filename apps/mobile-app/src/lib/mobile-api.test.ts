@@ -75,6 +75,12 @@ describe("mobile-api helpers", () => {
     });
   });
 
+  it("keeps public hairstyle catalogue images unauthenticated", () => {
+    expect(
+      buildProductImageSource("https://api.vibestyle.art", "/api/v1/hairstyles/smooth-bob/image", "secret-token"),
+    ).toEqual({ uri: "https://api.vibestyle.art/api/v1/hairstyles/smooth-bob/image" });
+  });
+
   it("formats marketplace errors", () => {
     expect(formatMarketplaceLinkError("MARKETPLACE_UNSUPPORTED")).toContain("Wildberries");
   });

@@ -32,8 +32,8 @@ export default function PaywallScreen() {
   const { api, profile, refreshProfile } = useSession();
   const [plans, setPlans] = useState<BillingPlanOffer[]>([]);
   const [selected, setSelected] = useState<{ plan: SubscriptionPlan; period: BillingPeriod }>({
-    plan: "elite",
-    period: "annual",
+    plan: "wibe",
+    period: "monthly",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export default function PaywallScreen() {
       } else if (activeSubscriber?.plan === "elite") {
         setSelected({ plan: "elite", period: activeSubscriber.billingPeriod });
       } else {
-        setSelected({ plan: "elite", period: "annual" });
+        setSelected(payload.defaultSelection);
       }
       setPaymentProvider(payload.paymentProvider ?? "mock");
       setRecurringAvailable(Boolean(payload.recurringAvailable));
@@ -184,7 +184,7 @@ export default function PaywallScreen() {
           if (!offer) return null;
           const active = selected.plan === plan;
           const savings = selected.period === "annual" ? annualSavingsRub(plans, plan) : 0;
-          const featured = plan === "elite" && selected.period === "annual";
+          const featured = plan === "wibe" && selected.period === "monthly";
           const currentPlan = hasActivePaidSubscription && subscriberPlan === plan && subscriberPeriod === selected.period;
           const blocked = hasActivePaidSubscription
             && (PLAN_RANK[plan] <= PLAN_RANK[subscriberPlan] || selected.period !== subscriberPeriod);
@@ -213,7 +213,7 @@ export default function PaywallScreen() {
                 accessibilityRole="button"
               >
                 {currentPlan ? <Text style={styles.currentBadge}>Текущий тариф</Text> : null}
-                {featured ? <Text style={styles.badge}>Рекомендуем годовой Elite</Text> : null}
+                {featured ? <Text style={styles.badge}>Рекомендуем месячный Wibe</Text> : null}
                 <Text style={styles.planName}>{plan === "elite" ? "Elite" : "Wibe"}</Text>
                 <Text style={styles.planPrice}>{offer.priceRub.toLocaleString("ru-RU")} ₽</Text>
                 {promoDiscountPercent > 0 && offer.basePriceRub > offer.priceRub ? (

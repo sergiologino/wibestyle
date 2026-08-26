@@ -21,6 +21,13 @@ export const adminSections = [
     href: "/referrals",
   },
   {
+    id: "hairstyles",
+    title: "Причёски",
+    description: "Каталог референсов: фото в хранилище, описание, тип и AI-инструкция.",
+    status: "Ready",
+    href: "/hairstyles",
+  },
+  {
     id: "manual-pushes",
     title: "Push-рассылки",
     description: "Ручные уведомления по сегментам: все, trial, Wibe, Elite и платные пользователи.",

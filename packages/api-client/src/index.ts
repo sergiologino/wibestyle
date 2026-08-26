@@ -742,6 +742,13 @@ export class WibeStyleApiClient {
     });
   }
 
+  applyPromo(code: string) {
+    return this.request<{ redeemed: boolean; promo?: PromoCodeRecord }>("/api/v1/billing/promo/apply", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+  }
+
   subscribe(plan: SubscriptionPlan, period: BillingPeriod) {
     return this.request<{
       status: string;
@@ -1055,6 +1062,31 @@ export class WibeStyleApiClient {
       headers: { "X-Admin-Key": adminKey },
       body: JSON.stringify(payload),
     });
+  }
+
+  getHairstylePortrait() {
+    return this.request<{ exists: boolean; imageUrl?: string }>("/api/v1/profile/hairstyle-portrait");
+  }
+
+  uploadHairstylePortrait(portrait: File) {
+    const body = new FormData();
+    body.append("portrait", portrait);
+    return this.request<{ exists: boolean; imageUrl: string }>("/api/v1/profile/hairstyle-portrait", { method: "POST", body });
+  }
+
+  createHairstyleTryOn(portrait: File | null, styleId: string) {
+    const body = new FormData();
+    if (portrait) {
+      body.append("portrait", portrait);
+    }
+    body.append("styleId", styleId);
+    return this.request<{
+      id: string;
+      session?: Pick<TryOnSessionRecord, "id" | "sourceType" | "status">;
+      styleId: string;
+      beforeImageUrl: string;
+      afterImageUrl: string;
+    }>("/api/v1/hairstyles/try-on", { method: "POST", body });
   }
 
   updateAdminPromoCode(

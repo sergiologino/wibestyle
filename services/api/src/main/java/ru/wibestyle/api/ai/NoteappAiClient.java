@@ -187,6 +187,47 @@ public class NoteappAiClient {
         return new AvatarEnhancementResult(imageBytes, response.path("response").path("imageContentType").asText("image/jpeg"));
     }
 
+    /** Image-to-image generation for the portrait-only hairstyle experience. */
+    public AvatarEnhancementResult applyHairstyle(
+            String networkName,
+            String externalUserId,
+            String portraitBase64,
+            String referenceBase64,
+            String prompt
+    ) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("prompt", prompt);
+        payload.put("personImageBase64", portraitBase64);
+        payload.put("image1Base64", portraitBase64);
+        payload.put("garmentImageBase64", referenceBase64);
+        payload.put("image2Base64", referenceBase64);
+        payload.put("inputImageOrder", "image1 is the user's portrait and identity source; image2 is hairstyle reference only");
+        payload.put("output_format", "jpeg");
+        payload.put("input_fidelity", "high");
+        payload.put("settings", Map.of("width", 1024, "height", 1024));
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", requireExternalUserId(externalUserId));
+        body.put("networkName", networkName);
+        body.put("requestType", "image_generation");
+        body.put("payload", payload);
+        try {
+            JsonNode response = restClient.post().uri("/api/ai/process").contentType(MediaType.APPLICATION_JSON)
+                    .header("X-API-Key", properties.getApiKey()).body(body).retrieve().body(JsonNode.class);
+            if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
+                throw new RestClientException(extractErrorMessage(response, "Hairstyle generation failed"));
+            }
+            String networkUsed = response.path("networkUsed").asText(null);
+            if (isUnexpectedNetwork(networkName, networkUsed)) throw new RestClientException("Hairstyle provider mismatch");
+            ImageResult image = extractImageResult(response.path("response"));
+            byte[] bytes = image == null ? null : image.bytes();
+            if ((bytes == null || bytes.length == 0) && image != null && image.sourceUrl() != null) bytes = downloadImageBytes(image.sourceUrl());
+            if (bytes == null || bytes.length == 0) throw new RestClientException("Hairstyle generation returned no image");
+            return new AvatarEnhancementResult(bytes, response.path("response").path("imageContentType").asText("image/jpeg"));
+        } catch (RestClientException ex) {
+            throw new IllegalArgumentException("HAIRSTYLE_GENERATION_FAILED", ex);
+        }
+    }
+
     private byte[] downloadImageBytes(String imageUrl) {
         try {
             return RestClient.create()

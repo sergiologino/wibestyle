@@ -166,6 +166,13 @@ The authenticated response contains the personal referral code, eligibility, rem
 | GET/POST | `/landing/leads` | GET → `{ remainingSpots, promoActive, discountPercent }` по `FIRST100`; POST → legacy create lead + те же promo stats |
 | POST | `/landing/interest` |
 
+## Billing Promo
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| POST | `/billing/promo/validate` | no | Проверяет код и остаток без привязки к пользователю |
+| POST | `/billing/promo/apply` | yes | Применяет pending promo к текущему пользователю; повторное применение того же кода идемпотентно |
+
 ## Admin (promo)
 
 | Method | Path | Header |

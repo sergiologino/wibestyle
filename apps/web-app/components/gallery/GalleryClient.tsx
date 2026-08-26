@@ -6,10 +6,33 @@ import { Card } from "@wibestyle/ui";
 import type { GalleryPost } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import ReportPostButton from "@/components/gallery/ReportPostButton";
-import { resolveGalleryImageUrl, resolveGalleryVideoUrl } from "@/lib/api-media";
+import { apiBaseUrl, resolveGalleryImageUrl, resolveGalleryVideoUrl } from "@/lib/api-media";
+import { readFeedCache, writeFeedCache } from "@/lib/feed-cache";
 
 type ViewMode = "grid" | "list";
 const GALLERY_PAGE_SIZE = 10;
+const GALLERY_TIMEOUT_MS = 8000;
+const GALLERY_CACHE_KEY = "wibestyle:web:gallery:public:v1";
+
+async function listPublicGalleryPosts(options?: { limit?: number; cursor?: string | null }) {
+  const params = new URLSearchParams();
+  params.set("limit", String(options?.limit ?? GALLERY_PAGE_SIZE));
+  if (options?.cursor) params.set("cursor", options.cursor);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), GALLERY_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${apiBaseUrl()}/api/v1/gallery/posts?${params.toString()}`, {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) {
+      throw new Error("GALLERY_LOAD_FAILED");
+    }
+    return await response.json() as { items: GalleryPost[]; nextCursor?: string | null; hasMore: boolean };
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
 export default function GalleryClient() {
   const { api, accessToken } = useAppSession();
@@ -24,12 +47,20 @@ export default function GalleryClient() {
   useEffect(() => {
     let active = true;
     setError(null);
-    api.listGalleryPosts({ limit: GALLERY_PAGE_SIZE })
+    const cached = readFeedCache<{ items: GalleryPost[]; nextCursor?: string | null; hasMore: boolean }>(GALLERY_CACHE_KEY);
+    if (cached) {
+      setPosts(cached.items);
+      setCursor(cached.nextCursor ?? null);
+      setHasMore(cached.hasMore);
+      setLoading(false);
+    }
+    listPublicGalleryPosts({ limit: GALLERY_PAGE_SIZE })
       .then((payload) => {
         if (active) {
           setPosts(payload.items);
           setCursor(payload.nextCursor ?? null);
           setHasMore(payload.hasMore);
+          writeFeedCache(GALLERY_CACHE_KEY, payload);
         }
       })
       .catch(() => {
@@ -46,13 +77,13 @@ export default function GalleryClient() {
     return () => {
       active = false;
     };
-  }, [api]);
+  }, []);
 
   async function loadMore() {
     if (!cursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const payload = await api.listGalleryPosts({ limit: GALLERY_PAGE_SIZE, cursor });
+      const payload = await listPublicGalleryPosts({ limit: GALLERY_PAGE_SIZE, cursor });
       setPosts((prev) => [...prev, ...payload.items]);
       setCursor(payload.nextCursor ?? null);
       setHasMore(payload.hasMore);
