@@ -7,6 +7,11 @@ describe("landing proxy", () => {
     expect(shouldForceHttps("www.vibestyle.art", null, "http:")).toBe(true);
   });
 
+  it("does not redirect HTTPS requests forwarded to Next.js over internal HTTP", () => {
+    expect(shouldForceHttps("vibestyle.art", "https", "http:")).toBe(false);
+    expect(shouldForceHttps("vibestyle.art", "https,http", "http:")).toBe(false);
+  });
+
   it("does not force HTTPS for local development hosts", () => {
     expect(shouldForceHttps("localhost:3000", "http", "http:")).toBe(false);
     expect(shouldForceHttps("127.0.0.1:3000", "http", "http:")).toBe(false);

@@ -11,10 +11,18 @@ export function buildPublicHttpsUrl(host: string, pathname: string, search: stri
   return `https://${host}${pathname}${search}`;
 }
 
+function firstForwardedValue(value: string | null): string | null {
+  return value?.split(",")[0]?.trim().toLowerCase() || null;
+}
+
 export function shouldForceHttps(host: string | null, forwardedProto: string | null, protocol: string): boolean {
   const normalizedHost = normalizeHost(host);
   if (!PUBLIC_HOSTS.has(normalizedHost)) return false;
-  return forwardedProto === "http" || protocol === "http:";
+
+  const publicProto = firstForwardedValue(forwardedProto);
+  if (publicProto) return publicProto === "http";
+
+  return protocol === "http:";
 }
 
 export function proxy(request: NextRequest) {
