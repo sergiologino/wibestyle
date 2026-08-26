@@ -9,25 +9,29 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Feather } from "@expo/vector-icons";
 import { Button } from "@/components/ui/Button";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { useSession } from "@/context/SessionProvider";
-import { FIRST_100_PROMO_CODE, mobileOnboardingSlides } from "@/lib/onboarding-copy";
+import { mobileOnboardingSlides } from "@/lib/onboarding-copy";
 import { colors, hairline, radius, shadows, spacing } from "@/theme/tokens";
 
 const assets = {
+  intro: require("../assets/onboarding/slides/app-intro-photo.png"),
   upload: require("../assets/onboarding/slides/upload-photo.webp"),
   flow: require("../assets/onboarding/slides/flow-photo.webp"),
-  privacy: require("../assets/onboarding/slides/privacy-photo.png"),
+  hair: require("../assets/onboarding/slides/hair-color-photo.png"),
+  share: require("../assets/onboarding/slides/share-social-photo.png"),
   future: require("../assets/onboarding/slides/future-photo.webp"),
-  paywall: require("../assets/onboarding/slides/paywall-photo.webp"),
-  referral: require("../assets/onboarding/slides/paywall-photo.webp"),
+  result: require("../assets/onboarding/slides/result-photo.png"),
 } as const;
 
-const resultVideo = require("../assets/onboarding/slides/result-photo.mp4");
+const videoAssets = {
+  link: require("../assets/onboarding/slides/link-product-video.mp4"),
+  result: require("../assets/onboarding/slides/result-photo.mp4"),
+} as const;
 
 const toneStyles = {
   coral: { backgroundColor: "#fff1ed", borderColor: "#ffb8a5", accent: "#ff5b3d" },
@@ -38,10 +42,12 @@ const toneStyles = {
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { completeOnboardingStep } = useSession();
+  const searchParams = useLocalSearchParams<{ replay?: string }>();
+  const { completeOnboardingStep, profile } = useSession();
   const [activeIndex, setActiveIndex] = useState(0);
   const { height, width } = useWindowDimensions();
   const activeSlide = mobileOnboardingSlides[activeIndex];
+  const replayOnboarding = searchParams.replay === "1";
   const tone = toneStyles[activeSlide.tone];
   const cardHeight = useMemo(() => Math.min(height - 32, 760), [height]);
   const imageHeight = useMemo(() => {
@@ -51,12 +57,11 @@ export default function WelcomeScreen() {
 
   function openAuth() {
     completeOnboardingStep("welcome");
+    if (replayOnboarding && profile) {
+      router.replace("/(main)/profile");
+      return;
+    }
     router.replace("/auth");
-  }
-
-  function openTrial() {
-    completeOnboardingStep("welcome");
-    router.replace("/auth?next=/paywall");
   }
 
   function skipOnboarding() {
@@ -98,7 +103,6 @@ export default function WelcomeScreen() {
                 <Feather name="heart" size={16} color={colors.white} />
               </View>
               <Text style={styles.counter}>{activeIndex + 1} / {mobileOnboardingSlides.length}</Text>
-              <Text style={styles.promo}>{FIRST_100_PROMO_CODE}</Text>
             </View>
 
             <Text style={styles.title}>{activeSlide.title}</Text>
@@ -131,11 +135,7 @@ export default function WelcomeScreen() {
           </View>
 
           <View style={styles.actions}>
-            {activeSlide.cta === "trial" ? (
-              <Button label="Подключить trial" size="lg" onPress={openTrial} style={styles.primaryButton} />
-            ) : (
-              <Button label="Дальше" size="lg" onPress={nextSlide} style={styles.primaryButton} />
-            )}
+            <Button label="Дальше" size="lg" onPress={nextSlide} style={styles.primaryButton} />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={activeIndex === 0 ? "Пропустить" : "Назад"}
@@ -270,17 +270,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.black,
   },
-  promo: {
-    marginLeft: "auto",
-    fontFamily: "Manrope_500Medium",
-    fontSize: 12,
-    color: "#8b3c2c",
-    backgroundColor: colors.white,
-    borderRadius: radius.pill,
-    overflow: "hidden",
-    paddingHorizontal: 11,
-    paddingVertical: 5,
-  },
   title: {
     marginTop: spacing.lg,
     fontFamily: "Manrope_300Light",
@@ -376,15 +365,16 @@ const styles = StyleSheet.create({
 });
 
 function OnboardingMedia({ slide, imageHeight }: { slide: (typeof mobileOnboardingSlides)[number]; imageHeight: number }) {
-  const player = useVideoPlayer(slide.asset === "result" ? resultVideo : null, (instance) => {
+  const videoSource = slide.video ? videoAssets[slide.video] : null;
+  const player = useVideoPlayer(videoSource, (instance) => {
     instance.loop = true;
     instance.muted = true;
-    if (slide.asset === "result") {
+    if (videoSource) {
       instance.play();
     }
   });
 
-  if (slide.asset === "result") {
+  if (videoSource) {
     return (
       <View style={[styles.image, { height: imageHeight }]}>
         <VideoView

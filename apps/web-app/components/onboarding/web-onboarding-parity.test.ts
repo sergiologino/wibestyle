@@ -12,10 +12,17 @@ describe("web onboarding parity", () => {
     expect(media).not.toContain("object-cover");
   });
 
-  it("routes trial to paywall and skip to avatar setup", () => {
-    expect(welcome).toContain('authUrl.searchParams.set("next", "/paywall")');
+  it("routes skip to avatar setup without a trial CTA", () => {
+    expect(welcome).not.toContain('authUrl.searchParams.set("next", "/paywall")');
+    expect(welcome).not.toContain("Подключить trial");
     expect(welcome).toContain('authUrl.searchParams.set("next", "/settings")');
     expect(welcome).toContain('activeIndex === 0 ? skipOnboarding()');
     expect(welcome).toContain('activeIndex === 0 ? "Пропустить"');
+  });
+
+  it("lets authenticated users replay onboarding from profile", () => {
+    expect(welcome).toContain('searchParams.get("replay") === "1"');
+    expect(welcome).toContain("!replayOnboarding && (onboarding.welcomeSeen || onboarding.avatarComplete)");
+    expect(welcome).toContain('router.push("/settings")');
   });
 });

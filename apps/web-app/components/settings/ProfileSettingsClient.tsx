@@ -322,6 +322,11 @@ export default function ProfileSettingsClient() {
           ) : (
             <AvatarManager activeAvatarId={profile?.activeAvatarId} />
           )}
+          <Link className="inline-block" href="/welcome?replay=1">
+            <Button size="md" type="button" variant="secondary">
+              Посмотреть онбординг
+            </Button>
+          </Link>
           <HairstylePortraitManager />
         </div>
       </Card>

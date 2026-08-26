@@ -316,6 +316,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
             <Text style={styles.toggleLabel}>Скрыть лицо в ленте</Text>
             <Switch value={hideFace} onValueChange={setHideFace} trackColor={{ true: theme.colors.primary }} />
           </View>
+          <Button label="Посмотреть онбординг" variant="secondary" onPress={() => router.push("/welcome?replay=1" as never)} />
         </Card>
 
         <Card>
