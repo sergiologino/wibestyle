@@ -62,22 +62,34 @@ public class StylistPreviewWorker {
 
     @Transactional
     public void generate(UUID variantId) {
+        log.info("Stylist preview worker started variantId={}", variantId);
         StylistVariantEntity variant = variantRepository.findById(variantId).orElse(null);
         if (variant == null) {
+            log.warn("Stylist preview worker skipped: variant not found variantId={}", variantId);
             return;
         }
         StylistSessionEntity session = sessionRepository.findById(variant.getSessionId()).orElse(null);
         if (session == null) {
+            log.warn("Stylist preview worker failed: session not found variantId={} sessionId={}", variantId, variant.getSessionId());
             markVariantFailed(variant, "STYLIST_SESSION_NOT_FOUND", "Stylist session not found");
             return;
         }
         if (!aiProperties.isStylistImageConfigured()) {
+            log.warn("Stylist preview worker skipped: image generation is not configured enabled={} apiKeyPresent={} network='{}'",
+                    aiProperties.isEnabled(),
+                    aiProperties.getApiKey() != null && !aiProperties.getApiKey().isBlank(),
+                    aiProperties.getStylistImageNetwork());
             markVariantSkipped(variant, "AI image generation is not configured");
             refreshSessionStatus(session);
             return;
         }
         AvatarSnapshotEntity avatar = avatarSnapshotRepository.findById(session.getAvatarSnapshotId()).orElse(null);
         if (avatar == null || avatar.getProcessedImagePath() == null || !blobStorage.exists(avatar.getProcessedImagePath())) {
+            log.warn("Stylist preview worker failed before AI call: avatar not ready variantId={} sessionId={} avatarSnapshotId={} processedPath={}",
+                    variantId,
+                    session.getId(),
+                    session.getAvatarSnapshotId(),
+                    avatar == null ? null : avatar.getProcessedImagePath());
             markVariantFailed(variant, "AVATAR_NOT_READY", "Avatar image is not ready");
             refreshSessionStatus(session);
             return;
@@ -90,6 +102,12 @@ public class StylistPreviewWorker {
         try {
             byte[] avatarBytes = blobStorage.readBytes(avatar.getProcessedImagePath());
             String prompt = buildPreviewPrompt(session, variant, avatar);
+            log.info("Stylist preview AI call variantId={} sessionId={} network={} promptLength={} avatarBytes={}",
+                    variantId,
+                    session.getId(),
+                    aiProperties.getStylistImageNetwork(),
+                    prompt.length(),
+                    avatarBytes.length);
             NoteappAiClient.ProcessResult result = aiClient.generateStylistPreview(
                     aiProperties.getStylistImageNetwork(),
                     session.getUserId().toString(),

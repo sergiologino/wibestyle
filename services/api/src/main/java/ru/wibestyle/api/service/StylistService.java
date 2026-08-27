@@ -98,8 +98,7 @@ public class StylistService {
     public Map<String, Object> createLook(UUID userId, String presetId) {
         UserEntity user = requireAvailable(userId);
         StylistPreset preset = findPreset(presetId);
-        AvatarSnapshotEntity avatar = avatarSnapshotRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("AVATAR_NOT_READY"));
+        AvatarSnapshotEntity avatar = findReadyAvatarSnapshot(user.getId());
 
         String season = seasonFor(LocalDate.now(PRODUCT_ZONE).getMonth());
         String avatarAnalysis = buildFallbackAvatarAnalysis();
@@ -374,6 +373,7 @@ public class StylistService {
         map.put("previewStatus", variant.getPreviewStatus());
         map.put("tryOnPreviewUrl", variant.getPreviewImageUrl());
         map.put("errorCode", variant.getErrorCode());
+        map.put("errorMessage", variant.getErrorMessage());
         map.put("products", products.stream().map(this::toProductMap).toList());
         return map;
     }
@@ -476,6 +476,13 @@ public class StylistService {
 
     private static String buildFallbackAvatarAnalysis() {
         return "Аватар готов для подбора образа. Учитываем рост, основные обхваты, размер одежды и сохраняем естественные пропорции. Рекомендации формулируем через силуэт, посадку, вертикали, цветовую гармонию и акценты.";
+    }
+
+    private AvatarSnapshotEntity findReadyAvatarSnapshot(UUID userId) {
+        return avatarSnapshotRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .filter(snapshot -> snapshot.getProcessedImagePath() != null && blobStorage.exists(snapshot.getProcessedImagePath()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("AVATAR_NOT_READY"));
     }
 
     private static String plainTextForUi(String value) {

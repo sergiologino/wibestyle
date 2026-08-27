@@ -239,6 +239,7 @@ function VariantTile({ variant, active, onPress }: { variant: StylistVariant; ac
       <Text style={styles.presetTitle}>{variant.title}</Text>
       <Text style={styles.presetDescription}>{variant.summary}</Text>
       {variant.previewStatus ? <Text style={styles.status}>{previewStatusText(variant.previewStatus)}</Text> : null}
+      {variant.previewStatus === "failed" && variant.errorMessage ? <Text style={styles.previewError}>{variant.errorMessage}</Text> : null}
     </Pressable>
   );
 }
@@ -310,6 +311,7 @@ const styles = StyleSheet.create({
   variants: { gap: spacing.sm },
   variant: { borderRadius: radius.xl, borderWidth: hairline, borderColor: colors.borderLight, backgroundColor: colors.white, padding: spacing.md, gap: 6 },
   status: { color: colors.pink, fontFamily: "Manrope_600SemiBold", fontSize: 11, textTransform: "uppercase" },
+  previewError: { color: "#b42318", fontFamily: "Manrope_500Medium", fontSize: 11, lineHeight: 15 },
   query: { color: colors.muted, fontFamily: "Manrope_400Regular", fontSize: 11, lineHeight: 16 },
   preview: { width: "100%", height: 360, borderRadius: radius.xl, backgroundColor: colors.pinkBg, marginBottom: spacing.md },
   previewPlaceholder: { height: 260, borderRadius: radius.xl, borderWidth: hairline, borderColor: colors.borderLight, backgroundColor: colors.pinkBg, alignItems: "center", justifyContent: "center", gap: spacing.sm, marginBottom: spacing.md },

@@ -557,6 +557,7 @@ export type StylistVariant = {
   previewStatus?: "queued" | "generating" | "ready" | "failed" | "skipped" | string;
   tryOnPreviewUrl?: string | null;
   errorCode?: string | null;
+  errorMessage?: string | null;
   products: StylistProductCandidate[];
 };
 

@@ -289,6 +289,9 @@ function VariantButton({ variant, active, onClick }: { variant: StylistVariant; 
           {previewStatusText(variant.previewStatus)}
         </span>
       ) : null}
+      {variant.previewStatus === "failed" && variant.errorMessage ? (
+        <span className="mt-2 block text-xs leading-4 text-[#b42318]">{variant.errorMessage}</span>
+      ) : null}
     </button>
   );
 }
