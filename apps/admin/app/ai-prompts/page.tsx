@@ -9,6 +9,9 @@ import { useAdminKey } from "@/components/admin-key-provider";
 const PROMPT_TEMPLATES = [
   { key: "vton.base_ru", label: "Примерка" },
   { key: "avatar.quality_analysis", label: "Анализ аватара" },
+  { key: "stylist.avatar_analysis_ru", label: "Стилист: аватар" },
+  { key: "stylist.trends_ru", label: "Стилист: тренды" },
+  { key: "stylist.preview_tryon_ru", label: "Стилист: превью" },
 ] as const;
 
 type AiPromptTemplate = {
@@ -62,8 +65,8 @@ export default function AdminAiPromptsPage() {
   return (
     <AdminPageShell
       pill="AI"
-      title="Промпт примерки"
-      description="Базовая неизменяемая часть на русском. К каждому запросу система допишет блок ДАННЫЕ ПРИМЕРКИ (JSON) с товаром, размерами и фигурой."
+      title="AI-промпты"
+      description="Редактируемая текстовая часть промптов. Технические данные, JSON, аватар и служебные ограничения система добавляет отдельно."
     >
       {!configured ? (
         <p className="font-bold text-[#6d6273]">Сохраните X-Admin-Key в верхней панели.</p>
@@ -86,12 +89,13 @@ export default function AdminAiPromptsPage() {
             </Button>
           ))}
         </div>
-        <h2 className="text-xl font-black">{template?.title ?? "Примерка — базовый промпт"}</h2>
+        <h2 className="text-xl font-black">{template?.title ?? "AI-промпт"}</h2>
         {template?.description ? (
           <p className="mt-2 font-bold text-[#6d6273]">{template.description}</p>
         ) : null}
         <p className="mt-2 text-sm font-bold text-[#6d6273]">
-          Упоминайте image1 (покупатель) и image2 (товар). Grok Imagine получает этот текст + JSON с сессии.
+          Для примерки можно упоминать image1 (покупатель) и image2 (товар). Для стилиста пишите только смысловую часть:
+          анализ, тренды или визуальный образ; техническую привязку к аватару система добавит сама.
         </p>
         {template?.updatedAt ? (
           <p className="mt-1 text-sm text-[#6d6273]">
@@ -102,7 +106,7 @@ export default function AdminAiPromptsPage() {
 
         <form className="mt-4 grid gap-3" onSubmit={onSave}>
           <label className="grid gap-2">
-            <span className="text-sm font-black uppercase tracking-wide text-[#6d6273]">Базовый промпт (русский)</span>
+            <span className="text-sm font-black uppercase tracking-wide text-[#6d6273]">Текстовая часть промпта</span>
             <textarea
               className="min-h-[320px] rounded-2xl border border-[#ffd1ed] px-4 py-3 font-mono text-sm leading-relaxed"
               value={body}
@@ -112,8 +116,7 @@ export default function AdminAiPromptsPage() {
             />
           </label>
           <p className="text-sm font-bold text-[#6d6273]">
-            После сохранения к тексту автоматически добавляется раздел «ДАННЫЕ ПРИМЕРКИ (JSON)» — его в админке не
-            редактируют.
+            Служебные поля, JSON, изображения и ограничения безопасности в админке не редактируют.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" disabled={saving || !configured}>

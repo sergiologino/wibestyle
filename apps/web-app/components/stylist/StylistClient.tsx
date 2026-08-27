@@ -122,7 +122,7 @@ export default function StylistClient() {
               Выберите сценарий. Стилист соберет три направления: классику, современный вариант и более смелый образ.
             </p>
           </div>
-          <Button disabled={loading || !selectedPresetId} onClick={() => void createLook()}>
+          <Button disabled={loading || !selectedPresetId} loading={loading} onClick={() => void createLook()}>
             <WandSparkles size={18} aria-hidden />
             {loading ? "Собираем..." : "Подобрать стиль"}
           </Button>
@@ -130,6 +130,18 @@ export default function StylistClient() {
       </section>
 
       {error ? <p className="rounded-2xl border border-[#ffd1ed] bg-[#fff4fb] p-4 text-sm font-medium text-[#ff1fa2]">{error}</p> : null}
+
+      {loading ? (
+        <Card className="border-[#ffd1ed] bg-white">
+          <div className="flex items-center gap-3">
+            <span className="size-5 shrink-0 animate-spin rounded-full border-2 border-[var(--pink)] border-t-transparent" aria-hidden />
+            <div>
+              <p className="text-sm font-semibold text-[var(--black)]">Генерируем подбор стиля</p>
+              <p className="mt-1 text-sm text-[var(--muted)]">Анализируем аватар, учитываем сценарий и собираем три направления образа.</p>
+            </div>
+          </div>
+        </Card>
+      ) : null}
 
       <section className="grid gap-3 md:grid-cols-4">
         {presets.map((preset) => {
@@ -190,7 +202,11 @@ export default function StylistClient() {
                       <ApiImage src={selectedVariant.tryOnPreviewUrl} alt="" className="h-full max-h-[420px] w-full object-contain" />
                     ) : (
                       <div className="flex h-72 w-48 flex-col items-center justify-center rounded-[28px] border border-[#ffd1ed] bg-white text-center text-sm font-medium text-[#6d6273]">
-                        <Sparkles className="mb-3 text-[var(--pink)]" size={28} aria-hidden />
+                        {selectedVariant.previewStatus === "queued" || selectedVariant.previewStatus === "generating" ? (
+                          <span className="mb-3 size-8 animate-spin rounded-full border-2 border-[var(--pink)] border-t-transparent" aria-hidden />
+                        ) : (
+                          <Sparkles className="mb-3 text-[var(--pink)]" size={28} aria-hidden />
+                        )}
                         {previewStatusText(selectedVariant.previewStatus)}
                       </div>
                     )}
@@ -200,7 +216,7 @@ export default function StylistClient() {
                     <h2 className="text-display-md mt-2 text-2xl">{selectedVariant.title}</h2>
                     <p className="text-body mt-3 text-sm">{selectedVariant.stylistComment}</p>
                     <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <Button disabled={productSearchLoading || !look.sessionId} onClick={() => void searchProducts()}>
+                      <Button disabled={productSearchLoading || !look.sessionId} loading={productSearchLoading} onClick={() => void searchProducts()}>
                         <WandSparkles size={17} aria-hidden />
                         {productSearchLoading ? "Ищем..." : "Подобрать товары WB"}
                       </Button>
@@ -257,9 +273,9 @@ function VariantButton({ variant, active, onClick }: { variant: StylistVariant; 
 function previewStatusText(status?: string | null) {
   switch (status) {
     case "queued":
-      return "В очереди";
+      return "Готовим запрос на генерацию превью";
     case "generating":
-      return "Генерируем превью";
+      return "Генерируем фото выбранного образа";
     case "ready":
       return "Превью готово";
     case "failed":

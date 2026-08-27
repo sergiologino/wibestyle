@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import type { StylistLookResponse, StylistPreset, StylistProductCandidate, StylistVariant } from "@wibestyle/shared-types";
@@ -132,7 +132,19 @@ export default function StylistScreen() {
         </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button label={loading ? "Собираем..." : "Подобрать стиль"} disabled={loading || !selectedPresetId} onPress={createLook} />
+        <Button label={loading ? "Собираем..." : "Подобрать стиль"} loading={loading} disabled={loading || !selectedPresetId} onPress={createLook} />
+
+        {loading ? (
+          <Card>
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color={colors.pink} />
+              <View style={styles.loadingCopy}>
+                <Text style={styles.loadingTitle}>Генерируем подбор стиля</Text>
+                <BodyText>Анализируем аватар, учитываем сценарий и собираем три направления образа.</BodyText>
+              </View>
+            </View>
+          </Card>
+        ) : null}
 
         {look ? (
           <View style={styles.results}>
@@ -172,7 +184,11 @@ export default function StylistScreen() {
                   />
                 ) : (
                   <View style={styles.previewPlaceholder}>
-                    <Feather name="star" size={24} color={colors.pink} />
+                    {selectedVariant.previewStatus === "queued" || selectedVariant.previewStatus === "generating" ? (
+                      <ActivityIndicator color={colors.pink} />
+                    ) : (
+                      <Feather name="star" size={24} color={colors.pink} />
+                    )}
                     <Text style={styles.previewText}>{previewStatusText(selectedVariant.previewStatus)}</Text>
                   </View>
                 )}
@@ -180,6 +196,7 @@ export default function StylistScreen() {
                 <BodyText>{selectedVariant.stylistComment}</BodyText>
                 <Button
                   label={productSearchLoading ? "Ищем..." : "Подобрать товары WB"}
+                  loading={productSearchLoading}
                   disabled={productSearchLoading || !look.sessionId}
                   onPress={searchProducts}
                 />
@@ -216,9 +233,9 @@ function VariantTile({ variant, active, onPress }: { variant: StylistVariant; ac
 function previewStatusText(status?: string | null) {
   switch (status) {
     case "queued":
-      return "В очереди";
+      return "Готовим запрос на генерацию превью";
     case "generating":
-      return "Генерируем превью";
+      return "Генерируем фото выбранного образа";
     case "ready":
       return "Превью готово";
     case "failed":
@@ -272,6 +289,9 @@ const styles = StyleSheet.create({
   presetTitle: { color: colors.black, fontFamily: "Manrope_600SemiBold", fontSize: 14, lineHeight: 19 },
   presetDescription: { color: colors.muted, fontFamily: "Manrope_400Regular", fontSize: 12, lineHeight: 17 },
   error: { color: colors.pink, fontFamily: "Manrope_500Medium", fontSize: 13, lineHeight: 18 },
+  loadingRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  loadingCopy: { flex: 1 },
+  loadingTitle: { color: colors.black, fontFamily: "Manrope_600SemiBold", fontSize: 14 },
   results: { gap: spacing.md },
   sectionTitle: { color: colors.violet, fontFamily: "Manrope_600SemiBold", fontSize: 15, marginBottom: 6 },
   variants: { gap: spacing.sm },

@@ -230,9 +230,21 @@ public class NoteappAiClient {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("prompt", prompt);
         payload.put("personImageBase64", avatarImageBase64);
+        payload.put("sourceImageBase64", avatarImageBase64);
+        payload.put("modelImageBase64", avatarImageBase64);
         payload.put("image1Base64", avatarImageBase64);
-        payload.put("image1Role", "customer avatar; preserve identity, face, hair, skin tone, height, body proportions and pose");
-        payload.put("inputImageOrder", "image1 is the user's full-body avatar and identity/body source");
+        payload.put("image1Role", "only human customer avatar source; preserve this exact person's identity, face, hair, skin tone, height, body proportions and pose; do not create animals or characters");
+        payload.put("inputImageOrder", "image1 is the user's full-body human avatar and the only allowed person/body/identity source");
+        payload.put(
+                "images",
+                List.of(Map.of(
+                        "label", "image1",
+                        "field", "personImageBase64",
+                        "role", "full-body human customer avatar; preserve identity and body; no animals, no foxes, no mascot, no forest scene",
+                        "base64Field", "personImageBase64"
+                ))
+        );
+        payload.put("negativePrompt", "animal, fox, wolf, mascot, furry character, forest, bushes, thickets, wilderness, fantasy creature, non-human subject, face replacement, body replacement");
         payload.put("output_format", "jpeg");
         payload.put("input_fidelity", "high");
         payload.put("settings", Map.of("width", 1024, "height", 1365, "aspectRatio", "3:4"));
