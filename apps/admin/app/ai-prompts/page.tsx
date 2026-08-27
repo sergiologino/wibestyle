@@ -86,6 +86,11 @@ export default function AdminAiPromptsPage() {
                     ? "border border-[#ff1fa2] bg-[#ff1fa2] text-[#14101a] hover:bg-[#ff4db5]"
                     : "border border-[#ffd1ed] bg-white text-[#302637] hover:bg-[#fff4fb]",
                 ].join(" ")}
+                style={{
+                  backgroundColor: active ? "#ff1fa2" : "#ffffff",
+                  borderColor: active ? "#ff1fa2" : "#ffd1ed",
+                  color: active ? "#14101a" : "#302637",
+                }}
                 onClick={() => {
                   setSelectedKey(item.key);
                   setSavedAt(null);
@@ -130,6 +135,7 @@ export default function AdminAiPromptsPage() {
               type="submit"
               disabled={saving || !configured}
               className="inline-flex min-h-9 items-center justify-center rounded-2xl bg-[#ff1fa2] px-4 py-2 text-sm font-black text-[#14101a] shadow-sm transition hover:bg-[#ff4db5] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ backgroundColor: "#ff1fa2", color: "#14101a" }}
             >
               {saving ? "Сохранение…" : "Сохранить"}
             </button>

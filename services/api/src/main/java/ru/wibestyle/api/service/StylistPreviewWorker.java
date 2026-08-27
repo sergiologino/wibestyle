@@ -102,14 +102,23 @@ public class StylistPreviewWorker {
                 refreshSessionStatus(session);
                 return;
             }
-            String storedPath = blobStorage.storeStylistVariantPreview(
-                    session.getUserId(),
-                    session.getId(),
-                    variant.getVariantKey(),
-                    new ByteArrayInputStream(result.imageBytes())
-            );
-            variant.setPreviewImagePath(storedPath);
-            variant.setPreviewImageUrl("/api/v1/stylist/looks/" + session.getId() + "/variants/" + variant.getVariantKey() + "/preview");
+            if (result.imageBytes() != null && result.imageBytes().length > 0) {
+                String storedPath = blobStorage.storeStylistVariantPreview(
+                        session.getUserId(),
+                        session.getId(),
+                        variant.getVariantKey(),
+                        new ByteArrayInputStream(result.imageBytes())
+                );
+                variant.setPreviewImagePath(storedPath);
+                variant.setPreviewImageUrl("/api/v1/stylist/looks/" + session.getId() + "/variants/" + variant.getVariantKey() + "/preview");
+            } else if (result.imageUrl() != null && !result.imageUrl().isBlank()) {
+                variant.setPreviewImagePath(null);
+                variant.setPreviewImageUrl(result.imageUrl());
+            } else {
+                markVariantFailed(variant, "AI_GENERATION_FAILED", "Stylist preview generation returned no image");
+                refreshSessionStatus(session);
+                return;
+            }
             variant.setPreviewStatus("ready");
             variant.setProvider(result.provider());
             variant.setExternalRequestId(result.requestId());

@@ -168,11 +168,11 @@ export default function StylistClient() {
           <div className="grid gap-4">
             <Card>
               <p className="text-eyebrow">Анализ аватара</p>
-              <p className="text-body mt-3 text-sm">{look.avatarAnalysis}</p>
+              <PlainTextBlock text={look.avatarAnalysis} />
             </Card>
             <Card>
               <p className="text-eyebrow">Сезон и тренды</p>
-              <p className="text-body mt-3 text-sm">{look.trendNote}</p>
+              <PlainTextBlock text={look.trendNote} />
             </Card>
           </div>
 
@@ -199,7 +199,7 @@ export default function StylistClient() {
                 <div className="grid md:grid-cols-[260px_1fr]">
                   <div className="flex min-h-80 items-center justify-center bg-[var(--pink-bg)] p-6">
                     {selectedVariant.tryOnPreviewUrl ? (
-                      <ApiImage src={selectedVariant.tryOnPreviewUrl} alt="" className="h-full max-h-[420px] w-full object-contain" />
+                      <PreviewImage src={selectedVariant.tryOnPreviewUrl} />
                     ) : (
                       <div className="flex h-72 w-48 flex-col items-center justify-center rounded-[28px] border border-[#ffd1ed] bg-white text-center text-sm font-medium text-[#6d6273]">
                         {selectedVariant.previewStatus === "queued" || selectedVariant.previewStatus === "generating" ? (
@@ -214,7 +214,7 @@ export default function StylistClient() {
                   <div className="p-5">
                     <p className="text-eyebrow">Выбранный стиль</p>
                     <h2 className="text-display-md mt-2 text-2xl">{selectedVariant.title}</h2>
-                    <p className="text-body mt-3 text-sm">{selectedVariant.stylistComment}</p>
+                    <PlainTextBlock text={selectedVariant.stylistComment} />
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                       <Button disabled={productSearchLoading || !look.sessionId} loading={productSearchLoading} onClick={() => void searchProducts()}>
                         <WandSparkles size={17} aria-hidden />
@@ -247,6 +247,29 @@ export default function StylistClient() {
       ) : null}
     </div>
   );
+}
+
+function PlainTextBlock({ text }: { text?: string | null }) {
+  return <p className="text-body mt-3 whitespace-pre-line text-sm">{plainTextForUi(text)}</p>;
+}
+
+function PreviewImage({ src }: { src: string }) {
+  if (/^https?:\/\//i.test(src)) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={src} alt="" className="h-full max-h-[420px] w-full object-contain" />;
+  }
+  return <ApiImage src={src} alt="" className="h-full max-h-[420px] w-full object-contain" />;
+}
+
+function plainTextForUi(text?: string | null) {
+  return (text ?? "")
+    .replace(/^\s*#{1,6}\s*/gm, "")
+    .replace(/\*\*/g, "")
+    .replace(/__/g, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function VariantButton({ variant, active, onClick }: { variant: StylistVariant; active: boolean; onClick: () => void }) {

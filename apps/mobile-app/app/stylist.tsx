@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import type { StylistLookResponse, StylistPreset, StylistProductCandidate, StylistVariant } from "@wibestyle/shared-types";
@@ -150,11 +150,11 @@ export default function StylistScreen() {
           <View style={styles.results}>
             <Card>
               <Text style={styles.sectionTitle}>Анализ аватара</Text>
-              <BodyText>{look.avatarAnalysis}</BodyText>
+              <BodyText>{plainTextForUi(look.avatarAnalysis)}</BodyText>
             </Card>
             <Card>
               <Text style={styles.sectionTitle}>Сезон и тренды</Text>
-              <BodyText>{look.trendNote}</BodyText>
+              <BodyText>{plainTextForUi(look.trendNote)}</BodyText>
             </Card>
             <View style={styles.variants}>
               {look.variants.map((variant) => (
@@ -176,12 +176,7 @@ export default function StylistScreen() {
             {selectedVariant ? (
               <Card>
                 {selectedVariant.tryOnPreviewUrl ? (
-                  <AuthenticatedImage
-                    path={selectedVariant.tryOnPreviewUrl}
-                    accessToken={accessToken}
-                    style={styles.preview}
-                    contentFit="contain"
-                  />
+                  <PreviewImage src={selectedVariant.tryOnPreviewUrl} accessToken={accessToken} />
                 ) : (
                   <View style={styles.previewPlaceholder}>
                     {selectedVariant.previewStatus === "queued" || selectedVariant.previewStatus === "generating" ? (
@@ -193,7 +188,7 @@ export default function StylistScreen() {
                   </View>
                 )}
                 <Text style={styles.title}>{selectedVariant.title}</Text>
-                <BodyText>{selectedVariant.stylistComment}</BodyText>
+                <BodyText>{plainTextForUi(selectedVariant.stylistComment)}</BodyText>
                 <Button
                   label={productSearchLoading ? "Ищем..." : "Подобрать товары WB"}
                   loading={productSearchLoading}
@@ -218,6 +213,24 @@ export default function StylistScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+function PreviewImage({ src, accessToken }: { src: string; accessToken: string | null }) {
+  if (/^https?:\/\//i.test(src)) {
+    return <Image source={{ uri: src }} style={styles.preview} resizeMode="contain" />;
+  }
+  return <AuthenticatedImage path={src} accessToken={accessToken} style={styles.preview} contentFit="contain" />;
+}
+
+function plainTextForUi(text?: string | null) {
+  return (text ?? "")
+    .replace(/^\s*#{1,6}\s*/gm, "")
+    .replace(/\*\*/g, "")
+    .replace(/__/g, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function VariantTile({ variant, active, onPress }: { variant: StylistVariant; active: boolean; onPress: () => void }) {

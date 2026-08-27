@@ -46,6 +46,10 @@ public class NoteappAiClient {
     }
 
     public String generateChatText(String networkName, String externalUserId, String systemPrompt, String userPrompt) {
+        return generateChatText(networkName, externalUserId, systemPrompt, userPrompt, 180);
+    }
+
+    public String generateChatText(String networkName, String externalUserId, String systemPrompt, String userPrompt, int maxTokens) {
         Map<String, Object> payload = new HashMap<>();
         payload.put(
                 "messages",
@@ -54,7 +58,7 @@ public class NoteappAiClient {
                         Map.of("role", "user", "content", userPrompt)
                 )
         );
-        payload.put("settings", Map.of("temperature", 0.9, "maxTokens", 180));
+        payload.put("settings", Map.of("temperature", 0.9, "maxTokens", maxTokens));
 
         Map<String, Object> body = buildChatRequestBody(networkName, externalUserId, payload);
 
@@ -93,6 +97,18 @@ public class NoteappAiClient {
             String imageBase64,
             String mimeType
     ) {
+        return generateVisionChatText(networkName, externalUserId, systemPrompt, userText, imageBase64, mimeType, 120);
+    }
+
+    public String generateVisionChatText(
+            String networkName,
+            String externalUserId,
+            String systemPrompt,
+            String userText,
+            String imageBase64,
+            String mimeType,
+            int maxTokens
+    ) {
         String dataUrl = "data:" + (mimeType == null || mimeType.isBlank() ? "image/jpeg" : mimeType) + ";base64," + imageBase64;
 
         Map<String, Object> payload = new HashMap<>();
@@ -109,7 +125,7 @@ public class NoteappAiClient {
                         )
                 )
         );
-        payload.put("settings", Map.of("temperature", 0.2, "maxTokens", 120));
+        payload.put("settings", Map.of("temperature", 0.2, "maxTokens", maxTokens));
 
         Map<String, Object> body = buildChatRequestBody(networkName, externalUserId, payload);
 
@@ -275,13 +291,18 @@ public class NoteappAiClient {
             String provider = response.path("response").path("provider").asText(null);
             ImageResult image = extractImageResult(response.path("response"));
             byte[] bytes = image == null ? null : image.bytes();
+            String imageUrl = image == null ? null : image.sourceUrl();
             if ((bytes == null || bytes.length == 0) && image != null && image.sourceUrl() != null) {
-                bytes = downloadImageBytes(image.sourceUrl());
+                try {
+                    bytes = downloadImageBytes(image.sourceUrl());
+                } catch (RestClientException ex) {
+                    log.warn("Stylist preview image download failed, keeping provider URL: {}", ex.getMessage());
+                }
             }
-            if (bytes == null || bytes.length == 0) {
+            if ((bytes == null || bytes.length == 0) && (imageUrl == null || imageUrl.isBlank())) {
                 return ProcessResult.failed("AI_GENERATION_FAILED", "Stylist preview generation returned no image");
             }
-            return ProcessResult.success(requestId, provider != null ? provider : networkUsed, executionTimeMs, null, bytes);
+            return ProcessResult.success(requestId, provider != null ? provider : networkUsed, executionTimeMs, imageUrl, bytes);
         } catch (RestClientException ex) {
             return ProcessResult.failed("AI_GENERATION_FAILED", extractExceptionMessage(ex));
         }

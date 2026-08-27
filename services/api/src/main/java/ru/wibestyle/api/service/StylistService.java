@@ -254,14 +254,15 @@ public class StylistService {
         LocalDate today = LocalDate.now(PRODUCT_ZONE);
         String userText = "Событие: " + preset.title() + ". Дата: " + today
                 + ". Сезон: " + season + ". Антропометрия: " + anthropometrySummary(avatar)
-                + ". Верни короткий обзор и рекомендации без негатива.";
+                + ". Верни короткий обзор и рекомендации без негатива. Пиши обычным текстом для веб-страницы: без Markdown, без ###, без **, без таблиц, без JSON. Не обрывай предложения. Дай 2-4 коротких абзаца.";
         String avatarAnalysis = aiClient.generateVisionChatText(
                 aiProperties.getStylistTrendsNetwork(),
                 user.getId().toString(),
                 analysisPrompt,
                 userText,
                 imageBase64,
-                "image/jpeg"
+                "image/jpeg",
+                700
         );
         String trendNote = aiClient.generateChatText(
                 aiProperties.getStylistTrendsNetwork(),
@@ -269,8 +270,10 @@ public class StylistService {
                 trendsPrompt,
                 "Событие: " + preset.title() + ". Дата: " + today + ". Сезон: " + season
                         + ". Аватар и антропометрия: " + avatarAnalysis + ". " + anthropometrySummary(avatar)
+                        + ". Верни связный текст для веб-страницы: без Markdown, без ###, без **, без таблиц, без JSON. Не обрывай предложения. Опиши три варианта образа и общую логику подбора в 3-5 коротких абзацах.",
+                1200
         );
-        return new AiTextContext(avatarAnalysis, trendNote);
+        return new AiTextContext(plainTextForUi(avatarAnalysis), plainTextForUi(trendNote));
     }
 
     private List<StylistVariantEntity> buildVariants(StylistSessionEntity session, StylistPreset preset, String season, boolean imageConfigured) {
@@ -473,6 +476,20 @@ public class StylistService {
 
     private static String buildFallbackAvatarAnalysis() {
         return "Аватар готов для подбора образа. Учитываем рост, основные обхваты, размер одежды и сохраняем естественные пропорции. Рекомендации формулируем через силуэт, посадку, вертикали, цветовую гармонию и акценты.";
+    }
+
+    private static String plainTextForUi(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replaceAll("(?m)^\\s*#{1,6}\\s*", "")
+                .replace("**", "")
+                .replace("__", "")
+                .replaceAll("(?m)^\\s*[-*]\\s+", "")
+                .replaceAll("[ \\t]+", " ")
+                .replaceAll("\\n{3,}", "\n\n")
+                .trim();
     }
 
     private static String anthropometrySummary(AvatarSnapshotEntity avatar) {
