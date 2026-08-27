@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Button, Card, Pill } from "@wibestyle/ui";
+import { Card, Pill } from "@wibestyle/ui";
 import { createAdminApi } from "@/lib/api";
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { useAdminKey } from "@/components/admin-key-provider";
@@ -74,20 +74,27 @@ export default function AdminAiPromptsPage() {
 
       <Card>
         <div className="mb-4 flex flex-wrap gap-2">
-          {PROMPT_TEMPLATES.map((item) => (
-            <Button
-              key={item.key}
-              type="button"
-              size="sm"
-              variant={selectedKey === item.key ? "primary" : "secondary"}
-              onClick={() => {
-                setSelectedKey(item.key);
-                setSavedAt(null);
-              }}
-            >
-              {item.label}
-            </Button>
-          ))}
+          {PROMPT_TEMPLATES.map((item) => {
+            const active = selectedKey === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={[
+                  "min-h-8 rounded-2xl px-3 py-1.5 text-xs font-black shadow-sm transition active:scale-[0.97]",
+                  active
+                    ? "border border-[#ff1fa2] bg-[#ff1fa2] text-[#14101a] hover:bg-[#ff4db5]"
+                    : "border border-[#ffd1ed] bg-white text-[#302637] hover:bg-[#fff4fb]",
+                ].join(" ")}
+                onClick={() => {
+                  setSelectedKey(item.key);
+                  setSavedAt(null);
+                }}
+              >
+                {item.label}
+              </button>
+            );
+          })}
         </div>
         <h2 className="text-xl font-black">{template?.title ?? "AI-промпт"}</h2>
         {template?.description ? (
@@ -119,9 +126,13 @@ export default function AdminAiPromptsPage() {
             Служебные поля, JSON, изображения и ограничения безопасности в админке не редактируют.
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit" disabled={saving || !configured}>
+            <button
+              type="submit"
+              disabled={saving || !configured}
+              className="inline-flex min-h-9 items-center justify-center rounded-2xl bg-[#ff1fa2] px-4 py-2 text-sm font-black text-[#14101a] shadow-sm transition hover:bg-[#ff4db5] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            >
               {saving ? "Сохранение…" : "Сохранить"}
-            </Button>
+            </button>
             <Pill tone="soft">{body.length} / 12000</Pill>
           </div>
         </form>
