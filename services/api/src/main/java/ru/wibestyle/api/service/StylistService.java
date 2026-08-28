@@ -370,10 +370,17 @@ public class StylistService {
         map.put("stylistComment", variant.getStylistComment());
         map.put("productSearchStatus", variant.getProductSearchStatus());
         map.put("productSearchQuery", variant.getProductSearchQuery());
-        map.put("previewStatus", variant.getPreviewStatus());
-        map.put("tryOnPreviewUrl", variant.getPreviewImageUrl());
-        map.put("errorCode", variant.getErrorCode());
-        map.put("errorMessage", variant.getErrorMessage());
+        if (isPollinationsPreview(variant)) {
+            map.put("previewStatus", "failed");
+            map.put("tryOnPreviewUrl", null);
+            map.put("errorCode", "AI_PROVIDER_FALLBACK_NOT_ALLOWED");
+            map.put("errorMessage", "Stylist preview requires Grok Imagine; Pollinations fallback is disabled");
+        } else {
+            map.put("previewStatus", variant.getPreviewStatus());
+            map.put("tryOnPreviewUrl", variant.getPreviewImageUrl());
+            map.put("errorCode", variant.getErrorCode());
+            map.put("errorMessage", variant.getErrorMessage());
+        }
         map.put("products", products.stream().map(this::toProductMap).toList());
         return map;
     }
@@ -483,6 +490,15 @@ public class StylistService {
                 .filter(snapshot -> snapshot.getProcessedImagePath() != null && blobStorage.exists(snapshot.getProcessedImagePath()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("AVATAR_NOT_READY"));
+    }
+
+    private static boolean isPollinationsPreview(StylistVariantEntity variant) {
+        return containsIgnoreCase(variant.getProvider(), "pollinations")
+                || containsIgnoreCase(variant.getPreviewImageUrl(), "pollinations.ai");
+    }
+
+    private static boolean containsIgnoreCase(String value, String needle) {
+        return value != null && needle != null && value.toLowerCase(java.util.Locale.ROOT).contains(needle.toLowerCase(java.util.Locale.ROOT));
     }
 
     private static String plainTextForUi(String value) {

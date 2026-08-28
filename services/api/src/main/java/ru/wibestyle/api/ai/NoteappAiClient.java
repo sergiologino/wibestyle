@@ -263,6 +263,9 @@ public class NoteappAiClient {
         payload.put("negativePrompt", "animal, fox, wolf, mascot, furry character, forest, bushes, thickets, wilderness, fantasy creature, non-human subject, face replacement, body replacement");
         payload.put("output_format", "jpeg");
         payload.put("input_fidelity", "high");
+        payload.put("allowFallback", false);
+        payload.put("requiredProvider", "grok");
+        payload.put("disallowedProviders", List.of("pollinations"));
         payload.put("settings", Map.of("width", 1024, "height", 1365, "aspectRatio", "3:4"));
 
         Map<String, Object> body = new HashMap<>();
@@ -292,6 +295,13 @@ public class NoteappAiClient {
             ImageResult image = extractImageResult(response.path("response"));
             byte[] bytes = image == null ? null : image.bytes();
             String imageUrl = image == null ? null : image.sourceUrl();
+            if (isPollinationsResult(provider, imageUrl, response.path("response"))) {
+                String routeReason = response.path("response").path("tryOnRouteReason").asText(null);
+                String reason = routeReason == null || routeReason.isBlank()
+                        ? "Stylist preview requires Grok Imagine; Pollinations fallback is disabled"
+                        : "Stylist preview requires Grok Imagine; Pollinations fallback is disabled: " + routeReason;
+                return ProcessResult.failed("AI_PROVIDER_FALLBACK_NOT_ALLOWED", reason);
+            }
             if ((bytes == null || bytes.length == 0) && image != null && image.sourceUrl() != null) {
                 try {
                     bytes = downloadImageBytes(image.sourceUrl());
@@ -537,6 +547,17 @@ public class NoteappAiClient {
                 && networkUsed != null
                 && !networkUsed.isBlank()
                 && !requestedNetwork.trim().equalsIgnoreCase(networkUsed.trim());
+    }
+
+    static boolean isPollinationsResult(String provider, String imageUrl, JsonNode responseBody) {
+        return containsIgnoreCase(provider, "pollinations")
+                || containsIgnoreCase(imageUrl, "pollinations.ai")
+                || containsIgnoreCase(responseBody == null ? null : responseBody.path("tryOnRoute").asText(null), "pollinations")
+                || containsIgnoreCase(responseBody == null ? null : responseBody.path("tryOnRouteReason").asText(null), "pollinations");
+    }
+
+    private static boolean containsIgnoreCase(String value, String needle) {
+        return value != null && needle != null && value.toLowerCase(java.util.Locale.ROOT).contains(needle.toLowerCase(java.util.Locale.ROOT));
     }
 
     static Map<String, Object> buildVirtualTryOnPayload(
