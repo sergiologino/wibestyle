@@ -219,6 +219,7 @@ public class AdminUserSupportService {
             case GARMENT_PHOTO -> "garment_photo";
             case GALLERY_UPLOAD -> "gallery_upload";
             case HAIRSTYLE -> "hairstyle";
+            case STYLIST_IDEA -> "stylist_idea";
         };
     }
 }

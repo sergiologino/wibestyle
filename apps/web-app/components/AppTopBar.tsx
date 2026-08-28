@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Grid2X2, Heart, Home, Search, Share2, Shirt, Sparkles, UserRound } from "lucide-react";
+import { Grid2X2, Heart, Home, Search, Share2, Shirt, Sparkles, UserRound, WandSparkles } from "lucide-react";
 import { BrandLogo, Button } from "@wibestyle/ui";
 import type { ReferralOverview } from "@wibestyle/shared-types";
 import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
@@ -36,6 +36,13 @@ export default function AppTopBar() {
 
   const logoHref = !sessionReady ? "/welcome" : isAuthenticated ? "/home" : "/welcome";
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const visibleNav = profile?.stylistAvailable
+    ? [
+        nav[0],
+        { href: "/stylist", label: "Стилист", icon: WandSparkles },
+        ...nav.slice(1),
+      ]
+    : nav;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -105,7 +112,7 @@ export default function AppTopBar() {
             <BrandLogo markClassName="translate-y-1" />
           </Link>
           <nav className="hidden items-center rounded-full border border-[#ffd1ed]/80 bg-white/80 p-1 text-sm font-normal text-[#6d6273] shadow-[0_8px_24px_rgba(58,12,82,0.04)] md:flex">
-            {nav.map((item) => (
+            {visibleNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -179,8 +186,9 @@ export default function AppTopBar() {
         <nav
           aria-label="Основная навигация"
           className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-5 rounded-[26px] border border-[#ffd1ed]/90 bg-white/96 p-1.5 shadow-[0_18px_48px_rgba(58,12,82,0.16)] backdrop-blur-xl md:hidden"
+          style={{ gridTemplateColumns: `repeat(${visibleNav.length}, minmax(0, 1fr))` }}
         >
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (

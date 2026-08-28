@@ -98,9 +98,10 @@ public class TryOnController {
     public Map<String, Object> listMine(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "24") int limit,
-            @RequestParam(required = false) String cursor
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) String type
     ) {
-        return tryOnService.listMine(requireUserId(authorization), limit, cursor);
+        return tryOnService.listMine(requireUserId(authorization), limit, cursor, type);
     }
 
     @GetMapping("/{sessionId}")
@@ -215,6 +216,7 @@ public class TryOnController {
         return switch (sourceType) {
             case "garment_photo" -> TryOnSourceType.GARMENT_PHOTO;
             case "hairstyle" -> TryOnSourceType.HAIRSTYLE;
+            case "stylist_idea" -> TryOnSourceType.STYLIST_IDEA;
             case "gallery_upload" -> TryOnSourceType.GALLERY_UPLOAD;
             default -> TryOnSourceType.GALLERY_UPLOAD;
         };

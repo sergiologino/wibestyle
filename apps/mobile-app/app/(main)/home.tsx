@@ -16,7 +16,14 @@ import { useAppTheme } from "@/theme/palettes";
 
 const INITIAL_HISTORY_LIMIT = 6;
 const HISTORY_PAGE_SIZE = 12;
-const homeHistoryCacheKey = (userId: string) => `wibestyle:mobile:home-history:${userId}:v1`;
+type HistoryFilter = "all" | "clothing" | "hairstyle" | "stylist";
+const HISTORY_FILTERS: Array<{ id: HistoryFilter; label: string }> = [
+  { id: "all", label: "Все" },
+  { id: "clothing", label: "Одежда" },
+  { id: "hairstyle", label: "Прически" },
+  { id: "stylist", label: "Стилист" },
+];
+const homeHistoryCacheKey = (userId: string, filter: HistoryFilter) => `wibestyle:mobile:home-history:${userId}:${filter}:v1`;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -27,6 +34,7 @@ export default function HomeScreen() {
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
   const [historyHasMore, setHistoryHasMore] = useState(false);
   const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter>("all");
   const [notification, setNotification] = useState<UserNotification | null>(null);
   const [reviews, setReviews] = useState<PublishedReview[]>([]);
 
@@ -44,7 +52,7 @@ export default function HomeScreen() {
           items: TryOnHistoryItem[];
           nextCursor?: string | null;
           hasMore: boolean;
-        }>(homeHistoryCacheKey(userId));
+        }>(homeHistoryCacheKey(userId, historyFilter));
         if (active && cached) {
           setHistory(cached.items);
           setHistoryCursor(cached.nextCursor ?? null);
@@ -53,13 +61,13 @@ export default function HomeScreen() {
         }
       }
       try {
-        const historyPayload = await api.listMyTryOnSessions({ limit: INITIAL_HISTORY_LIMIT });
+        const historyPayload = await api.listMyTryOnSessions({ limit: INITIAL_HISTORY_LIMIT, type: historyFilter });
         if (active) {
           setHistory(historyPayload.items);
           setHistoryCursor(historyPayload.nextCursor ?? null);
           setHistoryHasMore(historyPayload.hasMore);
           if (userId) {
-            await writeFeedCache(homeHistoryCacheKey(userId), historyPayload);
+            await writeFeedCache(homeHistoryCacheKey(userId, historyFilter), historyPayload);
           }
         }
         const [notifications, publishedReviews] = await Promise.all([
@@ -75,13 +83,13 @@ export default function HomeScreen() {
     return () => {
       active = false;
     };
-  }, [api, ensureSession, profile?.userId, router]));
+  }, [api, ensureSession, profile?.userId, router, historyFilter]));
 
   async function loadMoreHistory() {
     if (!historyCursor || historyLoadingMore) return;
     setHistoryLoadingMore(true);
     try {
-      const payload = await api.listMyTryOnSessions({ limit: HISTORY_PAGE_SIZE, cursor: historyCursor });
+      const payload = await api.listMyTryOnSessions({ limit: HISTORY_PAGE_SIZE, cursor: historyCursor, type: historyFilter });
       setHistory((prev) => [...prev, ...payload.items]);
       setHistoryCursor(payload.nextCursor ?? null);
       setHistoryHasMore(payload.hasMore);
@@ -227,6 +235,26 @@ export default function HomeScreen() {
           <SectionTitle>{`Твои примерки (${history.length})`}</SectionTitle>
           <BodyText>Все образы — даже если не {publishedVerb} в галерее.</BodyText>
         </View>
+        <View style={styles.filterRow}>
+          {HISTORY_FILTERS.map((filter) => {
+            const active = historyFilter === filter.id;
+            return (
+              <Pressable
+                key={filter.id}
+                style={[styles.filterButton, active && styles.filterButtonActive]}
+                onPress={() => {
+                  setHistoryFilter(filter.id);
+                  setHistory([]);
+                  setHistoryCursor(null);
+                  setHistoryHasMore(false);
+                  setLoading(true);
+                }}
+              >
+                <Text style={[styles.filterText, active && styles.filterTextActive]}>{filter.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         {loading ? (
           <BodyText>Загрузка…</BodyText>
@@ -254,6 +282,7 @@ export default function HomeScreen() {
                 <Text style={styles.tileTitle} numberOfLines={2}>
                   {item.productTitle}
                 </Text>
+                <Text style={styles.tileKind}>{historyKindLabel(item)}</Text>
               </Pressable>
             ))}
           </View>
@@ -285,6 +314,17 @@ export default function HomeScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+function historyKindLabel(item: TryOnHistoryItem) {
+  switch (item.sourceType) {
+    case "hairstyle":
+      return "Прическа / цвет волос";
+    case "stylist_idea":
+      return "Идея стилиста";
+    default:
+      return "Примерка одежды";
+  }
 }
 
 const styles = StyleSheet.create({
@@ -386,6 +426,31 @@ const styles = StyleSheet.create({
   section: {
     gap: 4,
   },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  filterButton: {
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  filterButtonActive: {
+    borderColor: colors.pink,
+    backgroundColor: colors.pinkBg,
+  },
+  filterText: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 12,
+    color: colors.muted,
+  },
+  filterTextActive: {
+    color: colors.pink,
+  },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -411,6 +476,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.black,
     lineHeight: 18,
+  },
+  tileKind: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 10,
+    color: colors.pink,
+    textTransform: "uppercase",
   },
   reviews: {
     gap: spacing.sm,

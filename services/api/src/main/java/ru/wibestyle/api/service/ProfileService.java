@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.wibestyle.api.domain.AvatarStatus;
 import ru.wibestyle.api.domain.UserProfileEntity;
+import ru.wibestyle.api.config.FeatureFlagsProperties;
 import ru.wibestyle.api.dto.UpdateProfileRequest;
 import ru.wibestyle.api.repository.AvatarRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
@@ -28,19 +29,22 @@ public class ProfileService {
     private final AvatarRepository avatarRepository;
     private final AvatarPreprocessService avatarPreprocessService;
     private final EntitlementsService entitlementsService;
+    private final FeatureFlagsProperties featureFlagsProperties;
 
     public ProfileService(
             UserRepository userRepository,
             UserProfileRepository userProfileRepository,
             AvatarRepository avatarRepository,
             AvatarPreprocessService avatarPreprocessService,
-            EntitlementsService entitlementsService
+            EntitlementsService entitlementsService,
+            FeatureFlagsProperties featureFlagsProperties
     ) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.avatarRepository = avatarRepository;
         this.avatarPreprocessService = avatarPreprocessService;
         this.entitlementsService = entitlementsService;
+        this.featureFlagsProperties = featureFlagsProperties;
     }
 
     public Map<String, Object> buildMeResponse(String authorization) {
@@ -62,7 +66,7 @@ public class ProfileService {
             userMap.put("login", user.getLogin());
         }
         response.put("user", userMap);
-        response.put("profile", toProfileMap(profile));
+        response.put("profile", toProfileMap(profile, user.isStylistFocusGroup()));
         response.put("entitlements", entitlementsService.forProfile(profile));
         return response;
     }
@@ -77,13 +81,19 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getProfile(UUID userId) {
-        return Map.of("profile", toProfileMap(requireProfile(userId)));
+        boolean stylistFocusGroup = userRepository.findById(userId)
+                .map(ru.wibestyle.api.domain.UserEntity::isStylistFocusGroup)
+                .orElse(false);
+        return Map.of("profile", toProfileMap(requireProfile(userId), stylistFocusGroup));
     }
 
     /** Ensures profile row exists and returns the admin/user profile map. */
     @Transactional
     public Map<String, Object> ensureProfileMap(UUID userId) {
-        return toProfileMap(ensureProfile(userId));
+        boolean stylistFocusGroup = userRepository.findById(userId)
+                .map(ru.wibestyle.api.domain.UserEntity::isStylistFocusGroup)
+                .orElse(false);
+        return toProfileMap(ensureProfile(userId), stylistFocusGroup);
     }
 
     @Transactional
@@ -97,7 +107,10 @@ public class ProfileService {
         if (privacyChanged) {
             syncAvatarPrivacy(userId, profile);
         }
-        return Map.of("profile", toProfileMap(profile));
+        boolean stylistFocusGroup = userRepository.findById(userId)
+                .map(ru.wibestyle.api.domain.UserEntity::isStylistFocusGroup)
+                .orElse(false);
+        return Map.of("profile", toProfileMap(profile, stylistFocusGroup));
     }
 
     @Transactional
@@ -120,7 +133,10 @@ public class ProfileService {
         profile.setInterfacePalette("vibe");
         profile.setUpdatedAt(Instant.now());
         userProfileRepository.save(profile);
-        return Map.of("profile", toProfileMap(profile));
+        boolean stylistFocusGroup = userRepository.findById(userId)
+                .map(ru.wibestyle.api.domain.UserEntity::isStylistFocusGroup)
+                .orElse(false);
+        return Map.of("profile", toProfileMap(profile, stylistFocusGroup));
     }
 
     @Transactional
@@ -196,7 +212,7 @@ public class ProfileService {
         });
     }
 
-    private Map<String, Object> toProfileMap(UserProfileEntity profile) {
+    private Map<String, Object> toProfileMap(UserProfileEntity profile, boolean stylistFocusGroup) {
         Map<String, Object> anthropometry = new HashMap<>();
         if (profile.getHeightCm() != null) anthropometry.put("heightCm", profile.getHeightCm());
         if (profile.getWeightKg() != null) anthropometry.put("weightKg", profile.getWeightKg());
@@ -225,6 +241,8 @@ public class ProfileService {
         if (profile.getDisplayName() != null) map.put("displayName", profile.getDisplayName());
         if (profile.getGender() != null) map.put("gender", profile.getGender());
         map.put("interfacePalette", profile.getInterfacePalette() == null ? "vibe" : profile.getInterfacePalette());
+        map.put("stylistFocusGroup", stylistFocusGroup);
+        map.put("stylistAvailable", featureFlagsProperties.isStylistAvailableFor(stylistFocusGroup));
         if (!anthropometry.isEmpty()) map.put("anthropometry", anthropometry);
         map.put("privacy", Map.of(
                 "faceHidden", profile.isPrivacyFaceHidden(),

@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+:root {
+  --pink: #ff1fa2;
+  --pink-dark: #eb1692;
+  --pink-soft: #ffd1ed;
+  --pink-bg: #fff4fb;
+  --violet: #782cff;
+  --black: #14101a;
+  --muted: #6d6273;
+}
+
 body {
   margin: 0;
   background: #fff8fd;

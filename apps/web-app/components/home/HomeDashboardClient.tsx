@@ -10,11 +10,18 @@ import TryOnHistoryGrid from "@/components/home/TryOnHistoryGrid";
 import SubscriptionNudgeBanner from "@/components/billing/SubscriptionNudgeBanner";
 import { isPaidSubscription, subscriptionNudgeLevel } from "@/lib/billing-plan";
 import { readFeedCache, writeFeedCache } from "@/lib/feed-cache";
-import { ImageIcon, Link2, Scissors } from "lucide-react";
+import { ImageIcon, Link2, Scissors, WandSparkles } from "lucide-react";
 
 const INITIAL_HISTORY_LIMIT = 6;
 const HISTORY_PAGE_SIZE = 12;
-const homeHistoryCacheKey = (userId: string) => `wibestyle:web:home-history:${userId}:v1`;
+type HistoryFilter = "all" | "clothing" | "hairstyle" | "stylist";
+const HISTORY_FILTERS: Array<{ id: HistoryFilter; label: string }> = [
+  { id: "all", label: "Все" },
+  { id: "clothing", label: "Одежда" },
+  { id: "hairstyle", label: "Прически" },
+  { id: "stylist", label: "Идеи стилиста" },
+];
+const homeHistoryCacheKey = (userId: string, filter: HistoryFilter) => `wibestyle:web:home-history:${userId}:${filter}:v1`;
 
 export default function HomeDashboardClient() {
   const searchParams = useSearchParams();
@@ -24,6 +31,7 @@ export default function HomeDashboardClient() {
   const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
   const [historyHasMore, setHistoryHasMore] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter>("all");
   const [celebration, setCelebration] = useState<string | null>(null);
   const [reviews, setReviews] = useState<PublishedReview[]>([]);
 
@@ -42,7 +50,7 @@ export default function HomeDashboardClient() {
         items: TryOnHistoryItem[];
         nextCursor?: string | null;
         hasMore: boolean;
-      }>(homeHistoryCacheKey(userId));
+      }>(homeHistoryCacheKey(userId, historyFilter));
       if (cached) {
         setHistory(cached.items);
         setHistoryCursor(cached.nextCursor ?? null);
@@ -50,14 +58,14 @@ export default function HomeDashboardClient() {
         setHistoryLoading(false);
       }
     }
-    api.listMyTryOnSessions({ limit: INITIAL_HISTORY_LIMIT })
+    api.listMyTryOnSessions({ limit: INITIAL_HISTORY_LIMIT, type: historyFilter })
       .then((historyPayload) => {
         if (active) {
           setHistory(historyPayload.items);
           setHistoryCursor(historyPayload.nextCursor ?? null);
           setHistoryHasMore(historyPayload.hasMore);
           if (userId) {
-            writeFeedCache(homeHistoryCacheKey(userId), historyPayload);
+            writeFeedCache(homeHistoryCacheKey(userId, historyFilter), historyPayload);
           }
         }
       })
@@ -69,7 +77,7 @@ export default function HomeDashboardClient() {
     return () => {
       active = false;
     };
-  }, [api, profile?.userId]);
+  }, [api, profile?.userId, historyFilter]);
 
   useEffect(() => {
     let active = true;
@@ -93,7 +101,7 @@ export default function HomeDashboardClient() {
     if (!historyCursor || historyLoadingMore) return;
     setHistoryLoadingMore(true);
     try {
-      const payload = await api.listMyTryOnSessions({ limit: HISTORY_PAGE_SIZE, cursor: historyCursor });
+      const payload = await api.listMyTryOnSessions({ limit: HISTORY_PAGE_SIZE, cursor: historyCursor, type: historyFilter });
       setHistory((prev) => [...prev, ...payload.items]);
       setHistoryCursor(payload.nextCursor ?? null);
       setHistoryHasMore(payload.hasMore);
@@ -136,6 +144,16 @@ export default function HomeDashboardClient() {
               : "Подписка активна — примеряй без ограничений trial."}
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {profile?.stylistAvailable ? (
+            <Link
+              href="/stylist"
+              data-testid="stylist-primary"
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-[var(--pink-soft)] bg-[var(--pink-bg)] px-4 py-3 font-medium text-[var(--pink-dark)] shadow-[0_6px_18px_var(--shadow-accent)] transition hover:-translate-y-0.5 hover:border-[var(--pink)] sm:col-span-2"
+            >
+              <WandSparkles size={19} aria-hidden />
+              <span>Подобрать образ под событие</span>
+            </Link>
+          ) : null}
           <Link
             href="/try-on/link"
             data-testid="marketplace-try-on-primary"
@@ -167,6 +185,29 @@ export default function HomeDashboardClient() {
           <p className="text-body mt-2">
             Все образы, которые ты примеряла — даже если не публиковала в общей галерее.
           </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {HISTORY_FILTERS.map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              className={[
+                "rounded-full border px-4 py-2 text-sm font-medium transition",
+                historyFilter === filter.id
+                  ? "border-[var(--pink)] bg-[var(--pink)] text-[#14101a]"
+                  : "border-[#ffd1ed] bg-white text-[#6d6273] hover:bg-[#fff4fb]",
+              ].join(" ")}
+              onClick={() => {
+                setHistoryFilter(filter.id);
+                setHistory([]);
+                setHistoryCursor(null);
+                setHistoryHasMore(false);
+                setHistoryLoading(true);
+              }}
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
         <TryOnHistoryGrid items={history} loading={historyLoading} />
         {!historyLoading && historyHasMore ? (

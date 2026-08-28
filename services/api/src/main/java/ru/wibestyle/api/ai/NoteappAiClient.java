@@ -25,7 +25,6 @@ import java.util.Map;
 public class NoteappAiClient {
 
     private static final Logger log = LoggerFactory.getLogger(NoteappAiClient.class);
-
     private final RestClient restClient;
     private final AiIntegrationProperties properties;
     private final AiIntegrationLogService logService;
@@ -46,6 +45,10 @@ public class NoteappAiClient {
     }
 
     public String generateChatText(String networkName, String externalUserId, String systemPrompt, String userPrompt) {
+        return generateChatText(networkName, externalUserId, systemPrompt, userPrompt, 180);
+    }
+
+    public String generateChatText(String networkName, String externalUserId, String systemPrompt, String userPrompt, int maxTokens) {
         Map<String, Object> payload = new HashMap<>();
         payload.put(
                 "messages",
@@ -54,7 +57,7 @@ public class NoteappAiClient {
                         Map.of("role", "user", "content", userPrompt)
                 )
         );
-        payload.put("settings", Map.of("temperature", 0.9, "maxTokens", 180));
+        payload.put("settings", Map.of("temperature", 0.9, "maxTokens", maxTokens));
 
         Map<String, Object> body = buildChatRequestBody(networkName, externalUserId, payload);
 
@@ -93,6 +96,18 @@ public class NoteappAiClient {
             String imageBase64,
             String mimeType
     ) {
+        return generateVisionChatText(networkName, externalUserId, systemPrompt, userText, imageBase64, mimeType, 120);
+    }
+
+    public String generateVisionChatText(
+            String networkName,
+            String externalUserId,
+            String systemPrompt,
+            String userText,
+            String imageBase64,
+            String mimeType,
+            int maxTokens
+    ) {
         String dataUrl = "data:" + (mimeType == null || mimeType.isBlank() ? "image/jpeg" : mimeType) + ";base64," + imageBase64;
 
         Map<String, Object> payload = new HashMap<>();
@@ -109,7 +124,7 @@ public class NoteappAiClient {
                         )
                 )
         );
-        payload.put("settings", Map.of("temperature", 0.2, "maxTokens", 120));
+        payload.put("settings", Map.of("temperature", 0.2, "maxTokens", maxTokens));
 
         Map<String, Object> body = buildChatRequestBody(networkName, externalUserId, payload);
 
@@ -218,6 +233,120 @@ public class NoteappAiClient {
         } catch (RestClientException ex) {
             throw new IllegalArgumentException("HAIRSTYLE_GENERATION_FAILED", ex);
         }
+    }
+
+    public ProcessResult generateStylistPreview(
+            String networkName,
+            String externalUserId,
+            String prompt,
+            String avatarImageBase64,
+            String portraitImageBase64,
+            Map<String, String> metadata
+    ) {
+        Map<String, Object> payload = buildStylistPreviewPayload(prompt, avatarImageBase64, portraitImageBase64);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", requireExternalUserId(externalUserId));
+        body.put("networkName", networkName);
+        body.put("requestType", "image_generation");
+        body.put("payload", payload);
+        body.put("metadata", metadata == null ? Map.of() : metadata);
+
+        try {
+            JsonNode response = restClient.post()
+                    .uri("/api/ai/process")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-API-Key", properties.getApiKey())
+                    .header("Cache-Control", "no-store")
+                    .body(body)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
+                return ProcessResult.failed("AI_GENERATION_FAILED", extractErrorMessage(response, "Stylist preview generation failed"));
+            }
+            String requestId = response.path("requestId").asText(null);
+            String networkUsed = response.path("networkUsed").asText(null);
+            long executionTimeMs = response.path("executionTimeMs").asLong(0);
+            String provider = response.path("response").path("provider").asText(null);
+            ImageResult image = extractImageResult(response.path("response"));
+            byte[] bytes = image == null ? null : image.bytes();
+            String imageUrl = image == null ? null : image.sourceUrl();
+            if (isPollinationsResult(provider, imageUrl, response.path("response"))) {
+                String routeReason = response.path("response").path("tryOnRouteReason").asText(null);
+                String reason = routeReason == null || routeReason.isBlank()
+                        ? "Stylist preview requires Grok Imagine; Pollinations fallback is disabled"
+                        : "Stylist preview requires Grok Imagine; Pollinations fallback is disabled: " + routeReason;
+                return ProcessResult.failed("AI_PROVIDER_FALLBACK_NOT_ALLOWED", reason);
+            }
+            if ((bytes == null || bytes.length == 0) && image != null && image.sourceUrl() != null) {
+                try {
+                    bytes = downloadImageBytes(image.sourceUrl());
+                } catch (RestClientException ex) {
+                    log.warn("Stylist preview image download failed, keeping provider URL: {}", ex.getMessage());
+                }
+            }
+            if ((bytes == null || bytes.length == 0) && (imageUrl == null || imageUrl.isBlank())) {
+                return ProcessResult.failed("AI_GENERATION_FAILED", "Stylist preview generation returned no image");
+            }
+            return ProcessResult.success(requestId, provider != null ? provider : networkUsed, executionTimeMs, imageUrl, bytes);
+        } catch (RestClientException ex) {
+            return ProcessResult.failed("AI_GENERATION_FAILED", extractExceptionMessage(ex));
+        }
+    }
+
+    static Map<String, Object> buildStylistPreviewPayload(String prompt, String avatarImageBase64, String portraitImageBase64) {
+        String referenceImageBase64 = portraitImageBase64 == null || portraitImageBase64.isBlank()
+                ? avatarImageBase64
+                : portraitImageBase64;
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("prompt", prompt);
+        payload.put("personImageBase64", avatarImageBase64);
+        payload.put("sourceImageBase64", avatarImageBase64);
+        payload.put("modelImageBase64", avatarImageBase64);
+        payload.put("image1Base64", avatarImageBase64);
+        payload.put("image1Role", "customer_avatar_identity_body_face_hair_source");
+        payload.put("garmentImageBase64", referenceImageBase64);
+        payload.put("productImageBase64", referenceImageBase64);
+        payload.put("image2Base64", referenceImageBase64);
+        payload.put("image2Role", "customer portrait and hairstyle reference only; preserve face and hair details, ignore background and do not use as a clothing reference");
+        payload.put("garmentTitle", "AI stylist complete outfit generated from the style brief");
+        payload.put("garmentBrand", "WibeStyle AI Stylist");
+        payload.put("garmentCategory", "complete_outfit");
+        payload.put("garmentPromptProfile", "full_outfit_text_brief");
+        payload.put("garmentCoverageLevel", "full_body");
+        payload.put("garmentModerationRisk", "low");
+        payload.put("garmentHasHumanModel", false);
+        payload.put(
+                "inputImageOrder",
+                "image1/personImageBase64 is the only customer identity and body source. "
+                        + "image2/garmentImageBase64 is the customer's portrait/hair reference required by the route; use it only to preserve face and hairstyle details, not as a clothing reference."
+        );
+        payload.put(
+                "images",
+                List.of(
+                        Map.of(
+                                "label", "image1",
+                                "field", "personImageBase64",
+                                "role", "customer avatar; preserve face, hair, skin tone, body proportions and pose",
+                                "base64Field", "personImageBase64"
+                        ),
+                        Map.of(
+                                "label", "image2",
+                                "field", "garmentImageBase64",
+                                "role", "customer portrait and hairstyle reference only; ignore clothing and background",
+                                "base64Field", "garmentImageBase64"
+                        )
+                )
+        );
+        payload.put("negativePrompt", "animal, fox, wolf, mascot, furry character, forest, bushes, thickets, wilderness, fantasy creature, non-human subject, face replacement, body replacement");
+        payload.put("output_format", "jpeg");
+        payload.put("input_fidelity", "high");
+        payload.put("allowFallback", false);
+        payload.put("requiredProvider", "grok");
+        payload.put("disallowedProviders", List.of("pollinations"));
+        payload.put("settings", Map.of("width", 1024, "height", 1365, "aspectRatio", "3:4"));
+        return payload;
     }
 
     static Map<String, Object> buildHairstylePayload(
@@ -449,6 +578,17 @@ public class NoteappAiClient {
                 && networkUsed != null
                 && !networkUsed.isBlank()
                 && !requestedNetwork.trim().equalsIgnoreCase(networkUsed.trim());
+    }
+
+    static boolean isPollinationsResult(String provider, String imageUrl, JsonNode responseBody) {
+        return containsIgnoreCase(provider, "pollinations")
+                || containsIgnoreCase(imageUrl, "pollinations.ai")
+                || containsIgnoreCase(responseBody == null ? null : responseBody.path("tryOnRoute").asText(null), "pollinations")
+                || containsIgnoreCase(responseBody == null ? null : responseBody.path("tryOnRouteReason").asText(null), "pollinations");
+    }
+
+    private static boolean containsIgnoreCase(String value, String needle) {
+        return value != null && needle != null && value.toLowerCase(java.util.Locale.ROOT).contains(needle.toLowerCase(java.util.Locale.ROOT));
     }
 
     static Map<String, Object> buildVirtualTryOnPayload(

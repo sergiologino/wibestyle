@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type ErrorBoundaryProps } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import { ApiError } from "@wibestyle/api-client";
-import type { GalleryPost, SeasonHitVideoStatus, TryOnResult } from "@wibestyle/shared-types";
+import type { GalleryPost, SeasonHitVideoStatus, TryOnResult, TryOnSessionRecord } from "@wibestyle/shared-types";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle } from "@/components/ui/Button";
@@ -61,6 +62,7 @@ export default function TryOnResultScreen() {
   const router = useRouter();
   const { api, accessToken, getAccessTokenForMedia, profile } = useSession();
   const [result, setResult] = useState<TryOnResult | null>(null);
+  const [session, setSession] = useState<TryOnSessionRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(accessToken);
@@ -78,6 +80,7 @@ export default function TryOnResultScreen() {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [reviewPromptStep, setReviewPromptStep] = useState<ReviewPromptStep>(null);
   const [feedbackReason, setFeedbackReason] = useState<ReviewFeedbackReason>("bad_fit");
+  const [imageModalVisible, setImageModalVisible] = useState(false);
 
   useEffect(() => {
     void getAccessTokenForMedia().then(setToken);
@@ -98,6 +101,7 @@ export default function TryOnResultScreen() {
       try {
         const payload = await api.getTryOnSession(sessionId);
         if (cancelled) return;
+        setSession(payload.session);
 
         if (payload.result) {
           setResult(payload.result);
@@ -245,6 +249,7 @@ export default function TryOnResultScreen() {
   }, [api, sessionId]);
 
   const galleryPostFor = (mediaType: "image" | "video") => galleryPosts.find((post) => (post.mediaType ?? "image") === mediaType);
+  const isStylistIdea = session?.sourceType === "stylist_idea";
 
   async function toggleGalleryPost(mediaType: "image" | "video") {
     if (!sessionId) return;
@@ -255,7 +260,13 @@ export default function TryOnResultScreen() {
         await api.deleteMyGalleryPost(existing.id);
         setGalleryPosts((posts) => posts.filter((post) => post.id !== existing.id));
       } else {
-        const { post } = await api.createGalleryPost({ tryOnSessionId: sessionId, visibility: "public", productLinkVisible: true, mediaType });
+        const { post } = await api.createGalleryPost({
+          tryOnSessionId: sessionId,
+          visibility: "public",
+          productLinkVisible: !isStylistIdea,
+          productVisibility: isStylistIdea ? "HIDE_PRODUCT_LINK" : "SHOW_PRODUCT_LINK",
+          mediaType,
+        });
         setGalleryPosts((posts) => [...posts, post]);
       }
     } catch (err) {
@@ -273,8 +284,8 @@ export default function TryOnResultScreen() {
       const { post } = await api.createGalleryPost({
         tryOnSessionId: sessionId,
         visibility: "unlisted",
-        productLinkVisible: true,
-        productVisibility: "SHOW_PRODUCT_LINK",
+        productLinkVisible: !isStylistIdea,
+        productVisibility: isStylistIdea ? "HIDE_PRODUCT_LINK" : "SHOW_PRODUCT_LINK",
         mediaType: "image",
       });
       const postUrl = buildPublicPostUrl({
@@ -483,7 +494,7 @@ export default function TryOnResultScreen() {
           <Feather name="arrow-left" size={22} color={colors.black} />
         </Pressable>
 
-        {result.product ? (
+        {result.product && !isStylistIdea ? (
           <Pressable
             accessibilityRole={result.product.productUrl ? "link" : "button"}
             accessibilityLabel="Открыть карточку товара"
@@ -495,13 +506,32 @@ export default function TryOnResultScreen() {
           </Pressable>
         ) : null}
 
-        <BeforeAfterSlider beforeSource={imageUris.before} afterSource={imageUris.after} height={480} />
+        {isStylistIdea ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Открыть идею стилиста на весь экран"
+            style={styles.singleImageWrap}
+            onPress={() => setImageModalVisible(true)}
+          >
+            {imageUris.after ? (
+              <Image source={imageUris.after} style={StyleSheet.absoluteFill} contentFit="contain" />
+            ) : (
+              <View style={StyleSheet.absoluteFill} />
+            )}
+            <View style={styles.expandBadge}>
+              <Feather name="maximize-2" size={18} color={colors.black} />
+            </View>
+          </Pressable>
+        ) : (
+          <BeforeAfterSlider beforeSource={imageUris.before} afterSource={imageUris.after} height={480} />
+        )}
+        {isStylistIdea ? <Text style={styles.stylistIdeaLabel}>Идея стилиста</Text> : null}
         <View style={styles.mediaActions}>
           <Button label="Скачать фото" variant="secondary" loading={downloading === "image"} onPress={() => void downloadBranded("image")} style={styles.mediaAction} />
           <Button label={galleryPostFor("image") ? "Убрать из галереи" : "Показать в галерее"} variant="secondary" loading={galleryAction === "image"} onPress={() => void toggleGalleryPost("image")} style={styles.mediaAction} />
         </View>
 
-        {videoStatus === "ready" && afterVideoUrl ? (
+        {!isStylistIdea && videoStatus === "ready" && afterVideoUrl ? (
           <View style={styles.videoSection}>
             <Text style={styles.videoTitle}>Видео «Хит сезона»</Text>
             <AppVideoPlayer path={afterVideoUrl} accessToken={token} />
@@ -512,7 +542,7 @@ export default function TryOnResultScreen() {
           </View>
         ) : null}
 
-        {videoStatus === "generating" || videoGenerating ? (
+        {!isStylistIdea && (videoStatus === "generating" || videoGenerating) ? (
           <View style={styles.videoStatusCard}>
             <ActivityIndicator color={colors.violet} />
             <View style={styles.videoStatusCopy}>
@@ -536,7 +566,7 @@ export default function TryOnResultScreen() {
         {result.sizeFitMessage ? <Text style={styles.fit}>{result.sizeFitMessage}</Text> : null}
 
         <View style={styles.actions}>
-          {videoStatus !== "ready" && videoStatus !== "generating" ? (
+          {!isStylistIdea && videoStatus !== "ready" && videoStatus !== "generating" ? (
             <View style={styles.primaryActionRow}>
               {result.product ? (
                 <Pressable
@@ -562,11 +592,20 @@ export default function TryOnResultScreen() {
               />
             </View>
           ) : null}
-          {videoStatus !== "ready" && videoStatus !== "generating" ? (
+          {!isStylistIdea && videoStatus !== "ready" && videoStatus !== "generating" ? (
             <BodyText>В trial доступно одно бесплатное видео. В Elite — видео к каждой примерке.</BodyText>
           ) : null}
           <Button label="Поделиться" variant="secondary" loading={sharing} onPress={shareResult} />
-          <Button label="Ещё примерка" onPress={() => router.push("/(main)/try-on")} />
+          <Button
+            label={isStylistIdea ? "Ещё идея стилиста" : "Ещё примерка"}
+            onPress={() => {
+              if (isStylistIdea) {
+                router.push("/stylist" as never);
+              } else {
+                router.push("/(main)/try-on");
+              }
+            }}
+          />
         </View>
       </ScrollView>
       <ReviewPromptModal
@@ -581,6 +620,21 @@ export default function TryOnResultScreen() {
         onNever={dismissReviewPromptForever}
         onSubmitFeedback={submitReviewFeedback}
       />
+      <Modal visible={imageModalVisible} transparent animationType="fade" onRequestClose={() => setImageModalVisible(false)}>
+        <View style={styles.imageModalBackdrop}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Закрыть просмотр"
+            style={styles.imageModalClose}
+            onPress={() => setImageModalVisible(false)}
+          >
+            <Feather name="x" size={24} color={colors.black} />
+          </Pressable>
+          {imageUris.after ? (
+            <Image source={imageUris.after} style={styles.imageModalImage} contentFit="contain" />
+          ) : null}
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -737,6 +791,57 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.muted,
     marginTop: 4,
+  },
+  stylistIdeaLabel: {
+    marginTop: -spacing.sm,
+    textAlign: "center",
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: "#7aa052",
+  },
+  singleImageWrap: {
+    height: 480,
+    borderRadius: radius.xxl,
+    overflow: "hidden",
+    backgroundColor: colors.pinkBg,
+    borderWidth: hairline,
+    borderColor: colors.borderLight,
+  },
+  expandBadge: {
+    position: "absolute",
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.94)",
+  },
+  imageModalBackdrop: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(20, 16, 26, 0.9)",
+    padding: spacing.md,
+  },
+  imageModalImage: {
+    width: "100%",
+    height: "86%",
+  },
+  imageModalClose: {
+    position: "absolute",
+    top: spacing.xl,
+    right: spacing.lg,
+    zIndex: 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.white,
   },
   fit: {
     fontFamily: "Manrope_400Regular",

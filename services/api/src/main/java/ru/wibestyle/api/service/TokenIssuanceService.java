@@ -84,6 +84,7 @@ public class TokenIssuanceService {
         if (user.getLogin() != null) {
             map.put("login", user.getLogin());
         }
+        map.put("stylistFocusGroup", user.isStylistFocusGroup());
         return map;
     }
 }

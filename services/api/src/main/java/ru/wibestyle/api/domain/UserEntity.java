@@ -45,6 +45,9 @@ public class UserEntity {
     @Column(name = "last_marketing_visit_id")
     private UUID lastMarketingVisitId;
 
+    @Column(name = "stylist_focus_group", nullable = false)
+    private boolean stylistFocusGroup = false;
+
     protected UserEntity() {
     }
 
@@ -122,6 +125,7 @@ public class UserEntity {
     public String getVisitorId() { return visitorId; }
     public UUID getFirstMarketingVisitId() { return firstMarketingVisitId; }
     public UUID getLastMarketingVisitId() { return lastMarketingVisitId; }
+    public boolean isStylistFocusGroup() { return stylistFocusGroup; }
 
     public void attachMarketing(String visitorId, UUID firstVisitId, UUID lastVisitId) {
         if (this.visitorId == null) this.visitorId = visitorId;
@@ -143,5 +147,9 @@ public class UserEntity {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public void setStylistFocusGroup(boolean stylistFocusGroup) {
+        this.stylistFocusGroup = stylistFocusGroup;
     }
 }

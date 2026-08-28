@@ -110,6 +110,11 @@ public class LocalBlobStorage implements BlobStorage {
     }
 
     @Override
+    public String storeStylistVariantPreview(UUID userId, UUID sessionId, String variantKey, InputStream input) throws IOException {
+        return put(BlobKeys.stylistVariantPreview(userId, sessionId, variantKey), input);
+    }
+
+    @Override
     public String storeMediaAsset(UUID userId, UUID assetId, String extension, InputStream input) throws IOException {
         return put(BlobKeys.mediaAsset(userId, assetId, extension), input);
     }

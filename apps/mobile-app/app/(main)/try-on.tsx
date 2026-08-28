@@ -5,6 +5,7 @@ import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, Card, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 import { Pressable, Text } from "react-native";
+import { useSession } from "@/context/SessionProvider";
 
 const OPTIONS = [
   {
@@ -34,6 +35,20 @@ const OPTIONS = [
 
 export default function TryOnHubScreen() {
   const router = useRouter();
+  const { profile } = useSession();
+  const options = profile?.stylistAvailable
+    ? [
+        {
+          id: "stylist",
+          title: "Подбор образа",
+          subtitle: "Событие, три стиля и товары-кандидаты",
+          icon: "star" as const,
+          href: "/stylist",
+          badge: "Фокус",
+        },
+        ...OPTIONS,
+      ]
+    : OPTIONS;
 
   return (
     <Screen>
@@ -43,7 +58,7 @@ export default function TryOnHubScreen() {
         <BodyText>Выбери способ — мы наденем образ на твоё фото в полный рост.</BodyText>
 
         <View style={styles.list}>
-          {OPTIONS.map((option) => (
+          {options.map((option) => (
             <Pressable
               key={option.id}
               style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}

@@ -21,8 +21,8 @@ describe("try-on result actions", () => {
 
   it("renders try again as a primary action", () => {
     expect(source).toContain('data-testid="try-on-again"');
-    expect(source).toContain('isHairstyle ? "Выбрать другую причёску" : "Примерить ещё одну вещь"');
-    expect(source).toContain('href={isHairstyle ? "/hairstyles" : "/try-on"}');
+    expect(source).toContain('isHairstyle ? "Выбрать другую причёску" : isStylistIdea ? "Собрать другую идею" : "Примерить ещё одну вещь"');
+    expect(source).toContain('href={isHairstyle ? "/hairstyles" : isStylistIdea ? "/stylist" : "/try-on"}');
   });
 
   it("toggles gallery publishing and supports owner unpublish", () => {

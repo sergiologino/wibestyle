@@ -16,6 +16,10 @@ public class AiIntegrationProperties {
     private String seasonVideoNetwork = "";
     /** OpenAI-compatible chat network in noteapp (e.g. openai-gpt4o-mini) for size compliments. */
     private String sizeComplimentNetwork = "";
+    /** Chat/vision network for stylist avatar analysis, trends and style briefs. */
+    private String stylistTrendsNetwork = "";
+    /** Image generation network for stylist preview renders. */
+    private String stylistImageNetwork = "";
     /** Opt-in image-edit network in noteapp for reversible avatar enhancement. */
     private String avatarEnhanceNetwork = "";
     private String webhookSecret = "";
@@ -96,6 +100,22 @@ public class AiIntegrationProperties {
         return avatarEnhanceNetwork;
     }
 
+    public String getStylistTrendsNetwork() {
+        return stylistTrendsNetwork;
+    }
+
+    public void setStylistTrendsNetwork(String stylistTrendsNetwork) {
+        this.stylistTrendsNetwork = stylistTrendsNetwork;
+    }
+
+    public String getStylistImageNetwork() {
+        return stylistImageNetwork;
+    }
+
+    public void setStylistImageNetwork(String stylistImageNetwork) {
+        this.stylistImageNetwork = normalizeStylistImageNetwork(stylistImageNetwork);
+    }
+
     public void setAvatarEnhanceNetwork(String avatarEnhanceNetwork) {
         this.avatarEnhanceNetwork = avatarEnhanceNetwork;
     }
@@ -128,9 +148,33 @@ public class AiIntegrationProperties {
                 && !sizeComplimentNetwork.isBlank();
     }
 
+    public boolean isStylistTrendsConfigured() {
+        return enabled
+                && apiKey != null
+                && !apiKey.isBlank()
+                && stylistTrendsNetwork != null
+                && !stylistTrendsNetwork.isBlank();
+    }
+
+    public boolean isStylistImageConfigured() {
+        return enabled
+                && apiKey != null
+                && !apiKey.isBlank()
+                && stylistImageNetwork != null
+                && !stylistImageNetwork.isBlank();
+    }
+
     public boolean isAvatarEnhanceConfigured() {
         return isIntegrationConfigured()
                 && avatarEnhanceNetwork != null
                 && !avatarEnhanceNetwork.isBlank();
+    }
+
+    private static String normalizeStylistImageNetwork(String networkName) {
+        if (networkName == null) {
+            return null;
+        }
+        String trimmed = networkName.trim();
+        return "grok-imagine".equalsIgnoreCase(trimmed) ? "wibestyle-vton" : trimmed;
     }
 }

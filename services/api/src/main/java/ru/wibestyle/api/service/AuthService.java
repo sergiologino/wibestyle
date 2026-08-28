@@ -2,6 +2,9 @@ package ru.wibestyle.api.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.data.domain.PageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.wibestyle.api.auth.JwtService;
@@ -14,6 +17,7 @@ import ru.wibestyle.api.support.OtpCodeGenerator;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -36,6 +40,7 @@ public class AuthService {
     private final SmsProperties smsProperties;
     private final SmsSender smsSender;
     private final EmailSender emailSender;
+    private final TransactionTemplate transactionTemplate;
     private final Map<String, PhoneOtpChallenge> phoneChallenges = new ConcurrentHashMap<>();
     private final Map<String, EmailOtpChallenge> emailChallenges = new ConcurrentHashMap<>();
     private final Map<String, Instant> lastStartByPhone = new ConcurrentHashMap<>();
@@ -52,7 +57,8 @@ public class AuthService {
             AuthProperties authProperties,
             SmsProperties smsProperties,
             SmsSender smsSender,
-            EmailSender emailSender
+            EmailSender emailSender,
+            PlatformTransactionManager transactionManager
     ) {
         this.userRepository = userRepository;
         this.profileService = profileService;
@@ -66,11 +72,13 @@ public class AuthService {
         this.smsProperties = smsProperties;
         this.smsSender = smsSender;
         this.emailSender = emailSender;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     public OtpStartResult startOtp(String phone) {
         String normalized = normalizePhone(phone);
-        if (normalized.length() < 10) {
+        String digits = phoneDigits(normalized);
+        if (digits.length() < 10 || digits.length() > 15) {
             throw new IllegalArgumentException("INVALID_PHONE");
         }
 
@@ -126,17 +134,14 @@ public class AuthService {
         return verifyOtp(requestId, code, promoCode, null);
     }
 
-    @Transactional
     public AuthResult verifyOtp(String requestId, String code, String promoCode, String referralCode) {
         return verifyOtp(requestId, code, promoCode, referralCode, null);
     }
 
-    @Transactional
     public AuthResult verifyOtp(String requestId, String code, String promoCode, String referralCode, String visitorId) {
         return verifyOtp(requestId, code, promoCode, referralCode, visitorId, null);
     }
 
-    @Transactional
     public AuthResult verifyOtp(
             String requestId,
             String code,
@@ -163,7 +168,6 @@ public class AuthService {
         return authenticateVerifiedPhone(challenge.phone(), promoCode, referralCode, visitorId, deviceId);
     }
 
-    @Transactional
     public AuthResult authenticateVerifiedPhone(
             String phone,
             String promoCode,
@@ -172,33 +176,47 @@ public class AuthService {
             String deviceId
     ) {
         String normalizedPhone = normalizePhone(phone);
-        if (normalizedPhone.length() < 10 || normalizedPhone.length() > 15) {
+        String digits = phoneDigits(normalizedPhone);
+        if (digits.length() < 10 || digits.length() > 15) {
             throw new IllegalArgumentException("INVALID_PHONE");
         }
         Object lock = normalizedPhone.intern();
         synchronized (lock) {
-            boolean isNewUser = userRepository.findByPhone(normalizedPhone).isEmpty();
-            UserEntity user = userRepository.findByPhone(normalizedPhone)
-                    .orElseGet(() -> userRepository.saveAndFlush(
-                            new UserEntity(UUID.randomUUID(), normalizedPhone, Instant.now())
-                    ));
-            profileService.ensureProfile(user.getId());
-            if (isNewUser) referralService.captureNewUser(user.getId(), referralCode);
-            try {
-                marketingAttributionService.attachUserToVisitor(user.getId(), visitorId, isNewUser);
-            } catch (RuntimeException ex) {
-                log.warn("Marketing attribution did not attach during SMS authentication", ex);
-            }
-            DeviceTrustService.DeviceRegistrationResult deviceResult =
-                    deviceTrustService.recordAuthentication(user.getId(), deviceId, isNewUser);
-
-            Map<String, Object> promoResult = Map.of("redeemed", false);
-            if (promoCode != null && !promoCode.isBlank()) {
-                promoResult = promoService.redeemForUser(user.getId(), promoCode);
-            }
-
-            return issueTokens(user, isNewUser, promoResult, deviceResult);
+            return transactionTemplate.execute(status ->
+                    authenticateVerifiedPhoneInTransaction(normalizedPhone, promoCode, referralCode, visitorId, deviceId)
+            );
         }
+    }
+
+    private AuthResult authenticateVerifiedPhoneInTransaction(
+            String normalizedPhone,
+            String promoCode,
+            String referralCode,
+            String visitorId,
+            String deviceId
+    ) {
+        UserEntity user = findUserByPhoneForLogin(normalizedPhone)
+                .orElse(null);
+        boolean isNewUser = user == null;
+        if (user == null) {
+            user = userRepository.saveAndFlush(new UserEntity(UUID.randomUUID(), normalizedPhone, Instant.now()));
+        }
+        profileService.ensureProfile(user.getId());
+        if (isNewUser) referralService.captureNewUser(user.getId(), referralCode);
+        try {
+            marketingAttributionService.attachUserToVisitor(user.getId(), visitorId, isNewUser);
+        } catch (RuntimeException ex) {
+            log.warn("Marketing attribution did not attach during SMS authentication", ex);
+        }
+        DeviceTrustService.DeviceRegistrationResult deviceResult =
+                deviceTrustService.recordAuthentication(user.getId(), deviceId, isNewUser);
+
+        Map<String, Object> promoResult = Map.of("redeemed", false);
+        if (promoCode != null && !promoCode.isBlank()) {
+            promoResult = promoService.redeemForUser(user.getId(), promoCode);
+        }
+
+        return issueTokens(user, isNewUser, promoResult, deviceResult);
     }
 
     @Transactional
@@ -274,7 +292,22 @@ public class AuthService {
     }
 
     private String normalizePhone(String phone) {
-        return phone.replaceAll("[^0-9+]", "");
+        String digits = phone == null ? "" : phone.replaceAll("\\D", "");
+        return digits.isBlank() ? "" : "+" + digits;
+    }
+
+    private Optional<UserEntity> findUserByPhoneForLogin(String normalizedPhone) {
+        String digits = phoneDigits(normalizedPhone);
+        if (digits.isBlank()) {
+            return Optional.empty();
+        }
+        return userRepository.findPhoneLoginCandidates(normalizedPhone, digits, PageRequest.of(0, 1))
+                .stream()
+                .findFirst();
+    }
+
+    private String phoneDigits(String phone) {
+        return phone == null ? "" : phone.replaceAll("\\D", "");
     }
 
     private String normalizeEmail(String email) {

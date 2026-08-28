@@ -10,6 +10,7 @@ import TryOnReviewForm from "@/components/try-on/TryOnReviewForm";
 import { TryOnBeforeAfter, TryOnResultVideo } from "@/components/try-on/TryOnResultImages";
 import TryOnProductBanner from "@/components/try-on/TryOnProductBanner";
 import TryOnFavoriteButton from "@/components/try-on/TryOnFavoriteButton";
+import ApiImage from "@/components/media/ApiImage";
 import AuthenticatedShareImage from "@/components/media/AuthenticatedShareImage";
 import FeedbackActionButton from "@/components/try-on/FeedbackActionButton";
 import OverlayModal from "@/components/ui/OverlayModal";
@@ -17,13 +18,13 @@ import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { formatTryOnError } from "@/lib/try-on-error-message";
 import { appBaseUrl, brandDomain, landingSiteUrl } from "@/lib/api-media";
 import { shareGalleryPost, buildSharePayloadFromPost } from "@/lib/share-post";
-import { downloadProtectedFile, downloadWatermarkedTryOnImage } from "@/lib/try-on-download";
+import { downloadProtectedFile } from "@/lib/try-on-download";
 import {
   canFavoriteTryOnProduct,
   favoriteProductKey,
   shouldShowProductBanner,
 } from "@/lib/try-on-product";
-import { Clapperboard, Download, Plus } from "lucide-react";
+import { Clapperboard, Download, Maximize2, Plus } from "lucide-react";
 
 const POLL_MS = 2000;
 /** ~3 minutes — aligned with backend AI timeout */
@@ -197,10 +198,11 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
 
   const fallbackSlug = useMemo(() => sessionId.replace(/-/g, "").slice(0, 12), [sessionId]);
   const isHairstyle = session?.sourceType === "hairstyle";
-  const productTitle = result?.product?.title ?? (isHairstyle ? "AI-причёска" : "Look из галереи");
+  const isStylistIdea = session?.sourceType === "stylist_idea";
+  const productTitle = isStylistIdea ? "Идея стилиста" : result?.product?.title ?? (isHairstyle ? "AI-причёска" : "Look из галереи");
   const productUrl = result?.product?.productUrl;
   const postSlug = galleryPostSlug ?? fallbackSlug;
-  const hasVideo = !isHairstyle && videoStatus === "ready" && afterVideoUrl;
+  const hasVideo = !isHairstyle && !isStylistIdea && videoStatus === "ready" && afterVideoUrl;
   const landingUrl = landingSiteUrl();
   const siteBrand = brandDomain();
   const shareAppBase = appBaseUrl();
@@ -266,8 +268,8 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     const created = await api.createGalleryPost({
       tryOnSessionId: sessionId,
       visibility,
-      productLinkVisible: isHairstyle ? false : showProductLink,
-      productVisibility: isHairstyle || !showProductLink ? "HIDE_PRODUCT_LINK" : "SHOW_PRODUCT_LINK",
+      productLinkVisible: isHairstyle || isStylistIdea ? false : showProductLink,
+      productVisibility: isHairstyle || isStylistIdea || !showProductLink ? "HIDE_PRODUCT_LINK" : "SHOW_PRODUCT_LINK",
       eliteFrame: result?.eliteFrame,
       mediaType: hasVideo ? mediaType : "image",
     });
@@ -331,7 +333,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         appBaseUrl: shareAppBase,
         title: post.title,
         productTitle,
-        showProductLink,
+        showProductLink: !isStylistIdea && showProductLink,
       });
       const outcome = await shareGalleryPost(sharePayload);
       setGalleryPostSlug(post.slug);
@@ -453,7 +455,9 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10">
       <div>
         <p className="text-eyebrow">Готово</p>
-        <h1 className="text-display mt-2 text-4xl">{isHairstyle ? "Смотри причёску до и после" : "Смотри, как смотрится на тебе"}</h1>
+        <h1 className="text-display mt-2 text-4xl">
+          {isHairstyle ? "Смотри причёску до и после" : isStylistIdea ? "Идея стилиста готова" : "Смотри, как смотрится на тебе"}
+        </h1>
       </div>
 
       {result.styleCompliment ? (
@@ -480,18 +484,34 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         </Card>
       ) : null}
 
-      {!isHairstyle && product && shouldShowProductBanner(product, selectedSize) ? (
+      {!isHairstyle && !isStylistIdea && product && shouldShowProductBanner(product, selectedSize) ? (
         <TryOnProductBanner product={product} selectedSize={selectedSize} />
       ) : null}
 
       <div className={`mx-auto grid w-full gap-6 ${hasVideo ? "max-w-4xl md:grid-cols-2" : "max-w-md"}`}>
-        <TryOnBeforeAfter
-          afterSrc={result.afterImageUrl}
-          beforeSrc={result.beforeImageUrl}
-          downloadBusy={downloadBusy}
-          onDownloadClick={() => void onDownloadResult()}
-          onExpandClick={() => setShowImageModal(true)}
-        />
+        <div>
+          {isStylistIdea ? (
+            <ResultSingleImage
+              src={result.afterImageUrl}
+              downloadBusy={downloadBusy}
+              onDownloadClick={() => void onDownloadResult()}
+              onExpandClick={() => setShowImageModal(true)}
+            />
+          ) : (
+            <TryOnBeforeAfter
+              afterSrc={result.afterImageUrl}
+              beforeSrc={result.beforeImageUrl}
+              downloadBusy={downloadBusy}
+              onDownloadClick={() => void onDownloadResult()}
+              onExpandClick={() => setShowImageModal(true)}
+            />
+          )}
+          {isStylistIdea ? (
+            <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-[#7aa052]">
+              Идея стилиста
+            </p>
+          ) : null}
+        </div>
 
         {hasVideo && afterVideoUrl ? (
           <TryOnResultVideo eliteFrame={result.eliteFrame} src={afterVideoUrl} downloadBusy={downloadBusy} onDownloadClick={() => void onDownloadVideo()} />
@@ -527,7 +547,11 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         open={showImageModal}
         onClose={() => setShowImageModal(false)}
       >
-        <TryOnBeforeAfter afterSrc={result.afterImageUrl} beforeSrc={result.beforeImageUrl} />
+        {isStylistIdea ? (
+          <ResultSingleImage src={result.afterImageUrl} className="max-h-[82vh] shadow-none" />
+        ) : (
+          <TryOnBeforeAfter afterSrc={result.afterImageUrl} beforeSrc={result.beforeImageUrl} />
+        )}
       </OverlayModal>
 
       <OverlayModal
@@ -556,7 +580,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
               landingUrl={landingUrl}
               postSlug={postSlug}
               productTitle={productTitle}
-              showProductLink={showProductLink}
+              showProductLink={!isStylistIdea && showProductLink}
             />
           </div>
           <div className="mt-5 px-1">
@@ -584,7 +608,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       ) : null}
 
       <Card>
-        {!isHairstyle ? (
+        {!isHairstyle && !isStylistIdea ? (
           <label className="mb-4 flex items-center gap-3 font-normal text-[#302637]">
             <input
               checked={showProductLink}
@@ -595,7 +619,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
           </label>
         ) : null}
 
-        {product && canFavoriteTryOnProduct(product) ? (
+        {!isStylistIdea && product && canFavoriteTryOnProduct(product) ? (
           <div className="mb-3">
             <TryOnFavoriteButton
               isFavorite={isFavorite}
@@ -607,7 +631,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
         ) : null}
 
         <div className="flex flex-wrap gap-3">
-          {!isHairstyle && !hasVideo && videoStatus !== "generating" ? (
+          {!isHairstyle && !isStylistIdea && !hasVideo && videoStatus !== "generating" ? (
             <button
               type="button"
               aria-label="Сделать видео из результата примерки"
@@ -635,7 +659,7 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
             Отправить подруге
           </FeedbackActionButton>
         </div>
-        {!isHairstyle && !hasVideo && videoStatus !== "generating" ? (
+        {!isHairstyle && !isStylistIdea && !hasVideo && videoStatus !== "generating" ? (
           <p className="text-body mt-3 text-sm">
             В trial доступно одно бесплатное видео. В Elite можно создавать видео к каждой примерке.
             Подходящая локация подбирается автоматически.
@@ -687,13 +711,54 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       <TryOnReviewForm api={api} sessionId={sessionId} />
 
       <Link
-        href={isHairstyle ? "/hairstyles" : "/try-on"}
+        href={isHairstyle ? "/hairstyles" : isStylistIdea ? "/stylist" : "/try-on"}
         data-testid="try-on-again"
         className="inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-2xl border border-[#ffd1ed] bg-[#fff4fb]/75 px-5 py-2.5 text-sm font-medium text-[#782cff] shadow-[0_6px_18px_rgba(58,12,82,0.05)] transition hover:border-[#ffb8e4] hover:bg-[#fff0f8] active:scale-[0.98]"
       >
         <Plus size={18} aria-hidden />
-        <span>{isHairstyle ? "Выбрать другую причёску" : "Примерить ещё одну вещь"}</span>
+        <span>{isHairstyle ? "Выбрать другую причёску" : isStylistIdea ? "Собрать другую идею" : "Примерить ещё одну вещь"}</span>
       </Link>
+    </div>
+  );
+}
+
+function ResultSingleImage({
+  src,
+  onExpandClick,
+  onDownloadClick,
+  downloadBusy = false,
+  className,
+}: {
+  src: string;
+  onExpandClick?: () => void;
+  onDownloadClick?: () => void;
+  downloadBusy?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={["relative aspect-[3/4] w-full overflow-hidden rounded-[28px] border border-[#f0dce8] bg-[#f5eef3] shadow-[0_20px_60px_rgba(58,12,82,0.12)]", className].filter(Boolean).join(" ")}>
+      <ApiImage alt="Идея стилиста" className="absolute inset-0 h-full w-full object-contain object-center" src={src} />
+      {onDownloadClick ? (
+        <button
+          aria-label="Скачать идею стилиста"
+          className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-full bg-white/95 text-[#302637] shadow-md transition hover:bg-white hover:text-[#ff1fa2] disabled:cursor-wait disabled:opacity-70"
+          disabled={downloadBusy}
+          type="button"
+          onClick={onDownloadClick}
+        >
+          <Download size={18} aria-hidden />
+        </button>
+      ) : null}
+      {onExpandClick ? (
+        <button
+          aria-label="Увеличить идею стилиста"
+          className={["absolute top-3 z-20 flex size-9 items-center justify-center rounded-full bg-white/95 text-[#302637] shadow-md transition hover:bg-white hover:text-[#ff1fa2]", onDownloadClick ? "right-14" : "right-3"].join(" ")}
+          type="button"
+          onClick={onExpandClick}
+        >
+          <Maximize2 size={18} aria-hidden />
+        </button>
+      ) : null}
     </div>
   );
 }

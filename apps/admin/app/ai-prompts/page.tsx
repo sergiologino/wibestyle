@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Button, Card, Pill } from "@wibestyle/ui";
+import { Card, Pill } from "@wibestyle/ui";
 import { createAdminApi } from "@/lib/api";
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { useAdminKey } from "@/components/admin-key-provider";
@@ -9,6 +9,9 @@ import { useAdminKey } from "@/components/admin-key-provider";
 const PROMPT_TEMPLATES = [
   { key: "vton.base_ru", label: "Примерка" },
   { key: "avatar.quality_analysis", label: "Анализ аватара" },
+  { key: "stylist.avatar_analysis_ru", label: "Стилист: аватар" },
+  { key: "stylist.trends_ru", label: "Стилист: тренды" },
+  { key: "stylist.preview_tryon_ru", label: "Стилист: превью" },
 ] as const;
 
 type AiPromptTemplate = {
@@ -62,8 +65,8 @@ export default function AdminAiPromptsPage() {
   return (
     <AdminPageShell
       pill="AI"
-      title="Промпт примерки"
-      description="Базовая неизменяемая часть на русском. К каждому запросу система допишет блок ДАННЫЕ ПРИМЕРКИ (JSON) с товаром, размерами и фигурой."
+      title="AI-промпты"
+      description="Редактируемая текстовая часть промптов. Технические данные, JSON, аватар и служебные ограничения система добавляет отдельно."
     >
       {!configured ? (
         <p className="font-bold text-[#6d6273]">Сохраните X-Admin-Key в верхней панели.</p>
@@ -71,27 +74,40 @@ export default function AdminAiPromptsPage() {
 
       <Card>
         <div className="mb-4 flex flex-wrap gap-2">
-          {PROMPT_TEMPLATES.map((item) => (
-            <Button
-              key={item.key}
-              type="button"
-              size="sm"
-              variant={selectedKey === item.key ? "primary" : "secondary"}
-              onClick={() => {
-                setSelectedKey(item.key);
-                setSavedAt(null);
-              }}
-            >
-              {item.label}
-            </Button>
-          ))}
+          {PROMPT_TEMPLATES.map((item) => {
+            const active = selectedKey === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={[
+                  "min-h-8 rounded-2xl px-3 py-1.5 text-xs font-black shadow-sm transition active:scale-[0.97]",
+                  active
+                    ? "border border-[#ff1fa2] bg-[#ff1fa2] text-[#14101a] hover:bg-[#ff4db5]"
+                    : "border border-[#ffd1ed] bg-white text-[#302637] hover:bg-[#fff4fb]",
+                ].join(" ")}
+                style={{
+                  backgroundColor: active ? "#ff1fa2" : "#ffffff",
+                  borderColor: active ? "#ff1fa2" : "#ffd1ed",
+                  color: active ? "#14101a" : "#302637",
+                }}
+                onClick={() => {
+                  setSelectedKey(item.key);
+                  setSavedAt(null);
+                }}
+              >
+                {item.label}
+              </button>
+            );
+          })}
         </div>
-        <h2 className="text-xl font-black">{template?.title ?? "Примерка — базовый промпт"}</h2>
+        <h2 className="text-xl font-black">{template?.title ?? "AI-промпт"}</h2>
         {template?.description ? (
           <p className="mt-2 font-bold text-[#6d6273]">{template.description}</p>
         ) : null}
         <p className="mt-2 text-sm font-bold text-[#6d6273]">
-          Упоминайте image1 (покупатель) и image2 (товар). Grok Imagine получает этот текст + JSON с сессии.
+          Для примерки можно упоминать image1 (покупатель) и image2 (товар). Для стилиста пишите только смысловую часть:
+          анализ, тренды или визуальный образ; техническую привязку к аватару система добавит сама.
         </p>
         {template?.updatedAt ? (
           <p className="mt-1 text-sm text-[#6d6273]">
@@ -102,7 +118,7 @@ export default function AdminAiPromptsPage() {
 
         <form className="mt-4 grid gap-3" onSubmit={onSave}>
           <label className="grid gap-2">
-            <span className="text-sm font-black uppercase tracking-wide text-[#6d6273]">Базовый промпт (русский)</span>
+            <span className="text-sm font-black uppercase tracking-wide text-[#6d6273]">Текстовая часть промпта</span>
             <textarea
               className="min-h-[320px] rounded-2xl border border-[#ffd1ed] px-4 py-3 font-mono text-sm leading-relaxed"
               value={body}
@@ -112,13 +128,17 @@ export default function AdminAiPromptsPage() {
             />
           </label>
           <p className="text-sm font-bold text-[#6d6273]">
-            После сохранения к тексту автоматически добавляется раздел «ДАННЫЕ ПРИМЕРКИ (JSON)» — его в админке не
-            редактируют.
+            Служебные поля, JSON, изображения и ограничения безопасности в админке не редактируют.
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit" disabled={saving || !configured}>
+            <button
+              type="submit"
+              disabled={saving || !configured}
+              className="inline-flex min-h-9 items-center justify-center rounded-2xl bg-[#ff1fa2] px-4 py-2 text-sm font-black text-[#14101a] shadow-sm transition hover:bg-[#ff4db5] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ backgroundColor: "#ff1fa2", color: "#14101a" }}
+            >
               {saving ? "Сохранение…" : "Сохранить"}
-            </Button>
+            </button>
             <Pill tone="soft">{body.length} / 12000</Pill>
           </div>
         </form>

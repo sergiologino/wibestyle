@@ -19,6 +19,8 @@ import type {
   SearchResultItem,
   SeasonHitVideoStatus,
   SizeAdvice,
+  StylistLookResponse,
+  StylistPreset,
   SubscriptionPlan,
   TryOnResult,
   TryOnHistoryItem,
@@ -416,7 +418,7 @@ export class WibeStyleApiClient {
   }
 
   refreshToken(refreshToken: string) {
-    return this.request<AuthTokens & { user: { id: string; phone: string }; tokenType?: string }>(
+    return this.request<AuthTokens & { user: { id: string; phone?: string; email?: string; login?: string; stylistFocusGroup?: boolean }; tokenType?: string }>(
       "/api/v1/auth/refresh",
       {
         method: "POST",
@@ -595,10 +597,11 @@ export class WibeStyleApiClient {
     }>(`/api/v1/try-on/sessions/${sessionId}/generate-video`, { method: "POST" });
   }
 
-  listMyTryOnSessions(options?: { limit?: number; cursor?: string | null }) {
+  listMyTryOnSessions(options?: { limit?: number; cursor?: string | null; type?: "all" | "clothing" | "hairstyle" | "stylist" }) {
     const params = new URLSearchParams();
     if (options?.limit) params.set("limit", String(options.limit));
     if (options?.cursor) params.set("cursor", options.cursor);
+    if (options?.type && options.type !== "all") params.set("type", options.type);
     const query = params.toString();
     return this.request<PaginatedResponse<TryOnHistoryItem>>(
       `/api/v1/try-on/sessions/mine${query ? `?${query}` : ""}`,
@@ -610,7 +613,42 @@ export class WibeStyleApiClient {
   }
 
   getFeatures() {
-    return this.request<{ flags: Record<FeatureFlag, boolean> }>("/api/v1/features");
+    return this.request<{ flags: Record<FeatureFlag, boolean>; stylistFocusGroupOnly?: boolean }>("/api/v1/features");
+  }
+
+  getMyFeatures() {
+    return this.request<{
+      flags: Record<FeatureFlag, boolean>;
+      stylistFocusGroupOnly: boolean;
+      stylistFocusGroup: boolean;
+    }>("/api/v1/features/me");
+  }
+
+  listStylistPresets() {
+    return this.request<{ items: StylistPreset[] }>("/api/v1/stylist/presets");
+  }
+
+  createStylistLook(presetId: string) {
+    return this.request<StylistLookResponse>("/api/v1/stylist/looks", {
+      method: "POST",
+      body: JSON.stringify({ presetId }),
+    });
+  }
+
+  getStylistLook(sessionId: string) {
+    return this.request<StylistLookResponse>(`/api/v1/stylist/looks/${sessionId}`);
+  }
+
+  selectStylistVariant(sessionId: string, variantId: string) {
+    return this.request<StylistLookResponse>(`/api/v1/stylist/looks/${sessionId}/variants/${variantId}/select`, {
+      method: "POST",
+    });
+  }
+
+  searchStylistProducts(sessionId: string, variantId: string) {
+    return this.request<StylistLookResponse>(`/api/v1/stylist/looks/${sessionId}/variants/${variantId}/products/search`, {
+      method: "POST",
+    });
   }
 
   searchProducts(query: string, marketplace?: string) {
@@ -1274,6 +1312,7 @@ export class WibeStyleApiClient {
         planGenerationsLeft?: number;
         displayName?: string;
         primaryAuth?: string;
+        stylistFocusGroup?: boolean;
         activeAvatarPhotoUrl?: string;
         avatarUploadAttempts?: number;
         avatarFailedAttempts?: number;
@@ -1421,6 +1460,14 @@ export class WibeStyleApiClient {
       mobileAndroidForceUpdate: boolean;
     }>("/api/v1/admin/settings", {
       headers: { "X-Admin-Key": adminKey },
+    });
+  }
+
+  updateAdminUserStylistFocusGroup(adminKey: string, userId: string, enabled: boolean) {
+    return this.request<Record<string, unknown>>(`/api/v1/admin/users/${userId}/stylist-focus-group`, {
+      method: "PATCH",
+      headers: { "X-Admin-Key": adminKey },
+      body: JSON.stringify({ enabled }),
     });
   }
 
