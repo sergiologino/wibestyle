@@ -4,5 +4,6 @@ public enum TryOnSourceType {
     MARKETPLACE_LINK,
     GARMENT_PHOTO,
     GALLERY_UPLOAD,
-    HAIRSTYLE
+    HAIRSTYLE,
+    STYLIST_IDEA
 }

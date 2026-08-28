@@ -23,6 +23,7 @@ export default function StylistClient() {
   const [loading, setLoading] = useState(false);
   const [productSearchLoading, setProductSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewModalSrc, setPreviewModalSrc] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profile?.stylistAvailable) return;
@@ -199,7 +200,14 @@ export default function StylistClient() {
                 <div className="grid md:grid-cols-[260px_1fr]">
                   <div className="flex min-h-80 items-center justify-center bg-[var(--pink-bg)] p-6">
                     {selectedVariant.tryOnPreviewUrl ? (
-                      <PreviewImage src={selectedVariant.tryOnPreviewUrl} />
+                      <button
+                        type="button"
+                        className="h-full w-full cursor-zoom-in"
+                        aria-label="Открыть фото образа"
+                        onClick={() => setPreviewModalSrc(selectedVariant.tryOnPreviewUrl ?? null)}
+                      >
+                        <PreviewImage src={selectedVariant.tryOnPreviewUrl} />
+                      </button>
                     ) : (
                       <div className="flex h-72 w-48 flex-col items-center justify-center rounded-[28px] border border-[#ffd1ed] bg-white text-center text-sm font-medium text-[#6d6273]">
                         {selectedVariant.previewStatus === "queued" || selectedVariant.previewStatus === "generating" ? (
@@ -245,6 +253,27 @@ export default function StylistClient() {
           </div>
         </section>
       ) : null}
+      {previewModalSrc ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#14101a]/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setPreviewModalSrc(null)}
+        >
+          <button
+            type="button"
+            aria-label="Закрыть просмотр"
+            title="Закрыть"
+            className="absolute right-4 top-4 flex size-11 items-center justify-center rounded-full bg-white text-[#302637] shadow-lg"
+            onClick={() => setPreviewModalSrc(null)}
+          >
+            <X size={20} aria-hidden />
+          </button>
+          <div className="max-h-[92vh] max-w-[min(92vw,820px)]" onClick={(event) => event.stopPropagation()}>
+            <PreviewImage src={previewModalSrc} className="max-h-[92vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl" />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -253,12 +282,12 @@ function PlainTextBlock({ text }: { text?: string | null }) {
   return <p className="text-body mt-3 whitespace-pre-line text-sm">{plainTextForUi(text)}</p>;
 }
 
-function PreviewImage({ src }: { src: string }) {
+function PreviewImage({ src, className = "h-full max-h-[420px] w-full object-contain" }: { src: string; className?: string }) {
   if (/^https?:\/\//i.test(src)) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt="" className="h-full max-h-[420px] w-full object-contain" />;
+    return <img src={src} alt="" className={className} />;
   }
-  return <ApiImage src={src} alt="" className="h-full max-h-[420px] w-full object-contain" />;
+  return <ApiImage src={src} alt="" className={className} />;
 }
 
 function plainTextForUi(text?: string | null) {

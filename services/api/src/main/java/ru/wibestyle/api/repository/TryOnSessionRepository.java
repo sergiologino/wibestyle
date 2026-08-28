@@ -19,6 +19,13 @@ public interface TryOnSessionRepository extends JpaRepository<TryOnSessionEntity
 
     List<TryOnSessionEntity> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, TryOnSessionStatus status, Pageable pageable);
 
+    List<TryOnSessionEntity> findByUserIdAndStatusAndSourceTypeInOrderByCreatedAtDesc(
+            UUID userId,
+            TryOnSessionStatus status,
+            List<ru.wibestyle.api.domain.TryOnSourceType> sourceTypes,
+            Pageable pageable
+    );
+
     List<TryOnSessionEntity> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
     Optional<TryOnSessionEntity> findTopByUserIdOrderByCreatedAtDesc(UUID userId);

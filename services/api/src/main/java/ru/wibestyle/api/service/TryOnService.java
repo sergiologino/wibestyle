@@ -263,19 +263,23 @@ public class TryOnService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> listMine(UUID userId) {
-        return listMine(userId, 24, null);
+        return listMine(userId, 24, null, null);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> listMine(UUID userId, int limit, String cursor) {
+        return listMine(userId, limit, cursor, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> listMine(UUID userId, int limit, String cursor, String type) {
         int offset = parseCursor(cursor);
         int pageSize = clampLimit(limit);
-        List<TryOnSessionEntity> sessions = tryOnSessionRepository
-                .findByUserIdAndStatusOrderByCreatedAtDesc(
-                        userId,
-                        TryOnSessionStatus.READY,
-                        PageRequest.of(offset / pageSize, pageSize)
-                );
+        PageRequest pageRequest = PageRequest.of(offset / pageSize, pageSize);
+        List<TryOnSourceType> sourceTypes = sourceTypesForHistoryFilter(type);
+        List<TryOnSessionEntity> sessions = sourceTypes == null
+                ? tryOnSessionRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, TryOnSessionStatus.READY, pageRequest)
+                : tryOnSessionRepository.findByUserIdAndStatusAndSourceTypeInOrderByCreatedAtDesc(userId, TryOnSessionStatus.READY, sourceTypes, pageRequest);
         boolean hasMore = sessions.size() == pageSize;
         List<Map<String, Object>> items = sessions.stream()
                 .map(this::toHistoryMap)
@@ -590,6 +594,23 @@ public class TryOnService {
             case GARMENT_PHOTO -> "garment_photo";
             case GALLERY_UPLOAD -> "gallery_upload";
             case HAIRSTYLE -> "hairstyle";
+            case STYLIST_IDEA -> "stylist_idea";
+        };
+    }
+
+    private static List<TryOnSourceType> sourceTypesForHistoryFilter(String type) {
+        if (type == null || type.isBlank() || "all".equalsIgnoreCase(type)) {
+            return null;
+        }
+        return switch (type.trim().toLowerCase(Locale.ROOT)) {
+            case "clothing", "try_on", "garment" -> List.of(
+                    TryOnSourceType.MARKETPLACE_LINK,
+                    TryOnSourceType.GARMENT_PHOTO,
+                    TryOnSourceType.GALLERY_UPLOAD
+            );
+            case "hairstyle", "hair" -> List.of(TryOnSourceType.HAIRSTYLE);
+            case "stylist", "stylist_idea" -> List.of(TryOnSourceType.STYLIST_IDEA);
+            default -> null;
         };
     }
 

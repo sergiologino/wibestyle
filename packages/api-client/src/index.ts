@@ -597,10 +597,11 @@ export class WibeStyleApiClient {
     }>(`/api/v1/try-on/sessions/${sessionId}/generate-video`, { method: "POST" });
   }
 
-  listMyTryOnSessions(options?: { limit?: number; cursor?: string | null }) {
+  listMyTryOnSessions(options?: { limit?: number; cursor?: string | null; type?: "all" | "clothing" | "hairstyle" | "stylist" }) {
     const params = new URLSearchParams();
     if (options?.limit) params.set("limit", String(options.limit));
     if (options?.cursor) params.set("cursor", options.cursor);
+    if (options?.type && options.type !== "all") params.set("type", options.type);
     const query = params.toString();
     return this.request<PaginatedResponse<TryOnHistoryItem>>(
       `/api/v1/try-on/sessions/mine${query ? `?${query}` : ""}`,

@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { TryOnHistoryItem } from "@wibestyle/shared-types";
 import ApiImage from "@/components/media/ApiImage";
 import { Card } from "@wibestyle/ui";
-import { formatTryOnHistoryTitle, tryOnResultPath } from "@/lib/try-on-history";
+import { formatTryOnHistoryTitle, tryOnHistoryKindLabel, tryOnResultPath } from "@/lib/try-on-history";
 
 type TryOnHistoryGridProps = {
   items: TryOnHistoryItem[];
@@ -56,6 +56,7 @@ export default function TryOnHistoryGrid({
               )}
             </div>
             <div className="space-y-1 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7aa052]">{tryOnHistoryKindLabel(item)}</p>
               <p className="line-clamp-2 font-normal text-[#302637]">{title}</p>
               {item.selectedSize ? (
                 <p className="text-sm font-normal text-[#9a8f99]">Размер {item.selectedSize}</p>

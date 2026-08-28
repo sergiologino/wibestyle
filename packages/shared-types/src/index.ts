@@ -381,7 +381,7 @@ export type CreateAvatarPayload = {
 
 export type TryOnSessionStatus = "draft" | "generating" | "ready" | "failed";
 
-export type TryOnSourceType = "marketplace_link" | "garment_photo" | "gallery_upload" | "hairstyle";
+export type TryOnSourceType = "marketplace_link" | "garment_photo" | "gallery_upload" | "hairstyle" | "stylist_idea";
 
 export type TryOnScenePreset =
   | "auto"

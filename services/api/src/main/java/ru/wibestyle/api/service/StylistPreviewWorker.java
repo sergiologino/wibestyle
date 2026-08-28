@@ -11,9 +11,13 @@ import ru.wibestyle.api.domain.AiOperations;
 import ru.wibestyle.api.domain.AvatarSnapshotEntity;
 import ru.wibestyle.api.domain.StylistSessionEntity;
 import ru.wibestyle.api.domain.StylistVariantEntity;
+import ru.wibestyle.api.domain.TryOnSessionEntity;
+import ru.wibestyle.api.domain.TryOnSessionStatus;
+import ru.wibestyle.api.domain.TryOnSourceType;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
 import ru.wibestyle.api.repository.StylistSessionRepository;
 import ru.wibestyle.api.repository.StylistVariantRepository;
+import ru.wibestyle.api.repository.TryOnSessionRepository;
 import ru.wibestyle.api.storage.BlobKeys;
 import ru.wibestyle.api.storage.BlobStorage;
 
@@ -32,6 +36,7 @@ public class StylistPreviewWorker {
 
     private final StylistSessionRepository sessionRepository;
     private final StylistVariantRepository variantRepository;
+    private final TryOnSessionRepository tryOnSessionRepository;
     private final AvatarSnapshotRepository avatarSnapshotRepository;
     private final AiPromptTemplateService promptTemplateService;
     private final NoteappAiClient aiClient;
@@ -41,6 +46,7 @@ public class StylistPreviewWorker {
     public StylistPreviewWorker(
             StylistSessionRepository sessionRepository,
             StylistVariantRepository variantRepository,
+            TryOnSessionRepository tryOnSessionRepository,
             AvatarSnapshotRepository avatarSnapshotRepository,
             AiPromptTemplateService promptTemplateService,
             NoteappAiClient aiClient,
@@ -49,6 +55,7 @@ public class StylistPreviewWorker {
     ) {
         this.sessionRepository = sessionRepository;
         this.variantRepository = variantRepository;
+        this.tryOnSessionRepository = tryOnSessionRepository;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
         this.promptTemplateService = promptTemplateService;
         this.aiClient = aiClient;
@@ -148,6 +155,7 @@ public class StylistPreviewWorker {
             variant.setErrorMessage(null);
             variant.setUpdatedAt(Instant.now());
             variantRepository.save(variant);
+            saveStylistIdeaTryOn(session, variant, avatar, avatarBytes, result);
         } catch (Exception ex) {
             log.warn("Stylist preview generation failed for variant {}: {}", variantId, ex.getMessage());
             markVariantFailed(variant, "AI_GENERATION_FAILED", ex.getMessage());
@@ -167,7 +175,72 @@ public class StylistPreviewWorker {
                 + "\nОписание образа: " + variant.getStyleDirection()
                 + "\nКомментарий стилиста: " + variant.getStylistComment()
                 + "\nАнтропометрия: " + anthropometrySummary(avatar)
+                + "\n\nLOCATION AND MOOD: " + locationInstruction(session, variant)
                 + "\n\nTECHNICAL INSTRUCTIONS: image1 is the full-body customer avatar and the main source for body, proportions, pose and identity. image2 is the customer's hairstyle portrait reference; use it only to preserve face and hair details, not as a clothing reference. Create the complete outfit from the text style brief. Generate a realistic full-body 3:4 fashion try-on photo of the same human customer. Do not create animals, foxes, mascots, fantasy characters, forest scenes, bushes or wilderness. Do not replace the person, face, body, pose, age, skin tone or silhouette. The clothes, shoes and accessories must look like a real marketplace outfit.";
+    }
+
+    private void saveStylistIdeaTryOn(
+            StylistSessionEntity stylistSession,
+            StylistVariantEntity variant,
+            AvatarSnapshotEntity avatar,
+            byte[] avatarBytes,
+            NoteappAiClient.ProcessResult result
+    ) throws Exception {
+        UUID tryOnSessionId = UUID.randomUUID();
+        blobStorage.storeTryOnResult(stylistSession.getUserId(), tryOnSessionId, "before", new ByteArrayInputStream(avatarBytes));
+        String afterImageUrl = result.imageUrl();
+        if (result.imageBytes() != null && result.imageBytes().length > 0) {
+            blobStorage.storeTryOnResult(stylistSession.getUserId(), tryOnSessionId, "after", new ByteArrayInputStream(result.imageBytes()));
+            afterImageUrl = "/api/v1/try-on/sessions/" + tryOnSessionId + "/after-photo";
+        }
+        Instant now = Instant.now();
+        TryOnSessionEntity tryOnSession = new TryOnSessionEntity(
+                tryOnSessionId,
+                stylistSession.getUserId(),
+                avatar.getId(),
+                TryOnSourceType.STYLIST_IDEA,
+                TryOnSessionStatus.READY,
+                now,
+                now
+        );
+        tryOnSession.setMarketplace("other");
+        tryOnSession.setExternalProductId("stylist:" + stylistSession.getId() + ":" + variant.getVariantKey());
+        tryOnSession.setProductTitle("Идея стилиста: " + stylistSession.getPresetTitle() + " - " + variant.getTitle());
+        tryOnSession.setProductBrand("AI-стилист");
+        tryOnSession.setProductImageUrl(variant.getPreviewImageUrl());
+        tryOnSession.setProductSizes("[]");
+        tryOnSession.setBeforeImageUrl("/api/v1/try-on/sessions/" + tryOnSessionId + "/before-photo");
+        tryOnSession.setAfterImageUrl(afterImageUrl);
+        tryOnSession.setStyleCompliment(limitText("Идея стилиста. " + variant.getStylistComment(), 512));
+        tryOnSessionRepository.save(tryOnSession);
+    }
+
+    private static String limitText(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, Math.max(0, maxLength - 1)).stripTrailing() + "…";
+    }
+
+    private static String locationInstruction(StylistSessionEntity session, StylistVariantEntity variant) {
+        String eventScene = switch (session.getPresetId()) {
+            case "date" -> "romantic city evening, warm restaurant entrance, quiet cocktail bar or softly lit walk after dinner";
+            case "office" -> "modern office lobby, business district street, glass-and-stone architecture, composed professional light";
+            case "interview" -> "calm corporate reception, clean conference center corridor, understated confidence, no visual noise";
+            case "wedding_guest" -> "elegant wedding venue terrace, hotel ballroom foyer, summer garden reception, festive but not bridal";
+            case "party" -> "loud energetic warehouse party, club lights, bold nightlife atmosphere, industrial edge, like a high-energy Prodigy track without showing text or performers";
+            case "vacation" -> "resort promenade, coastal cafe, airport-to-city travel mood, sunlit but practical and relaxed";
+            case "photoshoot" -> "editorial fashion location with controlled light, architectural backdrop, strong readable silhouette";
+            case "city_weekend" -> "stylish urban weekend street, coffee-to-gallery route, relaxed movement and natural daylight";
+            default -> "realistic fashion location matching the event";
+        };
+        String styleMood = switch (variant.getVariantKey()) {
+            case "classic" -> "Keep the location restrained, elegant, balanced and quiet; premium natural light, minimal distractions.";
+            case "modern" -> "Make the location brighter, more polished and expressive; contemporary fashion-week street style energy, richer color accents and a more cinematic setting.";
+            case "rebel" -> "Make the location sharper, more provocative and high-contrast; nightlife, industrial, graphic light, confident attitude, but still realistic.";
+            default -> "Match the location mood to the selected style direction.";
+        };
+        return eventScene + ". " + styleMood;
     }
 
     private byte[] readHairstylePortraitOrAvatar(StylistSessionEntity session, byte[] avatarBytes) {
