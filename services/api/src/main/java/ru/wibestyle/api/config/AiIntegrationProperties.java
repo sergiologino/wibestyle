@@ -113,7 +113,7 @@ public class AiIntegrationProperties {
     }
 
     public void setStylistImageNetwork(String stylistImageNetwork) {
-        this.stylistImageNetwork = stylistImageNetwork;
+        this.stylistImageNetwork = normalizeStylistImageNetwork(stylistImageNetwork);
     }
 
     public void setAvatarEnhanceNetwork(String avatarEnhanceNetwork) {
@@ -168,5 +168,13 @@ public class AiIntegrationProperties {
         return isIntegrationConfigured()
                 && avatarEnhanceNetwork != null
                 && !avatarEnhanceNetwork.isBlank();
+    }
+
+    private static String normalizeStylistImageNetwork(String networkName) {
+        if (networkName == null) {
+            return null;
+        }
+        String trimmed = networkName.trim();
+        return "grok-imagine".equalsIgnoreCase(trimmed) ? "wibestyle-vton" : trimmed;
     }
 }
