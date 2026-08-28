@@ -57,11 +57,12 @@ public class StylistController {
     @PostMapping("/looks")
     public Map<String, Object> createLook(
             @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @Valid @RequestBody CreateStylistLookRequest request
     ) {
         UUID userId = requireUser(authorization);
         try {
-            return stylistService.createLook(userId, request.presetId());
+            return stylistService.createLook(userId, request.presetId(), deviceId);
         } catch (IllegalArgumentException ex) {
             throw status(ex);
         }
@@ -142,6 +143,7 @@ public class StylistController {
     private static ResponseStatusException status(IllegalArgumentException ex) {
         return switch (ex.getMessage()) {
             case "STYLIST_DISABLED" -> new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
+            case "INSUFFICIENT_GENERATIONS" -> new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, ex.getMessage(), ex);
             case "AVATAR_NOT_READY" -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
             case "INVALID_STYLIST_PRESET" -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
             case "INVALID_STYLIST_VARIANT" -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);

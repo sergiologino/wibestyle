@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Sparkles, WandSparkles, X } from "lucide-react";
 import { Button, Card } from "@wibestyle/ui";
+import { ApiError } from "@wibestyle/api-client";
 import type {
   StylistLookResponse,
   StylistPreset,
@@ -75,9 +76,11 @@ export default function StylistClient() {
       setLook(payload);
       setSelectedVariantId(payload.selectedVariantId ?? payload.variants[0]?.id ?? null);
     } catch (err) {
-      const message = err instanceof Error && err.message === "AVATAR_NOT_READY"
-        ? "Сначала нужен готовый активный аватар."
-        : "Не удалось собрать образ. Попробуйте другой сценарий.";
+      const message = err instanceof ApiError && (err.code === "INSUFFICIENT_GENERATIONS" || err.status === 402)
+        ? "Примерки закончились. Пополните лимит или оформите подписку."
+        : err instanceof Error && err.message === "AVATAR_NOT_READY"
+          ? "Сначала нужен готовый активный аватар."
+          : "Не удалось собрать образ. Попробуйте другой сценарий.";
       setError(message);
     } finally {
       setLoading(false);

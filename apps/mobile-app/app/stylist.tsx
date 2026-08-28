@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { ApiError } from "@wibestyle/api-client";
 import type { StylistLookResponse, StylistPreset, StylistProductCandidate, StylistVariant } from "@wibestyle/shared-types";
 import { AuthenticatedImage } from "@/components/media/AuthenticatedImage";
 import { Screen } from "@/components/ui/Screen";
@@ -70,8 +71,10 @@ export default function StylistScreen() {
       const payload = await api.createStylistLook(selectedPresetId);
       setLook(payload);
       setSelectedVariantId(payload.selectedVariantId ?? payload.variants[0]?.id ?? null);
-    } catch {
-      setError("Не удалось собрать образ. Проверьте аватар или выберите другой сценарий.");
+    } catch (err) {
+      setError(err instanceof ApiError && (err.code === "INSUFFICIENT_GENERATIONS" || err.status === 402)
+        ? "Примерки закончились. Пополните лимит или оформите подписку."
+        : "Не удалось собрать образ. Проверьте аватар или выберите другой сценарий.");
     } finally {
       setLoading(false);
     }

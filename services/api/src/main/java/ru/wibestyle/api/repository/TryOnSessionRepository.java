@@ -1,7 +1,9 @@
 package ru.wibestyle.api.repository;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Lock;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.domain.TryOnSessionStatus;
 
@@ -12,6 +14,9 @@ import java.util.UUID;
 public interface TryOnSessionRepository extends JpaRepository<TryOnSessionEntity, UUID> {
 
     Optional<TryOnSessionEntity> findByIdAndUserId(UUID id, UUID userId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<TryOnSessionEntity> findByUserIdAndExternalProductId(UUID userId, String externalProductId);
 
     long countByUserIdAndStatusAndQuotaReservedTrueAndQuotaConsumedFalse(UUID userId, TryOnSessionStatus status);
 

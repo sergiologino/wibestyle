@@ -37,6 +37,7 @@ public class StylistPreviewWorker {
     private final StylistSessionRepository sessionRepository;
     private final StylistVariantRepository variantRepository;
     private final TryOnSessionRepository tryOnSessionRepository;
+    private final QuotaService quotaService;
     private final AvatarSnapshotRepository avatarSnapshotRepository;
     private final AiPromptTemplateService promptTemplateService;
     private final NoteappAiClient aiClient;
@@ -47,6 +48,7 @@ public class StylistPreviewWorker {
             StylistSessionRepository sessionRepository,
             StylistVariantRepository variantRepository,
             TryOnSessionRepository tryOnSessionRepository,
+            QuotaService quotaService,
             AvatarSnapshotRepository avatarSnapshotRepository,
             AiPromptTemplateService promptTemplateService,
             NoteappAiClient aiClient,
@@ -56,6 +58,7 @@ public class StylistPreviewWorker {
         this.sessionRepository = sessionRepository;
         this.variantRepository = variantRepository;
         this.tryOnSessionRepository = tryOnSessionRepository;
+        this.quotaService = quotaService;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
         this.promptTemplateService = promptTemplateService;
         this.aiClient = aiClient;
@@ -288,6 +291,7 @@ public class StylistPreviewWorker {
         List<StylistVariantEntity> variants = variantRepository.findBySessionIdOrderBySortOrderAsc(session.getId());
         boolean anyGenerating = variants.stream().anyMatch(variant -> "queued".equals(variant.getPreviewStatus()) || "generating".equals(variant.getPreviewStatus()));
         boolean anyReady = variants.stream().anyMatch(variant -> "ready".equals(variant.getPreviewStatus()));
+        long readyCount = variants.stream().filter(variant -> "ready".equals(variant.getPreviewStatus())).count();
         boolean allTerminal = variants.stream().allMatch(variant ->
                 "ready".equals(variant.getPreviewStatus()) || "failed".equals(variant.getPreviewStatus()) || "skipped".equals(variant.getPreviewStatus()));
         if (anyGenerating) {
@@ -301,6 +305,26 @@ public class StylistPreviewWorker {
         }
         session.setUpdatedAt(Instant.now());
         sessionRepository.save(session);
+        settleStylistQuota(session, readyCount, allTerminal);
+    }
+
+    private void settleStylistQuota(StylistSessionEntity session, long readyCount, boolean allTerminal) {
+        tryOnSessionRepository.findByUserIdAndExternalProductId(session.getUserId(), StylistService.stylistQuotaExternalId(session.getId()))
+                .ifPresent(quotaSession -> {
+                    if (readyCount >= 2) {
+                        quotaService.consume(quotaSession);
+                        quotaSession.setStatus(TryOnSessionStatus.DRAFT);
+                        quotaSession.setErrorCode(null);
+                        quotaSession.setErrorMessage(null);
+                        tryOnSessionRepository.save(quotaSession);
+                    } else if (allTerminal) {
+                        quotaService.refund(quotaSession);
+                        quotaSession.setStatus(TryOnSessionStatus.DRAFT);
+                        quotaSession.setErrorCode("STYLIST_PREVIEW_FAILED");
+                        quotaSession.setErrorMessage("Stylist quota refunded because fewer than two previews were generated");
+                        tryOnSessionRepository.save(quotaSession);
+                    }
+                });
     }
 
     private static String anthropometrySummary(AvatarSnapshotEntity avatar) {

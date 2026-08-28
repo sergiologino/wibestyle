@@ -11,11 +11,17 @@ import ru.wibestyle.api.domain.AvatarSnapshotEntity;
 import ru.wibestyle.api.domain.StylistProductEntity;
 import ru.wibestyle.api.domain.StylistSessionEntity;
 import ru.wibestyle.api.domain.StylistVariantEntity;
+import ru.wibestyle.api.domain.TryOnErrorCodes;
+import ru.wibestyle.api.domain.TryOnSessionEntity;
+import ru.wibestyle.api.domain.TryOnSessionStatus;
+import ru.wibestyle.api.domain.TryOnSourceType;
 import ru.wibestyle.api.domain.UserEntity;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
 import ru.wibestyle.api.repository.StylistProductRepository;
 import ru.wibestyle.api.repository.StylistSessionRepository;
 import ru.wibestyle.api.repository.StylistVariantRepository;
+import ru.wibestyle.api.repository.TryOnSessionRepository;
+import ru.wibestyle.api.repository.UserProfileRepository;
 import ru.wibestyle.api.repository.UserRepository;
 import ru.wibestyle.api.storage.BlobStorage;
 
@@ -51,10 +57,13 @@ public class StylistService {
     private final FeatureFlagsProperties featureFlagsProperties;
     private final AiIntegrationProperties aiProperties;
     private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final AvatarSnapshotRepository avatarSnapshotRepository;
     private final StylistSessionRepository sessionRepository;
     private final StylistVariantRepository variantRepository;
     private final StylistProductRepository productRepository;
+    private final TryOnSessionRepository tryOnSessionRepository;
+    private final QuotaService quotaService;
     private final SearchService searchService;
     private final AiPromptTemplateService promptTemplateService;
     private final NoteappAiClient aiClient;
@@ -65,10 +74,13 @@ public class StylistService {
             FeatureFlagsProperties featureFlagsProperties,
             AiIntegrationProperties aiProperties,
             UserRepository userRepository,
+            UserProfileRepository userProfileRepository,
             AvatarSnapshotRepository avatarSnapshotRepository,
             StylistSessionRepository sessionRepository,
             StylistVariantRepository variantRepository,
             StylistProductRepository productRepository,
+            TryOnSessionRepository tryOnSessionRepository,
+            QuotaService quotaService,
             SearchService searchService,
             AiPromptTemplateService promptTemplateService,
             NoteappAiClient aiClient,
@@ -78,10 +90,13 @@ public class StylistService {
         this.featureFlagsProperties = featureFlagsProperties;
         this.aiProperties = aiProperties;
         this.userRepository = userRepository;
+        this.userProfileRepository = userProfileRepository;
         this.avatarSnapshotRepository = avatarSnapshotRepository;
         this.sessionRepository = sessionRepository;
         this.variantRepository = variantRepository;
         this.productRepository = productRepository;
+        this.tryOnSessionRepository = tryOnSessionRepository;
+        this.quotaService = quotaService;
         this.searchService = searchService;
         this.promptTemplateService = promptTemplateService;
         this.aiClient = aiClient;
@@ -95,7 +110,7 @@ public class StylistService {
     }
 
     @Transactional
-    public Map<String, Object> createLook(UUID userId, String presetId) {
+    public Map<String, Object> createLook(UUID userId, String presetId, String deviceId) {
         UserEntity user = requireAvailable(userId);
         StylistPreset preset = findPreset(presetId);
         AvatarSnapshotEntity avatar = findReadyAvatarSnapshot(user.getId());
@@ -116,8 +131,9 @@ public class StylistService {
 
         Instant now = Instant.now();
         boolean imageConfigured = aiProperties.isStylistImageConfigured();
+        UUID sessionId = UUID.randomUUID();
         StylistSessionEntity session = sessionRepository.save(new StylistSessionEntity(
-                UUID.randomUUID(),
+                sessionId,
                 user.getId(),
                 avatar.getId(),
                 preset.id(),
@@ -129,6 +145,9 @@ public class StylistService {
                 now,
                 now
         ));
+        if (imageConfigured) {
+            reserveStylistQuota(session, avatar, deviceId, now);
+        }
 
         List<StylistVariantEntity> variants = variantRepository.saveAll(buildVariants(session, preset, season, imageConfigured));
         List<StylistProductEntity> products = new ArrayList<>();
@@ -141,6 +160,11 @@ public class StylistService {
             dispatchPreviews(variants);
         }
         return toLookMap(session, variants, products);
+    }
+
+    @Transactional
+    public Map<String, Object> createLook(UUID userId, String presetId) {
+        return createLook(userId, presetId, null);
     }
 
     @Transactional(readOnly = true)
@@ -237,6 +261,35 @@ public class StylistService {
             return;
         }
         dispatch.run();
+    }
+
+    private void reserveStylistQuota(StylistSessionEntity session, AvatarSnapshotEntity avatar, String deviceId, Instant now) {
+        var profile = userProfileRepository.findById(session.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
+        if (!quotaService.canStartGeneration(profile, deviceId)) {
+            throw new IllegalArgumentException(TryOnErrorCodes.INSUFFICIENT_GENERATIONS);
+        }
+        TryOnSessionEntity quotaSession = new TryOnSessionEntity(
+                UUID.randomUUID(),
+                session.getUserId(),
+                avatar.getId(),
+                TryOnSourceType.STYLIST_IDEA,
+                TryOnSessionStatus.GENERATING,
+                now,
+                now
+        );
+        quotaSession.setMarketplace("other");
+        quotaSession.setExternalProductId(stylistQuotaExternalId(session.getId()));
+        quotaSession.setProductTitle("AI-стилист: " + session.getPresetTitle());
+        quotaSession.setProductBrand("AI-стилист");
+        quotaSession.setProductSizes("[]");
+        quotaSession.setBeforeImageUrl("/api/v1/avatars/active/photo");
+        quotaService.reserve(quotaSession, profile, deviceId);
+        tryOnSessionRepository.save(quotaSession);
+    }
+
+    public static String stylistQuotaExternalId(UUID stylistSessionId) {
+        return "stylist-quota:" + stylistSessionId;
     }
 
     private AiTextContext generateAiTextContext(UserEntity user, StylistPreset preset, AvatarSnapshotEntity avatar, String season) throws IOException {
