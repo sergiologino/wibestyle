@@ -47,4 +47,16 @@ class NoteappAiClientRequestTest {
                 response
         )).isTrue();
     }
+
+    @Test
+    void stylistPreviewPayloadSendsAvatarAndPortraitAsTwoRouteImages() {
+        Map<String, Object> payload = NoteappAiClient.buildStylistPreviewPayload("prompt", "avatar-base64", "portrait-base64");
+
+        assertThat(payload).containsEntry("personImageBase64", "avatar-base64");
+        assertThat(payload).containsEntry("image1Base64", "avatar-base64");
+        assertThat(payload).containsEntry("garmentImageBase64", "portrait-base64");
+        assertThat(payload).containsEntry("productImageBase64", "portrait-base64");
+        assertThat(payload).containsEntry("image2Base64", "portrait-base64");
+        assertThat(payload.get("image2Role")).asString().contains("hairstyle reference");
+    }
 }

@@ -25,7 +25,6 @@ import java.util.Map;
 public class NoteappAiClient {
 
     private static final Logger log = LoggerFactory.getLogger(NoteappAiClient.class);
-
     private final RestClient restClient;
     private final AiIntegrationProperties properties;
     private final AiIntegrationLogService logService;
@@ -241,32 +240,10 @@ public class NoteappAiClient {
             String externalUserId,
             String prompt,
             String avatarImageBase64,
+            String portraitImageBase64,
             Map<String, String> metadata
     ) {
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("prompt", prompt);
-        payload.put("personImageBase64", avatarImageBase64);
-        payload.put("sourceImageBase64", avatarImageBase64);
-        payload.put("modelImageBase64", avatarImageBase64);
-        payload.put("image1Base64", avatarImageBase64);
-        payload.put("image1Role", "only human customer avatar source; preserve this exact person's identity, face, hair, skin tone, height, body proportions and pose; do not create animals or characters");
-        payload.put("inputImageOrder", "image1 is the user's full-body human avatar and the only allowed person/body/identity source");
-        payload.put(
-                "images",
-                List.of(Map.of(
-                        "label", "image1",
-                        "field", "personImageBase64",
-                        "role", "full-body human customer avatar; preserve identity and body; no animals, no foxes, no mascot, no forest scene",
-                        "base64Field", "personImageBase64"
-                ))
-        );
-        payload.put("negativePrompt", "animal, fox, wolf, mascot, furry character, forest, bushes, thickets, wilderness, fantasy creature, non-human subject, face replacement, body replacement");
-        payload.put("output_format", "jpeg");
-        payload.put("input_fidelity", "high");
-        payload.put("allowFallback", false);
-        payload.put("requiredProvider", "grok");
-        payload.put("disallowedProviders", List.of("pollinations"));
-        payload.put("settings", Map.of("width", 1024, "height", 1365, "aspectRatio", "3:4"));
+        Map<String, Object> payload = buildStylistPreviewPayload(prompt, avatarImageBase64, portraitImageBase64);
 
         Map<String, Object> body = new HashMap<>();
         body.put("userId", requireExternalUserId(externalUserId));
@@ -316,6 +293,60 @@ public class NoteappAiClient {
         } catch (RestClientException ex) {
             return ProcessResult.failed("AI_GENERATION_FAILED", extractExceptionMessage(ex));
         }
+    }
+
+    static Map<String, Object> buildStylistPreviewPayload(String prompt, String avatarImageBase64, String portraitImageBase64) {
+        String referenceImageBase64 = portraitImageBase64 == null || portraitImageBase64.isBlank()
+                ? avatarImageBase64
+                : portraitImageBase64;
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("prompt", prompt);
+        payload.put("personImageBase64", avatarImageBase64);
+        payload.put("sourceImageBase64", avatarImageBase64);
+        payload.put("modelImageBase64", avatarImageBase64);
+        payload.put("image1Base64", avatarImageBase64);
+        payload.put("image1Role", "customer_avatar_identity_body_face_hair_source");
+        payload.put("garmentImageBase64", referenceImageBase64);
+        payload.put("productImageBase64", referenceImageBase64);
+        payload.put("image2Base64", referenceImageBase64);
+        payload.put("image2Role", "customer portrait and hairstyle reference only; preserve face and hair details, ignore background and do not use as a clothing reference");
+        payload.put("garmentTitle", "AI stylist complete outfit generated from the style brief");
+        payload.put("garmentBrand", "WibeStyle AI Stylist");
+        payload.put("garmentCategory", "complete_outfit");
+        payload.put("garmentPromptProfile", "full_outfit_text_brief");
+        payload.put("garmentCoverageLevel", "full_body");
+        payload.put("garmentModerationRisk", "low");
+        payload.put("garmentHasHumanModel", false);
+        payload.put(
+                "inputImageOrder",
+                "image1/personImageBase64 is the only customer identity and body source. "
+                        + "image2/garmentImageBase64 is the customer's portrait/hair reference required by the route; use it only to preserve face and hairstyle details, not as a clothing reference."
+        );
+        payload.put(
+                "images",
+                List.of(
+                        Map.of(
+                                "label", "image1",
+                                "field", "personImageBase64",
+                                "role", "customer avatar; preserve face, hair, skin tone, body proportions and pose",
+                                "base64Field", "personImageBase64"
+                        ),
+                        Map.of(
+                                "label", "image2",
+                                "field", "garmentImageBase64",
+                                "role", "customer portrait and hairstyle reference only; ignore clothing and background",
+                                "base64Field", "garmentImageBase64"
+                        )
+                )
+        );
+        payload.put("negativePrompt", "animal, fox, wolf, mascot, furry character, forest, bushes, thickets, wilderness, fantasy creature, non-human subject, face replacement, body replacement");
+        payload.put("output_format", "jpeg");
+        payload.put("input_fidelity", "high");
+        payload.put("allowFallback", false);
+        payload.put("requiredProvider", "grok");
+        payload.put("disallowedProviders", List.of("pollinations"));
+        payload.put("settings", Map.of("width", 1024, "height", 1365, "aspectRatio", "3:4"));
+        return payload;
     }
 
     static Map<String, Object> buildHairstylePayload(

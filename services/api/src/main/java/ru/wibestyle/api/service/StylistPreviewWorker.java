@@ -14,6 +14,7 @@ import ru.wibestyle.api.domain.StylistVariantEntity;
 import ru.wibestyle.api.repository.AvatarSnapshotRepository;
 import ru.wibestyle.api.repository.StylistSessionRepository;
 import ru.wibestyle.api.repository.StylistVariantRepository;
+import ru.wibestyle.api.storage.BlobKeys;
 import ru.wibestyle.api.storage.BlobStorage;
 
 import java.io.ByteArrayInputStream;
@@ -101,18 +102,21 @@ public class StylistPreviewWorker {
 
         try {
             byte[] avatarBytes = blobStorage.readBytes(avatar.getProcessedImagePath());
+            byte[] portraitBytes = readHairstylePortraitOrAvatar(session, avatarBytes);
             String prompt = buildPreviewPrompt(session, variant, avatar);
-            log.info("Stylist preview AI call variantId={} sessionId={} network={} promptLength={} avatarBytes={}",
+            log.info("Stylist preview AI call variantId={} sessionId={} network={} promptLength={} avatarBytes={} portraitBytes={}",
                     variantId,
                     session.getId(),
                     aiProperties.getStylistImageNetwork(),
                     prompt.length(),
-                    avatarBytes.length);
+                    avatarBytes.length,
+                    portraitBytes.length);
             NoteappAiClient.ProcessResult result = aiClient.generateStylistPreview(
                     aiProperties.getStylistImageNetwork(),
                     session.getUserId().toString(),
                     prompt,
                     Base64.getEncoder().encodeToString(avatarBytes),
+                    Base64.getEncoder().encodeToString(portraitBytes),
                     metadata(session, variant)
             );
             if (!result.success()) {
@@ -163,7 +167,23 @@ public class StylistPreviewWorker {
                 + "\nОписание образа: " + variant.getStyleDirection()
                 + "\nКомментарий стилиста: " + variant.getStylistComment()
                 + "\nАнтропометрия: " + anthropometrySummary(avatar)
-                + "\nТехнически важно: image1 - единственный источник человека. На итоговом изображении должен быть тот же человек с image1, полный рост, без животных, без лисиц, без маскотов, без леса, без зарослей и без превращения человека в персонажа. Не меняй фигуру, возраст, лицо, тон кожи, позу и рост; одежда должна выглядеть как реальный комплект, покупаемый на маркетплейсе.";
+                + "\n\nTECHNICAL INSTRUCTIONS: image1 is the full-body customer avatar and the main source for body, proportions, pose and identity. image2 is the customer's hairstyle portrait reference; use it only to preserve face and hair details, not as a clothing reference. Create the complete outfit from the text style brief. Generate a realistic full-body 3:4 fashion try-on photo of the same human customer. Do not create animals, foxes, mascots, fantasy characters, forest scenes, bushes or wilderness. Do not replace the person, face, body, pose, age, skin tone or silhouette. The clothes, shoes and accessories must look like a real marketplace outfit.";
+    }
+
+    private byte[] readHairstylePortraitOrAvatar(StylistSessionEntity session, byte[] avatarBytes) {
+        String portraitPath = BlobKeys.hairstylePortrait(session.getUserId());
+        if (!blobStorage.exists(portraitPath)) {
+            return avatarBytes;
+        }
+        try {
+            return blobStorage.readBytes(portraitPath);
+        } catch (Exception ex) {
+            log.warn("Stylist preview portrait read failed, using avatar as second image sessionId={} path={}: {}",
+                    session.getId(),
+                    portraitPath,
+                    ex.getMessage());
+            return avatarBytes;
+        }
     }
 
     private static Map<String, String> metadata(StylistSessionEntity session, StylistVariantEntity variant) {
