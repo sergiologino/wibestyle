@@ -1,6 +1,7 @@
 package ru.wibestyle.api.service;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.PlatformTransactionManager;
 import ru.wibestyle.api.auth.JwtService;
 import ru.wibestyle.api.auth.RefreshTokenStore;
 import ru.wibestyle.api.config.AuthProperties;
@@ -37,7 +38,8 @@ class AuthServiceSmsFailureTest {
                 new AuthProperties(),
                 smsProperties,
                 smsSender,
-                mock(EmailSender.class)
+                mock(EmailSender.class),
+                mock(PlatformTransactionManager.class)
         );
 
         assertThatThrownBy(() -> service.startOtp("+7 900 123-45-67"))

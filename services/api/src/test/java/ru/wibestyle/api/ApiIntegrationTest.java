@@ -121,6 +121,47 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void verifiedPhoneLoginPrefersPlusPhoneAndFallsBackToLegacyDigits() {
+        UUID plusUserId = UUID.randomUUID();
+        UUID legacyUserId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "insert into users (id, phone, status, primary_auth, created_at) values (?, ?, 'active', 'phone', current_timestamp)",
+                plusUserId,
+                "+79990009901"
+        );
+        jdbcTemplate.update(
+                "insert into users (id, phone, status, primary_auth, created_at) values (?, ?, 'active', 'phone', current_timestamp)",
+                legacyUserId,
+                "79990009901"
+        );
+
+        var preferred = authService.authenticateVerifiedPhone("79990009901", null, null, null, "phone-format-device-a");
+
+        assertEquals(plusUserId, preferred.user().getId());
+        assertEquals("+79990009901", preferred.user().getPhone());
+        assertEquals(2, jdbcTemplate.queryForObject(
+                "select count(*) from users where phone in ('+79990009901', '79990009901')",
+                Integer.class
+        ));
+
+        UUID legacyOnlyUserId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "insert into users (id, phone, status, primary_auth, created_at) values (?, ?, 'active', 'phone', current_timestamp)",
+                legacyOnlyUserId,
+                "79990009902"
+        );
+
+        var legacy = authService.authenticateVerifiedPhone("+79990009902", null, null, null, "phone-format-device-b");
+
+        assertEquals(legacyOnlyUserId, legacy.user().getId());
+        assertEquals("79990009902", legacy.user().getPhone());
+        assertEquals(1, jdbcTemplate.queryForObject(
+                "select count(*) from users where phone in ('+79990009902', '79990009902')",
+                Integer.class
+        ));
+    }
+
+    @Test
     void jwtRefreshAndLogoutFlow() throws Exception {
         String body = mockMvc.perform(post("/api/v1/auth/otp/start")
                         .contentType(MediaType.APPLICATION_JSON)

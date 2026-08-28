@@ -7,11 +7,29 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ru.wibestyle.api.domain.UserEntity;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByPhone(String phone);
+
+    @Query("""
+            select user from UserEntity user
+            where user.phone = :phoneWithPlus
+               or user.phone = :digits
+               or user.phone like concat('%', :digits)
+            order by case
+                when user.phone = :phoneWithPlus then 0
+                when user.phone = :digits then 1
+                else 2
+            end, user.createdAt desc
+            """)
+    List<UserEntity> findPhoneLoginCandidates(
+            @Param("phoneWithPlus") String phoneWithPlus,
+            @Param("digits") String digits,
+            Pageable pageable
+    );
 
     Optional<UserEntity> findByLoginIgnoreCase(String login);
 
