@@ -3,27 +3,30 @@ import { homeFaq } from "@/content/home-faq";
 import { siteConfig } from "@/lib/site";
 import LeadForm from "@/components/LeadForm";
 import PublishedReviewsSection from "@/components/PublishedReviewsSection";
-import AppPreviewPhones from "@/components/home/AppPreviewPhones";
 import BeforeAfterSection from "@/components/home/BeforeAfterSection";
 import ExamplesGallerySection from "@/components/home/ExamplesGallerySection";
 import FinalCtaArt from "@/components/home/FinalCtaArt";
 import HeroBeforeCard from "@/components/home/HeroBeforeCard";
 import HeroCollage from "@/components/home/HeroCollage";
 import StyleShowcaseSection from "@/components/home/StyleShowcaseSection";
-import ProductFeaturesBlock from "@/components/seo/ProductFeaturesBlock";
 
 const futureCards = [
-  { title: "AI-макияж", text: "Нюдовый, вечерний, деловой, яркий или свадебный макияж на портретном фото.", href: "/makiyazh", analytics: "future_makeup_click" },
-  { title: "AI-причёски", text: "Каре, локоны, чёлка, хвост, укладка и новый цвет волос до визита к мастеру.", href: "/pricheski", analytics: "future_hairstyle_click" },
-  { title: "Полный look", text: "Одежда, обувь, аксессуары, макияж и причёска — один образ с ссылками на покупку.", href: "/podbor-obraza", analytics: "future_full_look_click" },
+  { title: "Макияж", text: "Нюдовый, вечерний, деловой, яркий или свадебный макияж на портретном фото.", href: "/makiyazh", analytics: "future_makeup_click", badge: true },
+  { title: "Причёски", text: "Каре, локоны, чёлка, хвост, укладка и новый цвет волос до визита к мастеру.", href: "/pricheski", analytics: "future_hairstyle_click", badge: false },
+  { title: "Полный look", text: "Одежда, обувь, аксессуары, макияж и причёска — один образ с ссылками на покупку.", href: "/podbor-obraza", analytics: "future_full_look_click", badge: true },
 ];
 
-const steps = [
-  ["🔗", "1", "Вставь ссылку", "На одежду с WB, Ozon, Яндекс Маркета и других."],
-                ["♕", "2", "Примерь на себе", "Нейростилист создаст визуальный образ на твоём фото."],
-  ["✈", "3", "Отправь подруге", "Сохрани образ и спроси мнение перед покупкой."],
-  ["🛍", "4", "Купи по ссылке", "Если образ твой — переходи в карточку товара."],
-] as const;
+function appUrl(path: string) {
+  try {
+    const target = new URL(siteConfig.appUrl);
+    target.pathname = path;
+    target.search = "";
+    target.hash = "";
+    return target.toString();
+  } catch {
+    return siteConfig.appUrl;
+  }
+}
 
 export default function HomePage() {
   return (
@@ -91,25 +94,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="how" className="how-section" aria-labelledby="how-title">
-        <div className="container split-layout">
-          <div className="panel steps-panel">
-            <h2 id="how-title">Почему это удобно ✦</h2>
-            <div className="steps">
-              {steps.map(([icon, num, title, text]) => (
-                <article key={title} className="step-card">
-                  <div className="icon">{icon}</div>
-                  <span className="num">{num}</span>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-          <AppPreviewPhones />
-        </div>
-      </section>
-
       <section className="categories" aria-labelledby="categories-title">
         <div className="container hair-tryon-layout">
           <div className="section-heading hair-tryon-copy">
@@ -123,9 +107,14 @@ export default function HomePage() {
               <span>Укладки</span>
               <span>Цвет волос</span>
             </div>
-            <Link className="hair-tryon-cta" href={`${siteConfig.appUrl}/hairstyles`} data-analytics="home_hairstyles_tryon">
-              Примерить прическу
-            </Link>
+            <div className="hair-tryon-actions">
+              <Link className="hair-tryon-cta" href={appUrl("/hairstyles")} data-analytics="home_hairstyles_tryon">
+                Перейти в веб-приложение
+              </Link>
+              <a className="hair-tryon-cta hair-tryon-cta--rustore" href={siteConfig.rustoreUrl} data-analytics="home_hairstyles_rustore">
+                Скачать в RuStore
+              </a>
+            </div>
           </div>
           <div className="hair-tryon-gallery" aria-label="Примеры примерки стрижек и цвета волос">
             <figure className="hair-tryon-card hair-tryon-card--short">
@@ -158,7 +147,7 @@ export default function HomePage() {
           <div className="future-grid">
             {futureCards.map((card) => (
               <article key={card.href} className="future-card">
-                <span className="badge-soon">Скоро</span>
+                {card.badge ? <span className="badge-soon">Скоро</span> : null}
                 <h3>{card.title}</h3>
                 <p>{card.text}</p>
                 <Link href={card.href} data-analytics={card.analytics}>
@@ -167,12 +156,6 @@ export default function HomePage() {
               </article>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="categories" aria-label="Умные возможности">
-        <div className="container">
-          <ProductFeaturesBlock />
         </div>
       </section>
 

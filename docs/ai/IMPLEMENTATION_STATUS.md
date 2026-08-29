@@ -23,6 +23,7 @@
 
 5. **Infra backlog.**
    - S3/private media storage migration.
+   - Web Push для web/PWA: service worker, browser permission UX, VAPID keys, storage for web subscriptions, backend Web Push sender, invalid-subscription cleanup and separate admin stats for mobile/web/no push channel.
    - Redis-backed distributed OTP/refresh-token state if multiple API instances are introduced.
    - OpenAPI spec.
    - Server-side OTP/API rate limiting as P2; provider-level SMS controls remain the primary protection for now.

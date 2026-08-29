@@ -924,10 +924,16 @@ h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255
   font-size: 14px;
   font-weight: 950;
 }
+.hair-tryon-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 .hair-tryon-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 1 1 210px;
   min-height: 54px;
   padding: 0 24px;
   border-radius: 18px;
@@ -935,6 +941,9 @@ h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255
   background: linear-gradient(135deg, var(--pink), var(--violet));
   box-shadow: var(--shadow-pink);
   font-weight: 950;
+}
+.hair-tryon-cta--rustore {
+  background: linear-gradient(135deg, #00a3ff, #ff6b00);
 }
 .hair-tryon-gallery {
   display: grid;

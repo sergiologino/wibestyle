@@ -102,10 +102,16 @@ a.category-card {
   color: rgba(255,255,255,.9);
   font-weight: 800;
 }
+.app-redirect-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 .app-redirect-cta__button {
   display: inline-flex;
   justify-content: center;
   align-items: center;
+  flex: 1 1 210px;
   min-height: 58px;
   padding: 18px 22px;
   border-radius: 18px;
@@ -113,6 +119,10 @@ a.category-card {
   color: var(--pink);
   font-weight: 950;
   box-shadow: 0 14px 34px rgba(76,0,98,.18);
+}
+.app-redirect-cta__button--rustore {
+  background: linear-gradient(135deg, #00a3ff, #ff6b00);
+  color: #fff;
 }
 .app-redirect-cta--compact {
   grid-template-columns: 1fr auto;
