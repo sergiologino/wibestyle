@@ -894,6 +894,93 @@ h1 span { color: var(--pink); display: inline; text-shadow: 0 10px 36px rgba(255
 .card-party { background: linear-gradient(135deg, #ff1fa2, #17001f); }
 .card-men { background: linear-gradient(135deg, #16111d, #7b2cff); }
 
+.hair-tryon-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 72px);
+}
+.hair-tryon-copy { margin-bottom: 0; }
+.hair-tryon-copy p:not(.eyebrow) {
+  max-width: 620px;
+  line-height: 1.45;
+}
+.hair-tryon-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 24px 0 26px;
+}
+.hair-tryon-points span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 1px solid #ffd1ed;
+  border-radius: 999px;
+  background: white;
+  color: var(--black);
+  box-shadow: 0 10px 24px rgba(61, 0, 77, .06);
+  font-size: 14px;
+  font-weight: 950;
+}
+.hair-tryon-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 0 24px;
+  border-radius: 18px;
+  color: white;
+  background: linear-gradient(135deg, var(--pink), var(--violet));
+  box-shadow: var(--shadow-pink);
+  font-weight: 950;
+}
+.hair-tryon-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 14px;
+}
+.hair-tryon-card {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 209, 237, .9);
+  border-radius: 28px;
+  background: white;
+  box-shadow: var(--shadow-soft);
+}
+.hair-tryon-card img {
+  display: block;
+  width: 100%;
+  height: clamp(270px, 29vw, 410px);
+  object-fit: cover;
+  object-position: center top;
+}
+.hair-tryon-card figcaption {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 34px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .9);
+  color: var(--black);
+  box-shadow: 0 10px 24px rgba(23, 0, 32, .12);
+  font-size: 13px;
+  font-weight: 950;
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+.hair-tryon-card--short,
+.hair-tryon-card--color { transform: translateY(24px); }
+.hair-tryon-card--layers { transform: translateY(-10px); }
+
 .future-section { padding: 76px 0; color: white; background: radial-gradient(circle at 12% 20%, rgba(255,31,162,.55), transparent 26%), linear-gradient(135deg, #170020, #7b2cff 56%, #ff1fa2); }
 .section-heading.light p, .section-heading.light .eyebrow { color: rgba(255,255,255,.82); }
 .future-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
@@ -1101,6 +1188,8 @@ details p { margin: 14px 0 0; color: var(--muted); font-weight: 700; line-height
   .steps { grid-template-columns: repeat(2, 1fr); }
   .step-card:not(:last-child)::after { display: none; }
   .category-grid { grid-template-columns: repeat(3, 1fr); }
+  .hair-tryon-layout { grid-template-columns: 1fr; }
+  .hair-tryon-gallery { max-width: 920px; }
   .future-grid { grid-template-columns: 1fr; }
 }
 
@@ -1233,6 +1322,25 @@ details p { margin: 14px 0 0; color: var(--muted); font-weight: 700; line-height
   .love-sticker { right: 8px; top: 7%; }
   .category-grid { grid-template-columns: 1fr; }
   .category-card { min-height: 190px; }
+  .hair-tryon-layout { gap: 24px; }
+  .hair-tryon-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .hair-tryon-card,
+  .hair-tryon-card--short,
+  .hair-tryon-card--layers,
+  .hair-tryon-card--color { transform: none; }
+  .hair-tryon-card { border-radius: 18px; }
+  .hair-tryon-card img { height: clamp(210px, 57vw, 330px); }
+  .hair-tryon-card figcaption {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    min-height: 30px;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
   .review-grid { grid-template-columns: 1fr; }
   .final-cta-inner { grid-template-columns: 1fr; }
   .cta-art { justify-content: flex-start; flex-wrap: wrap; }

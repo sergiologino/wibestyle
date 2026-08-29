@@ -5,7 +5,6 @@ import LeadForm from "@/components/LeadForm";
 import PublishedReviewsSection from "@/components/PublishedReviewsSection";
 import AppPreviewPhones from "@/components/home/AppPreviewPhones";
 import BeforeAfterSection from "@/components/home/BeforeAfterSection";
-import { categoryCards } from "@/components/home/category-cards-data";
 import ExamplesGallerySection from "@/components/home/ExamplesGallerySection";
 import FinalCtaArt from "@/components/home/FinalCtaArt";
 import HeroBeforeCard from "@/components/home/HeroBeforeCard";
@@ -112,24 +111,39 @@ export default function HomePage() {
       </section>
 
       <section className="categories" aria-labelledby="categories-title">
-        <div className="container">
-          <div className="section-heading">
-            <p className="eyebrow">примеряй по категориям</p>
-            <h2 id="categories-title">Платья, обувь, пиджаки, аксессуары — всё в одном сценарии</h2>
-            <p className="category-coming-soon">Уже скоро!</p>
+        <div className="container hair-tryon-layout">
+          <div className="section-heading hair-tryon-copy">
+            <p className="eyebrow">примерка причесок</p>
+            <h2 id="categories-title">Стрижка, укладка и цвет волос до визита к мастеру</h2>
+            <p>
+              Проверь каре, пикси, мягкие слои или новый оттенок на своём портрете. Сохрани варианты и покажи мастеру уже готовую идею.
+            </p>
+            <div className="hair-tryon-points" aria-label="Возможности примерки причесок">
+              <span>Стрижки</span>
+              <span>Укладки</span>
+              <span>Цвет волос</span>
+            </div>
+            <Link className="hair-tryon-cta" href={`${siteConfig.appUrl}/hairstyles`} data-analytics="home_hairstyles_tryon">
+              Примерить прическу
+            </Link>
           </div>
-          <div className="category-grid">
-            {categoryCards.map((c) => (
-              <Link
-                key={c.id}
-                href={c.href}
-                className={`category-card ${c.className}${c.image ? " category-card--with-image" : ""}`}
-                style={c.image ? { backgroundImage: `url("${c.image}")` } : undefined}
-              >
-                <span>{c.title}</span>
-                <b>{c.sub}</b>
-              </Link>
-            ))}
+          <div className="hair-tryon-gallery" aria-label="Примеры примерки стрижек и цвета волос">
+            <figure className="hair-tryon-card hair-tryon-card--short">
+              <img src="/assets/hairstyles/vibestyle-try-on-9da0e274.png" alt="Примерка короткой стрижки пикси" loading="lazy" />
+              <figcaption>Короткая стрижка</figcaption>
+            </figure>
+            <figure className="hair-tryon-card hair-tryon-card--layers">
+              <img src="/assets/hairstyles/vibestyle-try-on-051d8fa9.png" alt="Примерка удлиненной стрижки слоями" loading="lazy" />
+              <figcaption>Мягкие слои</figcaption>
+            </figure>
+            <figure className="hair-tryon-card hair-tryon-card--bob">
+              <img src="/assets/hairstyles/vibestyle-try-on-955859ee.png" alt="Примерка объемного каре" loading="lazy" />
+              <figcaption>Объемное каре</figcaption>
+            </figure>
+            <figure className="hair-tryon-card hair-tryon-card--color">
+              <img src="/assets/hairstyles/vibestyle-try-on-57468813.png" alt="Примерка рыжего цвета волос" loading="lazy" />
+              <figcaption>Новый цвет</figcaption>
+            </figure>
           </div>
         </div>
       </section>
