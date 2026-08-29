@@ -68,6 +68,7 @@ class BillingServiceYooKassaTest {
 
         billingService = new BillingService(
                 properties,
+                org.mockito.Mockito.mock(PlatformSettingsService.class),
                 userProfileRepository,
                 userRepository,
                 quotaService,
@@ -122,6 +123,7 @@ class BillingServiceYooKassaTest {
         properties.getYookassa().setSecretKey("secret");
         BillingService serviceWithoutRecurring = new BillingService(
                 properties,
+                org.mockito.Mockito.mock(PlatformSettingsService.class),
                 userProfileRepository,
                 userRepository,
                 quotaService,

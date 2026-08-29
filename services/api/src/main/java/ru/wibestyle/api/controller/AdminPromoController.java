@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.wibestyle.api.config.AdminProperties;
 import ru.wibestyle.api.dto.CreatePromoRequest;
+import ru.wibestyle.api.dto.UpdateBillingTariffsRequest;
 import ru.wibestyle.api.dto.UpdatePromoRequest;
+import ru.wibestyle.api.service.PlatformSettingsService;
 import ru.wibestyle.api.service.PromoService;
 import ru.wibestyle.api.support.AdminSupport;
 
@@ -23,10 +25,16 @@ import java.util.UUID;
 public class AdminPromoController {
 
     private final PromoService promoService;
+    private final PlatformSettingsService platformSettingsService;
     private final AdminProperties adminProperties;
 
-    public AdminPromoController(PromoService promoService, AdminProperties adminProperties) {
+    public AdminPromoController(
+            PromoService promoService,
+            PlatformSettingsService platformSettingsService,
+            AdminProperties adminProperties
+    ) {
         this.promoService = promoService;
+        this.platformSettingsService = platformSettingsService;
         this.adminProperties = adminProperties;
     }
 
@@ -34,6 +42,26 @@ public class AdminPromoController {
     public Map<String, Object> list(@RequestHeader(value = "X-Admin-Key", required = false) String adminKey) {
         AdminSupport.requireAdminKey(adminKey, adminProperties);
         return promoService.listPromos();
+    }
+
+    @GetMapping("/tariffs")
+    public Map<String, Object> tariffs(@RequestHeader(value = "X-Admin-Key", required = false) String adminKey) {
+        AdminSupport.requireAdminKey(adminKey, adminProperties);
+        return platformSettingsService.billingTariffsSnapshot();
+    }
+
+    @PatchMapping("/tariffs")
+    public Map<String, Object> updateTariffs(
+            @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
+            @RequestBody UpdateBillingTariffsRequest request
+    ) {
+        AdminSupport.requireAdminKey(adminKey, adminProperties);
+        platformSettingsService.updateBillingTariffs(
+                request.tryon20PriceRub(),
+                request.tryon50PriceRub(),
+                request.tryon100PriceRub()
+        );
+        return platformSettingsService.billingTariffsSnapshot();
     }
 
     @PostMapping

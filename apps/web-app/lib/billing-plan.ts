@@ -4,10 +4,14 @@ export function isPaidSubscription(profile: UserProfile | null | undefined): boo
   return profile?.plan === "wibe" || profile?.plan === "elite";
 }
 
+export function hasPaidTryOnBalance(profile: UserProfile | null | undefined): boolean {
+  return Boolean(profile && profile.plan !== "trial" && (profile.planGenerationsLeft ?? 0) > 0);
+}
+
 export type SubscriptionNudgeLevel = "none" | "soft" | "medium" | "urgent";
 
 export function subscriptionNudgeLevel(profile: UserProfile | null | undefined): SubscriptionNudgeLevel {
-  if (!profile || isPaidSubscription(profile)) {
+  if (!profile || isPaidSubscription(profile) || hasPaidTryOnBalance(profile)) {
     return "none";
   }
   const left = profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0);

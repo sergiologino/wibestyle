@@ -16,6 +16,7 @@ type AdminUserItem = {
   plan?: string;
   trialGenerationsLeft?: number;
   planGenerationsLeft?: number;
+  bonusGenerationsLeft?: number;
   displayName?: string;
   primaryAuth?: string;
   stylistFocusGroup?: boolean;
@@ -37,9 +38,9 @@ type AdminUserItem = {
 
 const planPresets = [
   { id: "trial", label: "Trial (5 gen)" },
-  { id: "wibe", label: "Wibe" },
-  { id: "elite", label: "Elite" },
-  { id: "none", label: "Без подписки" },
+  { id: "tryon_20", label: "+20" },
+  { id: "tryon_50", label: "+50" },
+  { id: "tryon_100", label: "+100" },
 ] as const;
 
 export default function AdminUsersPage() {
@@ -56,6 +57,7 @@ export default function AdminUsersPage() {
   const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [previewUser, setPreviewUser] = useState<AdminUserItem | null>(null);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [generationDrafts, setGenerationDrafts] = useState<Record<string, string>>({});
 
   const api = createAdminApi();
 
@@ -92,13 +94,11 @@ export default function AdminUsersPage() {
       const payload =
         plan === "trial"
           ? { plan: "trial" as const, trialGenerationsLeft: 5, planGenerationsLeft: 0 }
-          : plan === "wibe"
-            ? { plan: "wibe" as const, planGenerationsLeft: 20, trialGenerationsLeft: 0 }
-            : plan === "elite"
-              ? { plan: "elite" as const, planGenerationsLeft: 100, trialGenerationsLeft: 0 }
-              : { plan: "trial" as const, trialGenerationsLeft: 0, planGenerationsLeft: 0 };
+          : { additionalGenerations: Number(plan.replace("tryon_", "")) };
       await api.updateAdminUserSubscription(adminKey, user.id, payload);
-      setMessage(`Тариф ${plan} применён для ${user.login ?? user.email ?? user.phone ?? user.id.slice(0, 8)}`);
+      setMessage(plan === "trial"
+        ? `Trial применён для ${user.login ?? user.email ?? user.phone ?? user.id.slice(0, 8)}`
+        : `Начислено ${plan.replace("tryon_", "")} примерок для ${user.login ?? user.email ?? user.phone ?? user.id.slice(0, 8)}`);
       await load(page, query);
     } catch {
       setLocalError("Не удалось изменить тариф");
@@ -131,6 +131,27 @@ export default function AdminUsersPage() {
     } catch {
       popup?.close();
       setLocalError("Не удалось войти как пользователь");
+    } finally {
+      setActionUserId(null);
+    }
+  }
+
+  async function addCustomGenerations(user: AdminUserItem) {
+    const amount = Number(generationDrafts[user.id] ?? "");
+    if (!Number.isInteger(amount) || amount < 1) {
+      setLocalError("Укажите целое количество примерок больше нуля");
+      return;
+    }
+    setActionUserId(user.id);
+    setMessage(null);
+    setLocalError(null);
+    try {
+      await api.updateAdminUserSubscription(adminKey, user.id, { additionalGenerations: amount });
+      setGenerationDrafts((current) => ({ ...current, [user.id]: "" }));
+      setMessage(`Начислено ${amount} примерок для ${user.login ?? user.email ?? user.phone ?? user.id.slice(0, 8)}`);
+      await load(page, query);
+    } catch {
+      setLocalError("Не удалось начислить примерки");
     } finally {
       setActionUserId(null);
     }
@@ -253,6 +274,7 @@ export default function AdminUsersPage() {
                     <p>Зарегистрирован: {new Date(user.createdAt).toLocaleString("ru-RU")}</p>
                     <p>Тариф: {user.plan ?? "—"}</p>
                     <p>Осталось примерок: {user.plan === "trial" ? user.trialGenerationsLeft ?? 0 : user.planGenerationsLeft ?? 0}</p>
+                    <p>Бонусные примерки: {user.bonusGenerationsLeft ?? 0}</p>
                     <p>Avatar attempts: {user.avatarUploadAttempts ?? 0} · failed: {user.avatarFailedAttempts ?? 0}</p>
                   </div>
                   <div className="hidden md:block">
@@ -266,6 +288,7 @@ export default function AdminUsersPage() {
                   <p className="mt-1 text-sm font-bold text-[#6d6273]">
                     Тариф: {user.plan ?? "—"}
                     {user.plan === "trial" ? ` · trial ${user.trialGenerationsLeft ?? 0}` : ` · gen ${user.planGenerationsLeft ?? 0}`}
+                    {` · bonus ${user.bonusGenerationsLeft ?? 0}`}
                   </p>
                   <p className="mt-1 text-sm font-bold text-[#6d6273]">
                     Avatar attempts: {user.avatarUploadAttempts ?? 0} · failed: {user.avatarFailedAttempts ?? 0}
@@ -316,6 +339,26 @@ export default function AdminUsersPage() {
                     </Button>
                   ))}
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    className="min-h-8 w-28 rounded-xl border border-[#ffd1ed] px-3 py-1.5 text-xs font-bold md:min-h-9 md:text-sm"
+                    type="number"
+                    min={1}
+                    placeholder="Кол-во"
+                    value={generationDrafts[user.id] ?? ""}
+                    onChange={(event) => setGenerationDrafts((current) => ({ ...current, [user.id]: event.target.value }))}
+                    onClick={(event) => event.stopPropagation()}
+                  />
+                  <Button
+                    className="md:min-h-9 md:px-4 md:py-2 md:text-sm"
+                    size="sm"
+                    variant="secondary"
+                    disabled={actionUserId === user.id || !configured}
+                    onClick={() => void addCustomGenerations(user)}
+                  >
+                    Начислить
+                  </Button>
+                </div>
                 <button
                   type="button"
                   className="min-h-8 rounded-xl border-2 border-[#782cff] bg-white px-3 py-1.5 text-xs font-black text-[#782cff] underline decoration-2 underline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:min-h-9 md:px-4 md:py-2 md:text-sm"
@@ -351,7 +394,7 @@ export default function AdminUsersPage() {
                   <div className="grid gap-1">
                     <p>Тип: {user.primaryAuth ?? "—"} · создан: {new Date(user.createdAt).toLocaleString("ru-RU")}</p>
                     <p>Имя: {user.displayName ?? user.email ?? user.phone ?? "—"} · ник: {user.login ? `@${user.login}` : "—"}</p>
-                    <p>Тариф: {user.plan ?? "—"} · trial: {user.trialGenerationsLeft ?? 0} · gen: {user.planGenerationsLeft ?? 0}</p>
+                    <p>Тариф: {user.plan ?? "—"} · trial: {user.trialGenerationsLeft ?? 0} · gen: {user.planGenerationsLeft ?? 0} · bonus: {user.bonusGenerationsLeft ?? 0}</p>
                     <p>Стилист: {user.stylistFocusGroup ? "в фокус-группе" : "не включён"}</p>
                     <p>Попытки аватара: {user.avatarUploadAttempts ?? 0} · неудачные: {user.avatarFailedAttempts ?? 0}</p>
                     <p className="break-all">ID: {user.id}</p>

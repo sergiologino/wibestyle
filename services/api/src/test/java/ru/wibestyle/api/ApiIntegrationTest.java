@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -215,11 +216,11 @@ class ApiIntegrationTest {
         String body = mockMvc.perform(post("/api/v1/billing/checkout")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"plan\":\"wibe\",\"period\":\"monthly\"}"))
+                        .content("{\"plan\":\"tryon_20\",\"period\":\"one_time\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("pending"))
-                .andExpect(jsonPath("$.plan").value("wibe"))
-                .andExpect(jsonPath("$.period").value("monthly"))
+                .andExpect(jsonPath("$.plan").value("tryon_20"))
+                .andExpect(jsonPath("$.period").value("one_time"))
                 .andExpect(jsonPath("$.checkoutId").exists())
                 .andReturn().getResponse().getContentAsString();
 
@@ -233,11 +234,13 @@ class ApiIntegrationTest {
         mockMvc.perform(post("/api/v1/billing/webhooks/mock/simulate?checkoutId=" + checkoutId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("active"))
-                .andExpect(jsonPath("$.plan").value("wibe"));
+                .andExpect(jsonPath("$.plan").value("tryon_20"))
+                .andExpect(jsonPath("$.planGenerationsLeft").value(20));
 
         mockMvc.perform(get("/api/v1/me").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.profile.plan").value("wibe"));
+                .andExpect(jsonPath("$.profile.plan").value("tryon_20"))
+                .andExpect(jsonPath("$.profile.planGenerationsLeft").value(20));
     }
 
     @Test
@@ -855,15 +858,33 @@ class ApiIntegrationTest {
     }
 
     @Test
-    void billingPlansExposeWibeMonthlyDefault() throws Exception {
+    void billingPlansExposeTryOnPackagesDefault() throws Exception {
         mockMvc.perform(get("/api/v1/billing/plans"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defaultSelection.plan").value("wibe"))
-                .andExpect(jsonPath("$.defaultSelection.period").value("monthly"))
-                .andExpect(jsonPath("$.items[?(@.plan=='wibe' && @.period=='monthly')].generationsPerPeriod").value(20))
-                .andExpect(jsonPath("$.items[?(@.plan=='wibe' && @.period=='annual')].generationsPerPeriod").value(240))
-                .andExpect(jsonPath("$.items[?(@.plan=='elite' && @.period=='annual')].generationsPerPeriod").value(1200))
-                .andExpect(jsonPath("$.items[?(@.plan=='wibe' && @.period=='annual')].basePriceRub").value(3840));
+                .andExpect(jsonPath("$.defaultSelection.plan").value("tryon_20"))
+                .andExpect(jsonPath("$.defaultSelection.period").value("one_time"))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_20' && @.period=='one_time')].generationsPerPeriod").value(20))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_50' && @.period=='one_time')].generationsPerPeriod").value(50))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_100' && @.period=='one_time')].generationsPerPeriod").value(100))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_20' && @.period=='one_time')].basePriceRub").value(400));
+    }
+
+    @Test
+    void adminCanUpdateTryOnPackagePrices() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/promo-codes/tariffs")
+                        .header("X-Admin-Key", "test-admin-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tryon20PriceRub\":550,\"tryon50PriceRub\":1200,\"tryon100PriceRub\":2100}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tryon20PriceRub").value(550))
+                .andExpect(jsonPath("$.tryon50PriceRub").value(1200))
+                .andExpect(jsonPath("$.tryon100PriceRub").value(2100));
+
+        mockMvc.perform(get("/api/v1/billing/plans"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_20')].basePriceRub").value(550))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_50')].basePriceRub").value(1200))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_100')].basePriceRub").value(2100));
     }
 
     @Test

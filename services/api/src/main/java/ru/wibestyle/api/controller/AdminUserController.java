@@ -257,6 +257,7 @@ public class AdminUserController {
                             request.plan(),
                             request.trialGenerationsLeft(),
                             request.planGenerationsLeft(),
+                            request.additionalGenerations(),
                             request.billingPeriod(),
                             request.subscriptionExpiresAt()
                     )

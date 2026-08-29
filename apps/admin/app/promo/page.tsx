@@ -17,6 +17,12 @@ type PromoDraft = {
   label: string;
 };
 
+type TariffDraft = {
+  tryon20PriceRub: number;
+  tryon50PriceRub: number;
+  tryon100PriceRub: number;
+};
+
 function toDateTimeLocal(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -46,12 +52,21 @@ export default function AdminPromoPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [tariffs, setTariffs] = useState<TariffDraft>({
+    tryon20PriceRub: 400,
+    tryon50PriceRub: 900,
+    tryon100PriceRub: 1600,
+  });
 
   const api = createAdminApi();
 
   const load = useCallback(async (key: string) => {
-    const data = await api.listAdminPromoCodes(key);
-    setItems(data.items);
+    const [promoData, tariffData] = await Promise.all([
+      api.listAdminPromoCodes(key),
+      api.getAdminBillingTariffs(key),
+    ]);
+    setItems(promoData.items);
+    setTariffs(tariffData);
   }, [api]);
 
   useEffect(() => {
@@ -125,13 +140,65 @@ export default function AdminPromoPage() {
     }
   }
 
+  async function onSaveTariffs(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setMessage(null);
+    try {
+      const saved = await api.updateAdminBillingTariffs(adminKey, tariffs);
+      setTariffs(saved);
+      setMessage("Цены тарифов сохранены");
+    } catch {
+      setError("Не удалось сохранить цены тарифов. Проверьте, что значения больше нуля.");
+    }
+  }
+
   const instructions = selectedCode ? promoLinkInstructions(selectedCode) : null;
 
   return (
-    <AdminPageShell pill="Promo" title="Промокоды" description="Создание, редактирование параметров и ссылки для рекламных кампаний.">
+    <AdminPageShell pill="Billing" title="Тарификация" description="Цены пакетов примерок, промокоды и ссылки для рекламных кампаний.">
       {!configured ? <p className="font-bold text-[#6d6273]">Сохраните X-Admin-Key в верхней панели.</p> : null}
       {message ? <p className="font-bold text-emerald-700">{message}</p> : null}
       {error ? <p className="font-bold text-[#ff1fa2]">{error}</p> : null}
+
+      <Card>
+        <h2 className="text-xl font-black">Цены пакетов примерок</h2>
+        <p className="mt-2 font-bold text-[#6d6273]">
+          Эти цены используются на paywall. Промокод применяет процентную скидку к выбранному пакету.
+        </p>
+        <form className="mt-4 grid gap-3 md:grid-cols-3" onSubmit={onSaveTariffs}>
+          <AdminField label="20 примерок, ₽">
+            <input
+              className="rounded-2xl border border-[#ffd1ed] px-4 py-3 font-bold"
+              type="number"
+              min={1}
+              value={tariffs.tryon20PriceRub}
+              onChange={(event) => setTariffs({ ...tariffs, tryon20PriceRub: Number(event.target.value) })}
+            />
+          </AdminField>
+          <AdminField label="50 примерок, ₽">
+            <input
+              className="rounded-2xl border border-[#ffd1ed] px-4 py-3 font-bold"
+              type="number"
+              min={1}
+              value={tariffs.tryon50PriceRub}
+              onChange={(event) => setTariffs({ ...tariffs, tryon50PriceRub: Number(event.target.value) })}
+            />
+          </AdminField>
+          <AdminField label="100 примерок, ₽">
+            <input
+              className="rounded-2xl border border-[#ffd1ed] px-4 py-3 font-bold"
+              type="number"
+              min={1}
+              value={tariffs.tryon100PriceRub}
+              onChange={(event) => setTariffs({ ...tariffs, tryon100PriceRub: Number(event.target.value) })}
+            />
+          </AdminField>
+          <div className="md:col-span-3">
+            <Button type="submit">Сохранить цены</Button>
+          </div>
+        </form>
+      </Card>
 
       <Card>
         <h2 className="text-xl font-black">Создать промокод</h2>

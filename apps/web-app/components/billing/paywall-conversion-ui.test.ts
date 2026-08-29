@@ -11,26 +11,28 @@ describe("paywall conversion UI", () => {
     expect(paywall).toContain("line-through");
   });
 
-  it("defaults to monthly Wibe and applies a pending promo before loading prices", () => {
-    expect(paywall).toContain('useState<BillingPeriod>("monthly")');
+  it("defaults to a one-time try-on package and applies a pending promo before loading prices", () => {
+    expect(paywall).toContain('useState<BillingOfferPeriod>("one_time")');
+    expect(paywall).toContain('useState<BillingOfferPlan>("tryon_20")');
     expect(paywall).toContain("capturePromoFromSearchParams(searchParams) ?? readPendingPromo()");
     expect(paywall).toContain("await api.applyPromo(pendingPromo)");
   });
 
-  it("does not offer recurring payments until the backend confirms availability", () => {
-    expect(paywall).toContain('paymentProvider === "yookassa" && recurringAvailable');
-    expect(paywall).toContain("savePaymentMethod: recurringAvailable && savePaymentMethod");
+  it("uses one-time checkout without recurring payment setup", () => {
+    expect(paywall).toContain("savePaymentMethod: false");
+    expect(paywall).toContain("без автопродления");
   });
 
   it("makes the desktop subscription CTA prominent", () => {
-    expect(topBar).toContain("Подключить Wibe");
+    expect(topBar).toContain("Купить примерки");
     expect(topBar).toContain("subscription-header-cta");
   });
 
   it("uses everyday paywall wording instead of AI/generation wording", () => {
     expect(paywall).toContain("Программа может ошибаться");
     expect(paywall).toContain("качество примерок");
-    expect(paywall).toContain("Больше примерок в периоде");
+    expect(paywall).toContain("Купи пакет примерок");
+    expect(paywall).toContain("Идеи стилиста списываются как одна примерка");
     expect(paywall).not.toContain("AI-пример");
     expect(paywall).not.toContain("качество генераций");
   });

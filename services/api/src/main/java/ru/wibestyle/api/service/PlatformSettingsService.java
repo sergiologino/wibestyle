@@ -24,8 +24,14 @@ public class PlatformSettingsService {
     public static final String MOBILE_ANDROID_MIN_SUPPORTED_VERSION_KEY = "mobile_android_min_supported_version";
     public static final String MOBILE_ANDROID_UPDATE_URL_KEY = "mobile_android_update_url";
     public static final String MOBILE_ANDROID_FORCE_UPDATE_KEY = "mobile_android_force_update";
+    public static final String BILLING_TRYON_20_PRICE_RUB_KEY = "billing_tryon_20_price_rub";
+    public static final String BILLING_TRYON_50_PRICE_RUB_KEY = "billing_tryon_50_price_rub";
+    public static final String BILLING_TRYON_100_PRICE_RUB_KEY = "billing_tryon_100_price_rub";
     public static final String DEFAULT_ANDROID_VERSION = "1.0.0";
     public static final String DEFAULT_ANDROID_UPDATE_URL = "https://www.rustore.ru/catalog/app/ru.vibestyle.app";
+    public static final int DEFAULT_TRYON_20_PRICE_RUB = 400;
+    public static final int DEFAULT_TRYON_50_PRICE_RUB = 900;
+    public static final int DEFAULT_TRYON_100_PRICE_RUB = 1600;
 
     private static final Set<String> SCENE_KEYS = Set.of(
             "outerwear", "office", "casual", "homewear", "sleepwear",
@@ -85,6 +91,23 @@ public class PlatformSettingsService {
 
     public boolean isMobileAndroidForceUpdate() {
         return getBoolean(MOBILE_ANDROID_FORCE_UPDATE_KEY, false);
+    }
+
+    public int getBillingPackagePriceRub(String plan) {
+        return switch (plan) {
+            case "tryon_20" -> getInt(BILLING_TRYON_20_PRICE_RUB_KEY, DEFAULT_TRYON_20_PRICE_RUB);
+            case "tryon_50" -> getInt(BILLING_TRYON_50_PRICE_RUB_KEY, DEFAULT_TRYON_50_PRICE_RUB);
+            case "tryon_100" -> getInt(BILLING_TRYON_100_PRICE_RUB_KEY, DEFAULT_TRYON_100_PRICE_RUB);
+            default -> throw new IllegalArgumentException("INVALID_PLAN");
+        };
+    }
+
+    public Map<String, Object> billingTariffsSnapshot() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("tryon20PriceRub", getBillingPackagePriceRub("tryon_20"));
+        result.put("tryon50PriceRub", getBillingPackagePriceRub("tryon_50"));
+        result.put("tryon100PriceRub", getBillingPackagePriceRub("tryon_100"));
+        return result;
     }
 
     @Transactional
@@ -150,6 +173,19 @@ public class PlatformSettingsService {
         }
     }
 
+    @Transactional
+    public void updateBillingTariffs(Integer tryon20PriceRub, Integer tryon50PriceRub, Integer tryon100PriceRub) {
+        if (tryon20PriceRub != null) {
+            setValue(BILLING_TRYON_20_PRICE_RUB_KEY, Integer.toString(normalizePrice(tryon20PriceRub)));
+        }
+        if (tryon50PriceRub != null) {
+            setValue(BILLING_TRYON_50_PRICE_RUB_KEY, Integer.toString(normalizePrice(tryon50PriceRub)));
+        }
+        if (tryon100PriceRub != null) {
+            setValue(BILLING_TRYON_100_PRICE_RUB_KEY, Integer.toString(normalizePrice(tryon100PriceRub)));
+        }
+    }
+
     public Map<String, Object> snapshot() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("blockGoogleOAuth", isBlockGoogleOAuth());
@@ -160,6 +196,7 @@ public class PlatformSettingsService {
         result.put("mobileAndroidMinSupportedVersion", getMobileAndroidMinSupportedVersion());
         result.put("mobileAndroidUpdateUrl", getMobileAndroidUpdateUrl());
         result.put("mobileAndroidForceUpdate", isMobileAndroidForceUpdate());
+        result.put("billingTariffs", billingTariffsSnapshot());
         return result;
     }
 
@@ -185,6 +222,19 @@ public class PlatformSettingsService {
                 .orElse(defaultValue);
     }
 
+    private int getInt(String key, int defaultValue) {
+        return platformSettingRepository.findById(key)
+                .map(PlatformSettingEntity::getValue)
+                .map(value -> {
+                    try {
+                        return Integer.parseInt(value);
+                    } catch (NumberFormatException ex) {
+                        return defaultValue;
+                    }
+                })
+                .orElse(defaultValue);
+    }
+
     private void setValue(String key, String value) {
         PlatformSettingEntity setting = platformSettingRepository.findById(key)
                 .orElseGet(() -> new PlatformSettingEntity(key, value, Instant.now()));
@@ -207,6 +257,13 @@ public class PlatformSettingsService {
             throw new IllegalArgumentException("MOBILE_VERSION_INVALID");
         }
         return normalized;
+    }
+
+    private static int normalizePrice(int value) {
+        if (value < 1 || value > 1_000_000) {
+            throw new IllegalArgumentException("BILLING_TARIFF_PRICE_INVALID");
+        }
+        return value;
     }
 
     private static Map<String, String> defaultScenePrompts() {

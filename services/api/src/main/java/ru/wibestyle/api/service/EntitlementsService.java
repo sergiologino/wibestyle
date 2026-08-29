@@ -19,6 +19,8 @@ public class EntitlementsService {
 
     public Map<String, Object> forProfile(UserProfileEntity profile) {
         String plan = profile.getPlan();
+        boolean paidAccess = "wibe".equals(plan) || "elite".equals(plan)
+                || (!"trial".equals(plan) && profile.getPlanGenerationsLeft() > 0);
         Map<String, Object> entitlements = new HashMap<>();
         entitlements.put("singleTryOn", true);
         entitlements.put("multiItemTryOn", "elite".equals(plan));
@@ -31,9 +33,9 @@ public class EntitlementsService {
         entitlements.put("trialVideoGenerationsLeft", profile.getTrialVideoGenerationsLeft());
         entitlements.put("search", featureFlagsProperties.isEnabled("search"));
         entitlements.put("sizeAdvisory", featureFlagsProperties.isEnabled("sizeAdvisory"));
-        entitlements.put("favorites", !"trial".equals(plan) || profile.getTrialGenerationsLeft() >= 0);
+        entitlements.put("favorites", paidAccess || profile.getTrialGenerationsLeft() >= 0);
         entitlements.put("gallery", true);
-        entitlements.put("history", !"trial".equals(plan));
+        entitlements.put("history", paidAccess);
         return entitlements;
     }
 }

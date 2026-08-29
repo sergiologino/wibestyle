@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Check, ShieldCheck, Sparkles } from "lucide-react";
 import { Button, Card } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
-import type { BillingPeriod, BillingPlanOffer, SubscriptionPlan } from "@wibestyle/shared-types";
+import type { BillingOfferPeriod, BillingOfferPlan, BillingPackagePlan, BillingPlanOffer, SubscriptionPlan } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 import { isExternalPaymentUrl, rememberCheckoutId } from "@/lib/billing-plan";
 import { capturePromoFromSearchParams, clearPendingPromo, readPendingPromo } from "@/lib/promo-storage";
@@ -15,52 +15,49 @@ function formatRub(value: number) {
   return `${value.toLocaleString("ru-RU")} ₽`;
 }
 
-const PLAN_PERKS = {
-  wibe: [
-    "Примерки одежды по ссылкам с маркетплейсов",
-    "История образов и сохранение удачных looks",
-    "Share-карточки для подруг и стилиста",
-    "Приватная обработка фото в рамках профиля",
-  ],
-  elite: [
-    "Больше примерок в периоде",
-    "Видео «Хит сезона» для лучших образов",
-    "Приоритетная очередь обработки",
-    "Ранний доступ к новым fashion-функциям",
-  ],
-} satisfies Record<"wibe" | "elite", string[]>;
-
-const PLAN_RANK: Record<SubscriptionPlan, number> = {
-  trial: 0,
-  wibe: 1,
-  elite: 2,
-};
+const PACKAGE_COPY = {
+  tryon_20: {
+    title: "20 примерок",
+    accent: "#ff1fa2",
+    perks: ["Примерки одежды по ссылкам с маркетплейсов", "Причёски и цвет волос", "Идеи стилиста списываются как одна примерка"],
+  },
+  tryon_50: {
+    title: "50 примерок",
+    accent: "#42a5ff",
+    perks: ["Запас для нескольких образов", "История и сохранение удачных looks", "Оптимально для активного подбора"],
+  },
+  tryon_100: {
+    title: "100 примерок",
+    accent: "#7a9f52",
+    perks: ["Максимальный запас примерок", "Удобно для регулярного подбора гардероба", "Все базовые возможности приложения"],
+  },
+} satisfies Record<BillingPackagePlan, { title: string; accent: string; perks: string[] }>;
 
 function planLabel(plan: SubscriptionPlan) {
   return plan === "elite" ? "Elite" : plan === "wibe" ? "Wibe" : "trial";
+}
+
+function packageCopy(plan: BillingOfferPlan) {
+  return PACKAGE_COPY[plan as BillingPackagePlan] ?? PACKAGE_COPY.tryon_20;
 }
 
 export default function PaywallClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { api } = useAppSession();
-  const [period, setPeriod] = useState<BillingPeriod>("monthly");
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>("wibe");
+  const [period, setPeriod] = useState<BillingOfferPeriod>("one_time");
+  const [selectedPlan, setSelectedPlan] = useState<BillingOfferPlan>("tryon_20");
   const [offers, setOffers] = useState<BillingPlanOffer[]>([]);
-  const [annualDiscountPercent, setAnnualDiscountPercent] = useState(20);
   const [promoDiscountPercent, setPromoDiscountPercent] = useState(0);
   const [paymentProvider, setPaymentProvider] = useState("mock");
-  const [recurringAvailable, setRecurringAvailable] = useState(false);
   const [subscriberPlan, setSubscriberPlan] = useState<SubscriptionPlan>("trial");
-  const [subscriberPeriod, setSubscriberPeriod] = useState<BillingPeriod>("monthly");
+  const [subscriberPeriod, setSubscriberPeriod] = useState<BillingOfferPeriod>("monthly");
   const [subscriptionActive, setSubscriptionActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [savePaymentMethod, setSavePaymentMethod] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reason = searchParams.get("reason");
-  const isElitePerk = reason === "elite_perk";
 
   useEffect(() => {
     let active = true;
@@ -81,26 +78,11 @@ export default function PaywallClient() {
       const data = await api.getBillingPlans();
       if (!active) return;
       setOffers(data.items);
-      setAnnualDiscountPercent(data.annualDiscountPercent);
       setPromoDiscountPercent(data.promoDiscountPercent);
       setPaymentProvider(data.paymentProvider ?? "mock");
-      setRecurringAvailable(Boolean(data.recurringAvailable));
-      if (!data.recurringAvailable) setSavePaymentMethod(false);
-      const activeSubscriber = data.subscriber?.subscriptionActive && data.subscriber.plan !== "trial"
-        ? data.subscriber
-        : null;
-      if (isElitePerk) {
-        setSelectedPlan("elite");
-        setPeriod(activeSubscriber?.billingPeriod ?? data.defaultSelection.period);
-      } else if (planParam === "wibe" || planParam === "elite") {
+      if (planParam === "tryon_20" || planParam === "tryon_50" || planParam === "tryon_100") {
         setSelectedPlan(planParam);
-        setPeriod(periodParam === "monthly" || periodParam === "annual" ? periodParam : data.defaultSelection.period);
-      } else if (activeSubscriber?.plan === "wibe") {
-        setSelectedPlan("elite");
-        setPeriod(activeSubscriber.billingPeriod);
-      } else if (activeSubscriber?.plan === "elite") {
-        setSelectedPlan("elite");
-        setPeriod(activeSubscriber.billingPeriod);
+        setPeriod(periodParam === "one_time" ? periodParam : data.defaultSelection.period);
       } else {
         setSelectedPlan(data.defaultSelection.plan);
         setPeriod(data.defaultSelection.period);
@@ -118,54 +100,25 @@ export default function PaywallClient() {
     return () => {
       active = false;
     };
-  }, [api, isElitePerk, searchParams]);
+  }, [api, searchParams]);
 
   const currentOffer = useMemo(
     () => offers.find((item) => item.plan === selectedPlan && item.period === period),
     [offers, selectedPlan, period],
   );
 
-  const wibeOffer = offers.find((item) => item.plan === "wibe" && item.period === period);
-  const eliteOffer = offers.find((item) => item.plan === "elite" && item.period === period);
-  const showUpgradeHint = isElitePerk
-    && subscriptionActive
-    && subscriberPlan === "wibe"
-    && subscriberPeriod === "annual"
-    && period === "annual"
-    && eliteOffer?.upgradeFromWibe;
-
-  const displayPrice = currentOffer?.upgradeFromWibe && currentOffer.upgradePriceRub != null
-    ? currentOffer.upgradePriceRub
-    : currentOffer?.priceRub;
+  const displayPrice = currentOffer?.priceRub;
   const hasActivePaidSubscription = subscriptionActive && subscriberPlan !== "trial";
-  const isCurrentSelection = hasActivePaidSubscription
-    && selectedPlan === subscriberPlan
-    && period === subscriberPeriod;
-  const selectedPlanBlocked = hasActivePaidSubscription
-    && (PLAN_RANK[selectedPlan] <= PLAN_RANK[subscriberPlan] || period !== subscriberPeriod);
-  const checkoutDisabled = loading || submitting || !currentOffer || selectedPlanBlocked;
-  const checkoutLabel = selectedPlanBlocked
-    ? isCurrentSelection
-      ? "Это текущий тариф"
-      : `Доступен только апгрейд до более высокого тарифа ${subscriberPeriod === "annual" ? "на год" : "на месяц"}`
-    : submitting
-      ? "Открываем оплату…"
-      : isElitePerk || selectedPlan === "elite"
-        ? "Подключить Elite"
-        : "Подключить Wibe";
-
-  function isOfferBlocked(plan: Exclude<SubscriptionPlan, "trial">) {
-    return hasActivePaidSubscription
-      && (PLAN_RANK[plan] <= PLAN_RANK[subscriberPlan] || period !== subscriberPeriod);
-  }
+  const checkoutDisabled = loading || submitting || !currentOffer;
+  const checkoutLabel = submitting ? "Открываем оплату…" : "Купить примерки";
 
   async function onCheckout() {
-    if (selectedPlan === "trial" || selectedPlanBlocked) return;
+    if (!currentOffer) return;
     setError(null);
     setSubmitting(true);
     try {
       const result = await api.checkout(selectedPlan, period, {
-        savePaymentMethod: recurringAvailable && savePaymentMethod,
+        savePaymentMethod: false,
         client: "web",
       });
       if (isExternalPaymentUrl(result.provider, result.paymentUrl)) {
@@ -186,7 +139,7 @@ export default function PaywallClient() {
         <div className="flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-[#8b3c2c]">
             <Sparkles size={14} aria-hidden />
-            {isElitePerk ? "Elite" : reason === "trial_exhausted" ? "Trial закончился" : "WibeStyle Premium"}
+            {reason === "trial_exhausted" ? "Trial закончился" : "WibeStyle"}
           </span>
           {promoDiscountPercent > 0 ? (
             <span className="rounded-full bg-[#ff5b3d] px-3 py-1 text-xs font-medium text-white">
@@ -195,86 +148,43 @@ export default function PaywallClient() {
           ) : null}
         </div>
         <h1 className="text-display mt-4 text-4xl md:text-5xl">
-          {isElitePerk ? "Открой Elite-функции" : "Примеряй больше, покупай увереннее"}
+          Примеряй больше, покупай увереннее
         </h1>
         <p className="text-body mt-4 max-w-2xl text-lg">
-          Подключи тариф, чтобы делать больше примерок, сохранять образы и возвращаться к товарам с маркетплейсов без хаоса в корзине.
+          Купи пакет примерок: одежда, причёски, цвет волос и идеи стилиста расходуют общий баланс.
         </p>
         <div className="mt-5 flex flex-wrap gap-3 text-sm text-[#5f5662]">
           <span className="inline-flex items-center gap-2 rounded-full border border-[#ffb8a5] bg-white px-3 py-1">
             <ShieldCheck size={15} aria-hidden />
             безопасная оплата
           </span>
-          <span className="rounded-full border border-[#ffb8a5] bg-white px-3 py-1">отмена в любой момент</span>
+          <span className="rounded-full border border-[#ffb8a5] bg-white px-3 py-1">без автопродления</span>
           {paymentProvider === "mock" ? <span className="rounded-full border border-[#ffb8a5] bg-white px-3 py-1">dev checkout</span> : null}
         </div>
       </section>
 
       <Card>
-        {showUpgradeHint && eliteOffer?.upgradePriceRub != null ? (
-          <p className="mb-6 rounded-2xl border border-[#a9d8ff] bg-[#eef7ff] px-4 py-3 text-sm text-[#302637]">
-            У тебя активен годовой Wibe. Доплата за Elite: <strong>{formatRub(eliteOffer.upgradePriceRub)}</strong>
-          </p>
-        ) : null}
-
-        <div className="inline-flex rounded-full border border-[#ffd1ed] bg-white p-1">
-          <button
-            type="button"
-            disabled={hasActivePaidSubscription && subscriberPeriod !== "monthly"}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45 ${period === "monthly" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
-            onClick={() => setPeriod("monthly")}
-          >
-            Месяц
-          </button>
-          <button
-            type="button"
-            disabled={hasActivePaidSubscription && subscriberPeriod !== "annual"}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45 ${period === "annual" ? "bg-[#ff1fa2] text-white" : "text-[#6d6273]"}`}
-            onClick={() => setPeriod("annual")}
-          >
-            Год −{annualDiscountPercent}%
-          </button>
+        <div className="grid gap-4 md:grid-cols-3">
+          {offers.map((offer) => {
+            const copy = packageCopy(offer.plan);
+            return (
+              <PlanCard
+                key={`${offer.plan}:${offer.period}`}
+                title={offer.title ?? copy.title}
+                selected={selectedPlan === offer.plan}
+                accent={copy.accent}
+                recommended={Boolean(offer.recommended)}
+                price={formatRub(offer.priceRub)}
+                basePrice={offer.basePriceRub}
+                perks={copy.perks}
+                onSelect={() => {
+                  setSelectedPlan(offer.plan);
+                  setPeriod(offer.period);
+                }}
+              />
+            );
+          })}
         </div>
-
-        {!isElitePerk ? (
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <PlanCard
-              title="Wibe"
-              selected={selectedPlan === "wibe"}
-              accent="#ff1fa2"
-              recommended={period === "monthly"}
-              price={wibeOffer ? formatRub(wibeOffer.priceRub) : "…"}
-              basePrice={wibeOffer?.basePriceRub}
-              monthly={wibeOffer?.monthlyEquivalentRub ? `~${formatRub(wibeOffer.monthlyEquivalentRub)}/мес` : undefined}
-              perks={PLAN_PERKS.wibe}
-              current={hasActivePaidSubscription && subscriberPlan === "wibe" && subscriberPeriod === period}
-              disabled={isOfferBlocked("wibe")}
-              onSelect={() => setSelectedPlan("wibe")}
-            />
-            <PlanCard
-              title="Elite"
-              selected={selectedPlan === "elite"}
-              accent="#42a5ff"
-              price={eliteOffer ? formatRub(eliteOffer.priceRub) : "…"}
-              basePrice={eliteOffer?.basePriceRub}
-              monthly={eliteOffer?.monthlyEquivalentRub ? `~${formatRub(eliteOffer.monthlyEquivalentRub)}/мес` : undefined}
-              perks={PLAN_PERKS.elite}
-              current={hasActivePaidSubscription && subscriberPlan === "elite" && subscriberPeriod === period}
-              disabled={isOfferBlocked("elite")}
-              onSelect={() => setSelectedPlan("elite")}
-            />
-          </div>
-        ) : (
-          <div className="mt-6 rounded-[28px] border-2 border-[#42a5ff] bg-[#eef7ff] p-6">
-            <h2 className="text-display-md text-3xl">Elite</h2>
-            <p className="mt-2 text-3xl">{eliteOffer ? formatRub(displayPrice ?? eliteOffer.priceRub) : "…"}</p>
-            <ul className="text-body mt-4 space-y-2">
-              {PLAN_PERKS.elite.map((perk) => (
-                <li key={perk} className="flex gap-2"><Check size={16} className="mt-1 text-[#42a5ff]" aria-hidden />{perk}</li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         {displayPrice != null ? (
           <div className="mt-6 rounded-2xl border border-[#ffb8a5] bg-[#fff7f3] px-5 py-4 text-[#302637]">
@@ -286,31 +196,16 @@ export default function PaywallClient() {
               <strong className="text-3xl text-[#ff1fa2]">{formatRub(displayPrice)}</strong>
               {promoDiscountPercent > 0 ? <span className="rounded-full bg-[#ff1fa2] px-2.5 py-1 text-xs font-semibold text-white">Скидка {promoDiscountPercent}% уже включена</span> : null}
             </p>
-            {currentOffer?.monthlyEquivalentRub ? ` · ~${formatRub(currentOffer.monthlyEquivalentRub)}/мес` : ""}
+            <p className="mt-2 text-sm text-[#6d6273]">
+              {currentOffer?.generationsPerPeriod.toLocaleString("ru-RU")} примерок пополнят баланс после оплаты.
+            </p>
           </div>
-        ) : null}
-
-        {paymentProvider === "yookassa" && recurringAvailable ? (
-          <label className="mt-5 flex max-w-2xl cursor-pointer items-start gap-3 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] p-4 text-sm text-[#302637]">
-            <input
-              type="checkbox"
-              checked={savePaymentMethod}
-              onChange={(event) => setSavePaymentMethod(event.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-[#ff1fa2]"
-            />
-            <span>
-              <strong>Сохранить способ оплаты и включить автопродление</strong>
-              <span className="mt-1 block text-xs leading-5 text-[#6d6273]">
-                Следующее списание — в дату окончания подписки по обычной цене тарифа. За 3 дня пришлём уведомление. Автопродление можно отключить в профиле.
-              </span>
-            </span>
-          </label>
         ) : null}
 
         {hasActivePaidSubscription ? (
           <p className="mt-5 rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] px-4 py-3 text-sm text-[#302637]">
             Текущий тариф: <strong>{planLabel(subscriberPlan)}</strong>, {subscriberPeriod === "annual" ? "год" : "месяц"}.
-            Оплатить можно только более высокий тариф в том же периоде.
+            Он продолжит работать по старым правилам до окончания подписки.
           </p>
         ) : null}
 

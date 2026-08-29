@@ -36,8 +36,8 @@ export const adminSections = [
   },
   {
     id: "promo",
-    title: "Промокоды",
-    description: "Создание кодов, лимиты регистраций, ссылки для VK и отмена.",
+    title: "Тарификация",
+    description: "Цены пакетов примерок, промокоды, лимиты регистраций, ссылки для VK и отмена.",
     status: "Ready",
     href: "/promo",
   },
