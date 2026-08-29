@@ -136,6 +136,9 @@ public class TryOnSessionEntity {
     @Column(name = "video_quota_consumed", nullable = false)
     private boolean videoQuotaConsumed;
 
+    @Column(name = "video_quota_source", length = 32)
+    private String videoQuotaSource;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -467,6 +470,14 @@ public class TryOnSessionEntity {
 
     public void setVideoQuotaConsumed(boolean videoQuotaConsumed) {
         this.videoQuotaConsumed = videoQuotaConsumed;
+    }
+
+    public String getVideoQuotaSource() {
+        return videoQuotaSource;
+    }
+
+    public void setVideoQuotaSource(String videoQuotaSource) {
+        this.videoQuotaSource = videoQuotaSource;
     }
 
     public Instant getCreatedAt() {

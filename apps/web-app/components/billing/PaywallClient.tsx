@@ -19,7 +19,7 @@ const PACKAGE_COPY = {
   tryon_20: {
     title: "20 примерок",
     accent: "#ff1fa2",
-    perks: ["Примерки одежды по ссылкам с маркетплейсов", "Причёски и цвет волос", "Идеи стилиста списываются как одна примерка"],
+    perks: ["Примерки одежды по ссылкам с маркетплейсов", "Причёски и цвет волос", "Фото и видео удачных образов"],
   },
   tryon_50: {
     title: "50 примерок",
@@ -46,7 +46,7 @@ export default function PaywallClient() {
   const searchParams = useSearchParams();
   const { api } = useAppSession();
   const [period, setPeriod] = useState<BillingOfferPeriod>("one_time");
-  const [selectedPlan, setSelectedPlan] = useState<BillingOfferPlan>("tryon_20");
+  const [selectedPlan, setSelectedPlan] = useState<BillingOfferPlan>("tryon_50");
   const [offers, setOffers] = useState<BillingPlanOffer[]>([]);
   const [promoDiscountPercent, setPromoDiscountPercent] = useState(0);
   const [paymentProvider, setPaymentProvider] = useState("mock");
@@ -151,7 +151,7 @@ export default function PaywallClient() {
           Примеряй больше, покупай увереннее
         </h1>
         <p className="text-body mt-4 max-w-2xl text-lg">
-          Купи пакет примерок: одежда, причёски, цвет волос и идеи стилиста расходуют общий баланс.
+          Купи пакет примерок: одежда, причёски, цвет волос, фото и видео расходуют общий баланс.
         </p>
         <div className="mt-5 flex flex-wrap gap-3 text-sm text-[#5f5662]">
           <span className="inline-flex items-center gap-2 rounded-full border border-[#ffb8a5] bg-white px-3 py-1">
@@ -176,6 +176,7 @@ export default function PaywallClient() {
                 recommended={Boolean(offer.recommended)}
                 price={formatRub(offer.priceRub)}
                 basePrice={offer.basePriceRub}
+                discountPercent={offer.discountPercent}
                 perks={copy.perks}
                 onSelect={() => {
                   setSelectedPlan(offer.plan);
@@ -190,11 +191,11 @@ export default function PaywallClient() {
           <div className="mt-6 rounded-2xl border border-[#ffb8a5] bg-[#fff7f3] px-5 py-4 text-[#302637]">
             <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#8b3c2c]">К оплате</p>
             <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              {promoDiscountPercent > 0 && currentOffer?.basePriceRub != null ? (
+              {currentOffer?.discountPercent && currentOffer.discountPercent > 0 && currentOffer.basePriceRub > currentOffer.priceRub ? (
                 <span className="text-lg text-[#8a7d86] line-through">{formatRub(currentOffer.basePriceRub)}</span>
               ) : null}
               <strong className="text-3xl text-[#ff1fa2]">{formatRub(displayPrice)}</strong>
-              {promoDiscountPercent > 0 ? <span className="rounded-full bg-[#ff1fa2] px-2.5 py-1 text-xs font-semibold text-white">Скидка {promoDiscountPercent}% уже включена</span> : null}
+              {currentOffer?.discountPercent && currentOffer.discountPercent > 0 ? <span className="rounded-full bg-[#ff1fa2] px-2.5 py-1 text-xs font-semibold text-white">Скидка {currentOffer.discountPercent}% уже включена</span> : null}
             </p>
             <p className="mt-2 text-sm text-[#6d6273]">
               {currentOffer?.generationsPerPeriod.toLocaleString("ru-RU")} примерок пополнят баланс после оплаты.
@@ -232,6 +233,7 @@ function PlanCard(props: {
   recommended?: boolean;
   price: string;
   basePrice?: number;
+  discountPercent?: number;
   monthly?: string;
   perks: string[];
   current?: boolean;
@@ -252,7 +254,17 @@ function PlanCard(props: {
       onClick={props.onSelect}
     >
       {props.current ? <p className="text-eyebrow" style={{ color: props.accent }}>Текущий тариф</p> : null}
-      {props.recommended ? <p className="text-eyebrow" style={{ color: props.accent }}>Рекомендуем</p> : null}
+      <div className="flex flex-wrap gap-2">
+        {props.recommended ? <p className="text-eyebrow" style={{ color: props.accent }}>Рекомендуем</p> : null}
+        {props.discountPercent && props.discountPercent > 0 ? (
+          <span
+            className="rounded-full px-2.5 py-1 text-xs font-black text-white shadow-[0_8px_20px_rgba(255,31,162,0.20)]"
+            style={{ backgroundColor: props.accent }}
+          >
+            −{props.discountPercent}%
+          </span>
+        ) : null}
+      </div>
       <h2 className="text-display-md mt-2 text-3xl">{props.title}</h2>
       <p className="mt-2 flex flex-wrap items-baseline gap-2">
         {props.basePrice != null && props.price !== formatRub(props.basePrice) ? (

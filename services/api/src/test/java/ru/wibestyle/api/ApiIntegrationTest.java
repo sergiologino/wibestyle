@@ -861,12 +861,14 @@ class ApiIntegrationTest {
     void billingPlansExposeTryOnPackagesDefault() throws Exception {
         mockMvc.perform(get("/api/v1/billing/plans"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defaultSelection.plan").value("tryon_20"))
+                .andExpect(jsonPath("$.defaultSelection.plan").value("tryon_50"))
                 .andExpect(jsonPath("$.defaultSelection.period").value("one_time"))
                 .andExpect(jsonPath("$.items[?(@.plan=='tryon_20' && @.period=='one_time')].generationsPerPeriod").value(20))
                 .andExpect(jsonPath("$.items[?(@.plan=='tryon_50' && @.period=='one_time')].generationsPerPeriod").value(50))
                 .andExpect(jsonPath("$.items[?(@.plan=='tryon_100' && @.period=='one_time')].generationsPerPeriod").value(100))
-                .andExpect(jsonPath("$.items[?(@.plan=='tryon_20' && @.period=='one_time')].basePriceRub").value(400));
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_20' && @.period=='one_time')].basePriceRub").value(400))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_20')].discountPercent").value(0))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_100')].discountPercent").value(10));
     }
 
     @Test
@@ -920,7 +922,10 @@ class ApiIntegrationTest {
 
         mockMvc.perform(get("/api/v1/billing/plans").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.promoDiscountPercent").value(20));
+                .andExpect(jsonPath("$.promoDiscountPercent").value(20))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_20')].discountPercent").value(0))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_50')].discountPercent").value(20))
+                .andExpect(jsonPath("$.items[?(@.plan=='tryon_100')].discountPercent").value(30));
 
         String accessTokenWithoutPromo = authenticate("+79991112201");
         mockMvc.perform(post("/api/v1/billing/promo/apply")

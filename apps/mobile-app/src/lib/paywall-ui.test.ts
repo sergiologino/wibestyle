@@ -13,12 +13,13 @@ describe("mobile paywall UI contract", () => {
   });
 
   it("defaults to a one-time try-on package and lists package choices", () => {
-    expect(paywall).toContain('plan: "tryon_20"');
+    expect(paywall).toContain('plan: "tryon_50"');
     expect(paywall).toContain('period: "one_time"');
     expect(paywall).toContain("20 примерок");
     expect(paywall).toContain("50 примерок");
     expect(paywall).toContain("100 примерок");
     expect(paywall).toContain("setSelected(payload.defaultSelection)");
+    expect(paywall).toContain("−{offer.discountPercent}%");
   });
 
   it("uses a light savings treatment and sends onboarding skip through auth to avatar setup", () => {

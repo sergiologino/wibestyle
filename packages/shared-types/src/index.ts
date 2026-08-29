@@ -239,6 +239,7 @@ export type BillingPlanOffer = {
   period: BillingOfferPeriod;
   basePriceRub: number;
   priceRub: number;
+  discountPercent?: number;
   generationsPerPeriod: number;
   monthlyEquivalentRub?: number;
   savingsPercent?: number;

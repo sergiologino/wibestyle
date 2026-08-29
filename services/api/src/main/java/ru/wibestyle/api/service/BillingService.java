@@ -79,7 +79,7 @@ public class BillingService {
         Map<String, Object> response = new HashMap<>();
         response.put("items", items);
         response.put("annualDiscountPercent", 0);
-        response.put("defaultSelection", Map.of("plan", "tryon_20", "period", "one_time"));
+        response.put("defaultSelection", Map.of("plan", "tryon_50", "period", "one_time"));
         response.put("promoDiscountPercent", promoDiscount);
         response.put("paymentProvider", activeProvider());
         response.put("recurringAvailable", false);
@@ -648,7 +648,7 @@ public class BillingService {
         if (upgradeFromWibe) {
             chargeBase = basePrice - basePrice("wibe", period);
         }
-        int finalPrice = applyDiscount(chargeBase, profile.getPromoDiscountPercent());
+        int finalPrice = applyDiscount(chargeBase, effectiveDiscountPercent(plan, profile.getPromoDiscountPercent()));
         return new CheckoutPricing(basePrice, finalPrice, upgradeFromWibe);
     }
 
@@ -675,13 +675,15 @@ public class BillingService {
     private Map<String, Object> planOffer(UserProfileEntity profile, String plan, String period, int basePriceRub, int promoDiscountPercent) {
         boolean upgradeFromWibe = qualifiesForUpgradeDiff(profile, plan, period);
         int chargeBase = upgradeFromWibe ? basePriceRub - basePrice("wibe", period) : basePriceRub;
-        int finalPrice = applyDiscount(chargeBase, promoDiscountPercent);
+        int effectiveDiscountPercent = effectiveDiscountPercent(plan, promoDiscountPercent);
+        int finalPrice = applyDiscount(chargeBase, effectiveDiscountPercent);
         Map<String, Object> map = new HashMap<>();
         map.put("plan", plan);
         map.put("period", period);
         map.put("basePriceRub", basePriceRub);
         map.put("priceRub", finalPrice);
         map.put("generationsPerPeriod", quotaService.generationsForPlanPeriod(plan, period));
+        map.put("discountPercent", effectiveDiscountPercent);
         if (isPackagePlan(plan)) {
             map.put("oneTime", true);
             map.put("title", packageTitle(plan));
@@ -729,6 +731,17 @@ public class BillingService {
             return basePriceRub;
         }
         return Math.max(0, basePriceRub - (basePriceRub * discountPercent / 100));
+    }
+
+    private int effectiveDiscountPercent(String plan, Integer promoDiscountPercent) {
+        int promo = promoDiscountPercent == null ? 0 : Math.max(0, promoDiscountPercent);
+        if ("tryon_20".equals(plan)) {
+            return 0;
+        }
+        if ("tryon_100".equals(plan)) {
+            return Math.min(100, promo + 10);
+        }
+        return promo;
     }
 
     public static boolean isPackagePlan(String plan) {

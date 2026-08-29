@@ -31,7 +31,7 @@ export default function PaywallScreen() {
   const { api, profile, refreshProfile } = useSession();
   const [plans, setPlans] = useState<BillingPlanOffer[]>([]);
   const [selected, setSelected] = useState<{ plan: BillingOfferPlan; period: BillingOfferPeriod }>({
-    plan: "tryon_20",
+    plan: "tryon_50",
     period: "one_time",
   });
   const [loading, setLoading] = useState(false);
@@ -111,7 +111,7 @@ export default function PaywallScreen() {
         <Eyebrow>Пейволл</Eyebrow>
         <DisplayTitle>Выбери свой формат примерок</DisplayTitle>
         <BodyText>
-          Начни с бесплатных примерок или купи пакет: одежда, причёски, цвет волос и идеи стилиста расходуют общий баланс.
+          Начни с бесплатных примерок или купи пакет: одежда, причёски, цвет волос, фото и видео расходуют общий баланс.
         </BodyText>
 
         {showTrial ? (
@@ -155,10 +155,15 @@ export default function PaywallScreen() {
                 onPress={() => setSelected({ plan: offer.plan, period: offer.period })}
                 accessibilityRole="button"
               >
-                {featured ? <Text style={styles.badge}>Рекомендуем</Text> : null}
+                <View style={styles.badgeRow}>
+                  {featured ? <Text style={styles.badge}>Рекомендуем</Text> : null}
+                  {offer.discountPercent && offer.discountPercent > 0 ? (
+                    <Text style={styles.discountBadge}>−{offer.discountPercent}%</Text>
+                  ) : null}
+                </View>
                 <Text style={styles.planName}>{offer.title ?? copy.title}</Text>
                 <Text style={styles.planPrice}>{offer.priceRub.toLocaleString("ru-RU")} ₽</Text>
-                {promoDiscountPercent > 0 && offer.basePriceRub > offer.priceRub ? (
+                {offer.discountPercent && offer.discountPercent > 0 && offer.basePriceRub > offer.priceRub ? (
                   <Text style={styles.oldPrice}>Без промокода: {offer.basePriceRub.toLocaleString("ru-RU")} ₽</Text>
                 ) : null}
                 <Text style={styles.planMeta}>{formatTryOnAllowance(offer.generationsPerPeriod, offer.period)}</Text>
@@ -353,6 +358,22 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: "uppercase",
     marginTop: 4,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  discountBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    backgroundColor: colors.violet,
+    color: colors.white,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 12,
   },
   summary: {
     fontFamily: "Manrope_500Medium",

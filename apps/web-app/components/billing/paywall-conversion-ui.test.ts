@@ -7,13 +7,14 @@ describe("paywall conversion UI", () => {
   const topBar = readFileSync(join(process.cwd(), "components", "AppTopBar.tsx"), "utf8");
 
   it("shows the promo discount beside the payment price", () => {
-    expect(paywall).toContain("Скидка {promoDiscountPercent}% уже включена");
+    expect(paywall).toContain("Скидка {currentOffer.discountPercent}% уже включена");
+    expect(paywall).toContain("−{props.discountPercent}%");
     expect(paywall).toContain("line-through");
   });
 
   it("defaults to a one-time try-on package and applies a pending promo before loading prices", () => {
     expect(paywall).toContain('useState<BillingOfferPeriod>("one_time")');
-    expect(paywall).toContain('useState<BillingOfferPlan>("tryon_20")');
+    expect(paywall).toContain('useState<BillingOfferPlan>("tryon_50")');
     expect(paywall).toContain("capturePromoFromSearchParams(searchParams) ?? readPendingPromo()");
     expect(paywall).toContain("await api.applyPromo(pendingPromo)");
   });
@@ -32,7 +33,8 @@ describe("paywall conversion UI", () => {
     expect(paywall).toContain("Программа может ошибаться");
     expect(paywall).toContain("качество примерок");
     expect(paywall).toContain("Купи пакет примерок");
-    expect(paywall).toContain("Идеи стилиста списываются как одна примерка");
+    expect(paywall).toContain("Фото и видео удачных образов");
+    expect(paywall).not.toContain("Идеи стилиста");
     expect(paywall).not.toContain("AI-пример");
     expect(paywall).not.toContain("качество генераций");
   });
