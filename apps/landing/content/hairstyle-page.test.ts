@@ -4,7 +4,7 @@ import { getSeoPage } from "./seo-pages";
 describe("hairstyle landing page", () => {
   it("targets hairstyles, haircuts, and hair color intents with dedicated visual slots", () => {
     const page = getSeoPage("/pricheski");
-    expect(page?.badge).toBe("Скоро");
+    expect(page?.badge).toBeUndefined();
     expect(page?.visualsCompact).not.toBe(true);
     expect(page?.visualsTall).toBe(true);
     expect(page?.title).toContain("стрижку");
@@ -16,10 +16,13 @@ describe("hairstyle landing page", () => {
     });
     expect(page?.visuals).toMatchObject({
       type: "mosaic",
-      images: [
-        { src: "/assets/hairstyles/hairstyle-preview-1.png" },
-        { src: "/assets/hairstyles/hairstyle-preview-2.png" },
-      ],
     });
+    if (page?.visuals?.type === "mosaic") {
+      expect(page.visuals.images).toHaveLength(4);
+      expect(page.visuals.labels).toHaveLength(4);
+      page.visuals.images.forEach((image, index) => {
+        expect(image.src).toMatch(new RegExp(`/assets/hairstyles/hairstyle-preview-${index + 1}\\.(webp|png|jpg)$`));
+      });
+    }
   });
 });

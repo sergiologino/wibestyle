@@ -334,9 +334,17 @@ export const seoPages: SeoPageContent[] = [
     h1: "Виртуальная примерка причёсок, стрижек и цвета волос",
     keywords: [...baseKeywords, ...beautyKeywords, "примерить причёску", "примерить стрижку", "подобрать цвет волос"],
     priority: 0.7,
-    badge: "Скоро",
     intro: "Укладка, длина, чёлка, стрижка и цвет волос — вместе с одеждой и будущим макияжем. Проверьте каре, пикси, мягкие слои, локоны или новый оттенок до визита к мастеру.",
-    visuals: { type: "mosaic", images: [imageSlots.hairstylePreview1, imageSlots.hairstylePreview2] },
+    visuals: {
+      type: "mosaic",
+      labels: ["Причёска", "Укладка и цвет", "Стрижка", "Новый оттенок"],
+      images: [
+        imageSlots.hairstylePreview1,
+        imageSlots.hairstylePreview2,
+        imageSlots.hairstylePreview3,
+        imageSlots.hairstylePreview4,
+      ],
+    },
     visualsTall: true,
     sections: [
       { title: "Причёска под образ", body: "Одно платье — разные укладки, разное настроение. Сравните варианты и выберите тот, который усиливает лицо и силуэт." },
