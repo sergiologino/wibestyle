@@ -4,5 +4,5 @@ export const t = {
   stylistFull: "виртуальный персональный стилист",
   tryOn: "нейропримерка",
   tryOnFull: "виртуальная примерочная",
-  appLaunch: "начале июля 2026",
+  appLaunch: "актуальных релизах 2026",
 } as const;
