@@ -3,28 +3,30 @@ import { homeFaq } from "@/content/home-faq";
 import { siteConfig } from "@/lib/site";
 import LeadForm from "@/components/LeadForm";
 import PublishedReviewsSection from "@/components/PublishedReviewsSection";
-import AppPreviewPhones from "@/components/home/AppPreviewPhones";
 import BeforeAfterSection from "@/components/home/BeforeAfterSection";
-import { categoryCards } from "@/components/home/category-cards-data";
 import ExamplesGallerySection from "@/components/home/ExamplesGallerySection";
 import FinalCtaArt from "@/components/home/FinalCtaArt";
 import HeroBeforeCard from "@/components/home/HeroBeforeCard";
 import HeroCollage from "@/components/home/HeroCollage";
 import StyleShowcaseSection from "@/components/home/StyleShowcaseSection";
-import ProductFeaturesBlock from "@/components/seo/ProductFeaturesBlock";
 
 const futureCards = [
-  { title: "AI-макияж", text: "Нюдовый, вечерний, деловой, яркий или свадебный макияж на портретном фото.", href: "/makiyazh", analytics: "future_makeup_click" },
-  { title: "AI-причёски", text: "Каре, локоны, чёлка, хвост, укладка и новый цвет волос до визита к мастеру.", href: "/pricheski", analytics: "future_hairstyle_click" },
-  { title: "Полный look", text: "Одежда, обувь, аксессуары, макияж и причёска — один образ с ссылками на покупку.", href: "/podbor-obraza", analytics: "future_full_look_click" },
+  { title: "Макияж", text: "Нюдовый, вечерний, деловой, яркий или свадебный макияж на портретном фото.", href: "/makiyazh", analytics: "future_makeup_click", badge: true },
+  { title: "Причёски", text: "Каре, локоны, чёлка, хвост, укладка и новый цвет волос до визита к мастеру.", href: "/pricheski", analytics: "future_hairstyle_click", badge: false },
+  { title: "Полный look", text: "Одежда, обувь, аксессуары, макияж и причёска — один образ с ссылками на покупку.", href: "/podbor-obraza", analytics: "future_full_look_click", badge: true },
 ];
 
-const steps = [
-  ["🔗", "1", "Вставь ссылку", "На одежду с WB, Ozon, Яндекс Маркета и других."],
-                ["♕", "2", "Примерь на себе", "Нейростилист создаст визуальный образ на твоём фото."],
-  ["✈", "3", "Отправь подруге", "Сохрани образ и спроси мнение перед покупкой."],
-  ["🛍", "4", "Купи по ссылке", "Если образ твой — переходи в карточку товара."],
-] as const;
+function appUrl(path: string) {
+  try {
+    const target = new URL(siteConfig.appUrl);
+    target.pathname = path;
+    target.search = "";
+    target.hash = "";
+    return target.toString();
+  } catch {
+    return siteConfig.appUrl;
+  }
+}
 
 export default function HomePage() {
   return (
@@ -92,44 +94,45 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="how" className="how-section" aria-labelledby="how-title">
-        <div className="container split-layout">
-          <div className="panel steps-panel">
-            <h2 id="how-title">Почему это удобно ✦</h2>
-            <div className="steps">
-              {steps.map(([icon, num, title, text]) => (
-                <article key={title} className="step-card">
-                  <div className="icon">{icon}</div>
-                  <span className="num">{num}</span>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </article>
-              ))}
+      <section className="categories" aria-labelledby="categories-title">
+        <div className="container hair-tryon-layout">
+          <div className="section-heading hair-tryon-copy">
+            <p className="eyebrow">примерка причесок</p>
+            <h2 id="categories-title">Стрижка, укладка и цвет волос до визита к мастеру</h2>
+            <p>
+              Проверь каре, пикси, мягкие слои или новый оттенок на своём портрете. Сохрани варианты и покажи мастеру уже готовую идею.
+            </p>
+            <div className="hair-tryon-points" aria-label="Возможности примерки причесок">
+              <span>Стрижки</span>
+              <span>Укладки</span>
+              <span>Цвет волос</span>
+            </div>
+            <div className="hair-tryon-actions">
+              <Link className="hair-tryon-cta" href={appUrl("/hairstyles")} data-analytics="home_hairstyles_tryon">
+                Перейти в веб-приложение
+              </Link>
+              <a className="hair-tryon-cta hair-tryon-cta--rustore" href={siteConfig.rustoreUrl} data-analytics="home_hairstyles_rustore">
+                Скачать в RuStore
+              </a>
             </div>
           </div>
-          <AppPreviewPhones />
-        </div>
-      </section>
-
-      <section className="categories" aria-labelledby="categories-title">
-        <div className="container">
-          <div className="section-heading">
-            <p className="eyebrow">примеряй по категориям</p>
-            <h2 id="categories-title">Платья, обувь, пиджаки, аксессуары — всё в одном сценарии</h2>
-            <p className="category-coming-soon">Уже скоро!</p>
-          </div>
-          <div className="category-grid">
-            {categoryCards.map((c) => (
-              <Link
-                key={c.id}
-                href={c.href}
-                className={`category-card ${c.className}${c.image ? " category-card--with-image" : ""}`}
-                style={c.image ? { backgroundImage: `url("${c.image}")` } : undefined}
-              >
-                <span>{c.title}</span>
-                <b>{c.sub}</b>
-              </Link>
-            ))}
+          <div className="hair-tryon-gallery" aria-label="Примеры примерки стрижек и цвета волос">
+            <figure className="hair-tryon-card hair-tryon-card--short">
+              <img src="/assets/hairstyles/vibestyle-try-on-9da0e274.png" alt="Примерка короткой стрижки пикси" loading="lazy" />
+              <figcaption>Короткая стрижка</figcaption>
+            </figure>
+            <figure className="hair-tryon-card hair-tryon-card--layers">
+              <img src="/assets/hairstyles/vibestyle-try-on-051d8fa9.png" alt="Примерка удлиненной стрижки слоями" loading="lazy" />
+              <figcaption>Мягкие слои</figcaption>
+            </figure>
+            <figure className="hair-tryon-card hair-tryon-card--bob">
+              <img src="/assets/hairstyles/vibestyle-try-on-955859ee.png" alt="Примерка объемного каре" loading="lazy" />
+              <figcaption>Объемное каре</figcaption>
+            </figure>
+            <figure className="hair-tryon-card hair-tryon-card--color">
+              <img src="/assets/hairstyles/vibestyle-try-on-57468813.png" alt="Примерка рыжего цвета волос" loading="lazy" />
+              <figcaption>Новый цвет</figcaption>
+            </figure>
           </div>
         </div>
       </section>
@@ -144,7 +147,7 @@ export default function HomePage() {
           <div className="future-grid">
             {futureCards.map((card) => (
               <article key={card.href} className="future-card">
-                <span className="badge-soon">Скоро</span>
+                {card.badge ? <span className="badge-soon">Скоро</span> : null}
                 <h3>{card.title}</h3>
                 <p>{card.text}</p>
                 <Link href={card.href} data-analytics={card.analytics}>
@@ -153,12 +156,6 @@ export default function HomePage() {
               </article>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="categories" aria-label="Умные возможности">
-        <div className="container">
-          <ProductFeaturesBlock />
         </div>
       </section>
 

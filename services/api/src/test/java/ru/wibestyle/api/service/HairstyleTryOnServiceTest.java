@@ -9,8 +9,10 @@ import ru.wibestyle.api.domain.HairstyleCatalogEntity;
 import ru.wibestyle.api.repository.HairColorCatalogRepository;
 import ru.wibestyle.api.repository.HairstyleCatalogRepository;
 import ru.wibestyle.api.repository.TryOnSessionRepository;
+import ru.wibestyle.api.repository.UserProfileRepository;
 import ru.wibestyle.api.storage.BlobKeys;
 import ru.wibestyle.api.storage.BlobStorage;
+import ru.wibestyle.api.domain.UserProfileEntity;
 
 import java.time.Instant;
 import java.util.Base64;
@@ -30,6 +32,9 @@ class HairstyleTryOnServiceTest {
         HairColorCatalogRepository colors = mock(HairColorCatalogRepository.class);
         TryOnSessionRepository sessions = mock(TryOnSessionRepository.class);
         UserActivityService activity = mock(UserActivityService.class);
+        QuotaService quotaService = mock(QuotaService.class);
+        UserProfileRepository profiles = mock(UserProfileRepository.class);
+        UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
         AiIntegrationProperties ai = new AiIntegrationProperties();
         ai.setEnabled(true);
         ai.setApiKey("test-key");
@@ -43,6 +48,7 @@ class HairstyleTryOnServiceTest {
         when(storage.readBytes("catalog/hair-colors/red-coral.jpg")).thenReturn(colorReference);
         when(hairstyles.findBySlug("bixie")).thenReturn(Optional.of(hairstyle()));
         when(colors.findBySlug("red-coral")).thenReturn(Optional.of(hairColor()));
+        when(profiles.findById(userId)).thenReturn(Optional.of(profile));
         when(aiClient.applyHairstyle(anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(new NoteappAiClient.AvatarEnhancementResult(new byte[]{4}, "image/jpeg"));
 
@@ -54,7 +60,9 @@ class HairstyleTryOnServiceTest {
                 hairstyles,
                 colors,
                 sessions,
-                activity
+                activity,
+                quotaService,
+                profiles
         ).generate(userId, null, "bixie", "red-coral");
 
         verify(aiClient).applyHairstyle(
@@ -65,6 +73,8 @@ class HairstyleTryOnServiceTest {
                 eq(Base64.getEncoder().encodeToString(colorReference)),
                 contains("COLOR TO APPLY")
         );
+        verify(quotaService).reserve(any(), eq(profile));
+        verify(quotaService).consume(any());
     }
 
     private static HairstyleCatalogEntity hairstyle() {

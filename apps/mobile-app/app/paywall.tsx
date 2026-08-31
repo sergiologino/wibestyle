@@ -1,27 +1,26 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { LinearGradient } from "expo-linear-gradient";
-import type { BillingPlanOffer, BillingPeriod, SubscriptionPlan } from "@wibestyle/shared-types";
+import type { BillingOfferPeriod, BillingOfferPlan, BillingPackagePlan, BillingPlanOffer, SubscriptionPlan } from "@wibestyle/shared-types";
 import { Feather } from "@expo/vector-icons";
 import { ApiError } from "@wibestyle/api-client";
 import { useSession } from "@/context/SessionProvider";
 import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle, Eyebrow } from "@/components/ui/Button";
 import {
-  annualSavingsRub,
   formatTryOnAllowance,
   promoAppliedText,
   TRIAL_TRY_ONS,
 } from "@/lib/paywall-logic";
 import { colors, hairline, radius, spacing } from "@/theme/tokens";
 
-const PLAN_RANK: Record<SubscriptionPlan, number> = {
-  trial: 0,
-  wibe: 1,
-  elite: 2,
-};
+const PACKAGE_COPY = {
+  tryon_20: { title: "20 примерок", note: "Стартовый пакет для проверки нескольких покупок." },
+  tryon_50: { title: "50 примерок", note: "Оптимально для активного подбора образов.", featured: true },
+  tryon_100: { title: "100 примерок", note: "Максимальный запас для регулярной примерки." },
+} satisfies Record<BillingPackagePlan, { title: string; note: string; featured?: boolean }>;
 
 function planLabel(plan: SubscriptionPlan) {
   return plan === "elite" ? "Elite" : plan === "wibe" ? "Wibe" : "trial";
@@ -31,38 +30,21 @@ export default function PaywallScreen() {
   const router = useRouter();
   const { api, profile, refreshProfile } = useSession();
   const [plans, setPlans] = useState<BillingPlanOffer[]>([]);
-  const [selected, setSelected] = useState<{ plan: SubscriptionPlan; period: BillingPeriod }>({
-    plan: "wibe",
-    period: "monthly",
+  const [selected, setSelected] = useState<{ plan: BillingOfferPlan; period: BillingOfferPeriod }>({
+    plan: "tryon_50",
+    period: "one_time",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentProvider, setPaymentProvider] = useState("mock");
-  const [annualDiscountPercent, setAnnualDiscountPercent] = useState(20);
   const [promoDiscountPercent, setPromoDiscountPercent] = useState(0);
-  const [recurringAvailable, setRecurringAvailable] = useState(false);
-  const [savePaymentMethod, setSavePaymentMethod] = useState(false);
   const [subscriberPlan, setSubscriberPlan] = useState<SubscriptionPlan>("trial");
-  const [subscriberPeriod, setSubscriberPeriod] = useState<BillingPeriod>("monthly");
+  const [subscriberPeriod, setSubscriberPeriod] = useState<BillingOfferPeriod>("monthly");
   const [subscriptionActive, setSubscriptionActive] = useState(false);
 
   useEffect(() => {
     void api.getBillingPlans().then((payload) => {
       setPlans(payload.items);
-      const activeSubscriber = payload.subscriber?.subscriptionActive && payload.subscriber.plan !== "trial"
-        ? payload.subscriber
-        : null;
-      if (activeSubscriber?.plan === "wibe") {
-        setSelected({ plan: "elite", period: activeSubscriber.billingPeriod });
-      } else if (activeSubscriber?.plan === "elite") {
-        setSelected({ plan: "elite", period: activeSubscriber.billingPeriod });
-      } else {
-        setSelected(payload.defaultSelection);
-      }
-      setPaymentProvider(payload.paymentProvider ?? "mock");
-      setRecurringAvailable(Boolean(payload.recurringAvailable));
-      if (!payload.recurringAvailable) setSavePaymentMethod(false);
-      setAnnualDiscountPercent(payload.annualDiscountPercent);
+      setSelected(payload.defaultSelection);
       setPromoDiscountPercent(payload.promoDiscountPercent);
       if (payload.subscriber) {
         setSubscriberPlan(payload.subscriber.plan);
@@ -77,16 +59,7 @@ export default function PaywallScreen() {
   const showTrial = !profile || profile.plan === "trial";
   const trialRemaining = profile?.plan === "trial" ? profile.trialGenerationsLeft : TRIAL_TRY_ONS;
   const hasActivePaidSubscription = subscriptionActive && subscriberPlan !== "trial";
-  const selectedPlanBlocked = hasActivePaidSubscription
-    && (PLAN_RANK[selected.plan] <= PLAN_RANK[subscriberPlan] || selected.period !== subscriberPeriod);
-  const isCurrentSelection = hasActivePaidSubscription
-    && selected.plan === subscriberPlan
-    && selected.period === subscriberPeriod;
-  const checkoutLabel = selectedPlanBlocked
-    ? isCurrentSelection
-      ? "Это текущий тариф"
-      : "Доступен только апгрейд"
-    : "Перейти к оплате";
+  const checkoutLabel = "Перейти к оплате";
 
   function startTrial() {
     if (!profile) {
@@ -101,12 +74,11 @@ export default function PaywallScreen() {
       router.replace("/auth");
       return;
     }
-    if (selectedPlanBlocked) return;
     setLoading(true);
     setError(null);
     try {
-      const result = await api.checkout(selected.plan as "wibe" | "elite", selected.period, {
-        savePaymentMethod: recurringAvailable && savePaymentMethod,
+      const result = await api.checkout(selected.plan, selected.period, {
+        savePaymentMethod: false,
         client: "mobile",
       });
       if (result.provider === "yookassa") {
@@ -139,7 +111,7 @@ export default function PaywallScreen() {
         <Eyebrow>Пейволл</Eyebrow>
         <DisplayTitle>Выбери свой формат примерок</DisplayTitle>
         <BodyText>
-          Начни с бесплатных примерок или подключи Wibe либо Elite для большего количества образов.
+          Начни с бесплатных примерок или купи пакет: одежда, причёски, цвет волос, фото и видео расходуют общий баланс.
         </BodyText>
 
         {showTrial ? (
@@ -160,81 +132,42 @@ export default function PaywallScreen() {
 
         {promoMessage ? <Text style={styles.promoBanner}>{promoMessage}</Text> : null}
 
-        <View style={styles.toggle}>
-          {(["monthly", "annual"] as BillingPeriod[]).map((period) => (
-            <Pressable
-              key={period}
-              disabled={hasActivePaidSubscription && subscriberPeriod !== period}
-              style={[
-                styles.toggleItem,
-                selected.period === period && styles.toggleItemActive,
-                hasActivePaidSubscription && subscriberPeriod !== period && styles.disabledChoice,
-              ]}
-              onPress={() => setSelected((s) => ({ ...s, period }))}
-            >
-              <Text style={[styles.toggleText, selected.period === period && styles.toggleTextActive]}>
-                {period === "annual" ? `Год −${annualDiscountPercent}%` : "Месяц"}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {(["wibe", "elite"] as const).map((plan) => {
-          const offer = plans.find((p) => p.plan === plan && p.period === selected.period);
-          if (!offer) return null;
-          const active = selected.plan === plan;
-          const savings = selected.period === "annual" ? annualSavingsRub(plans, plan) : 0;
-          const featured = plan === "wibe" && selected.period === "monthly";
-          const currentPlan = hasActivePaidSubscription && subscriberPlan === plan && subscriberPeriod === selected.period;
-          const blocked = hasActivePaidSubscription
-            && (PLAN_RANK[plan] <= PLAN_RANK[subscriberPlan] || selected.period !== subscriberPeriod);
+        {plans.map((offer) => {
+          const active = selected.plan === offer.plan;
+          const copy = PACKAGE_COPY[offer.plan as BillingPackagePlan] ?? PACKAGE_COPY.tryon_20;
+          const featured = Boolean(offer.recommended || ("featured" in copy && copy.featured));
           return (
             <LinearGradient
-              key={plan}
+              key={`${offer.plan}:${offer.period}`}
               colors={
                 featured
                   ? ["#fff0f8", "#f4efff", "#eef7ff"]
-                  : selected.period === "annual"
-                    ? ["#fffafc", "#fff2f9"]
-                    : [colors.white, colors.white]
+                  : [colors.white, colors.white]
               }
               style={[
                 styles.planCard,
-                selected.period === "annual" && styles.annualPlanCard,
                 active && styles.planCardActive,
                 featured && styles.featuredPlanCard,
-                blocked && styles.disabledChoice,
               ]}
             >
               <Pressable
                 style={styles.planCardContent}
-                disabled={blocked}
-                onPress={() => setSelected((s) => ({ ...s, plan }))}
+                onPress={() => setSelected({ plan: offer.plan, period: offer.period })}
                 accessibilityRole="button"
               >
-                {currentPlan ? <Text style={styles.currentBadge}>Текущий тариф</Text> : null}
-                {featured ? <Text style={styles.badge}>Рекомендуем месячный Wibe</Text> : null}
-                <Text style={styles.planName}>{plan === "elite" ? "Elite" : "Wibe"}</Text>
+                <View style={styles.badgeRow}>
+                  {featured ? <Text style={styles.badge}>Рекомендуем</Text> : null}
+                  {offer.discountPercent && offer.discountPercent > 0 ? (
+                    <Text style={styles.discountBadge}>−{offer.discountPercent}%</Text>
+                  ) : null}
+                </View>
+                <Text style={styles.planName}>{offer.title ?? copy.title}</Text>
                 <Text style={styles.planPrice}>{offer.priceRub.toLocaleString("ru-RU")} ₽</Text>
-                {promoDiscountPercent > 0 && offer.basePriceRub > offer.priceRub ? (
+                {offer.discountPercent && offer.discountPercent > 0 && offer.basePriceRub > offer.priceRub ? (
                   <Text style={styles.oldPrice}>Без промокода: {offer.basePriceRub.toLocaleString("ru-RU")} ₽</Text>
                 ) : null}
                 <Text style={styles.planMeta}>{formatTryOnAllowance(offer.generationsPerPeriod, offer.period)}</Text>
-                {plan === "elite" ? (
-                  <View style={styles.elitePerks}>
-                    {["Видео к любой примерке", "Более точная обработка", "Приоритетная поддержка"].map((perk) => (
-                      <View key={perk} style={styles.elitePerk}>
-                        <Feather name="check" size={14} color={colors.violet} />
-                        <Text style={styles.elitePerkText}>{perk}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-                {savings > 0 ? (
-                  <Text style={styles.savingsBadge}>
-                    Экономия {savings.toLocaleString("ru-RU")} ₽ за год по сравнению с помесячной оплатой
-                  </Text>
-                ) : null}
+                <Text style={styles.packageNote}>{copy.note}</Text>
               </Pressable>
             </LinearGradient>
           );
@@ -248,22 +181,12 @@ export default function PaywallScreen() {
 
         {hasActivePaidSubscription ? (
           <Text style={styles.currentSubscription}>
-            Текущий тариф: {planLabel(subscriberPlan)}, {subscriberPeriod === "annual" ? "год" : "месяц"}. Оплатить можно только более высокий тариф.
+            Текущий тариф: {planLabel(subscriberPlan)}, {subscriberPeriod === "annual" ? "год" : "месяц"}. Он продолжит работать по старым правилам до окончания подписки.
           </Text>
         ) : null}
 
-        {paymentProvider === "yookassa" && recurringAvailable ? (
-          <View style={styles.autoRenewRow}>
-            <View style={styles.autoRenewCopy}>
-              <Text style={styles.autoRenewTitle}>Сохранить способ оплаты и включить автопродление</Text>
-              <Text style={styles.autoRenewText}>Предупредим за 3 дня. Отключить можно в профиле.</Text>
-            </View>
-            <Switch value={savePaymentMethod} onValueChange={setSavePaymentMethod} trackColor={{ true: colors.pink }} />
-          </View>
-        ) : null}
-
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button label={checkoutLabel} disabled={selectedPlanBlocked || !current} loading={loading} onPress={checkout} />
+        <Button label={checkoutLabel} disabled={!current} loading={loading} onPress={checkout} />
         <BodyText>
           Программа может ошибаться в посадке, слоях одежды и обработке белья. Мы улучшаем качество примерок и исправляем такие случаи.
         </BodyText>
@@ -388,6 +311,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.muted,
   },
+  packageNote: {
+    marginTop: spacing.sm,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.black,
+  },
   oldPrice: {
     fontFamily: "Manrope_400Regular",
     fontSize: 12,
@@ -428,6 +358,22 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: "uppercase",
     marginTop: 4,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  discountBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    backgroundColor: colors.violet,
+    color: colors.white,
+    fontFamily: "Manrope_500Medium",
+    fontSize: 12,
   },
   summary: {
     fontFamily: "Manrope_500Medium",

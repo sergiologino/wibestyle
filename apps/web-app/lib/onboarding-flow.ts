@@ -59,6 +59,10 @@ export function resolvePostAuthRoute(options: {
 }
 
 export function shouldShowPaywall(profile: UserProfile, trigger: PaywallTrigger): boolean {
+  const hasPaidBalance = profile.plan !== "trial" && (profile.planGenerationsLeft ?? 0) > 0;
+  if (hasPaidBalance) {
+    return trigger === "elite_perk" && profile.plan !== "elite";
+  }
   if (profile.plan === "wibe" || profile.plan === "elite") {
     return trigger === "elite_perk" && profile.plan !== "elite";
   }
@@ -72,6 +76,7 @@ export function shouldShowPaywall(profile: UserProfile, trigger: PaywallTrigger)
 }
 
 export function canStartGeneration(profile: UserProfile): boolean {
+  if (profile.plan !== "trial" && (profile.planGenerationsLeft ?? 0) > 0) return true;
   if (profile.plan === "wibe" || profile.plan === "elite") return true;
   return profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0) > 0;
 }

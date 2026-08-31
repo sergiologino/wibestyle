@@ -24,6 +24,8 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureFlag, boolean> = {
 };
 
 export type SubscriptionPlan = "trial" | "wibe" | "elite";
+export type BillingPackagePlan = "tryon_20" | "tryon_50" | "tryon_100";
+export type BillingOfferPlan = Exclude<SubscriptionPlan, "trial"> | BillingPackagePlan;
 
 export type InterfacePalette = "vibe" | "pistachio" | "graphite";
 
@@ -230,12 +232,14 @@ export type UserEntitlements = {
 };
 
 export type BillingPeriod = "monthly" | "annual";
+export type BillingOfferPeriod = BillingPeriod | "one_time";
 
 export type BillingPlanOffer = {
-  plan: Exclude<SubscriptionPlan, "trial">;
-  period: BillingPeriod;
+  plan: BillingOfferPlan;
+  period: BillingOfferPeriod;
   basePriceRub: number;
   priceRub: number;
+  discountPercent?: number;
   generationsPerPeriod: number;
   monthlyEquivalentRub?: number;
   savingsPercent?: number;
@@ -243,6 +247,8 @@ export type BillingPlanOffer = {
   upgradeFromWibe?: boolean;
   upgradePriceRub?: number;
   fullPriceRub?: number;
+  oneTime?: boolean;
+  title?: string;
 };
 
 export type BillingSubscriberInfo = {

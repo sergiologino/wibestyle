@@ -32,6 +32,7 @@ import java.util.UUID;
 public class BillingService {
 
     private final BillingProperties billingProperties;
+    private final PlatformSettingsService platformSettingsService;
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
     private final QuotaService quotaService;
@@ -44,6 +45,7 @@ public class BillingService {
 
     public BillingService(
             BillingProperties billingProperties,
+            PlatformSettingsService platformSettingsService,
             UserProfileRepository userProfileRepository,
             UserRepository userRepository,
             QuotaService quotaService,
@@ -55,6 +57,7 @@ public class BillingService {
             MarketingAttributionService marketingAttributionService
     ) {
         this.billingProperties = billingProperties;
+        this.platformSettingsService = platformSettingsService;
         this.userProfileRepository = userProfileRepository;
         this.userRepository = userRepository;
         this.quotaService = quotaService;
@@ -69,18 +72,17 @@ public class BillingService {
     public Map<String, Object> listPlans(UserProfileEntity profile) {
         int promoDiscount = profile.getPromoDiscountPercent() == null ? 0 : profile.getPromoDiscountPercent();
         List<Map<String, Object>> items = new ArrayList<>();
-        items.add(planOffer(profile, "wibe", "monthly", billingProperties.getWibeMonthlyRub(), promoDiscount));
-        items.add(planOffer(profile, "wibe", "annual", billingProperties.getWibeAnnualRub(), promoDiscount));
-        items.add(planOffer(profile, "elite", "monthly", billingProperties.getEliteMonthlyRub(), promoDiscount));
-        items.add(planOffer(profile, "elite", "annual", billingProperties.getEliteAnnualRub(), promoDiscount));
+        items.add(planOffer(profile, "tryon_20", "one_time", basePrice("tryon_20", "one_time"), promoDiscount));
+        items.add(planOffer(profile, "tryon_50", "one_time", basePrice("tryon_50", "one_time"), promoDiscount));
+        items.add(planOffer(profile, "tryon_100", "one_time", basePrice("tryon_100", "one_time"), promoDiscount));
 
         Map<String, Object> response = new HashMap<>();
         response.put("items", items);
-        response.put("annualDiscountPercent", billingProperties.getAnnualDiscountPercent());
-        response.put("defaultSelection", Map.of("plan", "wibe", "period", "monthly"));
+        response.put("annualDiscountPercent", 0);
+        response.put("defaultSelection", Map.of("plan", "tryon_50", "period", "one_time"));
         response.put("promoDiscountPercent", promoDiscount);
         response.put("paymentProvider", activeProvider());
-        response.put("recurringAvailable", billingProperties.getYookassa().isRecurringEnabled());
+        response.put("recurringAvailable", false);
         Map<String, Object> subscriber = new HashMap<>();
         subscriber.put("plan", profile.getPlan());
         subscriber.put("billingPeriod", profile.getBillingPeriod() == null ? "monthly" : profile.getBillingPeriod());
@@ -99,7 +101,11 @@ public class BillingService {
             throw new IllegalArgumentException("SUBSCRIBE_DEV_DISABLED");
         }
         CheckoutPricing pricing = resolvePricing(userId, plan, period);
-        activateSubscription(userId, plan, period, false);
+        if (isPackagePlan(plan)) {
+            activateGenerationPackage(userId, plan);
+        } else {
+            activateSubscription(userId, plan, period, false);
+        }
         UserProfileEntity profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
         return buildActiveSubscriptionResponse(plan, period, pricing, profile);
@@ -128,7 +134,9 @@ public class BillingService {
         } catch (RuntimeException ignored) {
             // Analytics must not prevent checkout creation.
         }
-        boolean effectiveSavePaymentMethod = savePaymentMethod && billingProperties.getYookassa().isRecurringEnabled();
+        boolean effectiveSavePaymentMethod = savePaymentMethod
+                && !isPackagePlan(plan)
+                && billingProperties.getYookassa().isRecurringEnabled();
         checkout.setSavePaymentMethod(effectiveSavePaymentMethod);
 
         String paymentUrl;
@@ -236,14 +244,20 @@ public class BillingService {
         }
 
         boolean renewal = "renewal".equals(checkout.getCheckoutType());
-        activateSubscription(checkout.getUserId(), checkout.getPlan(), checkout.getBillingPeriod(), renewal);
+        if (isPackagePlan(checkout.getPlan())) {
+            activateGenerationPackage(checkout.getUserId(), checkout.getPlan());
+        } else {
+            activateSubscription(checkout.getUserId(), checkout.getPlan(), checkout.getBillingPeriod(), renewal);
+        }
 
         checkout.setStatus("completed");
         checkout.setExternalPaymentId(externalPaymentId);
         checkout.setCompletedAt(Instant.now());
         billingCheckoutRepository.save(checkout);
 
-        updateRecurringSubscription(checkout, payment, renewal);
+        if (!isPackagePlan(checkout.getPlan())) {
+            updateRecurringSubscription(checkout, payment, renewal);
+        }
         referralService.rewardFirstPurchase(checkout);
         try {
             marketingAttributionService.recordSystemEvent(null, checkout.getUserId(), "payment_completed",
@@ -317,12 +331,14 @@ public class BillingService {
         if ("completed".equals(checkout.getStatus())) {
             UserProfileEntity profile = userProfileRepository.findById(checkout.getUserId())
                     .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
-            response.put("subscription", Map.of(
-                    "plan", profile.getPlan(),
-                    "period", profile.getBillingPeriod(),
-                    "subscriptionExpiresAt", profile.getSubscriptionExpiresAt().toString(),
-                    "planGenerationsLeft", profile.getPlanGenerationsLeft()
-            ));
+            Map<String, Object> purchase = new HashMap<>();
+            purchase.put("plan", profile.getPlan());
+            purchase.put("period", profile.getBillingPeriod() == null ? "one_time" : profile.getBillingPeriod());
+            purchase.put("planGenerationsLeft", profile.getPlanGenerationsLeft());
+            if (profile.getSubscriptionExpiresAt() != null) {
+                purchase.put("subscriptionExpiresAt", profile.getSubscriptionExpiresAt().toString());
+            }
+            response.put("subscription", purchase);
         }
         return response;
     }
@@ -349,6 +365,9 @@ public class BillingService {
     }
 
     private static String checkoutDescription(String plan, String period) {
+        if (isPackagePlan(plan)) {
+            return "WibeStyle пакет " + packageGenerations(plan) + " примерок";
+        }
         String planLabel = "elite".equals(plan) ? "Elite" : "Wibe";
         String periodLabel = "annual".equals(period) ? "год" : "месяц";
         return "WibeStyle подписка " + planLabel + " (" + periodLabel + ")";
@@ -368,6 +387,22 @@ public class BillingService {
         profile.setBillingPeriod(period);
         profile.setPlanGenerationsLeft(quotaService.generationsForPlanPeriod(plan, period));
         profile.setSubscriptionExpiresAt(expiresAt);
+        profile.setUpdatedAt(now);
+        userProfileRepository.save(profile);
+    }
+
+    private void activateGenerationPackage(UUID userId, String plan) {
+        UserProfileEntity profile = userProfileRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
+        Instant now = Instant.now();
+        if (!subscriptionActive(profile)) {
+            profile.setPlan(plan);
+            profile.setBillingPeriod("one_time");
+            profile.setSubscriptionExpiresAt(null);
+            profile.setPlanGenerationsLeft(profile.getPlanGenerationsLeft() + packageGenerations(plan));
+        } else {
+            profile.setBonusGenerationsLeft(profile.getBonusGenerationsLeft() + packageGenerations(plan));
+        }
         profile.setUpdatedAt(now);
         userProfileRepository.save(profile);
     }
@@ -575,28 +610,35 @@ public class BillingService {
         response.put("period", period);
         response.put("priceRub", pricing.finalPrice());
         response.put("basePriceRub", pricing.basePrice());
-        response.put("subscriptionExpiresAt", profile.getSubscriptionExpiresAt().toString());
         response.put("planGenerationsLeft", profile.getPlanGenerationsLeft());
-        response.put("profile", Map.of(
-                "plan", profile.getPlan(),
-                "billingPeriod", profile.getBillingPeriod(),
-                "planGenerationsLeft", profile.getPlanGenerationsLeft(),
-                "subscriptionExpiresAt", profile.getSubscriptionExpiresAt().toString()
-        ));
+        if (profile.getSubscriptionExpiresAt() != null) {
+            response.put("subscriptionExpiresAt", profile.getSubscriptionExpiresAt().toString());
+        }
+        Map<String, Object> profileMap = new HashMap<>();
+        profileMap.put("plan", profile.getPlan());
+        profileMap.put("billingPeriod", profile.getBillingPeriod() == null ? period : profile.getBillingPeriod());
+        profileMap.put("planGenerationsLeft", profile.getPlanGenerationsLeft());
+        if (profile.getSubscriptionExpiresAt() != null) {
+            profileMap.put("subscriptionExpiresAt", profile.getSubscriptionExpiresAt().toString());
+        }
+        response.put("profile", profileMap);
         return response;
     }
 
     private CheckoutPricing resolvePricing(UUID userId, String plan, String period) {
-        if (!"wibe".equals(plan) && !"elite".equals(plan)) {
+        if (!"wibe".equals(plan) && !"elite".equals(plan) && !isPackagePlan(plan)) {
             throw new IllegalArgumentException("INVALID_PLAN");
         }
-        if (!"monthly".equals(period) && !"annual".equals(period)) {
+        if (isPackagePlan(plan) && !"one_time".equals(period)) {
+            throw new IllegalArgumentException("INVALID_BILLING_PERIOD");
+        }
+        if (!isPackagePlan(plan) && !"monthly".equals(period) && !"annual".equals(period)) {
             throw new IllegalArgumentException("INVALID_BILLING_PERIOD");
         }
 
         UserProfileEntity profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
-        if (subscriptionActive(profile)
+        if (!isPackagePlan(plan) && subscriptionActive(profile)
                 && (planRank(plan) <= planRank(profile.getPlan()) || !period.equals(profile.getBillingPeriod()))) {
             throw new IllegalArgumentException("ONLY_UPGRADE_ALLOWED");
         }
@@ -606,14 +648,14 @@ public class BillingService {
         if (upgradeFromWibe) {
             chargeBase = basePrice - basePrice("wibe", period);
         }
-        int finalPrice = applyDiscount(chargeBase, profile.getPromoDiscountPercent());
+        int finalPrice = applyDiscount(chargeBase, effectiveDiscountPercent(plan, profile.getPromoDiscountPercent()));
         return new CheckoutPricing(basePrice, finalPrice, upgradeFromWibe);
     }
 
     private boolean subscriptionActive(UserProfileEntity profile) {
         return profile.getSubscriptionExpiresAt() != null
                 && profile.getSubscriptionExpiresAt().isAfter(Instant.now())
-                && !"trial".equals(profile.getPlan());
+                && ("wibe".equals(profile.getPlan()) || "elite".equals(profile.getPlan()));
     }
 
     private boolean qualifiesForUpgradeDiff(UserProfileEntity profile, String targetPlan, String targetPeriod) {
@@ -633,13 +675,20 @@ public class BillingService {
     private Map<String, Object> planOffer(UserProfileEntity profile, String plan, String period, int basePriceRub, int promoDiscountPercent) {
         boolean upgradeFromWibe = qualifiesForUpgradeDiff(profile, plan, period);
         int chargeBase = upgradeFromWibe ? basePriceRub - basePrice("wibe", period) : basePriceRub;
-        int finalPrice = applyDiscount(chargeBase, promoDiscountPercent);
+        int effectiveDiscountPercent = effectiveDiscountPercent(plan, promoDiscountPercent);
+        int finalPrice = applyDiscount(chargeBase, effectiveDiscountPercent);
         Map<String, Object> map = new HashMap<>();
         map.put("plan", plan);
         map.put("period", period);
         map.put("basePriceRub", basePriceRub);
         map.put("priceRub", finalPrice);
         map.put("generationsPerPeriod", quotaService.generationsForPlanPeriod(plan, period));
+        map.put("discountPercent", effectiveDiscountPercent);
+        if (isPackagePlan(plan)) {
+            map.put("oneTime", true);
+            map.put("title", packageTitle(plan));
+            map.put("recommended", "tryon_50".equals(plan));
+        }
         if ("annual".equals(period)) {
             map.put("monthlyEquivalentRub", Math.round(finalPrice / 12.0));
             map.put("savingsPercent", billingProperties.getAnnualDiscountPercent());
@@ -661,6 +710,9 @@ public class BillingService {
             case "wibe:annual" -> billingProperties.getWibeAnnualRub();
             case "elite:monthly" -> billingProperties.getEliteMonthlyRub();
             case "elite:annual" -> billingProperties.getEliteAnnualRub();
+            case "tryon_20:one_time" -> platformSettingsService.getBillingPackagePriceRub("tryon_20");
+            case "tryon_50:one_time" -> platformSettingsService.getBillingPackagePriceRub("tryon_50");
+            case "tryon_100:one_time" -> platformSettingsService.getBillingPackagePriceRub("tryon_100");
             default -> throw new IllegalArgumentException("INVALID_PLAN");
         };
     }
@@ -679,5 +731,34 @@ public class BillingService {
             return basePriceRub;
         }
         return Math.max(0, basePriceRub - (basePriceRub * discountPercent / 100));
+    }
+
+    private int effectiveDiscountPercent(String plan, Integer promoDiscountPercent) {
+        int promo = promoDiscountPercent == null ? 0 : Math.max(0, promoDiscountPercent);
+        if ("tryon_20".equals(plan)) {
+            return 0;
+        }
+        if ("tryon_100".equals(plan)) {
+            return Math.min(100, promo + 10);
+        }
+        return promo;
+    }
+
+    public static boolean isPackagePlan(String plan) {
+        return "tryon_20".equals(plan) || "tryon_50".equals(plan) || "tryon_100".equals(plan)
+                || "tryon_admin".equals(plan);
+    }
+
+    public static int packageGenerations(String plan) {
+        return switch (plan) {
+            case "tryon_20" -> 20;
+            case "tryon_50" -> 50;
+            case "tryon_100" -> 100;
+            default -> throw new IllegalArgumentException("INVALID_PLAN");
+        };
+    }
+
+    private static String packageTitle(String plan) {
+        return packageGenerations(plan) + " примерок";
     }
 }

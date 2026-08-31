@@ -69,6 +69,7 @@ export function resolvePostAuthRoute(options: {
 }
 
 export function canStartGeneration(profile: UserProfile): boolean {
+  if (profile.plan !== "trial" && (profile.planGenerationsLeft ?? 0) > 0) return true;
   if (profile.plan === "wibe" || profile.plan === "elite") return true;
   return profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0) > 0;
 }

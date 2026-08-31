@@ -31,4 +31,22 @@ class EntitlementsServiceTest {
                 .containsEntry("videoTryOn", false)
                 .containsEntry("trialVideoGenerationsLeft", 0);
     }
+
+    @Test
+    void packageBalanceGetsVideoEntitlement() {
+        FeatureFlagsProperties flags = new FeatureFlagsProperties();
+        flags.setFlags(Map.of("videoTryOn", true));
+        EntitlementsService service = new EntitlementsService(flags);
+        UserProfileEntity profile = new UserProfileEntity(UUID.randomUUID(), Instant.now());
+        profile.setPlan("tryon_50");
+        profile.setPlanGenerationsLeft(3);
+
+        assertThat(service.forProfile(profile))
+                .containsEntry("videoTryOn", true);
+
+        profile.setPlanGenerationsLeft(0);
+
+        assertThat(service.forProfile(profile))
+                .containsEntry("videoTryOn", false);
+    }
 }

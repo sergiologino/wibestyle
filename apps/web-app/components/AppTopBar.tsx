@@ -8,7 +8,7 @@ import { BrandLogo, Button } from "@wibestyle/ui";
 import type { ReferralOverview } from "@wibestyle/shared-types";
 import { useAppSession, useAuthenticatedBlob } from "@/components/providers/AppSessionProvider";
 import { isAuthenticatedSession } from "@/lib/session-auth";
-import { isPaidSubscription } from "@/lib/billing-plan";
+import { hasPaidTryOnBalance, isPaidSubscription } from "@/lib/billing-plan";
 import TelegramChannelButton from "@/components/community/TelegramChannelButton";
 import OverlayModal from "@/components/ui/OverlayModal";
 import AvatarRequiredNotice from "@/components/avatar/AvatarRequiredNotice";
@@ -89,7 +89,7 @@ export default function AppTopBar() {
     if (!referral) return;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
     const referralUrl = `${appUrl.replace(/\/$/, "")}/welcome?ref=${encodeURIComponent(referral.referralCode)}`;
-    const text = `Попробуй виртуальную примерочную «Я на стиле». Если ты купишь подписку, я получу дополнительные примерки: ${referralUrl}`;
+    const text = `Попробуй виртуальную примерочную «Я на стиле». Если ты купишь примерки, я получу дополнительные примерки: ${referralUrl}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "Я на стиле", text, url: referralUrl });
@@ -142,14 +142,14 @@ export default function AppTopBar() {
             {sessionReady ? (
               <TelegramChannelButton compact className="hidden lg:inline-flex" />
             ) : null}
-            {sessionReady && isAuthenticated && profile && !isPaidSubscription(profile) ? (
+            {sessionReady && isAuthenticated && profile && !isPaidSubscription(profile) && !hasPaidTryOnBalance(profile) ? (
               <Link href="/paywall">
                 <Button
                   size="sm"
                   className="subscription-header-cta relative overflow-hidden border border-transparent bg-[linear-gradient(105deg,#ff1fa2,#a855f7,#ff7a59,#ff1fa2)] bg-[length:220%_100%] px-4 text-white shadow-[0_8px_24px_rgba(255,31,162,0.36)] hover:bg-[linear-gradient(105deg,#eb1692,#7c3aed,#f05b3f,#eb1692)]"
                 >
                   <Sparkles size={14} aria-hidden />
-                  Подключить Wibe
+                  Купить примерки
                 </Button>
               </Link>
             ) : null}

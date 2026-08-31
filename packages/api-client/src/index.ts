@@ -2,6 +2,8 @@ import type {
   AuthTokens,
   AvatarRecord,
   AvatarValidationResponse,
+  BillingOfferPeriod,
+  BillingOfferPlan,
   BillingPlanOffer,
   BillingPeriod,
   CreateAvatarPayload,
@@ -765,7 +767,7 @@ export class WibeStyleApiClient {
     return this.request<{
       items: BillingPlanOffer[];
       annualDiscountPercent: number;
-      defaultSelection: { plan: SubscriptionPlan; period: BillingPeriod };
+      defaultSelection: { plan: BillingOfferPlan; period: BillingOfferPeriod };
       promoDiscountPercent: number;
       paymentProvider?: string;
       recurringAvailable?: boolean;
@@ -803,12 +805,12 @@ export class WibeStyleApiClient {
     });
   }
 
-  checkout(plan: SubscriptionPlan, period: BillingPeriod, options?: { savePaymentMethod?: boolean; client?: "web" | "mobile" }) {
+  checkout(plan: BillingOfferPlan, period: BillingOfferPeriod, options?: { savePaymentMethod?: boolean; client?: "web" | "mobile" }) {
     return this.request<{
       checkoutId: string;
       status: "pending";
-      plan: SubscriptionPlan;
-      period: BillingPeriod;
+      plan: BillingOfferPlan;
+      period: BillingOfferPeriod;
       priceRub: number;
       basePriceRub: number;
       provider: string;
@@ -866,14 +868,14 @@ export class WibeStyleApiClient {
     return this.request<{
       checkoutId: string;
       status: "pending" | "completed" | "canceled";
-      plan: SubscriptionPlan;
-      period: BillingPeriod;
+      plan: BillingOfferPlan;
+      period: BillingOfferPeriod;
       priceRub: number;
       provider: string;
       subscription?: {
         plan: SubscriptionPlan;
-        period: BillingPeriod;
-        subscriptionExpiresAt: string;
+        period: BillingOfferPeriod;
+        subscriptionExpiresAt?: string;
         planGenerationsLeft: number;
       };
     }>(`/api/v1/billing/checkout/${encodeURIComponent(checkoutId)}`);
@@ -883,10 +885,10 @@ export class WibeStyleApiClient {
     return this.request<{
       status: string;
       checkoutId: string;
-      plan: SubscriptionPlan;
-      period: BillingPeriod;
+      plan: BillingOfferPlan;
+      period: BillingOfferPeriod;
       priceRub: number;
-      subscriptionExpiresAt: string;
+      subscriptionExpiresAt?: string;
       planGenerationsLeft: number;
     }>(`/api/v1/billing/webhooks/mock/simulate?checkoutId=${encodeURIComponent(checkoutId)}`, {
       method: "POST",
@@ -1174,6 +1176,29 @@ export class WibeStyleApiClient {
     });
   }
 
+  getAdminBillingTariffs(adminKey: string) {
+    return this.request<{ tryon20PriceRub: number; tryon50PriceRub: number; tryon100PriceRub: number }>(
+      "/api/v1/admin/promo-codes/tariffs",
+      {
+        headers: { "X-Admin-Key": adminKey },
+      },
+    );
+  }
+
+  updateAdminBillingTariffs(
+    adminKey: string,
+    payload: { tryon20PriceRub?: number; tryon50PriceRub?: number; tryon100PriceRub?: number },
+  ) {
+    return this.request<{ tryon20PriceRub: number; tryon50PriceRub: number; tryon100PriceRub: number }>(
+      "/api/v1/admin/promo-codes/tariffs",
+      {
+        method: "PATCH",
+        headers: { "X-Admin-Key": adminKey },
+        body: JSON.stringify(payload),
+      },
+    );
+  }
+
   listAdminAiPrompts(adminKey: string) {
     return this.request<{
       items: { key: string; title: string; description?: string; body: string; updatedAt: string }[];
@@ -1310,6 +1335,7 @@ export class WibeStyleApiClient {
         plan?: string;
         trialGenerationsLeft?: number;
         planGenerationsLeft?: number;
+        bonusGenerationsLeft?: number;
         displayName?: string;
         primaryAuth?: string;
         stylistFocusGroup?: boolean;
@@ -1337,6 +1363,7 @@ export class WibeStyleApiClient {
       plan?: SubscriptionPlan | "none";
       trialGenerationsLeft?: number;
       planGenerationsLeft?: number;
+      additionalGenerations?: number;
       billingPeriod?: BillingPeriod;
     },
   ) {

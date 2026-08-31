@@ -38,7 +38,7 @@ public class QuotaService {
 
     public boolean canStartGeneration(UserProfileEntity profile, String deviceId) {
         long active = activeReservations(profile.getUserId());
-        if (hasActivePaidPlan(profile) || profile.getBonusGenerationsLeft() > 0) {
+        if (hasActivePaidPlan(profile) || hasGenerationPackageBalance(profile) || profile.getBonusGenerationsLeft() > 0) {
             return availableUnits(profile) > active;
         }
         int accountTrialUnits = "trial".equals(profile.getPlan()) ? profile.getTrialGenerationsLeft() : 0;
@@ -67,7 +67,7 @@ public class QuotaService {
             return;
         }
         userProfileRepository.findById(session.getUserId()).ifPresent(profile -> {
-            if (hasActivePaidPlan(profile) && profile.getPlanGenerationsLeft() > 0) {
+            if ((hasActivePaidPlan(profile) || hasGenerationPackageBalance(profile)) && profile.getPlanGenerationsLeft() > 0) {
                 profile.setPlanGenerationsLeft(profile.getPlanGenerationsLeft() - 1);
             } else if ("trial".equals(profile.getPlan()) && profile.getTrialGenerationsLeft() > 0) {
                 profile.setTrialGenerationsLeft(profile.getTrialGenerationsLeft() - 1);
@@ -93,7 +93,7 @@ public class QuotaService {
     }
 
     private int availableUnits(UserProfileEntity profile) {
-        if (hasActivePaidPlan(profile)) {
+        if (hasActivePaidPlan(profile) || hasGenerationPackageBalance(profile)) {
             return profile.getPlanGenerationsLeft() + profile.getBonusGenerationsLeft();
         }
         int trialUnits = "trial".equals(profile.getPlan()) ? profile.getTrialGenerationsLeft() : 0;
@@ -104,6 +104,10 @@ public class QuotaService {
         return ("wibe".equals(profile.getPlan()) || "elite".equals(profile.getPlan()))
                 && (profile.getSubscriptionExpiresAt() == null
                     || profile.getSubscriptionExpiresAt().isAfter(Instant.now()));
+    }
+
+    private boolean hasGenerationPackageBalance(UserProfileEntity profile) {
+        return BillingService.isPackagePlan(profile.getPlan()) && profile.getPlanGenerationsLeft() > 0;
     }
 
     private long activeReservations(UUID userId) {
@@ -117,11 +121,17 @@ public class QuotaService {
         return switch (plan) {
             case "wibe" -> billingProperties.getWibeGenerations();
             case "elite" -> billingProperties.getEliteGenerations();
+            case "tryon_20" -> 20;
+            case "tryon_50" -> 50;
+            case "tryon_100" -> 100;
             default -> 0;
         };
     }
 
     public int generationsForPlanPeriod(String plan, String period) {
+        if (BillingService.isPackagePlan(plan)) {
+            return BillingService.packageGenerations(plan);
+        }
         int monthlyGenerations = defaultGenerationsForPlan(plan);
         return "annual".equals(period) ? Math.multiplyExact(monthlyGenerations, 12) : monthlyGenerations;
     }

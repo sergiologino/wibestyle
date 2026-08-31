@@ -383,7 +383,11 @@ export default function ResultClient({ sessionId }: { sessionId: string }) {
       setVideoStatus("none");
       if (
         err instanceof ApiError
-        && (err.code === "VIDEO_ELITE_REQUIRED" || err.code === "VIDEO_TRIAL_EXHAUSTED")
+        && (
+          err.code === "VIDEO_ELITE_REQUIRED"
+          || err.code === "VIDEO_TRIAL_EXHAUSTED"
+          || err.code === "INSUFFICIENT_GENERATIONS"
+        )
       ) {
         router.push("/paywall?reason=elite_perk");
         return;

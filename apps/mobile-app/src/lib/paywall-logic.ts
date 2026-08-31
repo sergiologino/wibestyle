@@ -1,8 +1,9 @@
-import type { BillingPeriod, BillingPlanOffer } from "@wibestyle/shared-types";
+import type { BillingOfferPeriod, BillingPlanOffer } from "@wibestyle/shared-types";
 
 export const TRIAL_TRY_ONS = 3;
 
-export function formatTryOnAllowance(count: number, period: BillingPeriod): string {
+export function formatTryOnAllowance(count: number, period: BillingOfferPeriod): string {
+  if (period === "one_time") return `${count.toLocaleString("ru-RU")} примерок`;
   return `${count.toLocaleString("ru-RU")} примерок в ${period === "annual" ? "год" : "месяц"}`;
 }
 

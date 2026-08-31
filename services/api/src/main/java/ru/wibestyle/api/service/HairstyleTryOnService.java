@@ -9,7 +9,9 @@ import ru.wibestyle.api.config.AiIntegrationProperties;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.domain.TryOnSessionStatus;
 import ru.wibestyle.api.domain.TryOnSourceType;
+import ru.wibestyle.api.domain.UserProfileEntity;
 import ru.wibestyle.api.repository.TryOnSessionRepository;
+import ru.wibestyle.api.repository.UserProfileRepository;
 import ru.wibestyle.api.storage.BlobKeys;
 import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.domain.HairColorCatalogEntity;
@@ -28,8 +30,8 @@ import java.util.UUID;
 @Service
 public class HairstyleTryOnService {
     private static final int MAX_PORTRAIT_BYTES = 10 * 1024 * 1024;
-    private final NoteappAiClient aiClient; private final AiIntegrationProperties ai; private final BlobStorage storage; private final HairstylePromptBuilder promptBuilder; private final HairstyleCatalogRepository catalog; private final HairColorCatalogRepository colors; private final TryOnSessionRepository sessions; private final UserActivityService userActivityService;
-    public HairstyleTryOnService(NoteappAiClient aiClient, AiIntegrationProperties ai, BlobStorage storage, HairstylePromptBuilder promptBuilder, HairstyleCatalogRepository catalog, HairColorCatalogRepository colors, TryOnSessionRepository sessions, UserActivityService userActivityService) { this.aiClient = aiClient; this.ai = ai; this.storage = storage; this.promptBuilder = promptBuilder; this.catalog=catalog; this.colors=colors; this.sessions=sessions; this.userActivityService=userActivityService; }
+    private final NoteappAiClient aiClient; private final AiIntegrationProperties ai; private final BlobStorage storage; private final HairstylePromptBuilder promptBuilder; private final HairstyleCatalogRepository catalog; private final HairColorCatalogRepository colors; private final TryOnSessionRepository sessions; private final UserActivityService userActivityService; private final QuotaService quotaService; private final UserProfileRepository userProfileRepository;
+    public HairstyleTryOnService(NoteappAiClient aiClient, AiIntegrationProperties ai, BlobStorage storage, HairstylePromptBuilder promptBuilder, HairstyleCatalogRepository catalog, HairColorCatalogRepository colors, TryOnSessionRepository sessions, UserActivityService userActivityService, QuotaService quotaService, UserProfileRepository userProfileRepository) { this.aiClient = aiClient; this.ai = ai; this.storage = storage; this.promptBuilder = promptBuilder; this.catalog=catalog; this.colors=colors; this.sessions=sessions; this.userActivityService=userActivityService; this.quotaService=quotaService; this.userProfileRepository=userProfileRepository; }
     @Transactional
     public Map<String, Object> generate(UUID userId, MultipartFile portrait, String styleId, String colorId) throws IOException {
         if (!ai.isNoteappConfigured()) throw new IllegalArgumentException("HAIRSTYLE_AI_NOT_CONFIGURED");
@@ -51,18 +53,8 @@ public class HairstyleTryOnService {
                 : null;
         String prompt = promptBuilder.build(style == null ? null : style.getAiDirective(), color == null ? null : color.getAiDirective());
         UUID sessionId = UUID.randomUUID();
-        NoteappAiClient.AvatarEnhancementResult result = aiClient.applyHairstyle(
-                ai.getVirtualTryOnNetwork(),
-                userId + ":hairstyle:" + sessionId,
-                portraitBase64,
-                referenceBase64,
-                colorReferenceBase64,
-                prompt
-        );
-        storage.storeTryOnResult(userId, sessionId, "before", new ByteArrayInputStream(portraitBytes));
-        storage.storeTryOnResult(userId, sessionId, "after", new ByteArrayInputStream(result.imageBytes()));
         Instant now = Instant.now();
-        TryOnSessionEntity session = new TryOnSessionEntity(sessionId, userId, null, TryOnSourceType.HAIRSTYLE, TryOnSessionStatus.READY, now, now);
+        TryOnSessionEntity session = new TryOnSessionEntity(sessionId, userId, null, TryOnSourceType.HAIRSTYLE, TryOnSessionStatus.GENERATING, now, now);
         session.setMarketplace("other");
         session.setProductTitle(title(style, color));
         session.setProductBrand(color == null ? "AI-причёска" : "AI-причёска и цвет");
@@ -71,7 +63,32 @@ public class HairstyleTryOnService {
         session.setBeforeImageUrl("/api/v1/try-on/sessions/" + sessionId + "/before-photo");
         session.setAfterImageUrl("/api/v1/try-on/sessions/" + sessionId + "/after-photo");
         session.setStyleCompliment(note(style, color));
+        UserProfileEntity profile = userProfileRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
+        quotaService.reserve(session, profile);
         sessions.save(session);
+        try {
+            NoteappAiClient.AvatarEnhancementResult result = aiClient.applyHairstyle(
+                    ai.getVirtualTryOnNetwork(),
+                    userId + ":hairstyle:" + sessionId,
+                    portraitBase64,
+                    referenceBase64,
+                    colorReferenceBase64,
+                    prompt
+            );
+            storage.storeTryOnResult(userId, sessionId, "before", new ByteArrayInputStream(portraitBytes));
+            storage.storeTryOnResult(userId, sessionId, "after", new ByteArrayInputStream(result.imageBytes()));
+            session.setStatus(TryOnSessionStatus.READY);
+            quotaService.consume(session);
+            sessions.save(session);
+        } catch (RuntimeException | IOException ex) {
+            quotaService.refund(session);
+            session.setStatus(TryOnSessionStatus.FAILED);
+            session.setErrorCode("HAIRSTYLE_GENERATION_FAILED");
+            session.setErrorMessage(ex.getMessage());
+            sessions.save(session);
+            throw ex;
+        }
         userActivityService.recordTryOn(userId);
         Map<String, Object> response = new HashMap<>();
         response.put("id", sessionId.toString());

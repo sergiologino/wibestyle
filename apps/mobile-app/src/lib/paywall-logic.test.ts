@@ -16,6 +16,7 @@ const offers: BillingPlanOffer[] = [
 
 describe("mobile paywall pricing copy", () => {
   it("uses the actual subscription period in the try-on allowance", () => {
+    expect(formatTryOnAllowance(20, "one_time")).toBe("20 примерок");
     expect(formatTryOnAllowance(20, "monthly")).toBe("20 примерок в месяц");
     expect(formatTryOnAllowance(240, "annual")).toBe("240 примерок в год");
   });

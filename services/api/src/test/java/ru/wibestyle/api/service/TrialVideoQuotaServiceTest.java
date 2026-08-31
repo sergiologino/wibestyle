@@ -35,6 +35,7 @@ class TrialVideoQuotaServiceTest {
         assertThat(profile.getTrialVideoGenerationsLeft()).isZero();
         assertThat(session.isVideoQuotaReserved()).isTrue();
         assertThat(session.isVideoQuotaConsumed()).isTrue();
+        assertThat(session.getVideoQuotaSource()).isEqualTo("trial_video");
     }
 
     @Test
@@ -53,6 +54,7 @@ class TrialVideoQuotaServiceTest {
         assertThat(profile.getTrialVideoGenerationsLeft()).isEqualTo(1);
         assertThat(session.isVideoQuotaReserved()).isFalse();
         assertThat(session.isVideoQuotaConsumed()).isFalse();
+        assertThat(session.getVideoQuotaSource()).isNull();
     }
 
     @Test
@@ -70,10 +72,55 @@ class TrialVideoQuotaServiceTest {
                 .hasMessage("VIDEO_TRIAL_EXHAUSTED");
     }
 
+    @Test
+    void reservesAndConsumesPackageTryOnForVideo() {
+        UUID userId = UUID.randomUUID();
+        UserProfileEntity profile = packageProfile(userId, 2);
+        TryOnSessionEntity session = session(userId);
+        UserProfileRepository profileRepository = mock(UserProfileRepository.class);
+        TryOnSessionRepository sessionRepository = mock(TryOnSessionRepository.class);
+        when(profileRepository.findByIdForUpdate(userId)).thenReturn(Optional.of(profile));
+        TrialVideoQuotaService service = new TrialVideoQuotaService(profileRepository, sessionRepository);
+
+        service.reserve(userId, session);
+        service.consume(session);
+
+        assertThat(profile.getPlanGenerationsLeft()).isEqualTo(1);
+        assertThat(session.isVideoQuotaReserved()).isTrue();
+        assertThat(session.isVideoQuotaConsumed()).isTrue();
+        assertThat(session.getVideoQuotaSource()).isEqualTo("plan_generations");
+    }
+
+    @Test
+    void refundsPackageTryOnAfterProviderFailure() {
+        UUID userId = UUID.randomUUID();
+        UserProfileEntity profile = packageProfile(userId, 1);
+        TryOnSessionEntity session = session(userId);
+        UserProfileRepository profileRepository = mock(UserProfileRepository.class);
+        TryOnSessionRepository sessionRepository = mock(TryOnSessionRepository.class);
+        when(profileRepository.findByIdForUpdate(userId)).thenReturn(Optional.of(profile));
+        TrialVideoQuotaService service = new TrialVideoQuotaService(profileRepository, sessionRepository);
+
+        service.reserve(userId, session);
+        service.refund(session);
+
+        assertThat(profile.getPlanGenerationsLeft()).isEqualTo(1);
+        assertThat(session.isVideoQuotaReserved()).isFalse();
+        assertThat(session.isVideoQuotaConsumed()).isFalse();
+        assertThat(session.getVideoQuotaSource()).isNull();
+    }
+
     private static UserProfileEntity trialProfile(UUID userId, int videosLeft) {
         UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
         profile.setPlan("trial");
         profile.setTrialVideoGenerationsLeft(videosLeft);
+        return profile;
+    }
+
+    private static UserProfileEntity packageProfile(UUID userId, int generationsLeft) {
+        UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
+        profile.setPlan("tryon_50");
+        profile.setPlanGenerationsLeft(generationsLeft);
         return profile;
     }
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Card } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
-import type { SubscriptionPlan } from "@wibestyle/shared-types";
+import type { BillingOfferPlan } from "@wibestyle/shared-types";
 import { useAppSession } from "@/components/providers/AppSessionProvider";
 
 function formatRub(value: number) {
@@ -19,7 +19,7 @@ export default function PaymentClient() {
   const { api, refreshProfile } = useAppSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [plan, setPlan] = useState<SubscriptionPlan>("wibe");
+  const [plan, setPlan] = useState<BillingOfferPlan>("tryon_20");
   const [priceRub, setPriceRub] = useState<number | null>(null);
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function PaymentClient() {
         <p className="text-eyebrow">Dev checkout</p>
         <h1 className="text-display mt-4 text-3xl">Подтверждение оплаты</h1>
         <p className="text-body mt-3">
-          Локальный режим без YooKassa. Нажми «Оплатить», чтобы активировать подписку {plan.toUpperCase()}.
+          Локальный режим без YooKassa. Нажми «Оплатить», чтобы начислить пакет {plan.toUpperCase()}.
         </p>
         {priceRub != null ? (
           <p className="mt-4 text-2xl">{formatRub(priceRub)}</p>

@@ -81,7 +81,9 @@ public class AdminUserManagementService {
                 .orElseThrow(() -> new IllegalArgumentException("PROFILE_NOT_FOUND"));
 
         String plan = request.plan() == null ? profile.getPlan() : request.plan();
-        profile.setPlan(plan);
+        if (!"none".equals(plan)) {
+            profile.setPlan(plan);
+        }
         if (request.trialGenerationsLeft() != null) {
             profile.setTrialGenerationsLeft(request.trialGenerationsLeft());
         }
@@ -93,6 +95,9 @@ public class AdminUserManagementService {
         }
         if (request.subscriptionExpiresAt() != null) {
             profile.setSubscriptionExpiresAt(request.subscriptionExpiresAt());
+        }
+        if (request.additionalGenerations() != null) {
+            addGenerations(profile, request.additionalGenerations());
         }
         profile.setUpdatedAt(Instant.now());
         userProfileRepository.save(profile);
@@ -153,6 +158,7 @@ public class AdminUserManagementService {
             map.put("plan", profile.getPlan());
             map.put("trialGenerationsLeft", profile.getTrialGenerationsLeft());
             map.put("planGenerationsLeft", profile.getPlanGenerationsLeft());
+            map.put("bonusGenerationsLeft", profile.getBonusGenerationsLeft());
             map.put("displayName", profile.getDisplayName());
             avatarRepository.findByUserIdAndActiveTrue(user.getId()).ifPresent(avatar -> {
                 if (avatar.getPhotoProcessedPath() != null) {
@@ -182,8 +188,31 @@ public class AdminUserManagementService {
             String plan,
             Integer trialGenerationsLeft,
             Integer planGenerationsLeft,
+            Integer additionalGenerations,
             String billingPeriod,
             Instant subscriptionExpiresAt
     ) {
+    }
+
+    private static void addGenerations(UserProfileEntity profile, int amount) {
+        if (amount < 1 || amount > 100_000) {
+            throw new IllegalArgumentException("ADDITIONAL_GENERATIONS_INVALID");
+        }
+        if (hasActiveLegacySubscription(profile)) {
+            profile.setBonusGenerationsLeft(profile.getBonusGenerationsLeft() + amount);
+            return;
+        }
+        if ("trial".equals(profile.getPlan()) || "none".equals(profile.getPlan())) {
+            profile.setPlan("tryon_admin");
+            profile.setBillingPeriod("one_time");
+            profile.setSubscriptionExpiresAt(null);
+        }
+        profile.setPlanGenerationsLeft(profile.getPlanGenerationsLeft() + amount);
+    }
+
+    private static boolean hasActiveLegacySubscription(UserProfileEntity profile) {
+        return ("wibe".equals(profile.getPlan()) || "elite".equals(profile.getPlan()))
+                && profile.getSubscriptionExpiresAt() != null
+                && profile.getSubscriptionExpiresAt().isAfter(Instant.now());
     }
 }
