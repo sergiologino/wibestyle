@@ -10,5 +10,10 @@ describe("llms-full.txt", () => {
     expect(body).toContain("Будет ли виртуальный макияж онлайн?");
     expect(body).toContain("Ключевые темы:");
     expect(body).toContain("изменить цвет волос онлайн");
+    expect(body).toContain("Подписки по срокам нет");
+    expect(body).toContain("100 примерок");
+    expect(body).toContain("Можно ли сделать видео примерку?");
+    expect(body).toContain("Есть ли реферальная система?");
+    expect(body).toContain("Полный образ сейчас в работе");
   });
 });

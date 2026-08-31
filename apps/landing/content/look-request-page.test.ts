@@ -8,10 +8,12 @@ describe("look request landing page", () => {
     expect(page?.badge).toBe("Скоро");
     expect(page?.title).not.toContain("скоро");
     expect(page?.description).not.toContain("июля 2026");
+    expect(page?.description).toContain("готовит");
+    expect(page?.intro).toContain("сейчас в работе");
     expect(page?.keywords).toContain("персональный стилист онлайн");
     expect(page?.faq).toContainEqual({
       q: "Что входит в подбор полного образа?",
-      a: "В полный образ входят одежда, обувь, аксессуары, причёска, цвет волос и макияж под событие, сезон и ваш стиль.",
+      a: "Полный образ сейчас в работе. В сценарий войдут одежда, обувь, аксессуары, причёска, цвет волос и макияж под событие, сезон и ваш стиль.",
     });
     expect(page?.visuals).toMatchObject({
       type: "mosaic",

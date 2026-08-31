@@ -20,9 +20,9 @@ export function softwareApplicationSchema() {
     description: siteConfig.description,
     offers: {
       "@type": "Offer",
-      price: String(pricing.annualRub),
+      price: String(pricing.tryOn20Rub),
       priceCurrency: "RUB",
-      description: `Годовая подписка ${pricing.annualRub} ₽. Первые ${pricing.firstUsersLimit} — скидка ${pricing.discountPercent}%.`,
+      description: `Пакеты примерок без подписки по срокам: 20 примерок — ${pricing.tryOn20Rub} ₽, 50 примерок — ${pricing.tryOn50Rub} ₽, 100 примерок — ${pricing.tryOn100Rub} ₽.`,
     },
   };
 }

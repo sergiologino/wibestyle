@@ -25,10 +25,11 @@ export const siteConfig = {
 } as const;
 
 export const pricing = {
-  annualRub: 6990,
-  discountPercent: 50,
-  firstUsersLimit: 100,
-  get discountedAnnualRub() {
-    return Math.round(this.annualRub * (1 - this.discountPercent / 100));
+  tryOn20Rub: 400,
+  tryOn50Rub: 900,
+  tryOn100Rub: 1600,
+  recommendedPackageTryOns: 50,
+  get minTryOnUnitRub() {
+    return Math.round(this.tryOn20Rub / 20);
   },
 } as const;

@@ -110,18 +110,18 @@ Provider priorities only select the `networkName` sent to `noteapp-ai-integratio
 | GET | `/billing/plans` |
 | GET | `/billing/entitlements` |
 | POST | `/billing/promo/validate` |
-| POST | `/billing/checkout` | `{ plan, period, savePaymentMethod, client }`; pending checkout; `paymentUrl` = YooKassa redirect or mock simulate |
+| POST | `/billing/checkout` | `{ plan, period, savePaymentMethod, client }`; for packages use `period="one_time"`; pending checkout; `paymentUrl` = YooKassa redirect or mock simulate |
 | GET | `/billing/checkout/{checkoutId}` | status poll after return from YooKassa |
-| GET | `/billing/subscription` | recurring status, saved payment method flag and current period end |
-| PATCH | `/billing/subscription/auto-renew` | `{ enabled }`; enable requires a saved YooKassa payment method |
+| GET | `/billing/subscription` | legacy recurring status endpoint; current packages do not require period subscriptions |
+| PATCH | `/billing/subscription/auto-renew` | legacy autorenew endpoint; current package plans are one-time purchases |
 | POST | `/billing/subscribe` | *(dev only if `WIBESTYLE_BILLING_SUBSCRIBE_DEV_ENABLED=true`)* |
 | POST | `/billing/webhooks/yookassa` | YooKassa notification (verify via API) |
 | POST | `/billing/webhooks/{provider}` | webhook провайдера (`mock` + `payment.succeeded`) |
 | POST | `/billing/webhooks/mock/simulate?checkoutId=` | dev shortcut для завершения оплаты |
 
-`GET /billing/plans` returns period-accurate `generationsPerPeriod`: Wibe is 20 monthly or 240 annual; Elite is 100 monthly or 1200 annual. New profiles receive 3 free trial try-ons and 1 successful trial video. The response also includes `recurringAvailable`: clients show the saved-payment/autorenew consent only when the YooKassa shop has been approved for recurrent payments.
+`GET /billing/plans` returns one-time try-on packages: `tryon_20` = 20 примерок, `tryon_50` = 50 примерок, `tryon_100` = 100 примерок. Default backend prices are 400 ₽, 900 ₽ and 1600 ₽, but admins can update them through platform settings. The default selection is `tryon_50` with `period="one_time"`. New profiles receive 3 free trial try-ons and 1 successful trial video. The response includes `recurringAvailable=false` for the current package model.
 
-Recurring: initial payment sends `save_payment_method=true` only after explicit user consent **and** only when `WIBESTYLE_YOOKASSA_RECURRING_ENABLED=true`. Otherwise checkout is a one-time payment and no saved payment method is requested. Only verified YooKassa `payment_method.id` is stored. Scheduler warns at T−3 days, charges the regular current tariff at T0 and retries rejected charges up to three times. Unknown network outcomes reuse the same checkout UUID as YooKassa idempotence key.
+Package billing: current user-facing plans are not month/year subscriptions. A successful package checkout adds the purchased number of try-ons to the account balance. Failed AI/provider/moderation outcomes can release the reserved try-on instead of consuming it. Unknown network outcomes reuse the same checkout UUID as YooKassa idempotence key.
 
 ## Referrals
 
@@ -130,7 +130,7 @@ Recurring: initial payment sends `save_payment_method=true` only after explicit 
 | GET | `/referrals` |
 | GET | `/admin/referrals` | `X-Admin-Key`; inviter → registration → first purchase → reward report and totals |
 
-The authenticated response contains the personal referral code, eligibility, remaining bonus try-ons and reward history. Links use `/welcome?ref=CODE`; OTP and OAuth bind the code only for a new user. The friend's first successful purchase awards 3 bonus try-ons for monthly billing or 15 for annual billing. Rewards are available to every user, including trial and expired subscribers, and are idempotent across webhook retries, renewals and upgrades.
+The authenticated response contains the personal referral code, eligibility, remaining bonus try-ons and reward history. Links use `/welcome?ref=CODE`; OTP and OAuth bind the code only for a new user. The friend's first successful package purchase can award bonus try-ons according to referral rules. Rewards are available to every user, including trial users, and are idempotent across webhook retries.
 
 ## Notifications
 
