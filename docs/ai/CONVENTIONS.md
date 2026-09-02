@@ -30,4 +30,4 @@
 ## Стиль реализации (для текущего продукта)
 - Визуальный приоритет: image-first, fashion-tech, плотная композиция.
 - Контент-приоритет: SEO/GEO-дружественный, индексируемый HTML.
-- Admin UI: кнопки используют контрастную зелёно-серую action palette. Для самописных `<button>`/CTA-ссылок в `apps/admin` использовать `adminButtonClass` из `apps/admin/lib/admin-button-styles.ts`; не возвращать бледно-розовые button-state фоны без явной проверки контраста.
+- Admin UI: кнопки, ссылки и нативные file picker controls используют контрастную зелёно-серую action palette. Для самописных `<button>`/CTA-ссылок в `apps/admin` использовать `adminButtonClass` из `apps/admin/lib/admin-button-styles.ts`; медиа-превью помечать `admin-media-preview-button`; не возвращать бледно-розовые button-state фоны без явной проверки контраста.

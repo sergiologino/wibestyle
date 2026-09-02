@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { adminButtonClass, adminButtonTones } from "./admin-button-styles";
 
 describe("admin button styles", () => {
@@ -19,5 +21,23 @@ describe("admin button styles", () => {
     expect(buttonStyles).not.toContain("#fff0f9");
     expect(buttonStyles).not.toContain("#ffecf7");
     expect(buttonStyles).not.toContain("#ffd1ed");
+  });
+
+  it("styles native file picker buttons in the admin app", () => {
+    const css = readFileSync(resolve(__dirname, "../app/globals.css"), "utf8");
+    expect(css).toContain('.admin-app input[type="file"]::file-selector-button');
+    expect(css).toContain("border: 2px solid #13794e");
+    expect(css).toContain("color: #ffffff");
+  });
+
+  it("scopes the admin control palette from the root layout", () => {
+    const layout = readFileSync(resolve(__dirname, "../app/layout.tsx"), "utf8");
+    expect(layout).toContain('body className="admin-app"');
+  });
+
+  it("keeps media preview buttons out of the global action styling", () => {
+    const css = readFileSync(resolve(__dirname, "../app/globals.css"), "utf8");
+    expect(css).toContain(".admin-app .admin-media-preview-button");
+    expect(css).toContain("background-color: #ffffff !important");
   });
 });

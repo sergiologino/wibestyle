@@ -258,7 +258,7 @@ export default function AdminUsersPage() {
               <div className="flex min-w-0 flex-1 gap-3 md:gap-4">
                 <button
                   type="button"
-                  className="h-20 w-14 shrink-0 overflow-hidden rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] disabled:cursor-default md:h-28 md:w-20"
+                  className="admin-media-preview-button h-20 w-14 shrink-0 overflow-hidden rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] disabled:cursor-default md:h-28 md:w-20"
                   disabled={!user.activeAvatarPhotoUrl}
                   title={user.activeAvatarPhotoUrl ? "Открыть аватар" : "У пользователя нет активного аватара"}
                   onClick={() => setPreviewUser(user)}

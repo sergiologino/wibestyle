@@ -1,7 +1,8 @@
 # Current State
 
 ## Admin action contrast (2026-09-02)
-- Admin buttons use a dedicated high-contrast green/gray action palette. Shared `@wibestyle/ui/Button` receives admin-only CSS variable values in `apps/admin/app/globals.css`, while custom admin `<button>`/CTA links use `adminButtonClass`.
+- Admin buttons, links, native file picker controls, select/input focus states and checkbox accents use a dedicated high-contrast green/gray action palette. Shared `@wibestyle/ui/Button` receives admin-only CSS variable values in `apps/admin/app/globals.css`, while custom admin `<button>`/CTA links use `adminButtonClass`.
+- Media preview buttons are explicitly marked with `admin-media-preview-button` so global action styling does not cover avatar/image thumbnails.
 - The helper is covered by `apps/admin/lib/admin-button-styles.test.ts` to prevent pale-pink button-state backgrounds from returning.
 
 ## Recoverable avatar-quality warnings (2026-08-10)
