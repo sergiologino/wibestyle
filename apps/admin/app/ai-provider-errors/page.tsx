@@ -9,6 +9,7 @@ import type {
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { useAdminKey } from "@/components/admin-key-provider";
 import { createAdminApi } from "@/lib/api";
+import { adminButtonClass } from "@/lib/admin-button-styles";
 
 const emptyMapping: AiProviderErrorMappingPayload = {
   errorText: "",
@@ -138,7 +139,7 @@ export default function AdminAiProviderErrorsPage() {
               </Button>
               <button
                 type="button"
-                className="rounded-xl border border-[#ff1fa2] px-4 py-2 font-black text-[#ff1fa2]"
+                className={adminButtonClass("secondary")}
                 disabled={saving === item.id}
                 onClick={() => void deleteMapping(item)}
               >

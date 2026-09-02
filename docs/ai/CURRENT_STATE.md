@@ -1,5 +1,9 @@
 # Current State
 
+## Admin action contrast (2026-09-02)
+- Admin buttons use a dedicated high-contrast green/gray action palette. Shared `@wibestyle/ui/Button` receives admin-only CSS variable values in `apps/admin/app/globals.css`, while custom admin `<button>`/CTA links use `adminButtonClass`.
+- The helper is covered by `apps/admin/lib/admin-button-styles.test.ts` to prevent pale-pink button-state backgrounds from returning.
+
 ## Recoverable avatar-quality warnings (2026-08-10)
 - A vision-model `LOW_DETAIL` judgment is now recoverable rather than a hard rejection. Only objectively undersized sources (`LOW_RESOLUTION`) and unsuitable subject/composition warnings reject an avatar.
 - Natural or busy backgrounds, patterned clothing, mild softness and lighting issues lead to opt-in enhancement instead of forcing a new upload.

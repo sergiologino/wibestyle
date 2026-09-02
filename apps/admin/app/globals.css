@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --pink: #ff1fa2;
-  --pink-dark: #eb1692;
-  --pink-soft: #ffd1ed;
-  --pink-bg: #fff4fb;
+  --pink: #13794e;
+  --pink-dark: #0f6042;
+  --pink-soft: #94a3b8;
+  --pink-bg: #f1f5f9;
   --violet: #782cff;
   --black: #14101a;
   --muted: #6d6273;

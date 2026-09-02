@@ -6,6 +6,7 @@ import type { MarketingChannel, MarketingChannelPayload, MarketingRegistration, 
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { useAdminKey } from "@/components/admin-key-provider";
 import { createAdminApi } from "@/lib/api";
+import { adminButtonClass } from "@/lib/admin-button-styles";
 
 const emptyChannel: MarketingChannelPayload = {
   code: "",
@@ -198,7 +199,7 @@ export default function AdminMarketingPage() {
         <p className="text-sm font-bold text-[#302637]">
           Можно добавить любую площадку: X, Pinterest, Одноклассники или свой источник.
         </p>
-        <a href="#channel-builder" className="rounded-xl bg-[#ff1fa2] px-4 py-2 text-sm font-black text-white">
+        <a href="#channel-builder" className={adminButtonClass("primary")}>
           Создать канал и ссылку ↓
         </a>
       </div>

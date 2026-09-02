@@ -7,6 +7,7 @@ import { useAdminKey } from "@/components/admin-key-provider";
 import { AdminMediaImage } from "@/components/admin-media-image";
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { ADMIN_API_BASE_URL } from "@/lib/api";
+import { adminButtonClass } from "@/lib/admin-button-styles";
 
 type CatalogKind = "hairstyles" | "hair-colors";
 
@@ -333,9 +334,7 @@ export default function AdminHairstylesPage() {
           <button
             key={item.id}
             type="button"
-            className={`rounded-xl border px-4 py-2 font-black ${
-              kind === item.id ? "border-[#ff1fa2] bg-[#ffecf7] text-[#3d2332]" : "border-[#ffd1ed] bg-white text-[#6d6273]"
-            }`}
+            className={adminButtonClass(kind === item.id ? "active" : "secondary")}
             onClick={() => {
               setKind(item.id);
               setCreateDraft({ ...emptyDraft });
