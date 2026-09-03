@@ -16,15 +16,21 @@ const manrope = Manrope({ subsets: ["latin", "cyrillic"], variable: "--font-manr
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.domain),
   title: {
-    default: "Я на стиле — нейропримерочная и виртуальный стилист",
+    default: "Я на стиле — нейропримерочная и персональный нейростилист",
     template: "%s | Я на стиле",
   },
   description: siteConfig.description,
   keywords: [
     "нейропримерка",
     "нейростилист",
+    "виртуальный персональный стилист",
     "виртуальная примерочная",
     "примерить одежду онлайн",
+    "примерить причёску онлайн",
+    "подобрать стрижку по фото",
+    "изменить цвет волос онлайн",
+    "виртуальный макияж онлайн",
+    "подбор образа онлайн",
     "Wildberries примерка",
     "Ozon примерка",
   ],

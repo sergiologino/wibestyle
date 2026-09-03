@@ -19,16 +19,17 @@ export const siteConfig = {
   appUrl: normalizePublicUrl(process.env.NEXT_PUBLIC_APP_URL, "https://app.vibestyle.art/home", "/home"),
   rustoreUrl: normalizePublicUrl(process.env.NEXT_PUBLIC_RUSTORE_URL, "https://www.rustore.ru/catalog/app/ru.vibestyle.app"),
   description:
-    "Виртуальный персональный стилист и нейропримерочная с маркетплейсов: загрузи фото, вставь ссылку на товар и посмотри, как вещь преобразит твой образ до покупки.",
+    "Виртуальный персональный стилист и нейропримерочная для полного образа: одежда с маркетплейсов, стрижки, причёски, цвет волос и макияж по фото.",
   locale: "ru_RU",
   themeColor: "#ff1fa2",
 } as const;
 
 export const pricing = {
-  annualRub: 6990,
-  discountPercent: 50,
-  firstUsersLimit: 100,
-  get discountedAnnualRub() {
-    return Math.round(this.annualRub * (1 - this.discountPercent / 100));
+  tryOn20Rub: 400,
+  tryOn50Rub: 900,
+  tryOn100Rub: 1600,
+  recommendedPackageTryOns: 50,
+  get minTryOnUnitRub() {
+    return Math.round(this.tryOn20Rub / 20);
   },
 } as const;

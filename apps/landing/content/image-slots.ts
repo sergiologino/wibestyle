@@ -1,9 +1,31 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 export type ImageSlot = {
   src: string;
   alt: string;
   width?: number;
   height?: number;
 };
+
+const publicRoots = [
+  path.join(process.cwd(), "public"),
+  path.join(process.cwd(), "apps", "landing", "public"),
+];
+
+function publicAssetWithWebpPriority(basePath: string) {
+  const extensions = [".webp", ".png", ".jpg"];
+
+  for (const extension of extensions) {
+    const src = `${basePath}${extension}`;
+    const relativePath = src.replace(/^\//, "");
+    if (publicRoots.some((root) => existsSync(path.join(root, relativePath)))) {
+      return src;
+    }
+  }
+
+  return `${basePath}.webp`;
+}
 
 /** Замените только `src` на свои файлы в `/public/assets/`. */
 export const imageSlots = {
@@ -74,14 +96,26 @@ export const imageSlots = {
     height: 800,
   },
   hairstylePreview1: {
-    src: "/assets/hairstyles/hairstyle-preview-1.png",
+    src: publicAssetWithWebpPriority("/assets/hairstyles/hairstyle-preview-1"),
     alt: "Пример виртуальной примерки причёски",
     width: 600,
     height: 800,
   },
   hairstylePreview2: {
-    src: "/assets/hairstyles/hairstyle-preview-2.png",
+    src: publicAssetWithWebpPriority("/assets/hairstyles/hairstyle-preview-2"),
     alt: "Пример виртуальной примерки укладки и цвета волос",
+    width: 600,
+    height: 800,
+  },
+  hairstylePreview3: {
+    src: publicAssetWithWebpPriority("/assets/hairstyles/hairstyle-preview-3"),
+    alt: "Пример виртуальной примерки стрижки и формы волос",
+    width: 600,
+    height: 800,
+  },
+  hairstylePreview4: {
+    src: publicAssetWithWebpPriority("/assets/hairstyles/hairstyle-preview-4"),
+    alt: "Пример виртуального эксперимента с цветом волос",
     width: 600,
     height: 800,
   },

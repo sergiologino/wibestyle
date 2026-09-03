@@ -24,14 +24,15 @@ describe("seo-pages", () => {
     expect(page?.h1).toContain("Нейропримерка");
   });
 
-  it("discloses recurring-payment conditions in the public terms", () => {
+  it("discloses package-based billing in the public terms", () => {
     const terms = getSeoPage("/terms");
-    const recurring = terms?.sections.find((section) => section.title.startsWith("8. Автоплатежи"));
-    expect(recurring?.body).toContain("отдельно включил");
-    expect(recurring?.body).toContain("один раз в месяц");
-    expect(recurring?.body).toContain("один раз в год");
-    expect(recurring?.body).toContain("отключить автопродление");
-    expect(recurring?.body).toContain("до трёх раз");
+    const packages = terms?.sections.find((section) => section.title.startsWith("7. Пакеты примерок"));
+    const usage = terms?.sections.find((section) => section.title.startsWith("8. Использование"));
+
+    expect(packages?.body).toContain("Подписки по срокам");
+    expect(packages?.body).toContain("количество примерок");
+    expect(usage?.body).toContain("разовой покупкой");
+    expect(usage?.body).toContain("Автоматическое продление");
   });
 
   it("each page has title, description, h1, intro", () => {

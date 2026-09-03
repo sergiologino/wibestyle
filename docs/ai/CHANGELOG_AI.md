@@ -1,5 +1,11 @@
 # AI Changelog
 
+## 2026-09-02 (Admin button contrast)
+- Recolored admin action buttons from pale pink states to a high-contrast green/gray palette.
+- Added the shared `adminButtonClass` helper for custom admin buttons and CTA links, and updated AI prompts, AI provider errors, hairstyle catalog tabs, marketing CTA, statistics filters and user action buttons.
+- Added admin-only global control styling for native file picker buttons, links, focus states and checkbox accents; media preview buttons are excluded with `admin-media-preview-button`.
+- Documented the admin action palette convention and added regression coverage for button contrast tokens.
+
 ## 2026-08-25 (Mobile hairstyle portrait parity)
 - Added the dedicated hairstyle portrait upload block to the mobile profile.
 - Mobile hairstyle try-on now uses the backend profile portrait and sends only `styleId`; the style screen no longer asks for a second portrait upload.

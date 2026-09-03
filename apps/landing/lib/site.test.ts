@@ -31,17 +31,13 @@ describe("siteConfig", () => {
 });
 
 describe("pricing", () => {
-  it("annual price is 6990 RUB", async () => {
+  it("uses one-time try-on packages instead of period subscriptions", async () => {
     const { pricing } = await import("./site");
 
-    expect(pricing.annualRub).toBe(6990);
-  });
-
-  it("first 100 users get 50% discount", async () => {
-    const { pricing } = await import("./site");
-
-    expect(pricing.discountedAnnualRub).toBe(3495);
-    expect(pricing.discountPercent).toBe(50);
-    expect(pricing.firstUsersLimit).toBe(100);
+    expect(pricing.tryOn20Rub).toBe(400);
+    expect(pricing.tryOn50Rub).toBe(900);
+    expect(pricing.tryOn100Rub).toBe(1600);
+    expect(pricing.recommendedPackageTryOns).toBe(50);
+    expect(pricing.minTryOnUnitRub).toBe(20);
   });
 });

@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --pink: #ff1fa2;
-  --pink-dark: #eb1692;
-  --pink-soft: #ffd1ed;
-  --pink-bg: #fff4fb;
+  --pink: #13794e;
+  --pink-dark: #0f6042;
+  --pink-soft: #94a3b8;
+  --pink-bg: #f1f5f9;
   --violet: #782cff;
   --black: #14101a;
   --muted: #6d6273;
@@ -14,4 +14,103 @@ body {
   margin: 0;
   background: #fff8fd;
   color: #14101a;
+}
+
+.admin-app button {
+  border-width: 2px;
+  border-color: #94a3b8;
+}
+
+.admin-app button:not(.admin-media-preview-button) {
+  color: #334155;
+}
+
+.admin-app button:not(.admin-media-preview-button):hover {
+  border-color: #64748b;
+  background-color: #f1f5f9;
+}
+
+.admin-app button[class*="bg-[var(--pink)]"],
+.admin-app button[class*="bg-[#13794e]"],
+.admin-app a[class*="bg-[#13794e]"] {
+  border-color: #13794e !important;
+  background-color: #13794e !important;
+  color: #ffffff !important;
+}
+
+.admin-app button[class*="bg-[var(--pink)]"]:hover,
+.admin-app button[class*="bg-[#13794e]"]:hover,
+.admin-app a[class*="bg-[#13794e]"]:hover {
+  border-color: #0f6042 !important;
+  background-color: #0f6042 !important;
+  color: #ffffff !important;
+}
+
+.admin-app button[class*="bg-[#dff5e9]"] {
+  border-color: #13794e !important;
+  background-color: #dff5e9 !important;
+  color: #0f5132 !important;
+}
+
+.admin-app button:disabled {
+  background-color: #e5e7eb !important;
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+}
+
+.admin-app a[href] {
+  color: #13794e;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.admin-app a[href][class*="bg-[#13794e]"] {
+  color: #ffffff !important;
+  text-decoration: none;
+}
+
+.admin-app input,
+.admin-app select,
+.admin-app textarea {
+  border-color: #94a3b8;
+  color: #14101a;
+}
+
+.admin-app input:focus,
+.admin-app select:focus,
+.admin-app textarea:focus {
+  border-color: #13794e !important;
+  outline: 2px solid #bbf7d0;
+  outline-offset: 1px;
+}
+
+.admin-app input[type="checkbox"] {
+  accent-color: #13794e;
+}
+
+.admin-app input[type="file"] {
+  color: #334155;
+}
+
+.admin-app input[type="file"]::file-selector-button {
+  min-height: 36px;
+  margin-right: 12px;
+  border: 2px solid #13794e;
+  border-radius: 12px;
+  background: #13794e;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 7px 14px;
+}
+
+.admin-app input[type="file"]::file-selector-button:hover {
+  border-color: #0f6042;
+  background: #0f6042;
+}
+
+.admin-app .admin-media-preview-button {
+  border-color: #cbd5e1 !important;
+  background-color: #ffffff !important;
+  color: #334155 !important;
 }

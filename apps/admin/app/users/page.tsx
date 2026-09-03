@@ -7,6 +7,7 @@ import { AdminPageShell } from "@/components/admin-page-shell";
 import { AdminMediaImage } from "@/components/admin-media-image";
 import { useAdminKey } from "@/components/admin-key-provider";
 import { createAdminApi, APP_BASE_URL } from "@/lib/api";
+import { adminButtonClass } from "@/lib/admin-button-styles";
 
 type AdminUserItem = {
   id: string;
@@ -257,7 +258,7 @@ export default function AdminUsersPage() {
               <div className="flex min-w-0 flex-1 gap-3 md:gap-4">
                 <button
                   type="button"
-                  className="h-20 w-14 shrink-0 overflow-hidden rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] disabled:cursor-default md:h-28 md:w-20"
+                  className="admin-media-preview-button h-20 w-14 shrink-0 overflow-hidden rounded-2xl border border-[#ffd1ed] bg-[#fff8fd] disabled:cursor-default md:h-28 md:w-20"
                   disabled={!user.activeAvatarPhotoUrl}
                   title={user.activeAvatarPhotoUrl ? "Открыть аватар" : "У пользователя нет активного аватара"}
                   onClick={() => setPreviewUser(user)}
@@ -361,7 +362,7 @@ export default function AdminUsersPage() {
                 </div>
                 <button
                   type="button"
-                  className="min-h-8 rounded-xl border-2 border-[#782cff] bg-white px-3 py-1.5 text-xs font-black text-[#782cff] underline decoration-2 underline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:min-h-9 md:px-4 md:py-2 md:text-sm"
+                  className={adminButtonClass("secondary", "min-h-8 px-3 py-1.5 text-xs underline decoration-2 underline-offset-2 md:min-h-9 md:px-4 md:py-2 md:text-sm")}
                   disabled={actionUserId === user.id || !configured}
                   onClick={() => void impersonate(user)}
                 >
@@ -369,7 +370,7 @@ export default function AdminUsersPage() {
                 </button>
                 <button
                   type="button"
-                  className={`${user.stylistFocusGroup ? "border-[#22a06b] text-[#13794e]" : "border-[#ffd1ed] text-[#6d6273]"} min-h-8 rounded-xl border-2 bg-white px-3 py-1.5 text-xs font-black disabled:cursor-not-allowed disabled:opacity-50 md:min-h-9 md:px-4 md:py-2 md:text-sm`}
+                  className={adminButtonClass(user.stylistFocusGroup ? "active" : "secondary", "min-h-8 px-3 py-1.5 text-xs md:min-h-9 md:px-4 md:py-2 md:text-sm")}
                   disabled={actionUserId === user.id || !configured}
                   onClick={() => void toggleStylistFocusGroup(user)}
                 >

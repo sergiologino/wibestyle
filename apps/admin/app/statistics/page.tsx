@@ -7,6 +7,7 @@ import { Button, Card } from "@wibestyle/ui";
 import { AdminPageShell } from "@/components/admin-page-shell";
 import { useAdminKey } from "@/components/admin-key-provider";
 import { createAdminApi } from "@/lib/api";
+import { adminButtonClass } from "@/lib/admin-button-styles";
 import { formatLocalDateTime } from "@/lib/format-local-date";
 
 type TableColumn<T> = {
@@ -147,7 +148,7 @@ export default function AdminStatisticsPage() {
                   <button
                     key={value}
                     type="button"
-                    className={`rounded-xl px-3 py-2 text-sm font-black ${screenFilter === value ? "bg-[#ff1fa2] text-white" : "bg-[#fff0f9] text-[#302637]"}`}
+                    className={adminButtonClass(screenFilter === value ? "active" : "secondary", "px-3")}
                     onClick={() => setScreenFilter(value)}
                   >
                     {label}
