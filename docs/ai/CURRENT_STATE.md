@@ -1,5 +1,11 @@
 # Current State
 
+## Mobile profile balance refresh (2026-09-02)
+- Mobile Home refreshes `/me` when the screen gains focus and on pull-to-refresh, then reloads home history/notifications/reviews. This makes admin-granted try-ons visible without logout or app restart.
+- Mobile Profile also has pull-to-refresh for `/me`.
+- Home displays a combined available try-on balance: trial users see trial + bonus, paid/package/admin users see plan/package + bonus.
+- Android release bundling requires `scheduler` as a direct mobile dependency because Metro hierarchical lookup is disabled for monorepo safety; `verify:bundle` checks this resolution before Gradle.
+
 ## Admin action contrast (2026-09-02)
 - Admin buttons, links, native file picker controls, select/input focus states and checkbox accents use a dedicated high-contrast green/gray action palette. Shared `@wibestyle/ui/Button` receives admin-only CSS variable values in `apps/admin/app/globals.css`, while custom admin `<button>`/CTA links use `adminButtonClass`.
 - Media preview buttons are explicitly marked with `admin-media-preview-button` so global action styling does not cover avatar/image thumbnails.

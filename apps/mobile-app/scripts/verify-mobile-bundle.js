@@ -31,6 +31,16 @@ try {
   process.exit(1);
 }
 
+try {
+  require.resolve("scheduler", {
+    paths: [path.join(projectRoot, "node_modules"), path.join(projectRoot, "../..", "node_modules")],
+  });
+} catch {
+  console.error("Metro cannot resolve scheduler from configured mobile node_modules paths.");
+  console.error("Run npm install from the repository root; scheduler must be a direct mobile dependency.");
+  process.exit(1);
+}
+
 if (!fs.existsSync(shimEntry)) {
   console.error(`Missing vendored shim: ${shimEntry}`);
   process.exit(1);
@@ -103,3 +113,4 @@ console.log(`  ${normalized}`);
 console.log("Babel expo/config resolution OK.");
 console.log("Metro expo-asset tools resolution OK.");
 console.log("Metro @/* alias resolution OK.");
+console.log("Metro scheduler resolution OK.");

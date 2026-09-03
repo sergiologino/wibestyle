@@ -285,7 +285,7 @@ Backend нужно редеплоить после этих изменений, 
 Переменные подписи задаются в PowerShell перед сборкой. В `.env` их добавлять не нужно: это секреты Android-подписи.
 
 ```powershell
-$env:VIBESTYLE_STORE_FILE="E:\Keys\vibestyle-release.jks"
+$env:VIBESTYLE_STORE_FILE="E:\1_MyProjects\Look\Keys\vibestyle-release.jks"
 $env:VIBESTYLE_STORE_PASSWORD="пароль-хранилища"
 $env:VIBESTYLE_KEY_ALIAS="vibestyle"
 $env:VIBESTYLE_KEY_PASSWORD="пароль-ключа"
