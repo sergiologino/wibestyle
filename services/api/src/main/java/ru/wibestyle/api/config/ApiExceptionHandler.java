@@ -117,6 +117,15 @@ public class ApiExceptionHandler {
             case "VIDEO_TRIAL_EXHAUSTED" ->
                     "Бесплатное видео в trial уже использовано. Оформите Elite, чтобы создавать видео к каждой примерке.";
             case "VIDEO_GENERATION_FAILED" -> "Не удалось создать видео";
+            case "VIDEO_PROVIDER_UNAVAILABLE" -> "Видео сейчас перегружено. Попробуйте создать его позже.";
+            case "VIDEO_PROVIDER_INVALID_RESPONSE" -> "Сервис видео вернул неожиданный ответ. Мы не списали видео, попробуйте позже.";
+            case "STYLIST_FOCUS_GROUP_REQUIRED" -> "Эта функция пока доступна только фокус-группе стилиста";
+            case "HAIR_CHANGE_REQUIRED" -> "Выберите прическу или цвет волос";
+            case "HAIRSTYLE_NOT_FOUND" -> "Выбранная прическа недоступна";
+            case "HAIR_COLOR_NOT_FOUND" -> "Выбранный цвет волос недоступен";
+            case "PORTRAIT_REQUIRED" -> "Сначала загрузите портрет для причесок в профиле";
+            case "HAIRSTYLE_AI_NOT_CONFIGURED" -> "Примерка прически временно не настроена";
+            case "HAIRSTYLE_GENERATION_FAILED" -> "Не удалось примерить прическу. Попробуйте позже.";
             case "SIZE_ADVISORY_DISABLED" -> "Size advisory временно выключен";
             case "POST_NOT_FOUND" -> "Пост не найден";
             case "PROMO_CYRILLIC_KEYBOARD" -> "Промокод нужно вводить латиницей. Переключи клавиатуру на EN.";

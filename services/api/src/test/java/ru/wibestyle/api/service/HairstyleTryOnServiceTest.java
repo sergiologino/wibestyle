@@ -10,6 +10,7 @@ import ru.wibestyle.api.repository.HairColorCatalogRepository;
 import ru.wibestyle.api.repository.HairstyleCatalogRepository;
 import ru.wibestyle.api.repository.TryOnSessionRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
+import ru.wibestyle.api.repository.UserRepository;
 import ru.wibestyle.api.storage.BlobKeys;
 import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.domain.UserProfileEntity;
@@ -34,6 +35,7 @@ class HairstyleTryOnServiceTest {
         UserActivityService activity = mock(UserActivityService.class);
         QuotaService quotaService = mock(QuotaService.class);
         UserProfileRepository profiles = mock(UserProfileRepository.class);
+        UserRepository users = mock(UserRepository.class);
         UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
         AiIntegrationProperties ai = new AiIntegrationProperties();
         ai.setEnabled(true);
@@ -62,7 +64,8 @@ class HairstyleTryOnServiceTest {
                 sessions,
                 activity,
                 quotaService,
-                profiles
+                profiles,
+                users
         ).generate(userId, null, "bixie", "red-coral");
 
         verify(aiClient).applyHairstyle(

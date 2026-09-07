@@ -1150,6 +1150,39 @@ export class WibeStyleApiClient {
     }>("/api/v1/hairstyles/try-on", { method: "POST", body });
   }
 
+  async createHairstyleTryOnFromSession(sourceSessionId: string, styleId: string | null, colorId?: string | null) {
+    const params = new URLSearchParams();
+    if (styleId) {
+      params.set("styleId", styleId);
+    }
+    if (colorId) {
+      params.set("colorId", colorId);
+    }
+    type Response = {
+      id: string;
+      sourceSessionId: string;
+      session?: Pick<TryOnSessionRecord, "id" | "sourceType" | "status">;
+      styleId?: string;
+      colorId?: string;
+      beforeImageUrl: string;
+      afterImageUrl: string;
+    };
+    const query = params.toString();
+    const suffix = query ? `?${query}` : "";
+    try {
+      return await this.request<Response>(
+        `/api/v1/hairstyles/try-on/from-session/${encodeURIComponent(sourceSessionId)}${suffix}`,
+        { method: "POST" },
+      );
+    } catch (err) {
+      if (!(err instanceof ApiError) || err.status !== 404) {
+        throw err;
+      }
+      params.set("sourceSessionId", sourceSessionId);
+      return this.request<Response>(`/api/v1/hairstyles/try-on/from-session?${params.toString()}`, { method: "POST" });
+    }
+  }
+
   updateAdminPromoCode(
     adminKey: string,
     promoId: string,

@@ -42,6 +42,10 @@ public class HairstyleController {
     }
     @PostMapping(value = "/try-on", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Map<String, Object> tryOn(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestParam(value = "portrait", required = false) MultipartFile portrait, @RequestParam(value = "styleId", required = false) String styleId, @RequestParam(value = "colorId", required = false) String colorId) throws Exception { return service.generate(user(authorization), portrait, styleId, colorId); }
+    @PostMapping("/try-on/from-session")
+    public Map<String, Object> tryOnFromSession(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestParam UUID sourceSessionId, @RequestParam(value = "styleId", required = false) String styleId, @RequestParam(value = "colorId", required = false) String colorId) throws Exception { return generateFromSession(authorization, sourceSessionId, styleId, colorId); }
+    @PostMapping("/try-on/from-session/{sourceSessionId}")
+    public Map<String, Object> tryOnFromSessionPath(@RequestHeader(value = "Authorization", required = false) String authorization, @PathVariable UUID sourceSessionId, @RequestParam(value = "styleId", required = false) String styleId, @RequestParam(value = "colorId", required = false) String colorId) throws Exception { return generateFromSession(authorization, sourceSessionId, styleId, colorId); }
     @GetMapping("/results/{resultId}/after-photo")
     public ResponseEntity<Resource> result(@RequestHeader(value = "Authorization", required = false) String authorization, @PathVariable UUID resultId) throws Exception {
         UUID userId = user(authorization); String key = BlobKeys.hairstyleResult(userId, resultId);
@@ -50,6 +54,7 @@ public class HairstyleController {
         return ResponseEntity.ok().cacheControl(PRIVATE_RESULT_CACHE).header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=hairstyle.jpg").contentType(contentType == null ? MediaType.IMAGE_JPEG : MediaType.parseMediaType(contentType)).body(new FileSystemResource(path));
     }
     private UUID user(String header) { try { return AuthSupport.requireUserId(header); } catch (IllegalArgumentException e) { throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized", e); } }
+    private Map<String, Object> generateFromSession(String authorization, UUID sourceSessionId, String styleId, String colorId) throws Exception { return service.generateForTryOnSession(user(authorization), sourceSessionId, styleId, colorId); }
 
     static MediaType mediaType(Path path) throws Exception {
         String contentType = Files.probeContentType(path);

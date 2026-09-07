@@ -131,6 +131,32 @@ class NoteappAiClientTest {
     }
 
     @Test
+    void hairstyleAfterTryOnPayloadKeepsClothingResultAsFirstImage() {
+        Map<String, Object> payload = NoteappAiClient.buildHairstyleAfterTryOnPayload(
+                "prompt",
+                "tryon-base64",
+                "portrait-base64",
+                "style-base64",
+                "color-base64"
+        );
+
+        assertThat(payload).containsEntry("sourceImageBase64", "tryon-base64");
+        assertThat(payload).containsEntry("portraitImageBase64", "portrait-base64");
+        assertThat(payload).containsEntry("image3Base64", "style-base64");
+        assertThat(payload).containsEntry("image4Base64", "color-base64");
+        assertThat(payload.get("inputImageOrder").toString()).contains("completed clothing try-on result");
+
+        Object images = payload.get("images");
+        assertThat(images).isInstanceOf(List.class);
+        List<?> list = (List<?>) images;
+        assertThat(list).hasSize(4);
+        Map<?, ?> image1 = (Map<?, ?>) list.get(0);
+        Map<?, ?> image2 = (Map<?, ?>) list.get(1);
+        assertThat(image1.get("base64Field")).isEqualTo("sourceImageBase64");
+        assertThat(image2.get("base64Field")).isEqualTo("portraitImageBase64");
+    }
+
+    @Test
     void extractsProviderErrorFieldUsedByContentModerationResponses() throws Exception {
         var response = objectMapper.readTree("""
                 {"status":"error","error":"Generated image rejected by content moderation."}

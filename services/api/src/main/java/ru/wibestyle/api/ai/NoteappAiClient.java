@@ -235,6 +235,46 @@ public class NoteappAiClient {
         }
     }
 
+    /** Image-to-image generation for a clothing try-on result plus a separate hairstyle portrait reference. */
+    public AvatarEnhancementResult applyHairstyleToTryOnResult(
+            String networkName,
+            String externalUserId,
+            String tryOnResultBase64,
+            String portraitBase64,
+            String hairstyleReferenceBase64,
+            String colorReferenceBase64,
+            String prompt
+    ) {
+        Map<String, Object> payload = buildHairstyleAfterTryOnPayload(
+                prompt,
+                tryOnResultBase64,
+                portraitBase64,
+                hairstyleReferenceBase64,
+                colorReferenceBase64
+        );
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", requireExternalUserId(externalUserId));
+        body.put("networkName", networkName);
+        body.put("requestType", "image_generation");
+        body.put("payload", payload);
+        try {
+            JsonNode response = restClient.post().uri("/api/ai/process").contentType(MediaType.APPLICATION_JSON)
+                    .header("X-API-Key", properties.getApiKey()).body(body).retrieve().body(JsonNode.class);
+            if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
+                throw new RestClientException(extractErrorMessage(response, "Hairstyle generation failed"));
+            }
+            String networkUsed = response.path("networkUsed").asText(null);
+            if (isUnexpectedNetwork(networkName, networkUsed)) throw new RestClientException("Hairstyle provider mismatch");
+            ImageResult image = extractImageResult(response.path("response"));
+            byte[] bytes = image == null ? null : image.bytes();
+            if ((bytes == null || bytes.length == 0) && image != null && image.sourceUrl() != null) bytes = downloadImageBytes(image.sourceUrl());
+            if (bytes == null || bytes.length == 0) throw new RestClientException("Hairstyle generation returned no image");
+            return new AvatarEnhancementResult(bytes, response.path("response").path("imageContentType").asText("image/jpeg"));
+        } catch (RestClientException ex) {
+            throw new IllegalArgumentException("HAIRSTYLE_GENERATION_FAILED", ex);
+        }
+    }
+
     public ProcessResult generateStylistPreview(
             String networkName,
             String externalUserId,
@@ -411,6 +451,88 @@ public class NoteappAiClient {
         payload.put("output_format", "jpeg");
         payload.put("input_fidelity", "high");
         payload.put("settings", Map.of("width", 1024, "height", 1024));
+        return payload;
+    }
+
+    static Map<String, Object> buildHairstyleAfterTryOnPayload(
+            String prompt,
+            String tryOnResultBase64,
+            String portraitBase64,
+            String hairstyleReferenceBase64,
+            String colorReferenceBase64
+    ) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("prompt", prompt);
+        payload.put("sourceImageBase64", tryOnResultBase64);
+        payload.put("personImageBase64", tryOnResultBase64);
+        payload.put("image1Base64", tryOnResultBase64);
+        payload.put("image1Role", "clothing_try_on_result_keep_body_clothes_background_and_pose");
+        payload.put("portraitImageBase64", portraitBase64);
+        payload.put("image2Base64", portraitBase64);
+        payload.put("image2Role", "customer_portrait_identity_and_hairline_reference");
+        payload.put("garmentImageBase64", hairstyleReferenceBase64);
+        payload.put("image3Base64", hairstyleReferenceBase64);
+        payload.put("image3Role", colorReferenceBase64 == null
+                ? "selected_hairstyle_or_hair_color_reference_only_ignore_identity"
+                : "hairstyle_shape_length_bangs_parting_reference_only_ignore_identity_and_color_when_conflicting");
+        if (colorReferenceBase64 != null && !colorReferenceBase64.isBlank()) {
+            payload.put("hairColorImageBase64", colorReferenceBase64);
+            payload.put("image4Base64", colorReferenceBase64);
+            payload.put("image4Role", "hair_color_texture_reference_only_ignore_shape_identity_face_body_background");
+        }
+        payload.put("inputImageOrder", colorReferenceBase64 == null
+                ? "image1 is the completed clothing try-on result; image2 is the user's portrait and identity reference; image3 is the selected hairstyle or hair-color reference only"
+                : "image1 is the completed clothing try-on result; image2 is the user's portrait and identity reference; image3 is hairstyle shape reference only; image4 is hair-color texture reference only");
+        payload.put("images", colorReferenceBase64 == null
+                ? List.of(
+                Map.of(
+                        "label", "image1",
+                        "field", "sourceImageBase64",
+                        "role", "completed clothing try-on result; keep clothes, body, pose and background",
+                        "base64Field", "sourceImageBase64"
+                ),
+                Map.of(
+                        "label", "image2",
+                        "field", "portraitImageBase64",
+                        "role", "customer portrait and identity reference",
+                        "base64Field", "portraitImageBase64"
+                ),
+                Map.of(
+                        "label", "image3",
+                        "field", "garmentImageBase64",
+                        "role", "selected hairstyle or hair-color reference only",
+                        "base64Field", "garmentImageBase64"
+                )
+        )
+                : List.of(
+                Map.of(
+                        "label", "image1",
+                        "field", "sourceImageBase64",
+                        "role", "completed clothing try-on result; keep clothes, body, pose and background",
+                        "base64Field", "sourceImageBase64"
+                ),
+                Map.of(
+                        "label", "image2",
+                        "field", "portraitImageBase64",
+                        "role", "customer portrait and identity reference",
+                        "base64Field", "portraitImageBase64"
+                ),
+                Map.of(
+                        "label", "image3",
+                        "field", "garmentImageBase64",
+                        "role", "hairstyle shape, length, bangs and parting reference only",
+                        "base64Field", "garmentImageBase64"
+                ),
+                Map.of(
+                        "label", "image4",
+                        "field", "hairColorImageBase64",
+                        "role", "hair-color texture reference only",
+                        "base64Field", "hairColorImageBase64"
+                )
+        ));
+        payload.put("output_format", "jpeg");
+        payload.put("input_fidelity", "high");
+        payload.put("settings", Map.of("width", 1024, "height", 1365, "aspectRatio", "3:4"));
         return payload;
     }
 
@@ -850,7 +972,7 @@ public class NoteappAiClient {
 
             if (!"success".equalsIgnoreCase(status)) {
                 String error = extractErrorMessage(response, "AI video request failed");
-                ProviderErrorResolution resolution = resolveProviderError(error);
+                ProviderErrorResolution resolution = resolveVideoProviderError(error);
                 logService.logInboundResponse(session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs, error, Map.of(), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
                 return VideoProcessResult.failed(resolution.errorCode(), resolution.userMessage());
             }
@@ -872,10 +994,7 @@ public class NoteappAiClient {
         } catch (RestClientException ex) {
             String rawError = extractExceptionMessage(ex);
             log.warn("Noteapp season video call failed: {}", rawError);
-            ProviderErrorResolution resolution = resolveProviderError(rawError);
-            if ("AI_GENERATION_FAILED".equals(resolution.errorCode())) {
-                resolution = new ProviderErrorResolution("AI_PROVIDER_TIMEOUT", rawError);
-            }
+            ProviderErrorResolution resolution = resolveVideoProviderError(rawError);
             logService.logInboundResponse(session, false, null, networkName, null, 0, rawError, Map.of("exception", ex.getClass().getSimpleName()), metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason);
             return VideoProcessResult.failed(resolution.errorCode(), resolution.userMessage());
         }
@@ -989,6 +1108,43 @@ public class NoteappAiClient {
             return new ProviderErrorResolution("AI_PROVIDER_TOKENS_EXHAUSTED", errorMessage);
         }
         return new ProviderErrorResolution("AI_GENERATION_FAILED", errorMessage);
+    }
+
+    private ProviderErrorResolution resolveVideoProviderError(String errorMessage) {
+        var configured = errorMappingService.match(errorMessage);
+        if (configured.isPresent()) {
+            var match = configured.get();
+            return new ProviderErrorResolution(match.errorCode(), match.userMessage());
+        }
+        if (errorMessage == null || errorMessage.isBlank()) {
+            return new ProviderErrorResolution("VIDEO_GENERATION_FAILED", "Не удалось создать видео. Попробуйте позже.");
+        }
+        String lower = errorMessage.toLowerCase();
+        if (lower.contains("service_unavailable")
+                || lower.contains("temporarily overloaded")
+                || lower.contains("overloaded")
+                || lower.contains("503")) {
+            return new ProviderErrorResolution("VIDEO_PROVIDER_UNAVAILABLE", "Видео сейчас перегружено. Попробуйте создать его позже.");
+        }
+        if (lower.contains("extracting response")
+                || lower.contains("content type")
+                || lower.contains("application/octet-stream")
+                || lower.contains("jsonnode")) {
+            return new ProviderErrorResolution("VIDEO_PROVIDER_INVALID_RESPONSE", "Сервис видео вернул неожиданный ответ. Мы не списали видео, попробуйте позже.");
+        }
+        if (lower.contains("timeout") || lower.contains("timed out")) {
+            return new ProviderErrorResolution("AI_PROVIDER_TIMEOUT", "Видео создаётся дольше обычного. Попробуйте позже.");
+        }
+        if (lower.contains("token")
+                || lower.contains("tokens")
+                || lower.contains("quota")
+                || lower.contains("credits")
+                || lower.contains("insufficient balance")
+                || lower.contains("rate limit")
+                || lower.contains("429")) {
+            return new ProviderErrorResolution("AI_PROVIDER_TOKENS_EXHAUSTED", "Сервис видео временно ограничил запросы. Попробуйте позже.");
+        }
+        return new ProviderErrorResolution("VIDEO_GENERATION_FAILED", "Не удалось создать видео. Попробуйте позже.");
     }
 
     static String extractErrorMessage(JsonNode response, String fallback) {

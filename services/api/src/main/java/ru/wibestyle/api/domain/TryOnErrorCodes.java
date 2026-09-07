@@ -19,5 +19,7 @@ public final class TryOnErrorCodes {
     public static final String VIDEO_ELITE_REQUIRED = "VIDEO_ELITE_REQUIRED";
     public static final String VIDEO_TRIAL_EXHAUSTED = "VIDEO_TRIAL_EXHAUSTED";
     public static final String VIDEO_GENERATION_FAILED = "VIDEO_GENERATION_FAILED";
+    public static final String VIDEO_PROVIDER_UNAVAILABLE = "VIDEO_PROVIDER_UNAVAILABLE";
+    public static final String VIDEO_PROVIDER_INVALID_RESPONSE = "VIDEO_PROVIDER_INVALID_RESPONSE";
     public static final String PROFILE_GENDER_REQUIRED = "PROFILE_GENDER_REQUIRED";
 }

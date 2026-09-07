@@ -12,7 +12,7 @@ import { Screen } from "@/components/ui/Screen";
 import { BodyText, Button, DisplayTitle } from "@/components/ui/Button";
 import { BeforeAfterSlider } from "@/components/try-on/BeforeAfterSlider";
 import { AppVideoPlayer } from "@/components/media/VideoPlayer";
-import { formatTryOnError, resolveApiPath } from "@/lib/mobile-api";
+import { formatTryOnError, formatVideoTryOnError, resolveApiPath } from "@/lib/mobile-api";
 import { getApiBaseUrl, getAppBaseUrl } from "@/lib/config";
 import { buildPublicPostUrl, formatProductMeta } from "@/lib/result-display";
 import {
@@ -161,7 +161,7 @@ export default function TryOnResultScreen() {
         if (nextStatus === "failed") {
           setVideoStatus("failed");
           setVideoGenerating(false);
-          setVideoError(payload.session.videoErrorMessage ?? "Не удалось создать видео");
+          setVideoError(formatVideoTryOnError(payload.session.videoErrorCode, payload.session.videoErrorMessage));
           return;
         }
         polls += 1;
@@ -340,7 +340,7 @@ export default function TryOnResultScreen() {
         router.push("/paywall?reason=elite_perk" as never);
         return;
       }
-      setVideoError(err instanceof ApiError ? err.message : "Не удалось запустить создание видео");
+      setVideoError(err instanceof ApiError ? formatVideoTryOnError(err.code, err.message) : "Не удалось запустить создание видео");
     }
   }
 
