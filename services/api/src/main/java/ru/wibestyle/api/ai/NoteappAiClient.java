@@ -470,7 +470,8 @@ public class NoteappAiClient {
         payload.put("portraitImageBase64", portraitBase64);
         payload.put("image2Base64", portraitBase64);
         payload.put("image2Role", "customer_portrait_identity_and_hairline_reference");
-        payload.put("garmentImageBase64", hairstyleReferenceBase64);
+        payload.put("hairstyleReferenceImageBase64", hairstyleReferenceBase64);
+        payload.put("styleReferenceImageBase64", hairstyleReferenceBase64);
         payload.put("image3Base64", hairstyleReferenceBase64);
         payload.put("image3Role", colorReferenceBase64 == null
                 ? "selected_hairstyle_or_hair_color_reference_only_ignore_identity"
@@ -481,8 +482,10 @@ public class NoteappAiClient {
             payload.put("image4Role", "hair_color_texture_reference_only_ignore_shape_identity_face_body_background");
         }
         payload.put("inputImageOrder", colorReferenceBase64 == null
-                ? "image1 is the completed clothing try-on result; image2 is the user's portrait and identity reference; image3 is the selected hairstyle or hair-color reference only"
-                : "image1 is the completed clothing try-on result; image2 is the user's portrait and identity reference; image3 is hairstyle shape reference only; image4 is hair-color texture reference only");
+                ? "image1 is the completed clothing try-on result and final person source; image2 is the user's portrait and identity reference; image3 is the selected hairstyle or hair-color reference only and must never become the output person"
+                : "image1 is the completed clothing try-on result and final person source; image2 is the user's portrait and identity reference; image3 is hairstyle shape reference only and must never become the output person; image4 is hair-color texture reference only");
+        payload.put("identitySourcePolicy", "FINAL_PERSON_BODY_CLOTHES_POSE_AND_BACKGROUND_MUST_REMAIN_IMAGE1_TRYON_RESULT");
+        payload.put("referenceImagePolicy", "IMAGE3_AND_IMAGE4_ARE_HAIR_REFERENCES_ONLY_NEVER_OUTPUT_REFERENCE_MODEL_FACE_BODY_OR_BACKGROUND");
         payload.put("images", colorReferenceBase64 == null
                 ? List.of(
                 Map.of(
@@ -499,9 +502,9 @@ public class NoteappAiClient {
                 ),
                 Map.of(
                         "label", "image3",
-                        "field", "garmentImageBase64",
-                        "role", "selected hairstyle or hair-color reference only",
-                        "base64Field", "garmentImageBase64"
+                        "field", "hairstyleReferenceImageBase64",
+                        "role", "selected hairstyle or hair-color reference only; ignore identity, face, body, clothes and background",
+                        "base64Field", "hairstyleReferenceImageBase64"
                 )
         )
                 : List.of(
@@ -519,9 +522,9 @@ public class NoteappAiClient {
                 ),
                 Map.of(
                         "label", "image3",
-                        "field", "garmentImageBase64",
-                        "role", "hairstyle shape, length, bangs and parting reference only",
-                        "base64Field", "garmentImageBase64"
+                        "field", "hairstyleReferenceImageBase64",
+                        "role", "hairstyle shape, length, bangs and parting reference only; ignore identity, face, body, clothes and background",
+                        "base64Field", "hairstyleReferenceImageBase64"
                 ),
                 Map.of(
                         "label", "image4",
@@ -727,8 +730,11 @@ public class NoteappAiClient {
         payload.put(
                 "inputImageOrder",
                 "image1/customer/avatar/personImageBase64 is the identity and body source; "
-                        + "image2/product/garmentImageBase64 is only the garment reference."
+                        + "image2/product/garmentImageBase64 is only the garment reference; "
+                        + "never use a person, face, hair, pose, limbs, background or identity from image2."
         );
+        payload.put("identitySourcePolicy", "FINAL_PERSON_MUST_BE_IMAGE1_CUSTOMER_ONLY");
+        payload.put("productImagePolicy", "USE_IMAGE2_FOR_GARMENT_ONLY_NEVER_OUTPUT_PRODUCT_MODEL_OR_PRODUCT_CARD_PHOTO");
         payload.put("settings", Map.of("aspectRatio", "3:4", "width", 768, "height", 1024));
         payload.put("garmentTitle", GarmentTitleSanitizer.forPrompt(session.getProductTitle()));
         payload.put("garmentBrand", session.getProductBrand());
@@ -750,14 +756,17 @@ public class NoteappAiClient {
         payload.put("garmentHasHumanModel", session.isGarmentHasHumanModel());
         payload.put("selectedSize", session.getSelectedSize());
         if (personImageBase64 != null) {
+            payload.put("sourceImageBase64", personImageBase64);
+            payload.put("modelImageBase64", personImageBase64);
             payload.put("personImageBase64", personImageBase64);
             payload.put("image1Base64", personImageBase64);
-            payload.put("image1Role", "customer_avatar_identity_body_face_hair_source");
+            payload.put("image1Role", "customer_avatar_identity_body_face_hair_source_final_person");
         }
         if (garmentImageBase64 != null) {
             payload.put("garmentImageBase64", garmentImageBase64);
+            payload.put("productImageBase64", garmentImageBase64);
             payload.put("image2Base64", garmentImageBase64);
-            payload.put("image2Role", "product_garment_reference_only_ignore_any_person");
+            payload.put("image2Role", "product_garment_reference_only_ignore_any_person_never_output_image2");
         }
         if (personImageBase64 != null && garmentImageBase64 != null) {
             payload.put(
@@ -766,13 +775,13 @@ public class NoteappAiClient {
                             Map.of(
                                     "label", "image1",
                                     "field", "personImageBase64",
-                                    "role", "customer avatar; preserve face, hair, skin tone, body proportions and pose",
+                                    "role", "customer avatar; this is the only final person source; preserve face, hair, skin tone, body proportions and pose",
                                     "base64Field", "personImageBase64"
                             ),
                             Map.of(
                                     "label", "image2",
                                     "field", "garmentImageBase64",
-                                    "role", "product garment reference only; ignore any face, body, hair, pose or identity",
+                                    "role", "product garment reference only; ignore any face, body, hair, pose, limbs, skin tone, background or identity; never output this image or its model",
                                     "base64Field", "garmentImageBase64"
                             )
                     )

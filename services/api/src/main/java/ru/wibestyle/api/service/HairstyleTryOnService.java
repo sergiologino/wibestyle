@@ -123,6 +123,8 @@ public class HairstyleTryOnService {
         if (!storage.exists(storedPortrait)) throw new IllegalArgumentException("PORTRAIT_REQUIRED");
 
         byte[] tryOnResultBytes = storage.readBytes(sourceResultKey);
+        String sourceBeforeKey = storage.keyTryOnResult(userId, sourceSessionId, "before");
+        byte[] sourceBeforeBytes = storage.exists(sourceBeforeKey) ? storage.readBytes(sourceBeforeKey) : null;
         byte[] portraitBytes = storage.readBytes(storedPortrait);
         String primaryReferencePath = style != null ? style.getImagePath() : color.getImagePath();
         String referenceBase64 = Base64.getEncoder().encodeToString(storage.readBytes(primaryReferencePath));
@@ -156,7 +158,11 @@ public class HairstyleTryOnService {
                     colorReferenceBase64,
                     prompt
             );
-            storage.storeTryOnResult(userId, sessionId, "before", new ByteArrayInputStream(tryOnResultBytes));
+            if (sourceBeforeBytes != null && sourceBeforeBytes.length > 0) {
+                storage.storeTryOnResult(userId, sessionId, "before", new ByteArrayInputStream(sourceBeforeBytes));
+            } else {
+                session.setBeforeImageUrl(sourceSession.getBeforeImageUrl());
+            }
             storage.storeTryOnResult(userId, sessionId, "after", new ByteArrayInputStream(result.imageBytes()));
             session.setStatus(TryOnSessionStatus.READY);
             quotaService.consume(session);
@@ -229,6 +235,6 @@ public class HairstyleTryOnService {
 
     private String buildAfterTryOnPrompt(HairstyleCatalogEntity style, HairColorCatalogEntity color) {
         return promptBuilder.build(style == null ? null : style.getAiDirective(), color == null ? null : color.getAiDirective())
-                + "\n\nUse image 1 as the completed clothing try-on result and preserve its outfit, body, pose, background, lighting and framing. Use image 2 only as the customer's portrait identity and hairline reference. Apply only the selected hair change from the reference image(s). Do not change the clothes, body, hands, legs, shoes, room, camera angle or result framing.";
+                + "\n\nCOMBO TRY-ON RULES: image 1 is the completed clothing try-on result and must remain the final person, body, outfit, pose, hands, legs, shoes, background, lighting, camera angle and framing. Image 2 is only the customer's portrait identity and hairline reference. Image 3 is only the selected hairstyle shape reference or color reference; image 4, when present, is only the selected hair color reference. Never copy the face, body, skin tone, clothes, pose, background or full person from image 3 or image 4. Never return the hairstyle catalogue model. Apply only the selected hair change onto the person from image 1.";
     }
 }
