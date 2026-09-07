@@ -23,6 +23,9 @@ import java.util.Map;
 
 @Component
 public class NoteappAiClient {
+    private static final String DISABLED_IMAGE_FALLBACK_MESSAGE =
+            "Провайдер вернул запрещённый fallback. Результат не сохранён, попробуйте позже.";
+
 
     private static final Logger log = LoggerFactory.getLogger(NoteappAiClient.class);
     private final RestClient restClient;
@@ -218,6 +221,7 @@ public class NoteappAiClient {
         body.put("requestType", "image_generation");
         body.put("payload", payload);
         try {
+            rejectPollinationsNetwork(networkName, "Hairstyle generation");
             JsonNode response = restClient.post().uri("/api/ai/process").contentType(MediaType.APPLICATION_JSON)
                     .header("X-API-Key", properties.getApiKey()).body(body).retrieve().body(JsonNode.class);
             if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
@@ -226,6 +230,7 @@ public class NoteappAiClient {
             String networkUsed = response.path("networkUsed").asText(null);
             if (isUnexpectedNetwork(networkName, networkUsed)) throw new RestClientException("Hairstyle provider mismatch");
             ImageResult image = extractImageResult(response.path("response"));
+            rejectPollinationsImageResult(response, image, "Hairstyle generation");
             byte[] bytes = image == null ? null : image.bytes();
             if ((bytes == null || bytes.length == 0) && image != null && image.sourceUrl() != null) bytes = downloadImageBytes(image.sourceUrl());
             if (bytes == null || bytes.length == 0) throw new RestClientException("Hairstyle generation returned no image");
@@ -258,6 +263,7 @@ public class NoteappAiClient {
         body.put("requestType", "image_generation");
         body.put("payload", payload);
         try {
+            rejectPollinationsNetwork(networkName, "Hairstyle generation");
             JsonNode response = restClient.post().uri("/api/ai/process").contentType(MediaType.APPLICATION_JSON)
                     .header("X-API-Key", properties.getApiKey()).body(body).retrieve().body(JsonNode.class);
             if (response == null || !"success".equalsIgnoreCase(response.path("status").asText(""))) {
@@ -266,6 +272,7 @@ public class NoteappAiClient {
             String networkUsed = response.path("networkUsed").asText(null);
             if (isUnexpectedNetwork(networkName, networkUsed)) throw new RestClientException("Hairstyle provider mismatch");
             ImageResult image = extractImageResult(response.path("response"));
+            rejectPollinationsImageResult(response, image, "Hairstyle generation");
             byte[] bytes = image == null ? null : image.bytes();
             if ((bytes == null || bytes.length == 0) && image != null && image.sourceUrl() != null) bytes = downloadImageBytes(image.sourceUrl());
             if (bytes == null || bytes.length == 0) throw new RestClientException("Hairstyle generation returned no image");
@@ -293,6 +300,9 @@ public class NoteappAiClient {
         body.put("metadata", metadata == null ? Map.of() : metadata);
 
         try {
+            if (isPollinationsNetwork(networkName)) {
+                return ProcessResult.failed("AI_PROVIDER_FALLBACK_NOT_ALLOWED", DISABLED_IMAGE_FALLBACK_MESSAGE);
+            }
             JsonNode response = restClient.post()
                     .uri("/api/ai/process")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -397,6 +407,7 @@ public class NoteappAiClient {
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("prompt", prompt);
+        payload.put("disallowedProviders", List.of("pollinations"));
         payload.put("personImageBase64", portraitBase64);
         payload.put("image1Base64", portraitBase64);
         payload.put("image1Role", "customer_portrait_identity_source_preserve_all_non_hair_pixels");
@@ -463,6 +474,7 @@ public class NoteappAiClient {
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("prompt", prompt);
+        payload.put("disallowedProviders", List.of("pollinations"));
         payload.put("sourceImageBase64", tryOnResultBase64);
         payload.put("personImageBase64", tryOnResultBase64);
         payload.put("image1Base64", tryOnResultBase64);
@@ -584,6 +596,10 @@ public class NoteappAiClient {
             String figureLockPrompt,
             String fitPromptHint
     ) {
+        if (isPollinationsNetwork(networkName)) {
+            return ProcessResult.failure("AI_PROVIDER_FALLBACK_NOT_ALLOWED", DISABLED_IMAGE_FALLBACK_MESSAGE);
+        }
+
         Map<String, Object> payload = buildVirtualTryOnPayload(
                 session,
                 prompt,
@@ -675,6 +691,15 @@ public class NoteappAiClient {
                 );
                 return ProcessResult.failure("AI_GENERATION_FAILED", "No image in AI response");
             }
+            if (isPollinationsResult(provider, imageResult.sourceUrl(), response.path("response"))) {
+                String error = DISABLED_IMAGE_FALLBACK_MESSAGE;
+                log.warn("Blocked Pollinations image result for session {} provider={} url={}", session.getId(), provider, imageResult.sourceUrl());
+                logService.logInboundResponse(
+                        session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs,
+                        error, responseSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason
+                );
+                return ProcessResult.failure("AI_PROVIDER_FALLBACK_NOT_ALLOWED", error);
+            }
 
             byte[] imageBytes = imageResult.bytes();
             String sourceUrl = imageResult.sourceUrl();
@@ -712,6 +737,25 @@ public class NoteappAiClient {
                 || containsIgnoreCase(responseBody == null ? null : responseBody.path("tryOnRouteReason").asText(null), "pollinations");
     }
 
+    private static boolean isPollinationsNetwork(String networkName) {
+        return containsIgnoreCase(networkName, "pollinations");
+    }
+
+    private static void rejectPollinationsNetwork(String networkName, String operation) {
+        if (isPollinationsNetwork(networkName)) {
+            throw new RestClientException(operation + " rejected disabled image fallback network");
+        }
+    }
+
+    private static void rejectPollinationsImageResult(JsonNode response, ImageResult image, String operation) {
+        String provider = response == null ? null : response.path("response").path("provider").asText(null);
+        JsonNode responseBody = response == null ? null : response.path("response");
+        String imageUrl = image == null ? null : image.sourceUrl();
+        if (isPollinationsResult(provider, imageUrl, responseBody)) {
+            throw new RestClientException(operation + " rejected disabled image fallback");
+        }
+    }
+
     private static boolean containsIgnoreCase(String value, String needle) {
         return value != null && needle != null && value.toLowerCase(java.util.Locale.ROOT).contains(needle.toLowerCase(java.util.Locale.ROOT));
     }
@@ -727,6 +771,7 @@ public class NoteappAiClient {
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("prompt", prompt);
+        payload.put("disallowedProviders", List.of("pollinations"));
         payload.put(
                 "inputImageOrder",
                 "image1/customer/avatar/personImageBase64 is the identity and body source; "

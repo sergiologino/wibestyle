@@ -110,6 +110,8 @@ public class ApiExceptionHandler {
             case "SESSION_NOT_FOUND" -> "Сессия примерки не найдена";
             case "SIZE_NOT_AVAILABLE" -> "Выбранный размер недоступен";
             case "AI_GENERATION_FAILED" -> "Не удалось сгенерировать результат";
+            case "AI_PROVIDER_FALLBACK_NOT_ALLOWED" -> "Провайдер вернул запрещённый fallback. Результат не сохранён, попробуйте позже.";
+            case "AI_PROVIDER_DISABLED" -> "Этот AI-провайдер запрещён для генерации изображений";
             case "VTON_CONTENT_MODERATION" ->
                     "Сервис изображений отклонил примерку по модерации. Для домашней одежды это ложное срабатывание — попробуйте позже.";
             case "VIDEO_ELITE_REQUIRED" ->
