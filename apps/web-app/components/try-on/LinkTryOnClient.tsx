@@ -520,14 +520,36 @@ export default function LinkTryOnClient() {
           ) : null}
 
           {step >= 1 && sessionReady && isAuthenticatedSession({ accessToken, refreshToken, profile, accessTokenExpiresAt }) ? (
-            <Button
-              className="mt-6"
-              disabled={loading || (product.sizes.length > 0 && (!size || !product.sizes.includes(size)))}
-              size="md"
-              onClick={stylistStrikeAvailable && step < 2 ? () => setStep(2) : startGeneration}
-            >
-              {stylistStrikeAvailable && step < 2 ? "Дальше: прическа" : selectedHairChange ? "Примерить образ и прическу" : "Запустить AI-примерку"}
-            </Button>
+            stylistStrikeAvailable && step < 2 ? (
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Button
+                  className="sm:flex-1"
+                  disabled={loading || (product.sizes.length > 0 && (!size || !product.sizes.includes(size)))}
+                  size="md"
+                  onClick={startGeneration}
+                >
+                  Примерить
+                </Button>
+                <Button
+                  className="sm:flex-1"
+                  disabled={loading || (product.sizes.length > 0 && (!size || !product.sizes.includes(size)))}
+                  size="md"
+                  variant="secondary"
+                  onClick={() => setStep(2)}
+                >
+                  Изменить стрижку / цвет волос
+                </Button>
+              </div>
+            ) : (
+              <Button
+                className="mt-6"
+                disabled={loading || (product.sizes.length > 0 && (!size || !product.sizes.includes(size)))}
+                size="md"
+                onClick={startGeneration}
+              >
+                {selectedHairChange ? "Примерить образ и прическу" : "Запустить AI-примерку"}
+              </Button>
+            )
           ) : null}
         </Card>
       ) : null}

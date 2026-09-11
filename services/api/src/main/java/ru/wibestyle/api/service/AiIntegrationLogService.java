@@ -126,14 +126,14 @@ public class AiIntegrationLogService {
                 reason = nested.get("tryOnRouteReason");
             }
             if (reason instanceof String str && !str.isBlank()) {
-                routeHint = " Причина: " + str + ".";
+                routeHint = " Причина: " + sanitizeDisabledFallbackText(str) + ".";
             }
         }
         String attemptText = attemptNumber == null ? "" : ", попытка " + attemptNumber;
         String title = success
                 ? "Получен ответ от ai-integration, модель " + modelLabel + attemptText + " (" + executionTimeMs + " мс)." + routeHint
                 : "Ошибка от ai-integration, модель " + modelLabel + attemptText + "." + routeHint;
-        String body = "JSON ответа:\n" + toPrettyJson(payload);
+        String body = "JSON ответа:\n" + toPrettyJson(AiPayloadSanitizer.sanitize(payload));
         save(
                 session,
                 success ? "response" : "error",
@@ -197,13 +197,20 @@ public class AiIntegrationLogService {
         repository.save(entity);
     }
 
+    private static String sanitizeDisabledFallbackText(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.toLowerCase().contains("pollinations") ? "[blocked disabled image fallback]" : value;
+    }
+
     public static String humanModelLabel(String network, String provider) {
         if (provider != null) {
             if (provider.contains("grok")) {
                 return "Grok Imagine";
             }
             if (provider.contains("pollinations")) {
-                return "Pollinations (только текст)";
+                return "Отключенный fallback";
             }
         }
         if (network != null && network.contains("vton")) {

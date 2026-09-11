@@ -45,6 +45,10 @@ class NoteappAiClientTest {
 
         assertThat(payload).containsEntry("personImageBase64", "person-base64");
         assertThat(payload).containsEntry("disallowedProviders", List.of("pollinations"));
+        assertThat(payload).containsEntry("allowFallback", false);
+        assertThat(payload).containsEntry("disableFallback", true);
+        assertThat(payload).containsEntry("fallbackPolicy", "disabled");
+        assertThat(payload).containsEntry("forbiddenFallbackProviders", List.of("pollinations"));
         assertThat(payload).containsEntry("sourceImageBase64", "person-base64");
         assertThat(payload).containsEntry("modelImageBase64", "person-base64");
         assertThat(payload).containsEntry("garmentImageBase64", "garment-base64");
@@ -107,6 +111,10 @@ class NoteappAiClientTest {
 
         assertThat(payload).containsEntry("personImageBase64", "portrait-base64");
         assertThat(payload).containsEntry("disallowedProviders", List.of("pollinations"));
+        assertThat(payload).containsEntry("allowFallback", false);
+        assertThat(payload).containsEntry("disableFallback", true);
+        assertThat(payload).containsEntry("fallbackPolicy", "disabled");
+        assertThat(payload).containsEntry("forbiddenFallbackProviders", List.of("pollinations"));
         assertThat(payload).containsEntry("image2Base64", "style-base64");
         assertThat(payload).containsEntry("hairColorImageBase64", "color-base64");
         assertThat(payload).containsEntry("image3Base64", "color-base64");
@@ -149,6 +157,10 @@ class NoteappAiClientTest {
 
         assertThat(payload).containsEntry("sourceImageBase64", "tryon-base64");
         assertThat(payload).containsEntry("disallowedProviders", List.of("pollinations"));
+        assertThat(payload).containsEntry("allowFallback", false);
+        assertThat(payload).containsEntry("disableFallback", true);
+        assertThat(payload).containsEntry("fallbackPolicy", "disabled");
+        assertThat(payload).containsEntry("forbiddenFallbackProviders", List.of("pollinations"));
         assertThat(payload).containsEntry("portraitImageBase64", "portrait-base64");
         assertThat(payload).containsEntry("hairstyleReferenceImageBase64", "style-base64");
         assertThat(payload).doesNotContainKey("garmentImageBase64");

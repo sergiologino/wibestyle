@@ -65,6 +65,20 @@ class NoteappAiClientRequestTest {
     }
 
     @Test
+    void sanitizerRedactsDisabledFallbackUrlsFromLogs() {
+        Map<String, Object> sanitized = AiPayloadSanitizer.sanitize(Map.of(
+                "provider", "virtual_try_on_pollinations",
+                "data", java.util.List.of(Map.of("url", "https://image.pollinations.ai/prompt/test"))
+        ));
+
+        assertThat(sanitized.get("provider")).isEqualTo("[blocked disabled image fallback]");
+        Object data = sanitized.get("data");
+        assertThat(data).isInstanceOf(java.util.List.class);
+        Map<?, ?> first = (Map<?, ?>) ((java.util.List<?>) data).get(0);
+        assertThat(first.get("url")).isEqualTo("[blocked disabled image fallback]");
+    }
+
+    @Test
     void virtualTryOnRejectsPollinationsSuccessResponses() {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();

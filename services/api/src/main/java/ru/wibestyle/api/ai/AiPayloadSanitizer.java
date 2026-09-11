@@ -57,6 +57,9 @@ public final class AiPayloadSanitizer {
         if (value instanceof String str && looksLikeBase64(str)) {
             return base64Hint(str);
         }
+        if (value instanceof String str && containsPollinations(str)) {
+            return "[blocked disabled image fallback]";
+        }
         return value;
     }
 
@@ -82,5 +85,9 @@ public final class AiPayloadSanitizer {
 
     private static String base64Hint(String value) {
         return "[base64, символов=" + (value != null ? value.length() : 0) + "]";
+    }
+
+    private static boolean containsPollinations(String value) {
+        return value != null && value.toLowerCase().contains("pollinations");
     }
 }

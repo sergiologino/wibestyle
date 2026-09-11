@@ -291,11 +291,27 @@ export default function TryOnLinkScreen() {
                   onChangeText={setCustomScene}
                 />
               ) : null}
-              <Button
-                label={stylistStrikeAvailable ? "Дальше: прическа" : "Запустить AI-примерку"}
-                loading={loading}
-                onPress={stylistStrikeAvailable ? () => setStep(2) : generate}
-              />
+              {stylistStrikeAvailable ? (
+                <>
+                  <Button
+                    label="Примерить"
+                    loading={loading}
+                    onPress={generate}
+                  />
+                  <Button
+                    label="Изменить стрижку / цвет волос"
+                    variant="secondary"
+                    disabled={loading}
+                    onPress={() => setStep(2)}
+                  />
+                </>
+              ) : (
+                <Button
+                  label="Запустить AI-примерку"
+                  loading={loading}
+                  onPress={generate}
+                />
+              )}
               <Button label="Назад" variant="ghost" onPress={() => setStep(0)} />
             </>
           ) : null}

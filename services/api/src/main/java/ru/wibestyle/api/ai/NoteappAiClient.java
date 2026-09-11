@@ -325,8 +325,8 @@ public class NoteappAiClient {
             if (isPollinationsResult(provider, imageUrl, response.path("response"))) {
                 String routeReason = response.path("response").path("tryOnRouteReason").asText(null);
                 String reason = routeReason == null || routeReason.isBlank()
-                        ? "Stylist preview requires Grok Imagine; Pollinations fallback is disabled"
-                        : "Stylist preview requires Grok Imagine; Pollinations fallback is disabled: " + routeReason;
+                        ? "Stylist preview requires Grok Imagine; disabled fallback is not allowed"
+                        : "Stylist preview requires Grok Imagine; disabled fallback is not allowed: " + routeReason;
                 return ProcessResult.failed("AI_PROVIDER_FALLBACK_NOT_ALLOWED", reason);
             }
             if ((bytes == null || bytes.length == 0) && image != null && image.sourceUrl() != null) {
@@ -392,9 +392,8 @@ public class NoteappAiClient {
         payload.put("negativePrompt", "animal, fox, wolf, mascot, furry character, forest, bushes, thickets, wilderness, fantasy creature, non-human subject, face replacement, body replacement");
         payload.put("output_format", "jpeg");
         payload.put("input_fidelity", "high");
-        payload.put("allowFallback", false);
+        putDisabledFallbackPolicy(payload);
         payload.put("requiredProvider", "grok");
-        payload.put("disallowedProviders", List.of("pollinations"));
         payload.put("settings", Map.of("width", 1024, "height", 1365, "aspectRatio", "3:4"));
         return payload;
     }
@@ -407,7 +406,7 @@ public class NoteappAiClient {
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("prompt", prompt);
-        payload.put("disallowedProviders", List.of("pollinations"));
+        putDisabledFallbackPolicy(payload);
         payload.put("personImageBase64", portraitBase64);
         payload.put("image1Base64", portraitBase64);
         payload.put("image1Role", "customer_portrait_identity_source_preserve_all_non_hair_pixels");
@@ -474,7 +473,7 @@ public class NoteappAiClient {
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("prompt", prompt);
-        payload.put("disallowedProviders", List.of("pollinations"));
+        putDisabledFallbackPolicy(payload);
         payload.put("sourceImageBase64", tryOnResultBase64);
         payload.put("personImageBase64", tryOnResultBase64);
         payload.put("image1Base64", tryOnResultBase64);
@@ -693,7 +692,7 @@ public class NoteappAiClient {
             }
             if (isPollinationsResult(provider, imageResult.sourceUrl(), response.path("response"))) {
                 String error = DISABLED_IMAGE_FALLBACK_MESSAGE;
-                log.warn("Blocked Pollinations image result for session {} provider={} url={}", session.getId(), provider, imageResult.sourceUrl());
+                log.warn("Blocked disabled image fallback result for session {}", session.getId());
                 logService.logInboundResponse(
                         session, false, requestId, networkUsed != null ? networkUsed : networkName, provider, executionTimeMs,
                         error, responseSummary, metadata == null ? null : metadata.get("operation"), attemptNumber, fallbackReason
@@ -771,7 +770,7 @@ public class NoteappAiClient {
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("prompt", prompt);
-        payload.put("disallowedProviders", List.of("pollinations"));
+        putDisabledFallbackPolicy(payload);
         payload.put(
                 "inputImageOrder",
                 "image1/customer/avatar/personImageBase64 is the identity and body source; "
@@ -856,6 +855,15 @@ public class NoteappAiClient {
             payload.put("fitPromptHint", fitPromptHint);
         }
         return payload;
+    }
+
+    private static void putDisabledFallbackPolicy(Map<String, Object> payload) {
+        payload.put("allowFallback", false);
+        payload.put("disableFallback", true);
+        payload.put("fallbackPolicy", "disabled");
+        payload.put("fallbackProviders", List.of());
+        payload.put("disallowedProviders", List.of("pollinations"));
+        payload.put("forbiddenFallbackProviders", List.of("pollinations"));
     }
 
     private ImageResult extractImageResult(JsonNode responseBody) {
