@@ -167,9 +167,81 @@ class HairstyleTryOnServiceTest {
                 eq(Base64.getEncoder().encodeToString(portrait)),
                 eq(Base64.getEncoder().encodeToString(styleReference)),
                 isNull(),
-                contains("Never return the hairstyle catalogue model")
+                contains("Never output the hairstyle catalogue model")
         );
         assertThat(storedBefore.get()).isEqualTo(sourceBefore);
+    }
+
+    @Test
+    void comboPromptLocksTryOnResultAsOnlyCanvas() throws Exception {
+        UUID userId = UUID.randomUUID();
+        UUID sourceSessionId = UUID.randomUUID();
+        NoteappAiClient aiClient = mock(NoteappAiClient.class);
+        BlobStorage storage = mock(BlobStorage.class);
+        HairstyleCatalogRepository hairstyles = mock(HairstyleCatalogRepository.class);
+        HairColorCatalogRepository colors = mock(HairColorCatalogRepository.class);
+        TryOnSessionRepository sessions = mock(TryOnSessionRepository.class);
+        UserProfileRepository profiles = mock(UserProfileRepository.class);
+        UserRepository users = mock(UserRepository.class);
+        UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
+        UserEntity user = new UserEntity(userId, "+79990000000", Instant.now());
+        user.setStylistFocusGroup(true);
+        TryOnSessionEntity sourceSession = new TryOnSessionEntity(
+                sourceSessionId,
+                userId,
+                UUID.randomUUID(),
+                TryOnSourceType.MARKETPLACE_LINK,
+                TryOnSessionStatus.READY,
+                Instant.now(),
+                Instant.now()
+        );
+        AiIntegrationProperties ai = new AiIntegrationProperties();
+        ai.setEnabled(true);
+        ai.setApiKey("test-key");
+        ai.setVirtualTryOnNetwork("hair-network");
+        String sourceAfterKey = "source-after-key";
+        when(users.findById(userId)).thenReturn(Optional.of(user));
+        when(sessions.findByIdAndUserId(sourceSessionId, userId)).thenReturn(Optional.of(sourceSession));
+        when(storage.keyTryOnResult(userId, sourceSessionId, "after")).thenReturn(sourceAfterKey);
+        when(storage.keyTryOnResult(userId, sourceSessionId, "before")).thenReturn("source-before-key");
+        when(storage.exists(sourceAfterKey)).thenReturn(true);
+        when(storage.exists(BlobKeys.hairstylePortrait(userId))).thenReturn(true);
+        when(storage.readBytes(sourceAfterKey)).thenReturn(new byte[]{9});
+        when(storage.readBytes(BlobKeys.hairstylePortrait(userId))).thenReturn(new byte[]{1});
+        when(storage.readBytes("catalog/hairstyles/bixie.jpg")).thenReturn(new byte[]{2});
+        when(storage.readBytes("catalog/hair-colors/red-coral.jpg")).thenReturn(new byte[]{3});
+        when(hairstyles.findBySlug("bixie")).thenReturn(Optional.of(hairstyle()));
+        when(colors.findBySlug("red-coral")).thenReturn(Optional.of(hairColor()));
+        when(profiles.findById(userId)).thenReturn(Optional.of(profile));
+        when(aiClient.applyHairstyleToTryOnResult(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(new NoteappAiClient.AvatarEnhancementResult(new byte[]{4}, "image/jpeg"));
+
+        new HairstyleTryOnService(
+                aiClient,
+                ai,
+                storage,
+                new HairstylePromptBuilder(),
+                hairstyles,
+                colors,
+                sessions,
+                mock(UserActivityService.class),
+                mock(QuotaService.class),
+                profiles,
+                users
+        ).generateForTryOnSession(userId, sourceSessionId, "bixie", "red-coral");
+
+        verify(aiClient).applyHairstyleToTryOnResult(
+                eq("hair-network"),
+                startsWith(userId + ":tryon-hairstyle:"),
+                anyString(),
+                anyString(),
+                anyString(),
+                anyString(),
+                argThat(prompt -> prompt.contains("OUTPUT CANVAS LOCK")
+                        && prompt.contains("image 1 is the final canvas")
+                        && prompt.contains("Never use a reference image as the base image")
+                        && !prompt.contains("single close-up portrait"))
+        );
     }
 
     private static HairstyleCatalogEntity hairstyle() {

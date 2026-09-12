@@ -234,12 +234,11 @@ public class HairstyleTryOnService {
     }
 
     private String buildAfterTryOnPrompt(HairstyleCatalogEntity style, HairColorCatalogEntity color) {
-        String base = promptBuilder.build(style == null ? null : style.getAiDirective(), color == null ? null : color.getAiDirective());
-        if (style != null && color != null) {
-            return base
-                    + "\n\nCOMBO TRY-ON RULES: image 1 is the completed clothing try-on result and must remain the final person, face, body, outfit, pose, hands, legs, shoes, background, lighting, camera angle and framing. Image 2 is only the selected hairstyle shape reference. Image 3 is only the selected hair color reference. Never copy the face, body, skin tone, clothes, pose, background or full person from image 2 or image 3. Never return the hairstyle catalogue model. Apply only the selected haircut shape from image 2 and the selected hair color from image 3 onto the person from image 1.";
-        }
-        return base
-                + "\n\nCOMBO TRY-ON RULES: image 1 is the completed clothing try-on result and must remain the final person, body, outfit, pose, hands, legs, shoes, background, lighting, camera angle and framing. Image 2 is only the customer's portrait identity and hairline reference. Image 3 is only the selected hairstyle shape reference or color reference. Never copy the face, body, skin tone, clothes, pose, background or full person from image 3. Never return the hairstyle catalogue model. Apply only the selected hair change onto the person from image 1.";
+        return promptBuilder.buildAfterTryOnCombo(
+                style == null ? null : style.getAiDirective(),
+                color == null ? null : color.getAiDirective(),
+                style != null,
+                color != null
+        );
     }
 }

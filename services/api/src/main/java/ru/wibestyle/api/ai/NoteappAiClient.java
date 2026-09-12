@@ -477,7 +477,7 @@ public class NoteappAiClient {
         payload.put("sourceImageBase64", tryOnResultBase64);
         payload.put("personImageBase64", tryOnResultBase64);
         payload.put("image1Base64", tryOnResultBase64);
-        payload.put("image1Role", "clothing_try_on_result_keep_body_clothes_background_and_pose");
+        payload.put("image1Role", "ONLY_OUTPUT_CANVAS_completed_clothing_try_on_result_keep_person_face_body_clothes_pose_crop_background_camera_angle");
         payload.put("portraitImageBase64", portraitBase64);
         payload.put("hairstyleReferenceImageBase64", hairstyleReferenceBase64);
         payload.put("styleReferenceImageBase64", hairstyleReferenceBase64);
@@ -505,19 +505,19 @@ public class NoteappAiClient {
                 Map.of(
                         "label", "image1",
                         "field", "sourceImageBase64",
-                        "role", "completed clothing try-on result; keep clothes, body, pose and background",
+                        "role", "ONLY output canvas and final person source; keep face, body, clothes, pose, crop, camera angle, background and lighting",
                         "base64Field", "sourceImageBase64"
                 ),
                 Map.of(
                         "label", "image2",
                         "field", "portraitImageBase64",
-                        "role", "customer portrait and identity reference",
+                        "role", "customer portrait and hairline reference only; do not use as output canvas or crop",
                         "base64Field", "portraitImageBase64"
                 ),
                 Map.of(
                         "label", "image3",
                         "field", "hairstyleReferenceImageBase64",
-                        "role", "selected hairstyle or hair-color reference only; ignore identity, face, body, clothes and background",
+                        "role", "selected hairstyle or hair-color reference only; ignore identity, face, body, clothes, hands, pose, crop and background; never output this model",
                         "base64Field", "hairstyleReferenceImageBase64"
                 )
         )
@@ -525,19 +525,19 @@ public class NoteappAiClient {
                 Map.of(
                         "label", "image1",
                         "field", "sourceImageBase64",
-                        "role", "completed clothing try-on result; keep clothes, body, pose and background",
+                        "role", "ONLY output canvas and final person source; keep face, body, clothes, pose, crop, camera angle, background and lighting",
                         "base64Field", "sourceImageBase64"
                 ),
                 Map.of(
                         "label", "image2",
                         "field", "hairstyleReferenceImageBase64",
-                        "role", "hairstyle shape, length, bangs and parting reference only; ignore identity, face, body, clothes and background",
+                        "role", "haircut shape, length, bangs and parting reference only; ignore identity, face, body, clothes, hands, pose, crop and background; never output this model",
                         "base64Field", "hairstyleReferenceImageBase64"
                 ),
                 Map.of(
                         "label", "image3",
                         "field", "hairColorImageBase64",
-                        "role", "hair-color texture reference only",
+                        "role", "hair-color texture reference only; ignore face, body, clothes, pose, crop and background",
                         "base64Field", "hairColorImageBase64"
                 )
         ));
