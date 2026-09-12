@@ -166,20 +166,21 @@ class NoteappAiClientTest {
         assertThat(payload).doesNotContainKey("garmentImageBase64");
         assertThat(payload.get("identitySourcePolicy").toString()).contains("IMAGE1_TRYON_RESULT");
         assertThat(payload.get("referenceImagePolicy").toString()).contains("NEVER_OUTPUT_REFERENCE_MODEL");
-        assertThat(payload).containsEntry("image3Base64", "style-base64");
-        assertThat(payload).containsEntry("image4Base64", "color-base64");
+        assertThat(payload).containsEntry("image2Base64", "style-base64");
+        assertThat(payload).containsEntry("image3Base64", "color-base64");
+        assertThat(payload).doesNotContainKey("image4Base64");
         assertThat(payload.get("inputImageOrder").toString()).contains("completed clothing try-on result");
 
         Object images = payload.get("images");
         assertThat(images).isInstanceOf(List.class);
         List<?> list = (List<?>) images;
-        assertThat(list).hasSize(4);
+        assertThat(list).hasSize(3);
         Map<?, ?> image1 = (Map<?, ?>) list.get(0);
         Map<?, ?> image2 = (Map<?, ?>) list.get(1);
         Map<?, ?> image3 = (Map<?, ?>) list.get(2);
         assertThat(image1.get("base64Field")).isEqualTo("sourceImageBase64");
-        assertThat(image2.get("base64Field")).isEqualTo("portraitImageBase64");
-        assertThat(image3.get("base64Field")).isEqualTo("hairstyleReferenceImageBase64");
+        assertThat(image2.get("base64Field")).isEqualTo("hairstyleReferenceImageBase64");
+        assertThat(image3.get("base64Field")).isEqualTo("hairColorImageBase64");
     }
 
     @Test

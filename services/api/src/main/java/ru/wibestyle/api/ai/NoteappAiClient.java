@@ -479,24 +479,27 @@ public class NoteappAiClient {
         payload.put("image1Base64", tryOnResultBase64);
         payload.put("image1Role", "clothing_try_on_result_keep_body_clothes_background_and_pose");
         payload.put("portraitImageBase64", portraitBase64);
-        payload.put("image2Base64", portraitBase64);
-        payload.put("image2Role", "customer_portrait_identity_and_hairline_reference");
         payload.put("hairstyleReferenceImageBase64", hairstyleReferenceBase64);
         payload.put("styleReferenceImageBase64", hairstyleReferenceBase64);
-        payload.put("image3Base64", hairstyleReferenceBase64);
-        payload.put("image3Role", colorReferenceBase64 == null
-                ? "selected_hairstyle_or_hair_color_reference_only_ignore_identity"
-                : "hairstyle_shape_length_bangs_parting_reference_only_ignore_identity_and_color_when_conflicting");
         if (colorReferenceBase64 != null && !colorReferenceBase64.isBlank()) {
+            payload.put("image2Base64", hairstyleReferenceBase64);
+            payload.put("image2Role", "hairstyle_shape_length_bangs_parting_reference_only_ignore_identity_and_color_when_conflicting");
             payload.put("hairColorImageBase64", colorReferenceBase64);
-            payload.put("image4Base64", colorReferenceBase64);
-            payload.put("image4Role", "hair_color_texture_reference_only_ignore_shape_identity_face_body_background");
+            payload.put("image3Base64", colorReferenceBase64);
+            payload.put("image3Role", "hair_color_texture_reference_only_ignore_shape_identity_face_body_background");
+        } else {
+            payload.put("image2Base64", portraitBase64);
+            payload.put("image2Role", "customer_portrait_identity_and_hairline_reference");
+            payload.put("image3Base64", hairstyleReferenceBase64);
+            payload.put("image3Role", "selected_hairstyle_or_hair_color_reference_only_ignore_identity");
         }
         payload.put("inputImageOrder", colorReferenceBase64 == null
                 ? "image1 is the completed clothing try-on result and final person source; image2 is the user's portrait and identity reference; image3 is the selected hairstyle or hair-color reference only and must never become the output person"
-                : "image1 is the completed clothing try-on result and final person source; image2 is the user's portrait and identity reference; image3 is hairstyle shape reference only and must never become the output person; image4 is hair-color texture reference only");
+                : "image1 is the completed clothing try-on result and final person source; image2 is hairstyle shape reference only and must never become the output person; image3 is hair-color texture reference only");
         payload.put("identitySourcePolicy", "FINAL_PERSON_BODY_CLOTHES_POSE_AND_BACKGROUND_MUST_REMAIN_IMAGE1_TRYON_RESULT");
-        payload.put("referenceImagePolicy", "IMAGE3_AND_IMAGE4_ARE_HAIR_REFERENCES_ONLY_NEVER_OUTPUT_REFERENCE_MODEL_FACE_BODY_OR_BACKGROUND");
+        payload.put("referenceImagePolicy", colorReferenceBase64 == null
+                ? "IMAGE3_IS_HAIR_REFERENCE_ONLY_NEVER_OUTPUT_REFERENCE_MODEL_FACE_BODY_OR_BACKGROUND"
+                : "IMAGE2_AND_IMAGE3_ARE_HAIR_REFERENCES_ONLY_NEVER_OUTPUT_REFERENCE_MODEL_FACE_BODY_OR_BACKGROUND");
         payload.put("images", colorReferenceBase64 == null
                 ? List.of(
                 Map.of(
@@ -527,18 +530,12 @@ public class NoteappAiClient {
                 ),
                 Map.of(
                         "label", "image2",
-                        "field", "portraitImageBase64",
-                        "role", "customer portrait and identity reference",
-                        "base64Field", "portraitImageBase64"
-                ),
-                Map.of(
-                        "label", "image3",
                         "field", "hairstyleReferenceImageBase64",
                         "role", "hairstyle shape, length, bangs and parting reference only; ignore identity, face, body, clothes and background",
                         "base64Field", "hairstyleReferenceImageBase64"
                 ),
                 Map.of(
-                        "label", "image4",
+                        "label", "image3",
                         "field", "hairColorImageBase64",
                         "role", "hair-color texture reference only",
                         "base64Field", "hairColorImageBase64"
