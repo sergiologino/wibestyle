@@ -44,12 +44,22 @@ class NoteappAiClientTest {
         );
 
         assertThat(payload).containsEntry("personImageBase64", "person-base64");
+        assertThat(payload).containsEntry("disallowedProviders", List.of("pollinations"));
+        assertThat(payload).containsEntry("allowFallback", false);
+        assertThat(payload).containsEntry("disableFallback", true);
+        assertThat(payload).containsEntry("fallbackPolicy", "disabled");
+        assertThat(payload).containsEntry("forbiddenFallbackProviders", List.of("pollinations"));
+        assertThat(payload).containsEntry("sourceImageBase64", "person-base64");
+        assertThat(payload).containsEntry("modelImageBase64", "person-base64");
         assertThat(payload).containsEntry("garmentImageBase64", "garment-base64");
+        assertThat(payload).containsEntry("productImageBase64", "garment-base64");
+        assertThat(payload).containsEntry("identitySourcePolicy", "FINAL_PERSON_MUST_BE_IMAGE1_CUSTOMER_ONLY");
+        assertThat(payload.get("productImagePolicy").toString()).contains("NEVER_OUTPUT_PRODUCT_MODEL");
         assertThat(payload).containsEntry("image1Base64", "person-base64");
         assertThat(payload).containsEntry("image2Base64", "garment-base64");
         assertThat(payload.get("inputImageOrder").toString()).contains("image1/customer/avatar/personImageBase64");
         assertThat(payload.get("image1Role").toString()).contains("identity");
-        assertThat(payload.get("image2Role").toString()).contains("ignore_any_person");
+        assertThat(payload.get("image2Role").toString()).contains("never_output_image2");
 
         Object images = payload.get("images");
         assertThat(images).isInstanceOf(List.class);
@@ -100,6 +110,11 @@ class NoteappAiClientTest {
         );
 
         assertThat(payload).containsEntry("personImageBase64", "portrait-base64");
+        assertThat(payload).containsEntry("disallowedProviders", List.of("pollinations"));
+        assertThat(payload).containsEntry("allowFallback", false);
+        assertThat(payload).containsEntry("disableFallback", true);
+        assertThat(payload).containsEntry("fallbackPolicy", "disabled");
+        assertThat(payload).containsEntry("forbiddenFallbackProviders", List.of("pollinations"));
         assertThat(payload).containsEntry("image2Base64", "style-base64");
         assertThat(payload).containsEntry("hairColorImageBase64", "color-base64");
         assertThat(payload).containsEntry("image3Base64", "color-base64");
@@ -128,6 +143,44 @@ class NoteappAiClientTest {
         assertThat(payload).doesNotContainKey("image3Base64");
         assertThat(payload).doesNotContainKey("hairColorImageBase64");
         assertThat(payload.get("inputImageOrder").toString()).contains("image2 is the selected hairstyle or hair-color reference only");
+    }
+
+    @Test
+    void hairstyleAfterTryOnPayloadKeepsClothingResultAsFirstImage() {
+        Map<String, Object> payload = NoteappAiClient.buildHairstyleAfterTryOnPayload(
+                "prompt",
+                "tryon-base64",
+                "portrait-base64",
+                "style-base64",
+                "color-base64"
+        );
+
+        assertThat(payload).containsEntry("sourceImageBase64", "tryon-base64");
+        assertThat(payload).containsEntry("disallowedProviders", List.of("pollinations"));
+        assertThat(payload).containsEntry("allowFallback", false);
+        assertThat(payload).containsEntry("disableFallback", true);
+        assertThat(payload).containsEntry("fallbackPolicy", "disabled");
+        assertThat(payload).containsEntry("forbiddenFallbackProviders", List.of("pollinations"));
+        assertThat(payload).containsEntry("portraitImageBase64", "portrait-base64");
+        assertThat(payload).containsEntry("hairstyleReferenceImageBase64", "style-base64");
+        assertThat(payload).doesNotContainKey("garmentImageBase64");
+        assertThat(payload.get("identitySourcePolicy").toString()).contains("IMAGE1_TRYON_RESULT");
+        assertThat(payload.get("referenceImagePolicy").toString()).contains("NEVER_OUTPUT_REFERENCE_MODEL");
+        assertThat(payload).containsEntry("image2Base64", "style-base64");
+        assertThat(payload).containsEntry("image3Base64", "color-base64");
+        assertThat(payload).doesNotContainKey("image4Base64");
+        assertThat(payload.get("inputImageOrder").toString()).contains("completed clothing try-on result");
+
+        Object images = payload.get("images");
+        assertThat(images).isInstanceOf(List.class);
+        List<?> list = (List<?>) images;
+        assertThat(list).hasSize(3);
+        Map<?, ?> image1 = (Map<?, ?>) list.get(0);
+        Map<?, ?> image2 = (Map<?, ?>) list.get(1);
+        Map<?, ?> image3 = (Map<?, ?>) list.get(2);
+        assertThat(image1.get("base64Field")).isEqualTo("sourceImageBase64");
+        assertThat(image2.get("base64Field")).isEqualTo("hairstyleReferenceImageBase64");
+        assertThat(image3.get("base64Field")).isEqualTo("hairColorImageBase64");
     }
 
     @Test

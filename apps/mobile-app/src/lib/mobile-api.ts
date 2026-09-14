@@ -218,6 +218,39 @@ export function formatTryOnError(session: {
   return "Не удалось завершить примерку. Попробуйте ещё раз.";
 }
 
+export function formatVideoTryOnError(errorCode?: string, errorMessage?: string): string {
+  if (errorCode === "VIDEO_PROVIDER_UNAVAILABLE") {
+    return "Видео сейчас перегружено. Попробуйте создать его позже.";
+  }
+  if (errorCode === "VIDEO_PROVIDER_INVALID_RESPONSE") {
+    return "Сервис видео вернул неожиданный ответ. Мы не списали видео, попробуйте позже.";
+  }
+  if (errorCode === "AI_PROVIDER_TIMEOUT") {
+    return "Видео создаётся дольше обычного. Попробуйте позже.";
+  }
+  if (errorCode === "VIDEO_TRIAL_EXHAUSTED") {
+    return "Бесплатное видео в trial уже использовано. Оформите Elite, чтобы создавать видео к каждой примерке.";
+  }
+  if (errorCode === "VIDEO_ELITE_REQUIRED") {
+    return "Видео «Хит сезона» доступно только подписчикам Elite.";
+  }
+
+  const raw = errorMessage ?? "";
+  const lower = raw.toLowerCase();
+  if (lower.includes("service_unavailable") || lower.includes("temporarily overloaded") || lower.includes("overloaded")) {
+    return "Видео сейчас перегружено. Попробуйте создать его позже.";
+  }
+  if (lower.includes("extracting response") || lower.includes("content type") || lower.includes("application/octet-stream") || lower.includes("jsonnode")) {
+    return "Сервис видео вернул неожиданный ответ. Мы не списали видео, попробуйте позже.";
+  }
+  if (lower.includes("timeout") || lower.includes("timed out")) {
+    return "Видео создаётся дольше обычного. Попробуйте позже.";
+  }
+  return raw && raw.length < 140 && !/[{}\[\]=]/.test(raw)
+    ? raw
+    : "Не удалось создать видео. Попробуйте позже.";
+}
+
 export function formatMarketplaceLinkError(code?: string): string {
   if (code === "PRODUCT_IMAGE_NOT_FOUND") {
     return "Не удалось загрузить фото товара. Попробуйте «Примерить по фото».";

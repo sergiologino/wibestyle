@@ -48,6 +48,7 @@ public class AiProviderPriorityService {
             List<ProviderRoute> route = enabled.stream()
                     .sorted(providerComparator())
                     .map(ProviderRoute::from)
+                    .filter(routeItem -> !isDisallowedProviderRoute(routeItem.networkName()))
                     .toList();
             return normalizeRoutesForOperation(operation, route);
         }
@@ -62,6 +63,9 @@ public class AiProviderPriorityService {
                 ? aiProperties.getSeasonVideoNetwork()
                 : aiProperties.getVirtualTryOnNetwork();
         if (configured != null && !configured.isBlank()) {
+            if (isDisallowedProviderRoute(configured)) {
+                return List.of();
+            }
             return normalizeRoutesForOperation(operation, List.of(new ProviderRoute(configured, labelFor(operation, configured), 10)));
         }
         List<ProviderRoute> route = defaultsFor(operation).stream()
@@ -83,6 +87,9 @@ public class AiProviderPriorityService {
         ensureKnownOperation(operation);
         Instant now = Instant.now();
         for (AiProviderPriorityRequest.AiProviderPriorityItemRequest item : request.items()) {
+            if (isDisallowedProviderRoute(item.networkName())) {
+                throw new IllegalArgumentException("AI_PROVIDER_DISABLED");
+            }
             AiProviderPriorityEntity entity = repository.findByOperationAndNetworkName(operation, item.networkName())
                     .orElseGet(() -> new AiProviderPriorityEntity(
                             UUID.randomUUID(),
@@ -113,6 +120,7 @@ public class AiProviderPriorityService {
         }
         rows.sort(providerComparator());
         return rows.stream()
+                .filter(row -> !isDisallowedProviderRoute(row.getNetworkName()))
                 .map(row -> toMap(row.getNetworkName(), row.getDisplayName(), row.getPriorityOrder(), row.isEnabled()))
                 .toList();
     }
@@ -166,6 +174,10 @@ public class AiProviderPriorityService {
             case "kling-kolors-tryon" -> new ProviderRoute("kling-tryon-video", "Kling Virtual Try-On Video", route.priorityOrder());
             default -> route;
         };
+    }
+
+    private static boolean isDisallowedProviderRoute(String networkName) {
+        return networkName != null && networkName.toLowerCase(java.util.Locale.ROOT).contains("pollinations");
     }
 
     private String labelFor(String operation, String networkName) {

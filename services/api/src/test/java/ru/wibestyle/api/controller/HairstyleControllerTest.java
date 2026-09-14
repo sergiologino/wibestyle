@@ -2,19 +2,24 @@ package ru.wibestyle.api.controller;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import ru.wibestyle.api.config.AuthProperties;
 import ru.wibestyle.api.domain.HairstyleCatalogEntity;
 import ru.wibestyle.api.repository.HairstyleCatalogRepository;
 import ru.wibestyle.api.service.HairstyleTryOnService;
 import ru.wibestyle.api.storage.BlobStorage;
+import ru.wibestyle.api.support.AuthSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class HairstyleControllerTest {
@@ -49,5 +54,39 @@ class HairstyleControllerTest {
         assertThat(response.getHeaders().getContentType().toString()).isEqualTo("image/webp");
         assertThat(response.getHeaders().getCacheControl()).contains("max-age=604800");
         assertThat(response.getHeaders().getCacheControl()).contains("public");
+    }
+
+    @Test
+    void tryOnFromSessionAcceptsQueryAndPathSourceSessionId() throws Exception {
+        HairstyleTryOnService service = mock(HairstyleTryOnService.class);
+        BlobStorage storage = mock(BlobStorage.class);
+        HairstyleCatalogRepository catalog = mock(HairstyleCatalogRepository.class);
+        AuthSupport.configure(null, new AuthProperties());
+        UUID userId = UUID.randomUUID();
+        UUID querySessionId = UUID.randomUUID();
+        UUID pathSessionId = UUID.randomUUID();
+        when(service.generateForTryOnSession(eq(userId), eq(querySessionId), eq("bob"), eq("ruby")))
+                .thenReturn(Map.of("id", "query-result"));
+        when(service.generateForTryOnSession(eq(userId), eq(pathSessionId), eq("pixie"), eq("chocolate")))
+                .thenReturn(Map.of("id", "path-result"));
+        var controller = new HairstyleController(service, storage, catalog);
+
+        var queryResponse = controller.tryOnFromSession(
+                "Bearer access-" + userId,
+                querySessionId,
+                "bob",
+                "ruby"
+        );
+        var pathResponse = controller.tryOnFromSessionPath(
+                "Bearer access-" + userId,
+                pathSessionId,
+                "pixie",
+                "chocolate"
+        );
+
+        assertThat(queryResponse.get("id")).isEqualTo("query-result");
+        assertThat(pathResponse.get("id")).isEqualTo("path-result");
+        verify(service).generateForTryOnSession(userId, querySessionId, "bob", "ruby");
+        verify(service).generateForTryOnSession(userId, pathSessionId, "pixie", "chocolate");
     }
 }

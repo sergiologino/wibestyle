@@ -1,5 +1,12 @@
 # AI Changelog
 
+## 2026-09-02 (Mobile balance refresh)
+- Added pull-to-refresh to mobile Home and Profile so the app explicitly refreshes `/me` after admin-side balance changes.
+- Home now refreshes the profile on screen focus before loading cached/feed content.
+- Home's visible try-on counter now includes bonus try-ons for paid/package/admin users, matching backend quota behavior.
+- Added `scheduler` as a direct mobile dependency and extended `verify:bundle`; this fixes Android release bundling with Metro hierarchical lookup disabled.
+- Added regression coverage for mobile profile refresh and combined balance display.
+
 ## 2026-09-02 (Admin button contrast)
 - Recolored admin action buttons from pale pink states to a high-contrast green/gray palette.
 - Added the shared `adminButtonClass` helper for custom admin buttons and CTA links, and updated AI prompts, AI provider errors, hairstyle catalog tabs, marketing CTA, statistics filters and user action buttons.

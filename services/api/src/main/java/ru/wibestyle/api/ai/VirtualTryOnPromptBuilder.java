@@ -29,10 +29,12 @@ public class VirtualTryOnPromptBuilder {
     static final String DEFAULT_VTON_BASE_RU = """
             Virtual fitting of clothes for an online store.
             Input mapping: image1 = customer avatar/person photo (payload fields image1Base64/personImageBase64); image2 = product garment photo (payload fields image2Base64/garmentImageBase64).
-            image1 is the customer and is the only source for face, hair, skin tone, body shape and proportions.
-            image2 is the product photo and is only a reference for the garment.
+            image1 is the customer and the only source for the final person, face, hair, skin tone, body shape, age, pose and proportions.
+            image2 is the product photo and is only a reference for the garment, fabric, print, cut and visible item details.
             Transfer the garment from image2 onto the customer from image1.
-            Never use any face, head, hair, body, pose, limbs or identity from image2.
+            Never use any face, head, hair, body, pose, limbs, skin tone, age, background, accessories or identity from image2.
+            Never return image2, a crop of image2, the marketplace model, mannequin, seller photo person, or the product card photo as the result.
+            The final image must show the customer from image1 wearing the garment from image2.
             Photorealistic catalog image, neutral studio background, vertical 3:4, PG-safe styling.
             """.trim().replaceAll("\\s+", " ");
 
@@ -168,8 +170,9 @@ public class VirtualTryOnPromptBuilder {
                 PROMPT PROFILE: %s. Garment category: %s. %s
                 Input mapping: image1 is the customer avatar/person photo; image2 is the product garment photo.
                 Identity priority: image1 is the only source for face, head, hair, skin tone, body proportions and height impression.
-                Product priority: image2 is only a garment/material/color/detail reference. Never duplicate the seller model from image2.
+                Product priority: image2 is only a garment/material/color/detail reference. Never duplicate the seller model from image2. Never output the product card image itself.
                 If image1 and image2 conflict, preserve image1 identity and body and adapt only the clothing.
+                Rejection rule: if the result would mainly show the person from image2, redo it using the customer from image1.
                 """.formatted(profile, category, modelLock);
         String profileSpecific = switch (profile) {
             case "dress" -> "For dresses: preserve the customer's waist, bust, hips, shoulder line and leg length from image1; fit the dress naturally without slimming or replacing the body.";

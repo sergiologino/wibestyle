@@ -4,6 +4,7 @@ import {
   buildGalleryImageSources,
   formatMarketplaceLinkError,
   formatTryOnError,
+  formatVideoTryOnError,
   resolveApiPath,
 } from "./mobile-api";
 
@@ -99,5 +100,23 @@ describe("mobile-api helpers", () => {
     const message = formatTryOnError({ errorCode: "VTON_CONTENT_MODERATION" });
     expect(message).toContain("автоматической модерации");
     expect(message).toContain("не списана");
+  });
+
+  it("hides raw provider video overload errors", () => {
+    expect(
+      formatVideoTryOnError(
+        undefined,
+        "xAI video generation failed: {status=failed, error={code=service_unavailable, message=Video generation is temporarily overloaded. Please try again later.}}",
+      ),
+    ).toContain("перегружено");
+  });
+
+  it("hides raw video content-type extraction errors", () => {
+    expect(
+      formatVideoTryOnError(
+        undefined,
+        "Error while extracting response for type [com.fasterxml.jackson.databind.JsonNode] and content type [application/octet-stream]",
+      ),
+    ).toContain("неожиданный ответ");
   });
 });

@@ -76,6 +76,8 @@ class VirtualTryOnPromptBuilderTest {
         assertThat(prompt).doesNotContain("\"faceLock\"");
         assertThat(prompt).contains("PROMPT PROFILE: dress");
         assertThat(prompt).contains("Never duplicate the seller model");
+        assertThat(prompt).contains("Never output the product card image itself");
+        assertThat(prompt).contains("using the customer from image1");
         assertThat(prompt).contains("\"marketplaceLabelSize\" : \"M\"");
         assertThat(prompt).contains("\"promptProfile\" : \"dress\"");
         assertThat(prompt).contains("\"productPhotoHasHumanModel\" : true");

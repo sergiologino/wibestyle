@@ -5,6 +5,7 @@ import {
   Linking,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Switch,
@@ -55,6 +56,7 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
   const [billingSubscription, setBillingSubscription] = useState<BillingSubscription | null>(null);
   const [autoRenewSaving, setAutoRenewSaving] = useState(false);
   const [paletteSaving, setPaletteSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -84,6 +86,18 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
       setError(err instanceof ApiError ? err.message : "Не удалось изменить автопродление");
     } finally {
       setAutoRenewSaving(false);
+    }
+  }
+
+  async function onRefresh() {
+    setRefreshing(true);
+    setError(null);
+    try {
+      await refreshProfile();
+    } catch {
+      setError("Не удалось обновить профиль");
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -195,7 +209,12 @@ export function ProfileEditor({ showBackButton = false, showQuickLinks = true }:
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.pink} />}
+      >
         {showBackButton ? (
           <Pressable style={styles.back} onPress={() => router.back()}>
             <Feather name="arrow-left" size={22} color={colors.black} />

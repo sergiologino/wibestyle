@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import ru.wibestyle.api.config.AiIntegrationProperties;
 import ru.wibestyle.api.domain.AiOperations;
 import ru.wibestyle.api.domain.AiProviderPriorityEntity;
+import ru.wibestyle.api.dto.AiProviderPriorityRequest;
 import ru.wibestyle.api.repository.AiProviderPriorityRepository;
 
 import java.time.Instant;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -71,6 +73,52 @@ class AiProviderPriorityServiceTest {
 
         assertThat(route).hasSize(1);
         assertThat(route.get(0).networkName()).isEqualTo("custom-primary");
+    }
+
+    @Test
+    void routeForRejectsPollinationsConfiguredNetwork() {
+        properties.setVirtualTryOnNetwork("virtual_try_on_pollinations");
+        when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of());
+        when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of());
+
+        assertThat(service.routeFor(AiOperations.VIRTUAL_TRY_ON_PHOTO)).isEmpty();
+    }
+
+    @Test
+    void routeForFiltersPersistedPollinationsProviders() {
+        when(repository.findByOperationOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of(
+                        entity("virtual_try_on_pollinations", "Pollinations", 5, true),
+                        entity("wibestyle-vton", "Grok", 10, true)
+                ));
+        when(repository.findByOperationAndEnabledTrueOrderByPriorityOrderAsc(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .thenReturn(List.of(
+                        entity("virtual_try_on_pollinations", "Pollinations", 5, true),
+                        entity("wibestyle-vton", "Grok", 10, true)
+                ));
+
+        assertThat(service.routeFor(AiOperations.VIRTUAL_TRY_ON_PHOTO))
+                .extracting(AiProviderPriorityService.ProviderRoute::networkName)
+                .containsExactly("wibestyle-vton");
+    }
+
+    @Test
+    void updateRejectsPollinationsProviders() {
+        assertThatThrownBy(() -> service.update(
+                AiOperations.VIRTUAL_TRY_ON_PHOTO,
+                new AiProviderPriorityRequest(List.of(
+                        new AiProviderPriorityRequest.AiProviderPriorityItemRequest(
+                                "virtual_try_on_pollinations",
+                                "Pollinations",
+                                10,
+                                true
+                        )
+                ))
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("AI_PROVIDER_DISABLED");
     }
 
     @Test

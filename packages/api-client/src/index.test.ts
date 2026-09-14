@@ -61,4 +61,36 @@ describe("WibeStyleApiClient", () => {
 
     vi.unstubAllGlobals();
   });
+
+  it("starts hairstyle try-on from a source session path and falls back to query endpoint on stale servers", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: "Not Found" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: "hair-result-1",
+          sourceSessionId: "session-1",
+          beforeImageUrl: "/before.jpg",
+          afterImageUrl: "/after.jpg",
+        }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new WibeStyleApiClient({ baseUrl: "http://localhost:8080" });
+    const result = await client.createHairstyleTryOnFromSession("session-1", "bob", "ruby");
+
+    expect(result.id).toBe("hair-result-1");
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "http://localhost:8080/api/v1/hairstyles/try-on/from-session/session-1?styleId=bob&colorId=ruby",
+    );
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      "http://localhost:8080/api/v1/hairstyles/try-on/from-session?styleId=bob&colorId=ruby&sourceSessionId=session-1",
+    );
+
+    vi.unstubAllGlobals();
+  });
 });

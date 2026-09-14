@@ -427,7 +427,7 @@ public class StylistService {
             map.put("previewStatus", "failed");
             map.put("tryOnPreviewUrl", null);
             map.put("errorCode", "AI_PROVIDER_FALLBACK_NOT_ALLOWED");
-            map.put("errorMessage", "Stylist preview requires Grok Imagine; Pollinations fallback is disabled");
+            map.put("errorMessage", "Stylist preview requires Grok Imagine; disabled image fallback is not allowed");
         } else {
             map.put("previewStatus", variant.getPreviewStatus());
             map.put("tryOnPreviewUrl", variant.getPreviewImageUrl());

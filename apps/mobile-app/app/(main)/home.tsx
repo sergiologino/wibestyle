@@ -1,4 +1,4 @@
-import { Alert, ScrollView, Share, StyleSheet, View } from "react-native";
+import { Alert, RefreshControl, ScrollView, Share, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
@@ -28,9 +28,10 @@ const homeHistoryCacheKey = (userId: string, filter: HistoryFilter) => `wibestyl
 export default function HomeScreen() {
   const router = useRouter();
   const theme = useAppTheme();
-  const { api, profile, accessToken, ensureSession } = useSession();
+  const { api, profile, accessToken, ensureSession, refreshProfile } = useSession();
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
   const [historyHasMore, setHistoryHasMore] = useState(false);
   const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
@@ -38,22 +39,15 @@ export default function HomeScreen() {
   const [notification, setNotification] = useState<UserNotification | null>(null);
   const [reviews, setReviews] = useState<PublishedReview[]>([]);
 
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    (async () => {
-      const ok = await ensureSession();
-      if (!ok) {
-        router.replace("/auth");
-        return;
-      }
+  const loadHomeContent = useCallback(async (isActive: () => boolean, useCache = true) => {
       const userId = profile?.userId;
-      if (userId) {
+      if (useCache && userId) {
         const cached = await readFeedCache<{
           items: TryOnHistoryItem[];
           nextCursor?: string | null;
           hasMore: boolean;
         }>(homeHistoryCacheKey(userId, historyFilter));
-        if (active && cached) {
+        if (isActive() && cached) {
           setHistory(cached.items);
           setHistoryCursor(cached.nextCursor ?? null);
           setHistoryHasMore(cached.hasMore);
@@ -62,7 +56,7 @@ export default function HomeScreen() {
       }
       try {
         const historyPayload = await api.listMyTryOnSessions({ limit: INITIAL_HISTORY_LIMIT, type: historyFilter });
-        if (active) {
+        if (isActive()) {
           setHistory(historyPayload.items);
           setHistoryCursor(historyPayload.nextCursor ?? null);
           setHistoryHasMore(historyPayload.hasMore);
@@ -74,16 +68,43 @@ export default function HomeScreen() {
           api.getNotifications(),
           api.listPublishedReviews().catch(() => ({ items: [] as PublishedReview[] })),
         ]);
-        if (active) setNotification(notifications.items.find((item) => !item.read) ?? null);
-        if (active) setReviews(publishedReviews.items.slice(0, 3));
+        if (isActive()) setNotification(notifications.items.find((item) => !item.read) ?? null);
+        if (isActive()) setReviews(publishedReviews.items.slice(0, 3));
       } finally {
-        if (active) setLoading(false);
+        if (isActive()) setLoading(false);
       }
+  }, [api, historyFilter, profile?.userId]);
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    (async () => {
+      const ok = await ensureSession();
+      if (!ok) {
+        router.replace("/auth");
+        return;
+      }
+      await refreshProfile();
+      await loadHomeContent(() => active, true);
     })();
     return () => {
       active = false;
     };
-  }, [api, ensureSession, profile?.userId, router, historyFilter]));
+  }, [ensureSession, loadHomeContent, refreshProfile, router]));
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      const ok = await ensureSession();
+      if (!ok) {
+        router.replace("/auth");
+        return;
+      }
+      await refreshProfile();
+      await loadHomeContent(() => true, false);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function loadMoreHistory() {
     if (!historyCursor || historyLoadingMore) return;
@@ -101,7 +122,9 @@ export default function HomeScreen() {
   const gensLeft =
     profile?.plan === "trial"
       ? profile.trialGenerationsLeft + (profile.bonusGenerationsLeft ?? 0)
-      : profile?.planGenerationsLeft ?? null;
+      : profile
+        ? (profile?.planGenerationsLeft ?? 0) + (profile?.bonusGenerationsLeft ?? 0)
+        : null;
   const showLastTrialNudge = profile?.plan === "trial" && gensLeft === 1;
   const publishedVerb = profile?.gender === "male" ? "публиковал" : "публиковала";
   const greetingName = profile?.displayName?.trim() || "пользователь";
@@ -133,7 +156,11 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.pink} />}
+      >
         {notification ? (
           <Card style={styles.notificationCard}>
             <Eyebrow>Уведомление</Eyebrow>
