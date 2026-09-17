@@ -60,6 +60,9 @@ public class StylistVariantEntity {
     @Column(name = "error_message", length = 512)
     private String errorMessage;
 
+    @Column(name = "regeneration_count", nullable = false)
+    private int regenerationCount;
+
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 
@@ -114,16 +117,32 @@ public class StylistVariantEntity {
         return title;
     }
 
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     public String getSummary() {
         return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 
     public String getStyleDirection() {
         return styleDirection;
     }
 
+    public void setStyleDirection(String styleDirection) {
+        this.styleDirection = styleDirection;
+    }
+
     public String getStylistComment() {
         return stylistComment;
+    }
+
+    public void setStylistComment(String stylistComment) {
+        this.stylistComment = stylistComment;
     }
 
     public String getProductSearchStatus() {
@@ -196,6 +215,14 @@ public class StylistVariantEntity {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public int getRegenerationCount() {
+        return regenerationCount;
+    }
+
+    public void setRegenerationCount(int regenerationCount) {
+        this.regenerationCount = regenerationCount;
     }
 
     public int getSortOrder() {

@@ -653,6 +653,12 @@ export class WibeStyleApiClient {
     });
   }
 
+  regenerateStylistVariant(sessionId: string, variantId: string) {
+    return this.request<StylistLookResponse>(`/api/v1/stylist/looks/${sessionId}/variants/${variantId}/regenerate`, {
+      method: "POST",
+    });
+  }
+
   searchProducts(query: string, marketplace?: string) {
     return this.request<{ query: string; expandedQuery: string; facets: Record<string, unknown>; trendNote?: string; items: SearchResultItem[] }>(
       "/api/v1/search",

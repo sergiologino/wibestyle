@@ -20,6 +20,7 @@ export default function StylistScreen() {
   const [removedProductIds, setRemovedProductIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [productSearchLoading, setProductSearchLoading] = useState(false);
+  const [regeneratingVariantId, setRegeneratingVariantId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,6 +93,24 @@ export default function StylistScreen() {
       setError("Не удалось подобрать товары Wildberries для этого варианта.");
     } finally {
       setProductSearchLoading(false);
+    }
+  }
+
+  async function regenerateVariant() {
+    if (!look?.sessionId || !selectedVariant) return;
+    setRegeneratingVariantId(selectedVariant.id);
+    setError(null);
+    try {
+      const payload = await api.regenerateStylistVariant(look.sessionId, selectedVariant.id);
+      setLook(payload);
+      setSelectedVariantId(selectedVariant.id);
+      setRemovedProductIds(new Set());
+    } catch (err) {
+      setError(err instanceof ApiError && (err.code === "INSUFFICIENT_GENERATIONS" || err.status === 402)
+        ? "Для повторной генерации закончились примерки. Пополните лимит или оформите подписку."
+        : "Не удалось перегенерировать вариант. Попробуйте позже.");
+    } finally {
+      setRegeneratingVariantId(null);
     }
   }
 
@@ -197,6 +216,13 @@ export default function StylistScreen() {
                   loading={productSearchLoading}
                   disabled={productSearchLoading || !look.sessionId}
                   onPress={searchProducts}
+                />
+                <Button
+                  label={selectedVariant.nextRegenerationFree ? "Перегенерировать бесплатно" : "Перегенерировать за примерку"}
+                  variant="secondary"
+                  loading={regeneratingVariantId === selectedVariant.id}
+                  disabled={Boolean(regeneratingVariantId) || !look.sessionId}
+                  onPress={regenerateVariant}
                 />
                 <Text style={styles.status}>{productSearchStatusText(selectedVariant.productSearchStatus)}</Text>
                 {selectedVariant.productSearchQuery ? <Text style={styles.query}>Запрос: {selectedVariant.productSearchQuery}</Text> : null}

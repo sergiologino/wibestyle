@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Sparkles, WandSparkles, X } from "lucide-react";
+import { RefreshCcw, Sparkles, WandSparkles, X } from "lucide-react";
 import { Button, Card } from "@wibestyle/ui";
 import { ApiError } from "@wibestyle/api-client";
 import type {
@@ -23,6 +23,7 @@ export default function StylistClient() {
   const [removedProductIds, setRemovedProductIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [productSearchLoading, setProductSearchLoading] = useState(false);
+  const [regeneratingVariantId, setRegeneratingVariantId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewModalSrc, setPreviewModalSrc] = useState<string | null>(null);
 
@@ -99,6 +100,25 @@ export default function StylistClient() {
       setError("Не удалось подобрать товары Wildberries для этого варианта.");
     } finally {
       setProductSearchLoading(false);
+    }
+  }
+
+  async function regenerateVariant() {
+    if (!look?.sessionId || !selectedVariant) return;
+    setRegeneratingVariantId(selectedVariant.id);
+    setError(null);
+    try {
+      const payload = await api.regenerateStylistVariant(look.sessionId, selectedVariant.id);
+      setLook(payload);
+      setSelectedVariantId(selectedVariant.id);
+      setRemovedProductIds(new Set());
+    } catch (err) {
+      const message = err instanceof ApiError && (err.code === "INSUFFICIENT_GENERATIONS" || err.status === 402)
+        ? "Для повторной генерации закончились примерки. Пополните лимит или оформите подписку."
+        : "Не удалось перегенерировать вариант. Попробуйте позже.";
+      setError(message);
+    } finally {
+      setRegeneratingVariantId(null);
     }
   }
 
@@ -230,6 +250,15 @@ export default function StylistClient() {
                       <Button disabled={productSearchLoading || !look.sessionId} loading={productSearchLoading} onClick={() => void searchProducts()}>
                         <WandSparkles size={17} aria-hidden />
                         {productSearchLoading ? "Ищем..." : "Подобрать товары WB"}
+                      </Button>
+                      <Button
+                        disabled={Boolean(regeneratingVariantId) || !look.sessionId}
+                        loading={regeneratingVariantId === selectedVariant.id}
+                        variant="secondary"
+                        onClick={() => void regenerateVariant()}
+                      >
+                        <RefreshCcw size={17} aria-hidden />
+                        {selectedVariant.nextRegenerationFree ? "Перегенерировать бесплатно" : "Перегенерировать за примерку"}
                       </Button>
                       <span className="text-xs font-medium text-[var(--muted)]">
                         {productSearchStatusText(selectedVariant.productSearchStatus)}

@@ -102,6 +102,7 @@ public class StylistPreviewWorker {
                     session.getAvatarSnapshotId(),
                     avatar == null ? null : avatar.getProcessedImagePath());
             markVariantFailed(variant, "AVATAR_NOT_READY", "Avatar image is not ready");
+            settleRegenerationQuota(session, variant, false);
             refreshSessionStatus(session);
             return;
         }
@@ -131,6 +132,7 @@ public class StylistPreviewWorker {
             );
             if (!result.success()) {
                 markVariantFailed(variant, result.errorCode(), result.errorMessage());
+                settleRegenerationQuota(session, variant, false);
                 refreshSessionStatus(session);
                 return;
             }
@@ -148,6 +150,7 @@ public class StylistPreviewWorker {
                 variant.setPreviewImageUrl(result.imageUrl());
             } else {
                 markVariantFailed(variant, "AI_GENERATION_FAILED", "Stylist preview generation returned no image");
+                settleRegenerationQuota(session, variant, false);
                 refreshSessionStatus(session);
                 return;
             }
@@ -159,9 +162,11 @@ public class StylistPreviewWorker {
             variant.setUpdatedAt(Instant.now());
             variantRepository.save(variant);
             saveStylistIdeaTryOn(session, variant, avatar, avatarBytes, result);
+            settleRegenerationQuota(session, variant, true);
         } catch (Exception ex) {
             log.warn("Stylist preview generation failed for variant {}: {}", variantId, ex.getMessage());
             markVariantFailed(variant, "AI_GENERATION_FAILED", ex.getMessage());
+            settleRegenerationQuota(session, variant, false);
         }
         refreshSessionStatus(session);
     }
@@ -178,6 +183,7 @@ public class StylistPreviewWorker {
                 + "\nОписание образа: " + variant.getStyleDirection()
                 + "\nКомментарий стилиста: " + variant.getStylistComment()
                 + "\nАнтропометрия: " + anthropometrySummary(avatar)
+                + "\n\nDIVERSITY AND WARDROBE RULES: build exactly this event-specific outfit formula. Do not collapse it into a generic blazer, plain sheath dress, basic black evening dress, random suit, or the same silhouette used by the other variants. The clothes, shoes and accessories must visibly match the described palette, texture and main accent. Keep it modern, wearable, marketplace-realistic and distinct from the classic/modern/rebel sibling variants."
                 + "\n\nLOCATION AND MOOD: " + locationInstruction(session, variant)
                 + "\n\nTECHNICAL INSTRUCTIONS: image1 is the full-body customer avatar and the main source for body, proportions, pose and identity. image2 is the customer's hairstyle portrait reference; use it only to preserve face and hair details, not as a clothing reference. Create the complete outfit from the text style brief. Generate a realistic full-body 3:4 fashion try-on photo of the same human customer. Do not create animals, foxes, mascots, fantasy characters, forest scenes, bushes or wilderness. Do not replace the person, face, body, pose, age, skin tone or silhouette. The clothes, shoes and accessories must look like a real marketplace outfit.";
     }
@@ -325,6 +331,29 @@ public class StylistPreviewWorker {
                         tryOnSessionRepository.save(quotaSession);
                     }
                 });
+    }
+
+    private void settleRegenerationQuota(StylistSessionEntity session, StylistVariantEntity variant, boolean success) {
+        if (variant.getRegenerationCount() <= 1) {
+            return;
+        }
+        tryOnSessionRepository.findByUserIdAndExternalProductId(
+                session.getUserId(),
+                StylistService.stylistRegenerationQuotaExternalId(variant.getId(), variant.getRegenerationCount())
+        ).ifPresent(quotaSession -> {
+            if (success) {
+                quotaService.consume(quotaSession);
+                quotaSession.setStatus(TryOnSessionStatus.DRAFT);
+                quotaSession.setErrorCode(null);
+                quotaSession.setErrorMessage(null);
+            } else {
+                quotaService.refund(quotaSession);
+                quotaSession.setStatus(TryOnSessionStatus.DRAFT);
+                quotaSession.setErrorCode("STYLIST_REGENERATION_FAILED");
+                quotaSession.setErrorMessage("Stylist regeneration quota refunded because preview generation failed");
+            }
+            tryOnSessionRepository.save(quotaSession);
+        });
     }
 
     private static String anthropometrySummary(AvatarSnapshotEntity avatar) {

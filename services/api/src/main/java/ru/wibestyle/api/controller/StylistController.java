@@ -109,6 +109,21 @@ public class StylistController {
         }
     }
 
+    @PostMapping("/looks/{sessionId}/variants/{variantKey}/regenerate")
+    public Map<String, Object> regenerateVariant(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
+            @PathVariable UUID sessionId,
+            @PathVariable String variantKey
+    ) {
+        UUID userId = requireUser(authorization);
+        try {
+            return stylistService.regenerateVariant(userId, sessionId, variantKey, deviceId);
+        } catch (IllegalArgumentException ex) {
+            throw status(ex);
+        }
+    }
+
     @GetMapping("/looks/{sessionId}/variants/{variantKey}/preview")
     public ResponseEntity<Resource> variantPreview(
             @RequestHeader(value = "Authorization", required = false) String authorization,

@@ -560,6 +560,8 @@ export type StylistVariant = {
   stylistComment: string;
   productSearchStatus?: "demo" | "ready" | "empty" | "failed" | string;
   productSearchQuery?: string | null;
+  regenerationCount?: number;
+  nextRegenerationFree?: boolean;
   previewStatus?: "queued" | "generating" | "ready" | "failed" | "skipped" | string;
   tryOnPreviewUrl?: string | null;
   errorCode?: string | null;
