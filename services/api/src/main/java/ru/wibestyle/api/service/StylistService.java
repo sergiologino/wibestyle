@@ -559,12 +559,12 @@ public class StylistService {
         return result;
     }
 
-    private static String productSearchQuery(StylistSessionEntity session, StylistVariantEntity variant) {
-        return session.getPresetTitle()
+    static String productSearchQuery(StylistSessionEntity session, StylistVariantEntity variant) {
+        return limitText(session.getPresetTitle()
                 + ", " + session.getSeason()
                 + ", " + variant.getTitle()
                 + ", " + variant.getStyleDirection()
-                + ", одежда обувь аксессуары";
+                + ", одежда обувь аксессуары", 500);
     }
 
     private static StyleBrief styleBrief(String presetId, String presetTitle, String season, String variantKey, int regenerationNumber) {
@@ -582,7 +582,7 @@ public class StylistService {
         String comment = "Соберите образ вокруг конкретного события, а не вокруг общего дресс-кода. "
                 + event.commentFor(variantKey, rotation)
                 + " Визуально это должен быть самостоятельный вариант: другая формула комплекта, другая палитра, другая обувь и другой главный акцент по сравнению с соседними карточками.";
-        return new StyleBrief(title, limitText(summary, 500), limitText(directionText, 500), comment);
+        return new StyleBrief(title, limitText(summary, 500), limitText(directionText, 480), comment);
     }
 
     private static EventStyle eventStyle(String presetId) {
