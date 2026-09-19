@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ApiError } from "@wibestyle/api-client";
@@ -15,6 +15,8 @@ export default function StylistScreen() {
   const { api, profile, accessToken } = useSession();
   const [presets, setPresets] = useState<StylistPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [customEventDescription, setCustomEventDescription] = useState("");
+  const [eventPickerOpen, setEventPickerOpen] = useState(true);
   const [look, setLook] = useState<StylistLookResponse | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [removedProductIds, setRemovedProductIds] = useState<Set<string>>(new Set());
@@ -22,6 +24,7 @@ export default function StylistScreen() {
   const [productSearchLoading, setProductSearchLoading] = useState(false);
   const [regeneratingVariantId, setRegeneratingVariantId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
 
   useEffect(() => {
     if (!profile?.stylistAvailable) return;
@@ -60,22 +63,35 @@ export default function StylistScreen() {
     () => look?.variants.find((variant) => variant.id === selectedVariantId) ?? look?.variants[0] ?? null,
     [look, selectedVariantId],
   );
+  const selectedPreset = useMemo(
+    () => presets.find((preset) => preset.id === selectedPresetId) ?? null,
+    [presets, selectedPresetId],
+  );
+  const canCreateLook = Boolean(selectedPresetId) && (selectedPresetId !== "custom" || customEventDescription.trim().length >= 6);
 
   async function createLook() {
-    if (!selectedPresetId) return;
+    if (!selectedPresetId || !canCreateLook) return;
     setLoading(true);
     setError(null);
     setLook(null);
     setSelectedVariantId(null);
     setRemovedProductIds(new Set());
+    setEventPickerOpen(false);
     try {
-      const payload = await api.createStylistLook(selectedPresetId);
+      const payload = await api.createStylistLook(
+        selectedPresetId,
+        selectedPresetId === "custom" ? customEventDescription.trim() : undefined,
+      );
       setLook(payload);
       setSelectedVariantId(payload.selectedVariantId ?? payload.variants[0]?.id ?? null);
+      setTimeout(() => scrollRef.current?.scrollTo({ y: 190, animated: true }), 50);
     } catch (err) {
       setError(err instanceof ApiError && (err.code === "INSUFFICIENT_GENERATIONS" || err.status === 402)
         ? "Примерки закончились. Пополните лимит или оформите подписку."
+        : err instanceof Error && err.message === "INVALID_CUSTOM_STYLIST_EVENT"
+          ? "Опишите свое событие чуть подробнее."
         : "Не удалось собрать образ. Проверьте аватар или выберите другой сценарий.");
+      setEventPickerOpen(true);
     } finally {
       setLoading(false);
     }
@@ -133,7 +149,7 @@ export default function StylistScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Pressable style={styles.back} onPress={() => router.back()} accessibilityLabel="Назад">
           <Feather name="arrow-left" size={22} color={colors.black} />
         </Pressable>
@@ -141,20 +157,57 @@ export default function StylistScreen() {
         <DisplayTitle>Подбор образа под событие</DisplayTitle>
         <BodyText>Выберите сценарий. Стилист соберет классику, современный вариант и более смелый образ.</BodyText>
 
-        <View style={styles.grid}>
-          {presets.map((preset) => {
-            const active = preset.id === selectedPresetId;
-            return (
-              <Pressable key={preset.id} style={[styles.preset, active && styles.selected]} onPress={() => setSelectedPresetId(preset.id)}>
-                <Text style={styles.presetTitle}>{preset.title}</Text>
-                <Text style={styles.presetDescription}>{preset.description}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button label={loading ? "Собираем..." : "Подобрать стиль"} loading={loading} disabled={loading || !selectedPresetId} onPress={createLook} />
+
+        <Card>
+          <View style={styles.eventHeader}>
+            <View style={styles.eventCopy}>
+              <Text style={styles.sectionTitle}>Событие</Text>
+              <Text style={styles.eventTitle}>
+                {selectedPresetId === "custom"
+                  ? customEventDescription.trim() || "Свое событие"
+                  : selectedPreset?.title ?? "Выберите событие"}
+              </Text>
+            </View>
+            {look || loading ? (
+              <Pressable style={styles.changeEvent} onPress={() => setEventPickerOpen((value) => !value)}>
+                <Text style={styles.changeEventText}>{eventPickerOpen ? "Скрыть" : "Изменить"}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {eventPickerOpen ? (
+            <>
+              <View style={styles.grid}>
+                {presets.map((preset) => {
+                  const active = preset.id === selectedPresetId;
+                  return (
+                    <Pressable key={preset.id} style={[styles.preset, active && styles.selected]} onPress={() => setSelectedPresetId(preset.id)}>
+                      <Text style={styles.presetTitle}>{preset.title}</Text>
+                      <Text style={styles.presetDescription}>{preset.description}</Text>
+                    </Pressable>
+                  );
+                })}
+                <Pressable style={[styles.preset, selectedPresetId === "custom" && styles.selected]} onPress={() => setSelectedPresetId("custom")}>
+                  <Text style={styles.presetTitle}>Свое событие</Text>
+                  <Text style={styles.presetDescription}>Опишите повод, место, дресс-код или настроение.</Text>
+                </Pressable>
+              </View>
+              {selectedPresetId === "custom" ? (
+                <TextInput
+                  value={customEventDescription}
+                  onChangeText={setCustomEventDescription}
+                  maxLength={240}
+                  multiline
+                  textAlignVertical="top"
+                  placeholder="Например: ужин с друзьями в модном ресторане, хочу выглядеть заметно, но без вечернего платья"
+                  placeholderTextColor={colors.muted}
+                  style={styles.customEventInput}
+                />
+              ) : null}
+            </>
+          ) : null}
+          <Button label={loading ? "Собираем..." : look ? "Собрать заново" : "Подобрать стиль"} loading={loading} disabled={loading || !canCreateLook} onPress={createLook} />
+        </Card>
 
         {loading ? (
           <Card>
@@ -326,11 +379,17 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxxl },
   back: { width: 40, height: 40, justifyContent: "center", alignItems: "center" },
   title: { color: colors.black, fontFamily: "Manrope_600SemiBold", fontSize: 22, lineHeight: 29, marginBottom: spacing.sm },
+  eventHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginBottom: spacing.sm },
+  eventCopy: { flex: 1 },
+  eventTitle: { color: colors.black, fontFamily: "Manrope_600SemiBold", fontSize: 15, lineHeight: 20 },
+  changeEvent: { minHeight: 36, justifyContent: "center", borderRadius: radius.md, backgroundColor: colors.pinkBg, paddingHorizontal: spacing.md },
+  changeEventText: { color: colors.pink, fontFamily: "Manrope_600SemiBold", fontSize: 13 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   preset: { width: "48%", minHeight: 128, borderRadius: radius.xl, borderWidth: hairline, borderColor: colors.borderLight, backgroundColor: colors.white, padding: spacing.md, gap: 6 },
   selected: { borderColor: colors.pink, backgroundColor: colors.pinkBg },
   presetTitle: { color: colors.black, fontFamily: "Manrope_600SemiBold", fontSize: 14, lineHeight: 19 },
   presetDescription: { color: colors.muted, fontFamily: "Manrope_400Regular", fontSize: 12, lineHeight: 17 },
+  customEventInput: { minHeight: 104, borderRadius: radius.xl, borderWidth: hairline, borderColor: colors.borderLight, backgroundColor: colors.white, color: colors.black, fontFamily: "Manrope_400Regular", fontSize: 14, lineHeight: 20, padding: spacing.md, marginTop: spacing.sm, marginBottom: spacing.sm },
   error: { color: colors.pink, fontFamily: "Manrope_500Medium", fontSize: 13, lineHeight: 18 },
   loadingRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   loadingCopy: { flex: 1 },

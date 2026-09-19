@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { RefreshCcw, Sparkles, WandSparkles, X } from "lucide-react";
 import { Button, Card } from "@wibestyle/ui";
@@ -18,6 +18,8 @@ export default function StylistClient() {
   const { api, profile } = useAppSession();
   const [presets, setPresets] = useState<StylistPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [customEventDescription, setCustomEventDescription] = useState("");
+  const [eventPickerOpen, setEventPickerOpen] = useState(true);
   const [look, setLook] = useState<StylistLookResponse | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [removedProductIds, setRemovedProductIds] = useState<Set<string>>(new Set());
@@ -26,6 +28,7 @@ export default function StylistClient() {
   const [regeneratingVariantId, setRegeneratingVariantId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewModalSrc, setPreviewModalSrc] = useState<string | null>(null);
+  const resultRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!profile?.stylistAvailable) return;
@@ -65,24 +68,39 @@ export default function StylistClient() {
     [look, selectedVariantId],
   );
 
+  const selectedPreset = useMemo(
+    () => presets.find((preset) => preset.id === selectedPresetId) ?? null,
+    [presets, selectedPresetId],
+  );
+
+  const canCreateLook = Boolean(selectedPresetId) && (selectedPresetId !== "custom" || customEventDescription.trim().length >= 6);
+
   async function createLook() {
-    if (!selectedPresetId) return;
+    if (!selectedPresetId || !canCreateLook) return;
     setLoading(true);
     setError(null);
     setLook(null);
     setSelectedVariantId(null);
     setRemovedProductIds(new Set());
+    setEventPickerOpen(false);
     try {
-      const payload = await api.createStylistLook(selectedPresetId);
+      const payload = await api.createStylistLook(
+        selectedPresetId,
+        selectedPresetId === "custom" ? customEventDescription.trim() : undefined,
+      );
       setLook(payload);
       setSelectedVariantId(payload.selectedVariantId ?? payload.variants[0]?.id ?? null);
+      window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (err) {
       const message = err instanceof ApiError && (err.code === "INSUFFICIENT_GENERATIONS" || err.status === 402)
         ? "Примерки закончились. Пополните лимит или оформите подписку."
         : err instanceof Error && err.message === "AVATAR_NOT_READY"
           ? "Сначала нужен готовый активный аватар."
+          : err instanceof Error && err.message === "INVALID_CUSTOM_STYLIST_EVENT"
+            ? "Опишите свое событие чуть подробнее."
           : "Не удалось собрать образ. Попробуйте другой сценарий.";
       setError(message);
+      setEventPickerOpen(true);
     } finally {
       setLoading(false);
     }
@@ -146,7 +164,7 @@ export default function StylistClient() {
               Выберите сценарий. Стилист соберет три направления: классику, современный вариант и более смелый образ.
             </p>
           </div>
-          <Button disabled={loading || !selectedPresetId} loading={loading} onClick={() => void createLook()}>
+          <Button disabled={loading || !canCreateLook} loading={loading} onClick={() => void createLook()}>
             <WandSparkles size={18} aria-hidden />
             {loading ? "Собираем..." : "Подобрать стиль"}
           </Button>
@@ -155,36 +173,87 @@ export default function StylistClient() {
 
       {error ? <p className="rounded-2xl border border-[#ffd1ed] bg-[#fff4fb] p-4 text-sm font-medium text-[#ff1fa2]">{error}</p> : null}
 
-      {loading ? (
-        <Card className="border-[#ffd1ed] bg-white">
-          <div className="flex items-center gap-3">
-            <span className="size-5 shrink-0 animate-spin rounded-full border-2 border-[var(--pink)] border-t-transparent" aria-hidden />
-            <div>
-              <p className="text-sm font-semibold text-[var(--black)]">Генерируем подбор стиля</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">Анализируем аватар, учитываем сценарий и собираем три направления образа.</p>
-            </div>
+      <section className="rounded-[24px] border border-[#ffd1ed] bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-eyebrow">Событие</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--black)]">
+              {selectedPresetId === "custom"
+                ? customEventDescription.trim() || "Свое событие"
+                : selectedPreset?.title ?? "Выберите событие"}
+            </p>
           </div>
-        </Card>
-      ) : null}
-
-      <section className="grid gap-3 md:grid-cols-4">
-        {presets.map((preset) => {
-          const active = preset.id === selectedPresetId;
-          return (
+          <div className="flex flex-wrap gap-2">
+            {look || loading ? (
+              <Button size="md" variant="secondary" onClick={() => setEventPickerOpen((value) => !value)}>
+                {eventPickerOpen ? "Скрыть события" : "Изменить событие"}
+              </Button>
+            ) : null}
+            <Button disabled={loading || !canCreateLook} loading={loading} onClick={() => void createLook()}>
+              <WandSparkles size={18} aria-hidden />
+              {loading ? "Собираем..." : look ? "Собрать заново" : "Подобрать стиль"}
+            </Button>
+          </div>
+        </div>
+        {eventPickerOpen ? (
+          <div className="mt-4 grid gap-3 md:grid-cols-4">
+            {presets.map((preset) => {
+              const active = preset.id === selectedPresetId;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={[
+                    "min-h-28 rounded-[18px] border p-4 text-left transition",
+                    active ? "border-[var(--pink)] bg-[var(--pink-bg)] shadow-[0_10px_28px_var(--shadow-accent)]" : "border-[#ffd1ed] bg-white hover:bg-[#fff8fd]",
+                  ].join(" ")}
+                  onClick={() => setSelectedPresetId(preset.id)}
+                >
+                  <span className="text-sm font-semibold text-[var(--pink)]">{preset.title}</span>
+                  <span className="mt-2 block text-xs leading-5 text-[var(--muted)]">{preset.description}</span>
+                </button>
+              );
+            })}
             <button
-              key={preset.id}
               type="button"
               className={[
-                "min-h-32 rounded-[22px] border p-4 text-left transition",
-                active ? "border-[var(--pink)] bg-[var(--pink-bg)] shadow-[0_10px_28px_var(--shadow-accent)]" : "border-[#ffd1ed] bg-white hover:bg-[#fff8fd]",
+                "min-h-28 rounded-[18px] border p-4 text-left transition",
+                selectedPresetId === "custom" ? "border-[var(--pink)] bg-[var(--pink-bg)] shadow-[0_10px_28px_var(--shadow-accent)]" : "border-[#ffd1ed] bg-white hover:bg-[#fff8fd]",
               ].join(" ")}
-              onClick={() => setSelectedPresetId(preset.id)}
+              onClick={() => setSelectedPresetId("custom")}
             >
-              <span className="text-sm font-semibold text-[var(--pink)]">{preset.title}</span>
-              <span className="mt-2 block text-sm leading-5 text-[var(--muted)]">{preset.description}</span>
+              <span className="text-sm font-semibold text-[var(--pink)]">Свое событие</span>
+              <span className="mt-2 block text-xs leading-5 text-[var(--muted)]">Опишите повод, место, дресс-код или настроение.</span>
             </button>
-          );
-        })}
+            {selectedPresetId === "custom" ? (
+              <label className="md:col-span-4">
+                <span className="sr-only">Описание своего события</span>
+                <textarea
+                  value={customEventDescription}
+                  onChange={(event) => setCustomEventDescription(event.target.value)}
+                  maxLength={240}
+                  rows={3}
+                  className="min-h-24 w-full resize-none rounded-[18px] border border-[#ffd1ed] bg-white p-4 text-sm text-[var(--black)] outline-none transition focus:border-[var(--pink)]"
+                  placeholder="Например: ужин с друзьями в модном ресторане, хочу выглядеть заметно, но без вечернего платья"
+                />
+              </label>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+
+      <section ref={resultRef} className="scroll-mt-6">
+        {loading ? (
+          <Card className="border-[#ffd1ed] bg-white">
+            <div className="flex items-center gap-3">
+              <span className="size-5 shrink-0 animate-spin rounded-full border-2 border-[var(--pink)] border-t-transparent" aria-hidden />
+              <div>
+                <p className="text-sm font-semibold text-[var(--black)]">Генерируем подбор стиля</p>
+                <p className="mt-1 text-sm text-[var(--muted)]">Анализируем аватар, учитываем событие и сразу готовим превью вариантов.</p>
+              </div>
+            </div>
+          </Card>
+        ) : null}
       </section>
 
       {look ? (

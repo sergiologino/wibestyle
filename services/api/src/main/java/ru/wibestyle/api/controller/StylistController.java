@@ -62,7 +62,7 @@ public class StylistController {
     ) {
         UUID userId = requireUser(authorization);
         try {
-            return stylistService.createLook(userId, request.presetId(), deviceId);
+            return stylistService.createLook(userId, request.presetId(), request.customEventDescription(), deviceId);
         } catch (IllegalArgumentException ex) {
             throw status(ex);
         }
@@ -161,6 +161,7 @@ public class StylistController {
             case "INSUFFICIENT_GENERATIONS" -> new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, ex.getMessage(), ex);
             case "AVATAR_NOT_READY" -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
             case "INVALID_STYLIST_PRESET" -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+            case "INVALID_CUSTOM_STYLIST_EVENT" -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
             case "INVALID_STYLIST_VARIANT" -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
             case "STYLIST_SESSION_NOT_FOUND" -> new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
             case "STYLIST_PREVIEW_NOT_READY" -> new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);

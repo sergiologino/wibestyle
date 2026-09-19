@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record CreateStylistLookRequest(
-        @NotBlank @Size(max = 64) String presetId
+        @NotBlank @Size(max = 64) String presetId,
+        @Size(max = 240) String customEventDescription
 ) {
 }

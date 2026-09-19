@@ -111,8 +111,13 @@ public class StylistService {
 
     @Transactional
     public Map<String, Object> createLook(UUID userId, String presetId, String deviceId) {
+        return createLook(userId, presetId, null, deviceId);
+    }
+
+    @Transactional
+    public Map<String, Object> createLook(UUID userId, String presetId, String customEventDescription, String deviceId) {
         UserEntity user = requireAvailable(userId);
-        StylistPreset preset = findPreset(presetId);
+        StylistPreset preset = resolvePreset(presetId, customEventDescription);
         AvatarSnapshotEntity avatar = findReadyAvatarSnapshot(user.getId());
 
         String season = seasonFor(LocalDate.now(PRODUCT_ZONE).getMonth());
@@ -164,7 +169,7 @@ public class StylistService {
 
     @Transactional
     public Map<String, Object> createLook(UUID userId, String presetId) {
-        return createLook(userId, presetId, null);
+        return createLook(userId, presetId, null, null);
     }
 
     @Transactional(readOnly = true)
@@ -768,8 +773,19 @@ public class StylistService {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", session.getPresetId());
         map.put("title", session.getPresetTitle());
-        map.put("description", findPreset(session.getPresetId()).description());
+        map.put("description", findPresetOrCustom(session.getPresetId(), session.getPresetTitle()).description());
         return map;
+    }
+
+    private static StylistPreset resolvePreset(String presetId, String customEventDescription) {
+        if ("custom".equals(presetId)) {
+            String description = plainTextForUi(customEventDescription);
+            if (description == null || description.length() < 6) {
+                throw new IllegalArgumentException("INVALID_CUSTOM_STYLIST_EVENT");
+            }
+            return new StylistPreset("custom", customPresetTitle(description), description);
+        }
+        return findPreset(presetId);
     }
 
     private static StylistPreset findPreset(String presetId) {
@@ -777,6 +793,18 @@ public class StylistService {
                 .filter(preset -> preset.id().equals(presetId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("INVALID_STYLIST_PRESET"));
+    }
+
+    private static StylistPreset findPresetOrCustom(String presetId, String presetTitle) {
+        if ("custom".equals(presetId)) {
+            return new StylistPreset("custom", presetTitle, presetTitle);
+        }
+        return findPreset(presetId);
+    }
+
+    private static String customPresetTitle(String description) {
+        String normalized = description.replaceAll("\\s+", " ").trim();
+        return "Свое событие: " + limitText(normalized, 80);
     }
 
     private static String buildFallbackAvatarAnalysis() {

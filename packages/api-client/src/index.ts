@@ -630,10 +630,10 @@ export class WibeStyleApiClient {
     return this.request<{ items: StylistPreset[] }>("/api/v1/stylist/presets");
   }
 
-  createStylistLook(presetId: string) {
+  createStylistLook(presetId: string, customEventDescription?: string) {
     return this.request<StylistLookResponse>("/api/v1/stylist/looks", {
       method: "POST",
-      body: JSON.stringify({ presetId }),
+      body: JSON.stringify({ presetId, customEventDescription }),
     });
   }
 
