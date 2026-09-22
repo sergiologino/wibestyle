@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 describe("web link try-on strike flow", () => {
   const source = readFileSync(join(process.cwd(), "components", "try-on", "LinkTryOnClient.tsx"), "utf8");
 
-  it("offers hairstyle and hair color selection for the stylist focus group", () => {
+  it("offers hairstyle and hair color selection when stylist is available", () => {
     expect(source).toContain("profile?.stylistAvailable");
     expect(source).toContain('data-testid="link-try-on-hair-strike"');
     expect(source).toContain('data-testid="link-try-on-hair-color-gallery"');

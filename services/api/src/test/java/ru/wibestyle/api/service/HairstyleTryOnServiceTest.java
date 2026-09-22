@@ -9,12 +9,10 @@ import ru.wibestyle.api.domain.HairstyleCatalogEntity;
 import ru.wibestyle.api.domain.TryOnSessionEntity;
 import ru.wibestyle.api.domain.TryOnSessionStatus;
 import ru.wibestyle.api.domain.TryOnSourceType;
-import ru.wibestyle.api.domain.UserEntity;
 import ru.wibestyle.api.repository.HairColorCatalogRepository;
 import ru.wibestyle.api.repository.HairstyleCatalogRepository;
 import ru.wibestyle.api.repository.TryOnSessionRepository;
 import ru.wibestyle.api.repository.UserProfileRepository;
-import ru.wibestyle.api.repository.UserRepository;
 import ru.wibestyle.api.storage.BlobKeys;
 import ru.wibestyle.api.storage.BlobStorage;
 import ru.wibestyle.api.domain.UserProfileEntity;
@@ -42,7 +40,6 @@ class HairstyleTryOnServiceTest {
         UserActivityService activity = mock(UserActivityService.class);
         QuotaService quotaService = mock(QuotaService.class);
         UserProfileRepository profiles = mock(UserProfileRepository.class);
-        UserRepository users = mock(UserRepository.class);
         UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
         AiIntegrationProperties ai = new AiIntegrationProperties();
         ai.setEnabled(true);
@@ -71,8 +68,7 @@ class HairstyleTryOnServiceTest {
                 sessions,
                 activity,
                 quotaService,
-                profiles,
-                users
+                profiles
         ).generate(userId, null, "bixie", "red-coral");
 
         verify(aiClient).applyHairstyle(
@@ -88,7 +84,7 @@ class HairstyleTryOnServiceTest {
     }
 
     @Test
-    void tryOnSessionHairstyleKeepsOriginalAvatarAsBeforeImage() throws Exception {
+    void tryOnSessionHairstyleIsAvailableWithoutFocusGroupAndKeepsOriginalAvatar() throws Exception {
         UUID userId = UUID.randomUUID();
         UUID sourceSessionId = UUID.randomUUID();
         NoteappAiClient aiClient = mock(NoteappAiClient.class);
@@ -99,10 +95,7 @@ class HairstyleTryOnServiceTest {
         UserActivityService activity = mock(UserActivityService.class);
         QuotaService quotaService = mock(QuotaService.class);
         UserProfileRepository profiles = mock(UserProfileRepository.class);
-        UserRepository users = mock(UserRepository.class);
         UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
-        UserEntity user = new UserEntity(userId, "+79990000000", Instant.now());
-        user.setStylistFocusGroup(true);
         TryOnSessionEntity sourceSession = new TryOnSessionEntity(
                 sourceSessionId,
                 userId,
@@ -125,7 +118,6 @@ class HairstyleTryOnServiceTest {
         AtomicReference<byte[]> storedBefore = new AtomicReference<>();
         byte[] portrait = new byte[]{1};
         byte[] styleReference = new byte[]{2};
-        when(users.findById(userId)).thenReturn(Optional.of(user));
         when(sessions.findByIdAndUserId(sourceSessionId, userId)).thenReturn(Optional.of(sourceSession));
         when(storage.keyTryOnResult(userId, sourceSessionId, "after")).thenReturn(sourceAfterKey);
         when(storage.keyTryOnResult(userId, sourceSessionId, "before")).thenReturn(sourceBeforeKey);
@@ -156,8 +148,7 @@ class HairstyleTryOnServiceTest {
                 sessions,
                 activity,
                 quotaService,
-                profiles,
-                users
+                profiles
         ).generateForTryOnSession(userId, sourceSessionId, "bixie", null);
 
         verify(aiClient).applyHairstyleToTryOnResult(
@@ -170,6 +161,37 @@ class HairstyleTryOnServiceTest {
                 contains("Never output the hairstyle catalogue model")
         );
         assertThat(storedBefore.get()).isEqualTo(sourceBefore);
+        verify(quotaService).reserve(any(), eq(profile));
+        verify(quotaService).consume(any());
+    }
+
+    @Test
+    void publicTryOnHairstyleStillRequiresSessionOwnership() {
+        UUID userId = UUID.randomUUID();
+        UUID sourceSessionId = UUID.randomUUID();
+        NoteappAiClient aiClient = mock(NoteappAiClient.class);
+        BlobStorage storage = mock(BlobStorage.class);
+        HairstyleCatalogRepository hairstyles = mock(HairstyleCatalogRepository.class);
+        TryOnSessionRepository sessions = mock(TryOnSessionRepository.class);
+        QuotaService quotaService = mock(QuotaService.class);
+        AiIntegrationProperties ai = new AiIntegrationProperties();
+        ai.setEnabled(true);
+        ai.setApiKey("test-key");
+        ai.setVirtualTryOnNetwork("hair-network");
+        when(hairstyles.findBySlug("bixie")).thenReturn(Optional.of(hairstyle()));
+        when(sessions.findByIdAndUserId(sourceSessionId, userId)).thenReturn(Optional.empty());
+
+        HairstyleTryOnService service = new HairstyleTryOnService(
+                aiClient, ai, storage, new HairstylePromptBuilder(), hairstyles,
+                mock(HairColorCatalogRepository.class), sessions, mock(UserActivityService.class),
+                quotaService, mock(UserProfileRepository.class)
+        );
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> service.generateForTryOnSession(userId, sourceSessionId, "bixie", null)
+        ).isInstanceOf(IllegalArgumentException.class).hasMessage("SESSION_NOT_FOUND");
+        verify(sessions).findByIdAndUserId(sourceSessionId, userId);
+        verifyNoInteractions(aiClient, storage, quotaService);
     }
 
     @Test
@@ -182,10 +204,7 @@ class HairstyleTryOnServiceTest {
         HairColorCatalogRepository colors = mock(HairColorCatalogRepository.class);
         TryOnSessionRepository sessions = mock(TryOnSessionRepository.class);
         UserProfileRepository profiles = mock(UserProfileRepository.class);
-        UserRepository users = mock(UserRepository.class);
         UserProfileEntity profile = new UserProfileEntity(userId, Instant.now());
-        UserEntity user = new UserEntity(userId, "+79990000000", Instant.now());
-        user.setStylistFocusGroup(true);
         TryOnSessionEntity sourceSession = new TryOnSessionEntity(
                 sourceSessionId,
                 userId,
@@ -200,7 +219,6 @@ class HairstyleTryOnServiceTest {
         ai.setApiKey("test-key");
         ai.setVirtualTryOnNetwork("hair-network");
         String sourceAfterKey = "source-after-key";
-        when(users.findById(userId)).thenReturn(Optional.of(user));
         when(sessions.findByIdAndUserId(sourceSessionId, userId)).thenReturn(Optional.of(sourceSession));
         when(storage.keyTryOnResult(userId, sourceSessionId, "after")).thenReturn(sourceAfterKey);
         when(storage.keyTryOnResult(userId, sourceSessionId, "before")).thenReturn("source-before-key");
@@ -226,8 +244,7 @@ class HairstyleTryOnServiceTest {
                 sessions,
                 mock(UserActivityService.class),
                 mock(QuotaService.class),
-                profiles,
-                users
+                profiles
         ).generateForTryOnSession(userId, sourceSessionId, "bixie", "red-coral");
 
         verify(aiClient).applyHairstyleToTryOnResult(

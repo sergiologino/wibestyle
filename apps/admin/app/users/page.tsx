@@ -20,7 +20,6 @@ type AdminUserItem = {
   bonusGenerationsLeft?: number;
   displayName?: string;
   primaryAuth?: string;
-  stylistFocusGroup?: boolean;
   activeAvatarPhotoUrl?: string;
   avatarUploadAttempts?: number;
   avatarFailedAttempts?: number;
@@ -158,22 +157,6 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function toggleStylistFocusGroup(user: AdminUserItem) {
-    setActionUserId(user.id);
-    setMessage(null);
-    setLocalError(null);
-    try {
-      const next = !user.stylistFocusGroup;
-      await api.updateAdminUserStylistFocusGroup(adminKey, user.id, next);
-      setMessage(`${next ? "Включена" : "Выключена"} фокус-группа стилиста для ${user.login ?? user.email ?? user.phone ?? user.id.slice(0, 8)}`);
-      await load(page, query);
-    } catch {
-      setLocalError("Не удалось изменить фокус-группу стилиста");
-    } finally {
-      setActionUserId(null);
-    }
-  }
-
   async function deleteUser(user: AdminUserItem) {
     const label = user.login ?? user.email ?? user.phone ?? user.id;
     if (!window.confirm(`Полностью удалить пользователя ${label} и все данные?`)) return;
@@ -294,9 +277,6 @@ export default function AdminUsersPage() {
                   <p className="mt-1 text-sm font-bold text-[#6d6273]">
                     Avatar attempts: {user.avatarUploadAttempts ?? 0} · failed: {user.avatarFailedAttempts ?? 0}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-[#6d6273]">
-                    Стилист: {user.stylistFocusGroup ? "фокус-группа" : "нет доступа"}
-                  </p>
                   <p className="mt-1 text-xs font-bold text-[#6d6273]">
                     Создан: {new Date(user.createdAt).toLocaleString("ru-RU")}
                   </p>
@@ -368,14 +348,6 @@ export default function AdminUsersPage() {
                 >
                   Войти как пользователь
                 </button>
-                <button
-                  type="button"
-                  className={adminButtonClass(user.stylistFocusGroup ? "active" : "secondary", "min-h-8 px-3 py-1.5 text-xs md:min-h-9 md:px-4 md:py-2 md:text-sm")}
-                  disabled={actionUserId === user.id || !configured}
-                  onClick={() => void toggleStylistFocusGroup(user)}
-                >
-                  {user.stylistFocusGroup ? "Убрать из стилиста" : "Включить стилиста"}
-                </button>
                 <Button className="md:min-h-9 md:px-4 md:py-2 md:text-sm" disabled={actionUserId === user.id || !configured} size="sm" variant="secondary" onClick={() => void deleteUser(user)}>
                   Удалить полностью
                 </Button>
@@ -396,7 +368,6 @@ export default function AdminUsersPage() {
                     <p>Тип: {user.primaryAuth ?? "—"} · создан: {new Date(user.createdAt).toLocaleString("ru-RU")}</p>
                     <p>Имя: {user.displayName ?? user.email ?? user.phone ?? "—"} · ник: {user.login ? `@${user.login}` : "—"}</p>
                     <p>Тариф: {user.plan ?? "—"} · trial: {user.trialGenerationsLeft ?? 0} · gen: {user.planGenerationsLeft ?? 0} · bonus: {user.bonusGenerationsLeft ?? 0}</p>
-                    <p>Стилист: {user.stylistFocusGroup ? "в фокус-группе" : "не включён"}</p>
                     <p>Попытки аватара: {user.avatarUploadAttempts ?? 0} · неудачные: {user.avatarFailedAttempts ?? 0}</p>
                     <p className="break-all">ID: {user.id}</p>
                   </div>

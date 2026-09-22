@@ -18,7 +18,6 @@ import ru.wibestyle.api.domain.HairColorCatalogEntity;
 import ru.wibestyle.api.domain.HairstyleCatalogEntity;
 import ru.wibestyle.api.repository.HairColorCatalogRepository;
 import ru.wibestyle.api.repository.HairstyleCatalogRepository;
-import ru.wibestyle.api.repository.UserRepository;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,8 +30,8 @@ import java.util.UUID;
 @Service
 public class HairstyleTryOnService {
     private static final int MAX_PORTRAIT_BYTES = 10 * 1024 * 1024;
-    private final NoteappAiClient aiClient; private final AiIntegrationProperties ai; private final BlobStorage storage; private final HairstylePromptBuilder promptBuilder; private final HairstyleCatalogRepository catalog; private final HairColorCatalogRepository colors; private final TryOnSessionRepository sessions; private final UserActivityService userActivityService; private final QuotaService quotaService; private final UserProfileRepository userProfileRepository; private final UserRepository userRepository;
-    public HairstyleTryOnService(NoteappAiClient aiClient, AiIntegrationProperties ai, BlobStorage storage, HairstylePromptBuilder promptBuilder, HairstyleCatalogRepository catalog, HairColorCatalogRepository colors, TryOnSessionRepository sessions, UserActivityService userActivityService, QuotaService quotaService, UserProfileRepository userProfileRepository, UserRepository userRepository) { this.aiClient = aiClient; this.ai = ai; this.storage = storage; this.promptBuilder = promptBuilder; this.catalog=catalog; this.colors=colors; this.sessions=sessions; this.userActivityService=userActivityService; this.quotaService=quotaService; this.userProfileRepository=userProfileRepository; this.userRepository=userRepository; }
+    private final NoteappAiClient aiClient; private final AiIntegrationProperties ai; private final BlobStorage storage; private final HairstylePromptBuilder promptBuilder; private final HairstyleCatalogRepository catalog; private final HairColorCatalogRepository colors; private final TryOnSessionRepository sessions; private final UserActivityService userActivityService; private final QuotaService quotaService; private final UserProfileRepository userProfileRepository;
+    public HairstyleTryOnService(NoteappAiClient aiClient, AiIntegrationProperties ai, BlobStorage storage, HairstylePromptBuilder promptBuilder, HairstyleCatalogRepository catalog, HairColorCatalogRepository colors, TryOnSessionRepository sessions, UserActivityService userActivityService, QuotaService quotaService, UserProfileRepository userProfileRepository) { this.aiClient = aiClient; this.ai = ai; this.storage = storage; this.promptBuilder = promptBuilder; this.catalog=catalog; this.colors=colors; this.sessions=sessions; this.userActivityService=userActivityService; this.quotaService=quotaService; this.userProfileRepository=userProfileRepository; }
     @Transactional
     public Map<String, Object> generate(UUID userId, MultipartFile portrait, String styleId, String colorId) throws IOException {
         if (!ai.isNoteappConfigured()) throw new IllegalArgumentException("HAIRSTYLE_AI_NOT_CONFIGURED");
@@ -103,7 +102,6 @@ public class HairstyleTryOnService {
 
     @Transactional
     public Map<String, Object> generateForTryOnSession(UUID userId, UUID sourceSessionId, String styleId, String colorId) throws IOException {
-        requireStylistFocusGroup(userId);
         if (!ai.isNoteappConfigured()) throw new IllegalArgumentException("HAIRSTYLE_AI_NOT_CONFIGURED");
         HairstyleCatalogEntity style = resolveStyle(styleId);
         HairColorCatalogEntity color = resolveColor(colorId);
@@ -222,15 +220,6 @@ public class HairstyleTryOnService {
         }
         return colors.findBySlug(colorId).filter(HairColorCatalogEntity::isActive)
                 .orElseThrow(() -> new IllegalArgumentException("HAIR_COLOR_NOT_FOUND"));
-    }
-
-    private void requireStylistFocusGroup(UUID userId) {
-        boolean allowed = userRepository.findById(userId)
-                .map(user -> user.isStylistFocusGroup())
-                .orElse(false);
-        if (!allowed) {
-            throw new IllegalArgumentException("STYLIST_FOCUS_GROUP_REQUIRED");
-        }
     }
 
     private String buildAfterTryOnPrompt(HairstyleCatalogEntity style, HairColorCatalogEntity color) {

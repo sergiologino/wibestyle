@@ -61,6 +61,28 @@ class ApiIntegrationTest {
     private BlobStorage blobStorage;
 
     @Test
+    void stylistIsAvailableToUserOutsideFocusGroup() throws Exception {
+        String accessToken = authenticate("+79990007763");
+
+        mockMvc.perform(get("/api/v1/me").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.stylistFocusGroup").value(false))
+                .andExpect(jsonPath("$.profile.stylistAvailable").value(true));
+
+        mockMvc.perform(get("/api/v1/features/me").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stylistFocusGroup").value(false))
+                .andExpect(jsonPath("$.stylistFocusGroupOnly").value(false))
+                .andExpect(jsonPath("$.flags.stylist").value(true));
+
+        mockMvc.perform(get("/api/v1/stylist/presets").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/stylist/presets"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void healthEndpointReturnsOk() throws Exception {
         mockMvc.perform(get("/api/v1/health"))
                 .andExpect(status().isOk())

@@ -31,7 +31,8 @@ describe("buildPublicPostMetadata", () => {
     process.env.NEXT_PUBLIC_LANDING_URL = "https://vibestyle.art";
 
     const metadata = buildPublicPostMetadata(samplePost, "look-abc");
-    const ogImage = metadata.openGraph?.images?.[0];
+    const images = metadata.openGraph?.images;
+    const ogImage = Array.isArray(images) ? images[0] : images;
 
     expect(metadata.openGraph?.url).toBe("https://app.vibestyle.art/p/look-abc");
     expect(ogImage).toMatchObject({

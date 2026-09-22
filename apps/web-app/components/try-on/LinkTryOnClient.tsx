@@ -443,7 +443,7 @@ export default function LinkTryOnClient() {
               {step === 2 && stylistStrikeAvailable ? (
                 <div className="mt-6 border-t border-[#ffd1ed] pt-6" data-testid="link-try-on-hair-strike">
                   <div>
-                    <p className="text-eyebrow text-[#782cff]">Фокус-группа стилиста</p>
+                    <p className="text-eyebrow text-[#782cff]">Причёска и цвет волос</p>
                     <h3 className="text-display-md mt-1 text-lg">Прическа к образу</h3>
                     <p className="mt-1 text-sm font-normal text-[#6d6273]">
                       Можно оставить волосы как есть или сразу примерить вещь с новой прической и цветом. Если меняем волосы, спишем 2 примерки.

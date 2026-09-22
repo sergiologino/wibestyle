@@ -145,8 +145,8 @@ export default function StylistClient() {
       <div className="mx-auto max-w-3xl px-4 py-12">
         <Card className="border-[#ffd1ed] bg-white">
           <p className="text-eyebrow">AI-стилист</p>
-          <h1 className="text-display-md mt-2 text-3xl">Функция пока в фокус-группе</h1>
-          <p className="text-body mt-3">Когда администратор включит доступ, здесь появится подбор образа под событие.</p>
+          <h1 className="text-display-md mt-2 text-3xl">Стилист временно недоступен</h1>
+          <p className="text-body mt-3">Попробуй вернуться позже.</p>
           <Link href="/try-on" className="text-link mt-4 inline-block text-sm">Вернуться к примерке</Link>
         </Card>
       </div>

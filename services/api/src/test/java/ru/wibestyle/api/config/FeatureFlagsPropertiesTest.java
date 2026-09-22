@@ -9,22 +9,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FeatureFlagsPropertiesTest {
 
     @Test
-    void stylistCanBeLimitedToFocusGroup() {
+    void legacyFocusGroupSettingDoesNotRestrictPublicRelease() {
         FeatureFlagsProperties flags = new FeatureFlagsProperties();
         flags.setFlags(Map.of("stylist", true));
         flags.setStylistFocusGroupOnly(true);
 
-        assertThat(flags.isStylistAvailableFor(false)).isFalse();
+        assertThat(flags.isStylistFocusGroupOnly()).isFalse();
+        assertThat(flags.isStylistAvailableFor(false)).isTrue();
         assertThat(flags.isStylistAvailableFor(true)).isTrue();
     }
 
     @Test
-    void stylistCanBeOpenedForEveryoneByEnvironmentFlag() {
+    void stylistIsAvailableToEveryoneByDefault() {
         FeatureFlagsProperties flags = new FeatureFlagsProperties();
-        flags.setFlags(Map.of("stylist", true));
-        flags.setStylistFocusGroupOnly(false);
 
         assertThat(flags.isStylistAvailableFor(false)).isTrue();
+        assertThat(flags.isStylistAvailableFor(true)).isTrue();
     }
 
     @Test
@@ -34,5 +34,6 @@ class FeatureFlagsPropertiesTest {
         flags.setStylistFocusGroupOnly(false);
 
         assertThat(flags.isStylistAvailableFor(true)).isFalse();
+        assertThat(flags.isStylistAvailableFor(false)).isFalse();
     }
 }

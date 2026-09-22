@@ -139,8 +139,8 @@ export default function StylistScreen() {
           </Pressable>
           <Card>
             <Eyebrow>AI-стилист</Eyebrow>
-            <Text style={styles.title}>Функция пока в фокус-группе</Text>
-            <BodyText>Доступ включается администратором.</BodyText>
+            <Text style={styles.title}>Стилист временно недоступен</Text>
+            <BodyText>Попробуй вернуться позже.</BodyText>
           </Card>
         </View>
       </Screen>

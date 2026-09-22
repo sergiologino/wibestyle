@@ -318,7 +318,7 @@ export default function TryOnLinkScreen() {
 
           {step === 2 && product && stylistStrikeAvailable ? (
             <>
-              <Eyebrow>Фокус-группа стилиста</Eyebrow>
+              <Eyebrow>Причёска и цвет волос</Eyebrow>
               <DisplayTitle>Прическа к образу</DisplayTitle>
               <BodyText>
                 Можно оставить волосы как есть или сразу примерить вещь и обновить прическу. С прической спишем 2 примерки.

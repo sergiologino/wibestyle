@@ -120,7 +120,6 @@ wibestyle:
     # Leave unset locally — StorageRootResolver finds wibestyle/data/storage via data/storage/.gitkeep
     root: ${WIBESTYLE_STORAGE_ROOT:}
   features:
-    stylist-focus-group-only: ${WIBESTYLE_STYLIST_FOCUS_GROUP_ONLY:true}
     flags:
       videoTryOn: true
       multiItemTryOn: false

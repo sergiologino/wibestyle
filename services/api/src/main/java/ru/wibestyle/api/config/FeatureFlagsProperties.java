@@ -9,7 +9,6 @@ import java.util.Map;
 public class FeatureFlagsProperties {
 
     private Map<String, Boolean> flags = defaultFlags();
-    private boolean stylistFocusGroupOnly = true;
 
     public Map<String, Boolean> getFlags() {
         return flags;
@@ -24,18 +23,15 @@ public class FeatureFlagsProperties {
     }
 
     public boolean isStylistFocusGroupOnly() {
-        return stylistFocusGroupOnly;
+        return false;
     }
 
     public void setStylistFocusGroupOnly(boolean stylistFocusGroupOnly) {
-        this.stylistFocusGroupOnly = stylistFocusGroupOnly;
+        // Legacy deployment settings must not restrict the public release.
     }
 
     public boolean isStylistAvailableFor(boolean userInFocusGroup) {
-        if (!isEnabled("stylist")) {
-            return false;
-        }
-        return !stylistFocusGroupOnly || userInFocusGroup;
+        return isEnabled("stylist");
     }
 
     private static Map<String, Boolean> defaultFlags() {
@@ -45,7 +41,7 @@ public class FeatureFlagsProperties {
         map.put("search", false);
         map.put("sizeAdvisory", false);
         map.put("eliteFrame", false);
-        map.put("stylist", false);
+        map.put("stylist", true);
         map.put("futureStylist", false);
         map.put("futureMakeup", false);
         map.put("futureHairstyle", false);
